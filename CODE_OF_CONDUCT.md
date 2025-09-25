@@ -69,7 +69,7 @@ Community leaders will follow these Community Impact Guidelines in determining t
 ## Definitions
 
 - communism: aka `socialism` or `marxism`, a doctrine of social organization in which all property is owned by the 'community' and each person contributes and receives according to their needs; In practice: you will own nothing and you will be happy. Since inception, all communist governments have failed or are failing, see current status of Venezuella, Cuba, China, North Korea, or Vietnam for instance. Here are some key elements of Marxism and their consequences:
-  - [x] Centralisation of all powers: leads to authoritarinism and cults of the leader
+  - [x] Centralisation of all powers: leads to authoritarinism and cult of the leader
   - [x] Centralisation of credit, means of communication and means of production: you will be a slave, and economy falters
   - [x] Abolition of all right of inheritance: you will own nothing
   - [x] Confiscation of the property of everyone: you will own nothing
