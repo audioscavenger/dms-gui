@@ -8,7 +8,7 @@ const dockerMailserver = require('./dockerMailserver');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
 
 const options = {
   definition: {
@@ -312,11 +312,11 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT_NODEJS, () => {
+  console.log(`Server running on port ${PORT_NODEJS}`);
 
   // Log debug status
-  if (process.env.DEBUG_DOCKER === 'true') {
+  if (process.env.DEBUG === 'true') {
     console.log('🐞 Docker debug mode is ENABLED');
   }
 });

@@ -26,7 +26,7 @@ Configure the `.env` file with the appropriate environment variables:
 
 ```
 PORT=3001
-SETUP_SCRIPT=/path/to/docker-mailserver/setup.sh
+SETUP_SCRIPT=/usr/local/bin/setup
 ```
 
 ## Available endpoints

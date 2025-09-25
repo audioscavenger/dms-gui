@@ -1,5 +1,5 @@
 # Docker Mailserver GUI
-[![Docker Pulls](https://img.shields.io/docker/pulls/dunajdev/docker-mailserver-gui)](https://hub.docker.com/r/dunajdev/docker-mailserver-gui)
+[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
 A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status.
 
@@ -10,6 +10,10 @@ A graphical user interface for managing [Docker Mailserver](https://github.com/d
 - ↔️ Email alias management
 - 🔧 Docker Mailserver connection configuration
 - 🌐 Multilingual support (English, Polish)
+
+![Dashboard](/assets/dms-gui-Dashboard.webp)
+![Accounts](/assets/dms-gui-Accounts.webp)
+![Aliases](/assets/dms-gui-Aliases.webp)
 
 ## Requirements
 
@@ -26,44 +30,7 @@ The application consists of two parts:
 
 ## Installation
 
-### Backend
-
-```bash
-cd backend
-npm install
-```
-
-Configure the `.env` file with the appropriate environment variables:
-
-```
-PORT=3001
-SETUP_SCRIPT=/path/to/docker-mailserver/setup.sh
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-## Running the Application
-
-### Backend
-
-```bash
-cd backend
-npm run dev
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm start
-```
-
-After running both parts, the application will be available at http://localhost:3000
+I'm givig you none of that. Use the container provided or download the git and compile it yourself.
 
 ## Configuration
 
@@ -74,7 +41,7 @@ After the first launch, go to the "Settings" tab and configure:
 
 ## Language Support
 
-The application supports multiple languages:
+The application supports multiple languages throught i18n.js:
 
 - English
 - Polish
@@ -85,41 +52,82 @@ Languages can be switched using the language selector in the top navigation bar.
 
 There are two ways to deploy using Docker:
 
-### Option 1: Using the pre-built image from Docker Hub (Recommended)
+### Option 1: Docker Compose with dms + proxy (Recommended)
+
+Sample extract from `docker-compose.yml`, rename `dms` to the actual name of your docket-Mailserver container!
+```yaml
+---
+services:
+  dms:
+    <your dms compose here>
+    ...
+    networks:
+      frontend:
+  
+  gui:
+    container_name: dms-gui
+    hostname: dms-gui
+    image: dunajdev/docker-mailserver-gui:latest
+    restart: unless-stopped
+    depends_on:
+      - dms
+    
+    # use either ones: env_file or the environment section:
+    env_file: ./dms-gui/backend/.env
+    
+    environment:
+      TZ: ${TZ}
+      PORT_NODEJS: 3001
+      DOCKER_CONTAINER: dms
+      DEBUG: false
+
+    expose:
+      - 3001
+    
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    
+    networks:
+      frontend:
+
+networks:
+  frontend:
+    external: true
+    name: frontend
+```
+
+**Note:** Replace `dms` with the name of your docker-mailserver container.
+**Note:** Replace `frontend` with the name of the external network your proxy also uses
+
+### Option 2: Manual using the pre-built image from Docker Hub
 
 ```bash
 docker run -d \
-  --name mailserver-gui \
-  -p 80:80 \
-  -e DOCKER_CONTAINER=mailserver \
+  --name dms-gui \
+  -p 80:3001 \
+  -e DOCKER_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   dunajdev/docker-mailserver-gui:latest
 ```
 
-**Note:** Replace `mailserver` with the name of your docker-mailserver container.
-
-### Option 2: Building locally with Docker Compose
-
-```bash
-# Build and start the container
-docker-compose up -d
-```
-
-The application will be available at http://localhost
+**Note:** Replace `dms` with the name of your docker-mailserver container.
 
 ### Environment Variables
 
 - `DOCKER_CONTAINER`: Name of your docker-mailserver container (required)
-- `PORT`: Internal port for the Node.js server (defaults to 3001)
-- `NODE_ENV`: Node.js environment (defaults to production)
+- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
+- `DEBUG`: Node.js environment: (*production or development)
+- `NODE_ENV`: Node.js environment: (*production or development)
+- `SETUP_SCRIPT`: the internal path the docker-mailserver setup script: normally `/usr/local/bin/setup`
 
 ### Docker Features
 
 - Single container with both frontend and backend
-- Nginx serves the React frontend and proxies API requests 
+- Nginx serves the React frontend and proxies API requests with http
 - Communication with docker-mailserver via Docker API
-- No need for shared networks between containers
-- Only the Docker socket needs to be mounted
 - Minimal configuration (just set the container name)
 
 For detailed Docker setup instructions, please refer to:
@@ -148,6 +156,41 @@ npm run format
 # Check if all relevant files are formatted correctly
 npm run format:check
 ```
+
+## Development
+
+### Backend
+
+```bash
+cd backend
+npm install
+```
+Configure the `.env` file with the appropriate [#environment-variables], using `.env.example`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+## Running the Application
+
+### Backend
+
+```bash
+cd backend
+npm run dev
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm start
+```
+
+After running both parts, the application will be available at http://localhost:3000
 
 ## License
 

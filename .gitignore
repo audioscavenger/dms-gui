@@ -1,9 +1,14 @@
+# ---> gitsync
+**/backup
+git*.cmd
+commit.*.txt
+README.cmd
+
 # Dependencies
 node_modules/
 
 # Environment variables
-.env
-*.env
+**/.env
 !.env.example
 
 # Logs

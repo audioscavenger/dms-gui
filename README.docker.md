@@ -15,9 +15,11 @@ This document provides detailed instructions for deploying and managing the [Doc
 
 Both deployment options use the same environment variables:
 
-- `DOCKER_CONTAINER`: The name of your docker-mailserver container (required)
-- `PORT`: Internal port for the Node.js server (defaults to 3001)
-- `NODE_ENV`: Node.js environment (defaults to production)
+- `DOCKER_CONTAINER`: Name of your docker-mailserver container (required)
+- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
+- `DEBUG`: Node.js environment: (*production or development)
+- `NODE_ENV`: Node.js environment: (*production or development)
+- `SETUP_SCRIPT`: the internal path the docker-mailserver setup script: normally `/usr/local/bin/setup`
 
 ### Deployment Options
 
@@ -31,7 +33,7 @@ Each option is detailed in the sections below.
 ## Project Structure
 
 ```
-docker-mailserver-GUI/
+dms-gui/
 ├── backend/               # Backend API
 ├── frontend/              # Frontend React app
 ├── docker/                # Docker configuration files
@@ -48,19 +50,19 @@ The application is available as a pre-built Docker image on Docker Hub:
 
 ```bash
 docker run -d \
-  --name mailserver-gui \
-  -p 80:80 \
-  -e DOCKER_CONTAINER=mailserver \
+  --name dms-gui \
+  -p 80:3001 \
+  -e DOCKER_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   dunajdev/docker-mailserver-gui:latest
 ```
 
 Where:
-- `mailserver` is the name of your docker-mailserver container
+- `dms` is the name of your docker-mailserver container
 - Port 80 is mapped to your host
 
 For more information about the Docker Hub image, visit:
-https://hub.docker.com/r/dunajdev/docker-mailserver-gui
+https://hub.docker.com/r/audioscavenger/dms-gui
 
 ## Option 2: Building Locally with Docker Compose
 

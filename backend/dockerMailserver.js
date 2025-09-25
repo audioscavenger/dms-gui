@@ -3,9 +3,10 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 // Docker container name for docker-mailserver
 const DOCKER_CONTAINER = process.env.DOCKER_CONTAINER || 'mailserver';
+const SETUP_SCRIPT = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
 
 // Debug flag
-const DEBUG = process.env.DEBUG_DOCKER === 'true';
+const DEBUG = process.env.DEBUG === 'true';
 
 /**
  * Debug logger that only logs if DEBUG is true
@@ -15,9 +16,9 @@ const DEBUG = process.env.DEBUG_DOCKER === 'true';
 function debugLog(message, data = null) {
   if (DEBUG) {
     if (data) {
-      console.log(`[DOCKER-DEBUG] ${message}`, data);
+      console.log(`[DEBUG] ${message}`, data);
     } else {
-      console.log(`[DOCKER-DEBUG] ${message}`);
+      console.log(`[DEBUG] ${message}`);
     }
   }
 }
@@ -29,7 +30,7 @@ function debugLog(message, data = null) {
  */
 async function execInContainer(command) {
   try {
-    debugLog(`Executing command in container ${DOCKER_CONTAINER}: ${command}`);
+    debugLog(`${arguments.callee.name}: Executing command in container ${DOCKER_CONTAINER}: ${command}`);
 
     // Get container instance
     const container = docker.getContainer(DOCKER_CONTAINER);
@@ -56,18 +57,18 @@ async function execInContainer(command) {
       });
 
       stream.on('end', () => {
-        debugLog(`Command completed. Output:`, stdoutData);
+        debugLog(`${arguments.callee.name}: Command completed. Output:`, stdoutData);
         resolve(stdoutData);
       });
 
       stream.on('error', (err) => {
-        debugLog(`Command error:`, err);
+        debugLog(`${arguments.callee.name}: Command error:`, err);
         reject(err);
       });
     });
   } catch (error) {
-    console.error(`Error executing command in container: ${command}`, error);
-    debugLog(`Execution error:`, error);
+    console.error(`${arguments.callee.name}: Error executing command in container: ${command}`, error);
+    debugLog(`${arguments.callee.name}: Execution error:`, error);
     throw error;
   }
 }
@@ -79,38 +80,49 @@ async function execInContainer(command) {
  */
 async function execSetup(setupCommand) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
-  debugLog(`Executing setup command: ${setupCommand}`);
-  return execInContainer(`/usr/local/bin/setup ${setupCommand}`);
+  debugLog(`${arguments.callee.name}: Executing setup command: ${setupCommand}`);
+  return execInContainer(`${SETUP_SCRIPT} ${setupCommand}`);
 }
 
 // Function to retrieve email accounts
 async function getAccounts() {
   try {
-    debugLog('Getting email accounts list');
+    debugLog(`${arguments.callee.name}: Getting email accounts list`);
     const stdout = await execSetup('email list');
 
     // Parse multiline output with regex to extract email and size information
     const accounts = [];
-    const accountLineRegex =
-      /\* ([\w\-\.@]+) \( ([\w\.\~]+) \/ ([\w\.\~]+) \) \[(\d+)%\](.*)$/;
+    // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
+    const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
+    // const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\.\S+)\s+\(\s+([\w\.\~]+)\s+\/\s+([\w\.\~]+)\s+\)\s+\[(\d+)%\]/;
+    const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\.\S+)\s+([\w\.\~]+)\s+([\w\.\~]+)\s+(\d+)%/;
+    const accountLineRegexQuotaOFF = /(\*\s+)(\S+)@(\S+\.\S+)/;
 
     // Process each line individually
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
-    debugLog('Raw email list response:', lines);
+    // debugLog(`${arguments.callee.name}: email list RAW response:`, lines);
 
     for (let i = 0; i < lines.length; i++) {
+      debugLog(`${arguments.callee.name}: email list line RAW  :`, lines[i]);
+      
       // Clean the line from binary control characters
-      const line = lines[i].replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+      const line = lines[i].replace(emailLineValidChars, '').trim();
+      debugLog(`${arguments.callee.name}: email list line CLEAN:`, line);
 
       // Check if line contains * which indicates an account entry
       if (line.includes('*')) {
-        const match = line.match(accountLineRegex);
+        const matchQuotaON  = line.match(accountLineRegexQuotaON);
+        const matchQuotaOFF = line.match(accountLineRegexQuotaOFF);
 
-        if (match) {
-          const email = match[1];
-          const usedSpace = match[2];
-          const totalSpace = match[3] === '~' ? 'unlimited' : match[3];
-          const usagePercent = match[4];
+        if (matchQuotaON) {
+          // matchQuotaON = [ "* user@domain.com ( 2.5G / 30G ) [8%]", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
+          // matchQuotaON = [ "* user@domain.com 2.5G 30G 8%", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
+          const email = `${matchQuotaON[2]}@${matchQuotaON[3]}`;
+          
+          // this works only if Dovecot ENABLE_QUOTAS=1
+          const usedSpace = matchQuotaON[4];
+          const totalSpace = matchQuotaON[5] === '~' ? 'unlimited' : matchQuotaON[5];
+          const usagePercent = matchQuotaON[6];
 
           debugLog(
             `Parsed account: ${email}, Storage: ${usedSpace}/${totalSpace} [${usagePercent}%]`
@@ -124,17 +136,24 @@ async function getAccounts() {
               percent: usagePercent + '%',
             },
           });
+        } else if  (matchQuotaOFF) {
+          // matchQuotaOFF = [ "* user@domain.com", "* ", "user", "domain.com" ]
+          const email = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
+
+          accounts.push({
+            email,
+          });
         } else {
-          debugLog(`Failed to parse account line: ${line}`);
+          debugLog(`${arguments.callee.name}: Failed to parse account line: ${line}`);
         }
       }
     }
 
-    debugLog(`Found ${accounts.length} accounts`);
+    debugLog(`${arguments.callee.name}: Found ${accounts.length} accounts`);
     return accounts;
   } catch (error) {
-    console.error('Error retrieving accounts:', error);
-    debugLog('Account retrieval error:', error);
+    console.error(`${arguments.callee.name}: Error retrieving accounts:`, error);
+    debugLog(`${arguments.callee.name}: Account retrieval error:`, error);
     throw new Error('Unable to retrieve account list');
   }
 }
@@ -142,13 +161,13 @@ async function getAccounts() {
 // Function to add a new email account
 async function addAccount(email, password) {
   try {
-    debugLog(`Adding new email account: ${email}`);
+    debugLog(`${arguments.callee.name}: Adding new email account: ${email}`);
     await execSetup(`email add ${email} ${password}`);
-    debugLog(`Account created: ${email}`);
+    debugLog(`${arguments.callee.name}: Account created: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error('Error adding account:', error);
-    debugLog('Account creation error:', error);
+    console.error(`${arguments.callee.name}: Error adding account:`, error);
+    debugLog(`${arguments.callee.name}: Account creation error:`, error);
     throw new Error('Unable to add email account');
   }
 }
@@ -156,13 +175,13 @@ async function addAccount(email, password) {
 // Function to update an email account password
 async function updateAccountPassword(email, password) {
   try {
-    debugLog(`Updating password for account: ${email}`);
+    debugLog(`${arguments.callee.name}: Updating password for account: ${email}`);
     await execSetup(`email update ${email} ${password}`);
-    debugLog(`Password updated for account: ${email}`);
+    debugLog(`${arguments.callee.name}: Password updated for account: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error('Error updating account password:', error);
-    debugLog('Account password update error:', error);
+    console.error(`${arguments.callee.name}: Error updating account password:`, error);
+    debugLog(`${arguments.callee.name}: Account password update error:`, error);
     throw new Error('Unable to update email account password');
   }
 }
@@ -170,13 +189,13 @@ async function updateAccountPassword(email, password) {
 // Function to delete an email account
 async function deleteAccount(email) {
   try {
-    debugLog(`Deleting email account: ${email}`);
+    debugLog(`${arguments.callee.name}: Deleting email account: ${email}`);
     await execSetup(`email del ${email}`);
-    debugLog(`Account deleted: ${email}`);
+    debugLog(`${arguments.callee.name}: Account deleted: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error('Error deleting account:', error);
-    debugLog('Account deletion error:', error);
+    console.error(`${arguments.callee.name}: Error deleting account:`, error);
+    debugLog(`${arguments.callee.name}: Account deletion error:`, error);
     throw new Error('Unable to delete email account');
   }
 }
@@ -184,13 +203,13 @@ async function deleteAccount(email) {
 // Function to retrieve aliases
 async function getAliases() {
   try {
-    debugLog('Getting aliases list');
+    debugLog(`${arguments.callee.name}: Getting aliases list`);
     const stdout = await execSetup('alias list');
     const aliases = [];
 
     // Parse each line in the format "* source destination"
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
-    debugLog('Raw alias list response:', lines);
+    debugLog(`${arguments.callee.name}: Raw alias list response:`, lines);
 
     // Modified regex to be more tolerant of control characters that might appear in the output
     const aliasRegex = /\* ([\w\-\.@]+) ([\w\-\.@]+)$/;
@@ -204,23 +223,23 @@ async function getAliases() {
         if (match) {
           const source = match[1];
           const destination = match[2];
-          debugLog(`Parsed alias: ${source} -> ${destination}`);
+          debugLog(`${arguments.callee.name}: Parsed alias: ${source} -> ${destination}`);
 
           aliases.push({
             source,
             destination,
           });
         } else {
-          debugLog(`Failed to parse alias line: ${line}`);
+          debugLog(`${arguments.callee.name}: Failed to parse alias line: ${line}`);
         }
       }
     }
 
-    debugLog(`Found ${aliases.length} aliases`);
+    debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
     return aliases;
   } catch (error) {
-    console.error('Error retrieving aliases:', error);
-    debugLog('Alias retrieval error:', error);
+    console.error(`${arguments.callee.name}: Error retrieving aliases:`, error);
+    debugLog(`${arguments.callee.name}: Alias retrieval error:`, error);
     throw new Error('Unable to retrieve alias list');
   }
 }
@@ -228,13 +247,13 @@ async function getAliases() {
 // Function to add an alias
 async function addAlias(source, destination) {
   try {
-    debugLog(`Adding new alias: ${source} -> ${destination}`);
+    debugLog(`${arguments.callee.name}: Adding new alias: ${source} -> ${destination}`);
     await execSetup(`alias add ${source} ${destination}`);
-    debugLog(`Alias created: ${source} -> ${destination}`);
+    debugLog(`${arguments.callee.name}: Alias created: ${source} -> ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
-    console.error('Error adding alias:', error);
-    debugLog('Alias creation error:', error);
+    console.error(`${arguments.callee.name}: Error adding alias:`, error);
+    debugLog(`${arguments.callee.name}: Alias creation error:`, error);
     throw new Error('Unable to add alias');
   }
 }
@@ -242,13 +261,13 @@ async function addAlias(source, destination) {
 // Function to delete an alias
 async function deleteAlias(source, destination) {
   try {
-    debugLog(`Deleting alias: ${source} => ${destination}`);
+    debugLog(`${arguments.callee.name}: Deleting alias: ${source} => ${destination}`);
     await execSetup(`alias del ${source} ${destination}`);
-    debugLog(`Alias deleted: ${source} => ${destination}`);
+    debugLog(`${arguments.callee.name}: Alias deleted: ${source} => ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
-    console.error('Error deleting alias:', error);
-    debugLog('Alias deletion error:', error);
+    console.error(`${arguments.callee.name}: Error deleting alias:`, error);
+    debugLog(`${arguments.callee.name}: Alias deletion error:`, error);
     throw new Error('Unable to delete alias');
   }
 }
@@ -256,7 +275,7 @@ async function deleteAlias(source, destination) {
 // Function to check server status
 async function getServerStatus() {
   try {
-    debugLog('Getting server status');
+    debugLog(`${arguments.callee.name}: Getting server status`);
 
     // Get container info
     const container = docker.getContainer(DOCKER_CONTAINER);
@@ -264,7 +283,7 @@ async function getServerStatus() {
 
     // Check if container is running
     const isRunning = containerInfo.State.Running === true;
-    debugLog(`Container running: ${isRunning}`);
+    debugLog(`${arguments.callee.name}: Container running: ${isRunning}`);
 
     let diskUsage = '0%';
     let cpuUsage = '0%';
@@ -272,7 +291,7 @@ async function getServerStatus() {
 
     if (isRunning) {
       // Get container stats
-      debugLog('Getting container stats');
+      debugLog(`${arguments.callee.name}: Getting container stats`);
       const stats = await container.stats({ stream: false });
 
       // Calculate CPU usage percentage
@@ -289,7 +308,7 @@ async function getServerStatus() {
       const memoryUsageBytes = stats.memory_stats.usage;
       memoryUsage = formatMemorySize(memoryUsageBytes);
 
-      debugLog(`Resources - CPU: ${cpuUsage}, Memory: ${memoryUsage}`);
+      debugLog(`${arguments.callee.name}: Resources - CPU: ${cpuUsage}, Memory: ${memoryUsage}`);
 
       // For disk usage, we would need to run a command inside the container
       // This could be a more complex operation involving checking specific directories
@@ -306,11 +325,11 @@ async function getServerStatus() {
       },
     };
 
-    debugLog('Server status result:', result);
+    debugLog(`${arguments.callee.name}: Server status result:`, result);
     return result;
   } catch (error) {
-    console.error('Error checking server status:', error);
-    debugLog('Server status error:', error);
+    console.error(`${arguments.callee.name}: Error checking server status:`, error);
+    debugLog(`${arguments.callee.name}: Server status error:`, error);
     return {
       status: 'unknown',
       error: error.message,
@@ -329,6 +348,7 @@ function formatMemorySize(bytes) {
 }
 
 module.exports = {
+  debugLog,
   getAccounts,
   addAccount,
   updateAccountPassword,
