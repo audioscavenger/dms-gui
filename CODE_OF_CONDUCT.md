@@ -8,8 +8,6 @@ We pledge to act and interact in ways that contribute to an open community, free
 
 We are a technical / computer science community, and politics have no place in the discussions or projects we participate in.
 
-We support Capitalism and the right to free speech as defined in the 1st amendment of the United States of America.
-
 ## Our Standards
 
 Examples of behavior that contributes to a positive environment for our community include:

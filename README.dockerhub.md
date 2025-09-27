@@ -2,7 +2,7 @@
 
 A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status.
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/dunajdev/docker-mailserver-gui)](https://hub.docker.com/r/dunajdev/docker-mailserver-gui)
+[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
 ## Features
 
@@ -18,9 +18,9 @@ A graphical user interface for managing [Docker Mailserver](https://github.com/d
 docker run -d \
   --name mailserver-gui \
   -p 80:80 \
-  -e DOCKER_CONTAINER=mailserver \
+  -e DMS_CONTAINER=mailserver \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  dunajdev/docker-mailserver-gui:latest
+  audioscavenger/dms-gui:latest
 ```
 
 The application will be available at http://localhost
@@ -29,7 +29,7 @@ The application will be available at http://localhost
 
 ### Environment Variables
 
-- `DOCKER_CONTAINER`: Name of your docker-mailserver container (required)
+- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
 - `PORT`: Internal port for the Node.js server (defaults to 3001)
 - `NODE_ENV`: Node.js environment (defaults to production)
 
@@ -56,7 +56,7 @@ When the container starts:
 ### Connection to docker-mailserver fails
 
 - Ensure the docker-mailserver container is running
-- Check that the container name matches the `DOCKER_CONTAINER` environment variable
+- Check that the container name matches the `DMS_CONTAINER` environment variable
 - Check that the `/var/run/docker.sock` volume is correctly mounted
 - Verify that your host user has permissions to access the Docker socket
 
@@ -77,5 +77,5 @@ MIT
 
 ## Links
 
-- [GitHub Repository](https://github.com/dunaj-dev/docker-mailserver-GUI)
-- [Bug Reports](https://github.com/dunajdev/docker-mailserver-GUI/issues)
+- [GitHub Repository](https://github.com/audioscavenger/dms-gui)
+- [Bug Reports](https://github.com/audioscavenger/dms-gui/issues)

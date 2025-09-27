@@ -313,10 +313,11 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
 });
 
 app.listen(PORT_NODEJS, () => {
-  console.log(`Server running on port ${PORT_NODEJS}`);
+  const { name, version } = dockerMailserver.getPackageJson();
+  console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status
   if (process.env.DEBUG === 'true') {
-    console.log('🐞 Docker debug mode is ENABLED');
+    console.log('🐞 debug mode is ENABLED');
   }
 });

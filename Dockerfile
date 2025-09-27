@@ -1,6 +1,10 @@
 # Multi-stage build for Docker Mailserver GUI
-# Stage 1: Build frontend
-FROM node:18-alpine as frontend-builder
+#   docker build -t audioscavenger/dms-gui .
+#   docker image ls
+#   docker push audioscavenger/dms-gui
+
+# Stage 1: Build frontend https://hub.docker.com/_/node
+FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -13,7 +17,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Build backend
-FROM node:18-alpine as backend-builder
+FROM node:24-alpine AS backend-builder
 
 WORKDIR /app/backend
 
@@ -28,7 +32,7 @@ COPY backend/ ./
 RUN apk add --no-cache docker-cli
 
 # Stage 3: Final image with Nginx and Node.js
-FROM node:18-alpine
+FROM node:24-alpine
 
 # Install Nginx and Docker client
 RUN apk add --no-cache nginx docker-cli
@@ -51,7 +55,7 @@ COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Expose port for the application
-EXPOSE 80
+EXPOSE 3001
 
 # Start Nginx and Node.js
 CMD ["/app/start.sh"]

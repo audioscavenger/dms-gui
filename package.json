@@ -1,7 +1,7 @@
 {
-  "name": "docker-mailserver-gui",
-  "version": "1.0.3",
-  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/dunajdev/docker-mailserver-gui)](https://hub.docker.com/r/dunajdev/docker-mailserver-gui)",
+  "name": "dms-gui",
+  "version": "1.0.4",
+  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

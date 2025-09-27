@@ -8,7 +8,7 @@ on:
     branches: [ "master" ]
 
 env:
-  IMAGE_NAME: dunajdev/docker-mailserver-gui
+  IMAGE_NAME: audioscavenger/dms-gui
 
 jobs:
   build:

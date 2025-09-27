@@ -15,7 +15,7 @@ This document provides detailed instructions for deploying and managing the [Doc
 
 Both deployment options use the same environment variables:
 
-- `DOCKER_CONTAINER`: Name of your docker-mailserver container (required)
+- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `DEBUG`: Node.js environment: (*production or development)
 - `NODE_ENV`: Node.js environment: (*production or development)
@@ -51,10 +51,10 @@ The application is available as a pre-built Docker image on Docker Hub:
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:3001 \
-  -e DOCKER_CONTAINER=dms \
+  -p 80:80 \
+  -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  dunajdev/docker-mailserver-gui:latest
+  audioscavenger/dms-gui:latest
 ```
 
 Where:
@@ -70,12 +70,12 @@ https://hub.docker.com/r/audioscavenger/dms-gui
 
 Before building the application, adjust the `docker-compose.yml` file to match your docker-mailserver setup:
 
-1. Update the `DOCKER_CONTAINER` environment variable to match your docker-mailserver container name
+1. Update the `DMS_CONTAINER` environment variable to match your docker-mailserver container name
 
 Example:
 ```yaml
 environment:
-  - DOCKER_CONTAINER=mail-server  # Your docker-mailserver container name
+  - DMS_CONTAINER=mail-server  # Your docker-mailserver container name
 ```
 
 That's it! Since we're using Docker API via the socket, no network configuration is needed. The application will communicate with docker-mailserver through the Docker daemon on the host.
@@ -156,7 +156,7 @@ Unlike a traditional approach where containers need to be on the same network to
 ### Connection to docker-mailserver fails
 
 - Ensure the docker-mailserver container is running
-- Check that the container name matches the `DOCKER_CONTAINER` environment variable
+- Check that the container name matches the `DMS_CONTAINER` environment variable
 - Check that the `/var/run/docker.sock` volume is correctly mounted
 - Verify that your host user has permissions to access the Docker socket
 
