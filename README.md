@@ -1,7 +1,7 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](dunaj-dev/docker-mailserver-gui)
+A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
 
 ## Features
 
@@ -30,7 +30,9 @@ The application consists of two parts:
 
 ## Installation
 
-I'm givig you none of that. Use the container provided or download the git and compile it yourself.
+You have nothing to install, this is an all-included docker service for your DMS compose, that provides a UI for DMS.
+
+If you want to develop/pull requests and test, see README.docker.md and each README under the subfolders `backend` and `frontend`.
 
 ## Configuration
 
