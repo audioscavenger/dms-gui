@@ -1,0 +1,28 @@
+{
+  "name": "docker-mailserver-gui",
+  "version": "1.0.3",
+  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/dunajdev/docker-mailserver-gui)](https://hub.docker.com/r/dunajdev/docker-mailserver-gui)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0"
+  },
+  "lint-staged": {
+    "backend/**/*.{js,json}": [
+      "prettier --write"
+    ],
+    "frontend/src/**/*.{js,jsx,css,json}": [
+      "prettier --write"
+    ],
+    "frontend/public/index.html": [
+      "prettier --write"
+    ]
+  }
+}

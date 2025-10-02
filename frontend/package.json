@@ -1,0 +1,46 @@
+{
+  "name": "docker-mailserver-gui-frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack serve --mode development --open",
+    "build": "webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,json}\" \"public/index.html\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\" \"public/index.html\""
+  },
+  "keywords": [
+    "docker",
+    "mailserver",
+    "gui",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Frontend GUI dla docker-mailserver",
+  "dependencies": {
+    "axios": "^1.8.4",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.11.3",
+    "i18next": "^24.2.3",
+    "i18next-browser-languagedetector": "^8.0.4",
+    "react": "^19.1.0",
+    "react-bootstrap": "^2.10.9",
+    "react-dom": "^19.1.0",
+    "react-i18next": "^15.4.1",
+    "react-router-dom": "^7.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "prettier": "3.5.3",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.1"
+  }
+}

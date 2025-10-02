@@ -1,0 +1,20 @@
+
+---
+services:
+  # Combined frontend and backend service
+  dms-gui:
+    build: .
+    container_name: dms-gui
+    ports:
+      - "80:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      # The name of the docker-mailserver container
+      - DOCKER_CONTAINER=dms
+    volumes:
+      # Mount the docker socket to allow container communication with Docker
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+# No networks or volumes needed as we're using Docker API via the socket

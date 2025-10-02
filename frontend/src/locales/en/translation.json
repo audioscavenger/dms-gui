@@ -1,0 +1,125 @@
+{
+  "app": {
+    "title": "Docker Mailserver GUI"
+  },
+  "navbar": {
+    "documentation": "Documentation"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "emailAccounts": "Email Accounts",
+    "aliases": "Aliases",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "serverStatus": "Server Status",
+    "cpuUsage": "CPU Usage",
+    "memoryUsage": "Memory Usage",
+    "diskUsage": "Disk Usage",
+    "emailAccounts": "Email Accounts",
+    "aliases": "Aliases",
+    "loading": "Loading...",
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "unknown": "Unknown"
+    },
+    "error": "Unable to load dashboard data. Please check server connection."
+  },
+  "accounts": {
+    "title": "Email Accounts Management",
+    "newAccount": "Add New Account",
+    "existingAccounts": "Existing Accounts",
+    "email": "Email Address",
+    "password": "Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "storage": "Storage Usage",
+    "aliases": "Aliases",
+    "actions": "Actions",
+    "addAccount": "Add Account",
+    "changePassword": "Change Password",
+    "updatePassword": "Update Password",
+    "noAccounts": "No email accounts. Add your first account.",
+    "emailRequired": "Email is required",
+    "invalidEmail": "Invalid email format",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password must be at least 8 characters",
+    "passwordsNotMatch": "Passwords do not match",
+    "accountCreated": "Account created successfully!",
+    "accountDeleted": "Account deleted successfully!",
+    "passwordUpdated": "Password updated successfully!",
+    "cannotCreateAccount": "Unable to create account. Please try again.",
+    "cannotDeleteAccount": "Unable to delete account. Please try again.",
+    "cannotUpdatePassword": "Unable to update password. Please try again.",
+    "confirmDelete": "Are you sure you want to delete account {{email}}?"
+  },
+  "aliases": {
+    "title": "Aliases Management",
+    "newAlias": "Add New Alias",
+    "existingAliases": "Existing Aliases",
+    "sourceAddress": "Source Address (Alias)",
+    "destinationAddress": "Destination Address",
+    "sourceInfo": "This is the address mail will be sent to.",
+    "destinationInfo": "Mail will be forwarded from the alias to this account.",
+    "selectDestination": "Select destination account",
+    "addAlias": "Add Alias",
+    "noAliases": "No aliases. Add your first alias.",
+    "sourceRequired": "Source address is required",
+    "invalidSource": "Invalid email format",
+    "destinationRequired": "Destination address is required",
+    "invalidDestination": "Invalid email format",
+    "aliasCreated": "Alias created successfully!",
+    "aliasDeleted": "Alias deleted successfully!",
+    "cannotCreateAlias": "Unable to create alias. Please try again.",
+    "cannotDeleteAlias": "Unable to delete alias. Please try again.",
+    "confirmDelete": "Are you sure you want to delete alias {{source}} => {{destination}}?"
+  },
+  "settings": {
+    "title": "Settings",
+    "configuration": "Docker Mailserver Configuration",
+    "setupPath": "Setup.sh Script Path",
+    "setupPathInfo": "Full path to the setup.sh script in your docker-mailserver installation.",
+    "containerName": "Docker Mailserver Container Name",
+    "containerNameInfo": "Name of the Docker container running Docker Mailserver.",
+    "saveSettings": "Save Settings",
+    "settingsSaved": "Settings saved successfully!",
+    "cannotSaveSettings": "Unable to save settings. Please try again.",
+    "about": "About Docker Mailserver GUI",
+    "aboutText": "Docker Mailserver GUI is a graphical interface for managing your Docker Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
+    "version": "Version",
+    "saveButton": "Save Settings",
+    "saveSuccess": "Settings saved successfully!",
+    "saveError": "Unable to save settings. Please try again.",
+    "configTitle": "Docker Mailserver Configuration",
+    "setupPathHelp": "Full path to the setup.sh script in your docker-mailserver installation.",
+    "containerNameHelp": "Name of the Docker container running Docker Mailserver.",
+    "aboutTitle": "About Docker Mailserver GUI",
+    "aboutDescription": "Docker Mailserver GUI is a graphical interface for managing your Docker Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
+    "githubLink": "View on GitHub"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel"
+  },
+  "api": {
+    "errors": {
+      "fetchServerStatus": "Error fetching server status",
+      "fetchAccounts": "Error fetching accounts",
+      "addAccount": "Error adding account",
+      "deleteAccount": "Error deleting account",
+      "updatePassword": "Error updating password",
+      "fetchAliases": "Error fetching aliases",
+      "addAlias": "Error adding alias",
+      "deleteAlias": "Error deleting alias"
+    }
+  },
+  "language": {
+    "select": "Select Language",
+    "en": "English",
+    "pl": "Polish"
+  }
+}

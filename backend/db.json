@@ -1,0 +1,24 @@
+{
+  "accounts": [
+    {
+      "id": 1,
+      "email": "test1@example.com",
+      "storage": { "used": "100MB", "total": "1GB", "percent": "10%" }
+    },
+    {
+      "id": 2,
+      "email": "test2@example.com",
+      "storage": { "used": "200MB", "total": "1GB", "percent": "20%" }
+    },
+    {
+      "id": 3,
+      "email": "test3@example.com",
+      "storage": { "used": "300MB", "total": "1GB", "percent": "30%" }
+    }
+  ],
+  "aliases": [
+    { "source": "alias1@example.com", "destination": "test1@example.com" },
+    { "source": "alias2@example.com", "destination": "test2@example.com" },
+    { "source": "alias3@example.com", "destination": "test3@example.com" }
+  ]
+}

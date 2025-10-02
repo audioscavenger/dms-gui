@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+}
+
+.sidebar {
+  background-color: #343a40;
+  padding-top: 20px;
+}
+
+/* The "min-width" comes from the "min-width" media attribute on "main-content" */
+@media (min-width: 768px) {
+  .sidebar {
+    min-height: calc(100vh - 56px);
+  }
+}
+
+/* Removed color and background styles as they are set inline in Sidebar.js */
+/* Kept basic layout and transition styles */
+.sidebar .nav-link {
+  /* Target .nav-link added by react-bootstrap */
+  text-decoration: none;
+  display: block;
+  padding: 10px 15px;
+  transition: all 0.3s;
+}
+
+/* Kept only the :hover style */
+.sidebar .nav-link:hover {
+  color: #fff !important; /* Use !important to override potential inline styles */
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Icon style - target icon inside the link */
+.sidebar .nav-link i {
+  margin-right: 10px;
+}
+
+.main-content {
+  padding: 20px;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 20px;
+}
+
+.dashboard-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.dashboard-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.form-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
