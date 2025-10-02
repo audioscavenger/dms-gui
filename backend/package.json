@@ -1,6 +1,6 @@
 {
   "name": "dms-gui-backend",
-  "version": "1.0.5",
+  "version": "1.0.5.5",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -20,6 +20,7 @@
   "license": "ISC",
   "description": "Backend API for GUI docker-mailserver",
   "dependencies": {
+    "async-mutex": "^0.5.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dockerode": "^4.0.8",

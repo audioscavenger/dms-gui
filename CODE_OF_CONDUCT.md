@@ -6,7 +6,7 @@ We as members, contributors, and leaders pledge to make participation in our com
 
 We pledge to act and interact in ways that contribute to an open community, free of hate and communism.
 
-We are a technical / computer science community, and politics have no place in the discussions or projects we participate in.
+We are a technical / computer science community, and identity politics have no place in the discussions or projects we participate in.
 
 ## Our Standards
 

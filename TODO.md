@@ -16,8 +16,11 @@
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 * [ ] - Implement functionality for the Settings page or remove it (currently mocked).
 * [ ] - Should we rely on setup script or more simply read the files off dms directly?
+* [ ] - Dashboard/aliases are correclty sorted
+* [ ] 1.0.5.5 - addAlias correctly refresh after adding, updated api.js and index.js
+* [x] 1.0.5.4 - implement refresh on start
+* [x] 1.0.5.3 - DB_JSON holds Aliases
 * [x] 1.0.5.2 - Dashboard shows version next to server status
-* [ ] 1.0.5 - DB_JSON holds Aliases
 * [x] 1.0.5 - DB_JSON holds Accounts
 * [x] 1.0.5 - backend: add DB_JSON=/app/config/db.json
 * [x] 1.0.5 - frontend: add favicon.png with webpack.config.js; tried everything for 30mn, I give up

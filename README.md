@@ -1,45 +1,62 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
+A graphical user interface for managing [Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
+
+Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api call can do anything!
 
 ## Features
 
 - 📊 Dashboard with server status information
 - 👤 Email account management (add, delete)
 - ↔️ Email alias management
-- 🔧 Docker Mailserver connection configuration
+- 🔧 Docker-Mailserver connection configuration
 - 🌐 Multilingual support (English, Polish)
 
+<!-- ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true) -->
 ![Dashboard](/assets/dms-gui-Dashboard.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
 
 ## Requirements
 
-- Node.js (v24)
+- Node.js (v24+)
 - npm
-- [Docker Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
+- [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
 ## Project Structure
 
 The application consists of two parts:
 
-- **Backend**: Node.js/Express API for communicating with Docker Mailserver
+- **Backend**: Node.js/Express API for communicating with Docker-Mailserver
 - **Frontend**: React user interface with i18n support
 
 ## Installation
 
-You have nothing to install, this is an all-included docker service for your DMS compose, that provides a UI for DMS.
+You have nothing to install, this is an all-included docker service for your MS compose, that provides a UI for DMS.
 
 If you want to develop/pull requests and test, see README.docker.md and each README under the subfolders `backend` and `frontend`.
 
 ## Configuration
 
-After the first launch, go to the "Settings" tab and configure:
+Copy `dms-gui/backend/.env.example` ro `dms-gui/backend/.env` and update with your own environment:
 
-1. Path to the `setup.sh` script from Docker Mailserver
-2. Docker Mailserver container name
+```
+# Server port
+PORT_NODEJS=3001
+DB_JSON=/app/config/db.json
+
+# Docker Mailserver Configuration
+SETUP_SCRIPT=/usr/local/bin/setup
+DMS_CONTAINER=dms
+
+# Debugging
+# Set to true to enable debug logs for Docker commands
+#DEBUG=true
+
+# Environment
+NODE_ENV=production
+```
 
 ## Language Support
 
@@ -56,6 +73,7 @@ There are two ways to deploy using Docker:
 
 ### Option 1: Docker Compose with dms + proxy (Recommended)
 
+#### Compose for dms + dms-gui
 Sample extract from `docker-compose.yml`, rename `dms` to the actual name of your docket-Mailserver container!
 ```yaml
 ---
@@ -89,6 +107,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - ./dms-gui/config/:/app/config/
       
       - /var/run/docker.sock:/var/run/docker.sock:ro
     
@@ -103,7 +122,45 @@ networks:
 ```
 
 **Note:** Replace `dms` with the name of your docker-mailserver container.
+
 **Note:** Replace `frontend` with the name of the external network your proxy also uses
+
+#### Reverse proxy
+
+We recommend this reverse proxy for its simplicity: [swag](https://docs.linuxserver.io/general/swag/).
+
+Sample proxy configuration:
+
+```nginx
+server {
+    listen 443 ssl;
+   listen 443 quic;
+    listen [::]:443 ssl;
+   listen [::]:443 quic;
+  
+  server_name dms.*;
+
+  location / {
+
+    # enable the next two lines for http auth
+    auth_basic "Restricted";
+    auth_basic_user_file /config/nginx/.htpasswd;
+
+    include /config/nginx/proxy.conf;
+    include /config/nginx/resolver.conf;
+
+    set $upstream_app dms-gui;
+    set $upstream_port 80;
+    set $upstream_proto http;
+    proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+  }
+
+}
+```
+
+As stated above, no security is in place yet. You must as a form of authentication at the proxy level.
+
 
 ### Option 2: Manual using the pre-built image from Docker Hub
 
@@ -175,22 +232,6 @@ Configure the `.env` file with the appropriate [#environment-variables], using `
 ```bash
 cd frontend
 npm install
-```
-
-## Running the Application
-
-### Backend
-
-```bash
-cd backend
-npm run dev
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm start
 ```
 
 After running both parts, the application will be available at http://localhost:3000

@@ -1,23 +1,45 @@
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
-const fsPromises = fs.promises;
+const fsp = fs.promises;
+// const { promises: fs } = require("fs");
 
 // Docker container name for docker-mailserver
 const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
-const SETUP_SCRIPT = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
-const DB_JSON = process.env.DB_JSON || '/app/config/db.json';
+const SETUP_SCRIPT  = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
+const DB_PATH       = process.env.DB_PATH || '/app/config';
+const DB_Accounts   = DB_PATH + '/db.accounts.json';
+const DB_Aliases    = DB_PATH + '/db.aliases.json';
 
 // Debug flag
 const DEBUG = process.env.DEBUG === 'true';
+
+// While global values are discouraged for production code, we use it to serve as a shared source of state.
+// Well locking files to save or read proves too difficult, I give up
+// import { Mutex } from 'async-mutex';
+// const Mutex = require('async-mutex').Mutex;
+// const mutex = new Mutex();
+// let DBdict = {};
 
 /**
  * getJson to get the version fo this project from package.json
  * @param {string} package - json to read, defaults to /package.json
  */
-function getJson(jsonFile = '/package.json') {
-  const jsonFilePath = `${process.cwd()}/${jsonFile}`;
-  return JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+async function getJson(jsonFile = '/package.json') {
+  const jsonFilePath = process.cwd() + jsonFile;
+  var json = {};
+  console.debug('ddebug fs.existsSync(jsonFilePath)=', fs.existsSync(jsonFilePath));
+  if (fs.existsSync(jsonFilePath)) {
+    try {
+      // json = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+      const data = await fsp.readFile(jsonFilePath, "utf8");
+      json = JSON.parse(Buffer.from(data));
+      
+    } catch (error) {
+      throw error;
+    }
+  }
+  return json;
 }
 
 /**
@@ -46,6 +68,20 @@ async function debugLog(message, data = null) {
     }
   }
 }
+
+
+/**
+ * Executes a setup.sh command in the docker-mailserver container
+ * @param {string} setupCommand Command to pass to setup.sh
+ * @return {Promise<string>} stdout from the command
+ */
+async function execSetup(setupCommand) {
+  // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
+  
+  debugLog(`${arguments.callee.name}: Executing setup command: ${setupCommand}`);
+  return execInContainer(`${SETUP_SCRIPT} ${setupCommand}`);
+}
+
 
 /**
  * Executes a command in the docker-mailserver container
@@ -82,7 +118,10 @@ async function execInContainer(command) {
 
       stream.on('end', () => {
         debugLog(`${arguments.callee.name}: Command completed. Output:`, stdoutData);
-        resolve(stdoutData);
+        if (stdoutData.match(/ERROR/))
+          reject(stdoutData);
+        else
+          resolve(stdoutData);
       });
 
       stream.on('error', (err) => {
@@ -97,96 +136,100 @@ async function execInContainer(command) {
   }
 }
 
-/**
- * Executes a setup.sh command in the docker-mailserver container
- * @param {string} setupCommand Command to pass to setup.sh
- * @return {Promise<string>} stdout from the command
- */
-async function execSetup(setupCommand) {
-  // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
-  
-  debugLog(`${arguments.callee.name}: Executing setup command: ${setupCommand}`);
-  return execInContainer(`${SETUP_SCRIPT} ${setupCommand}`);
-}
-
-
-async function readDB() {
-  try {
-    DBdict = JSON.parse(fs.readFileSync(DB_JSON, "utf8"));
-    debugLog(`${arguments.callee.name}: got DBdict from ${DB_JSON}`);
-    return DBdict;
-  } catch (error) {
-    debugLog(`${arguments.callee.name}: ${DB_JSON} read error:`, error);
-    throw new Error('readDB Error reading DB_JSON');
-  }
-}
-
-
-async function writeDB(DBdict) {
-  if (DBdict.constructor == Object) {
+async function readDB(DB_JSON) {
+  var DBdict = {};
+  // await mutex.runExclusive(async () => {
     try {
-      fs.writeFileSync(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
-      debugLog(`${arguments.callee.name}: Wrote DBdict into ${DB_JSON}`);
+      if (fs.existsSync(DB_JSON)) {
+        // DBdict = JSON.parse(fs.readFileSync(DB_JSON, "utf8"));
+        const data = await fsp.readFile(DB_JSON, "utf8");
+        DBdict = JSON.parse(Buffer.from(data));
+        debugLog(`readDB: got DBdict from ${DB_JSON}`);
+      }
+      
     } catch (error) {
-      debugLog(`${arguments.callee.name}: ${DB_JSON} write error:`, error);
-      throw new Error('Error writting DB_JSON');
+      debugLog(`readDB: ${DB_JSON} read error:`, error);
+      throw new Error('readDB Error reading DB_JSON');
     }
-  } else {
-    throw new Error('writeDB Error: DBdict not an Object');
-  }
+  // })
+  return DBdict;
+}
+
+
+async function writeDB(DB_JSON, DBdict) {
+  // await mutex.runExclusive(async () => {
+    
+    if (DBdict.constructor == Object) {
+      try {
+
+        // fs.writeFileSync(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
+        await fsp.writeFile(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
+        debugLog(`writeDB: Wrote DBdict into ${DB_JSON}`);
+
+        
+      } catch (error) {
+        debugLog(`writeDB: ${DB_JSON} write error:`, error);
+        throw new Error('Error writting DB_JSON');
+      }
+    } else {
+      debugLog(`writeDB: DBdict not an Object:`, DBdict);
+      throw new Error('writeDB Error: DBdict not an Object');
+    }
+  // });
 }
 
 
 // Function to retrieve email accounts
-async function getAccounts() {
-  var force = false;
+async function getAccounts(refresh) {
+  refresh = (refresh === undefined) ? false : refresh;
   var DBdict = {};
   var accounts = [];
-  debugLog(`${arguments.callee.name}: start (force=${force})`);
+  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   try {
     
-     if (!force && fs.existsSync(DB_JSON)) {
-      debugLog(`${arguments.callee.name}: read DBdict from ${DB_JSON} (force=${force})`);
+     if (!refresh) {
+      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
       
-      try {
-        DBdict = await readDB();
-        debugLog(`${arguments.callee.name}: DBdict[accounts]:`, DBdict['accounts']);
-      } catch (error) {
-        debugLog(`${arguments.callee.name}: readDB(DBdict) error:`, error);
-      }
+      // try {
+        DBdict = await readDB(DB_Accounts);
+        debugLog(`${arguments.callee.name}: DBdict[accounts]:`, DBdict['accounts'].length);
+      // } catch (error) {
+        // debugLog(`${arguments.callee.name}: readDB() error:`, error);
+      // }
     }
     
 
-    // we could read DB_JSON and it is valid
+    // we could read DB_Accounts and it is valid
     if (DBdict.constructor == Object && 'accounts' in DBdict) {
       debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
       return DBdict.accounts;
       
-    // we could not read DB_JSON or it is invalid
+    // we could not read DB_Accounts or it is invalid
     } else {
-      try {
+      // try {
         accounts = await getAccountsFromDMS();
-        debugLog(`${arguments.callee.name}: got ${accounts.length} from getAccountsFromDMS()`);
-      } catch (error) {
-        console.error(`${arguments.callee.name}: Error with getAccountsFromDMS():`, error);
-      }
+        debugLog(`${arguments.callee.name}: got ${accounts.length} accounts from getAccountsFromDMS()`);
+      // } catch (error) {
+        // console.error(`${arguments.callee.name}: Error with getAccountsFromDMS():`, error);
+      // }
     }
     
-    // since we had to call getAccountsFromDMS, we save DB_JSON
+    // since we had to call getAccountsFromDMS, we save DB_Accounts
     if (Array.isArray(accounts) && accounts.length) {
       DBdict["accounts"] = accounts;
       // DBdict = { ...DBdict, "accounts": accounts };
+      // console.debug('ddebug ----------------------------- DBdict',DBdict);
       
-      try {
-        await writeDB(DBdict);
-      } catch (error) {
-        console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
-      }
+      // try {
+        await writeDB(DB_Accounts, DBdict);
+      // } catch (error) {
+        // console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
+      // }
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: Unknown error retrieving accounts`);
+      console.error(`${arguments.callee.name}: error with accounts:`, accounts);
     }
 
 
@@ -317,55 +360,64 @@ async function deleteAccount(email) {
 }
 
 // Function to retrieve aliases
-async function getAliases() {
-  var force = false;
+async function getAliases(refresh) {
+  refresh = (refresh === undefined) ? false : refresh;
+  
   var DBdict = {};
   var aliases = [];
-  debugLog(`${arguments.callee.name}: start (force=${force})`);
+  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   try {
+    console.debug(`ddebug getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
     
-     if (!force && fs.existsSync(DB_JSON)) {
-      debugLog(`${arguments.callee.name}: read DBdict from ${DB_JSON} (force=${force})`);
+    if (refresh) {
+      debugLog(`ddebug true:  refresh=${refresh}`);
+    } else {
+      debugLog(`ddebug false: refresh=${refresh}`);
+    }
+    
+    if (!refresh) {
+      debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
       
-      try {
-        DBdict = await readDB();
-        debugLog(`${arguments.callee.name}: DBdict[aliases]:`, DBdict['aliases']);
-      } catch (error) {
-        debugLog(`${arguments.callee.name}: readDB(DBdict) error:`, error);
-      }
+      // try {
+        DBdict = await readDB(DB_Aliases);
+        debugLog(`${arguments.callee.name}: DBdict[aliases]:`, DBdict['aliases'].length);
+      // } catch (error) {
+        // debugLog(`${arguments.callee.name}: readDB() error:`, error);
+      // }
     }
     
 
-    // we could read DB_JSON and it is valid
+    // we could read DB_Aliases and it is valid
     if (DBdict.constructor == Object && 'aliases' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found DBdict['aliases'].length aliases in DBdict`);
+      debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
       return DBdict.aliases;
       
-    // we could not read DB_JSON or it is invalid
+    // we could not read DB_Aliases or it is invalid
     } else {
-      try {
+      // try {
         aliases = await getAliasesFromDMS();
-        debugLog(`${arguments.callee.name}: got ${aliases.length} from getAliasesFromDMS()`);
-      } catch (error) {
-        console.error(`${arguments.callee.name}: Error with getAliasesFromDMS():`, error);
-      }
+        debugLog(`${arguments.callee.name}: got ${aliases.length} aliases from getAliasesFromDMS()`);
+      // } catch (error) {
+        // console.error(`${arguments.callee.name}: Error with getAliasesFromDMS():`, error);
+      // }
     }
     
-    // since we had to call getAliasesFromDMS, we save DB_JSON
+    // since we had to call getAliasesFromDMS, we save DB_Aliases
     if (Array.isArray(aliases) && aliases.length) {
       DBdict["aliases"] = aliases;
       // DBdict = { ...DBdict, "aliases": aliases };
+      // console.debug('ddebug ----------------------------- DBdict',DBdict);
       
-      try {
-        await writeDB(DBdict);
-      } catch (error) {
-        console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
-      }
+      // try {
+        await writeDB(DB_Aliases, DBdict);
+      // } catch (error) {
+        // console.error(`${arguments.callee.name}: writeDB(DBdict) error:`, error);
+      // }
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: Unknown error retrieving aliases`);
+      console.error(`${arguments.callee.name}: error with aliases:`, aliases);
     }
 
 
@@ -503,7 +555,7 @@ async function getServerStatus() {
     debugLog(`${arguments.callee.name}: Getting server status`);
 
     // Get this project version
-    const { name, version } = getJson();
+    const { name, version } = await getJson();
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
@@ -578,6 +630,7 @@ function formatMemorySize(bytes) {
   return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + sizes[i];
 }
 
+// export default (
 module.exports = {
   debugLog,
   getAccounts,
@@ -590,3 +643,4 @@ module.exports = {
   getServerStatus,
   getJson,
 };
+// );

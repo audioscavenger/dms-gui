@@ -65,6 +65,7 @@ app.get('/api/status', async (req, res) => {
  *         description: Unable to retrieve accounts
  */
 app.get('/api/accounts', async (req, res) => {
+  await dockerMailserver.debugLog(`[DEBUG] backend /api/accounts?${req.query.refresh}`);
   try {
     const accounts = await dockerMailserver.getAccounts();
     res.json(accounts);
@@ -215,7 +216,8 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  */
 app.get('/api/aliases', async (req, res) => {
   try {
-    const aliases = await dockerMailserver.getAliases();
+    await dockerMailserver.debugLog(`[DEBUG] backend /api/aliases?${req.query.refresh}`);
+    const aliases = await dockerMailserver.getAliases(JSON.parse(req.query.refresh) ? true : false);
     res.json(aliases);
   } catch (error) {
     res.status(500).json({ error: 'Unable to retrieve aliases' });
@@ -312,12 +314,12 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
   }
 });
 
-app.listen(PORT_NODEJS, () => {
-  const { name, version } = dockerMailserver.getPackageJson();
+app.listen(PORT_NODEJS, async () => {
+  const { name, version } = await dockerMailserver.getJson('/package.json');
   console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status
   if (process.env.DEBUG === 'true') {
-    console.log('🐞 debug mode is ENABLED');
+    console.debug('🐞 debug mode is ENABLED');
   }
 });

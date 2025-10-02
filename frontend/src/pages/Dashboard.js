@@ -9,6 +9,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const [status, setStatus] = useState({
     status: 'loading',
+    version: '1.0.52',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
   });
   const [accountsCount, setAccountsCount] = useState(0);
@@ -17,33 +18,38 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch data in parallel
-        const [statusResponse, accountsResponse, aliasesResponse] =
-          await Promise.all([getServerStatus(), getAccounts(), getAliases()]);
-
-        setStatus(statusResponse);
-        setAccountsCount(accountsResponse.length);
-        setAliasesCount(aliasesResponse.length);
-        setError(null);
-      } catch (err) {
-        console.error(t('api.errors.fetchServerStatus'), err);
-        setError('api.errors.fetchServerStatus');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    fetchDashboardData(false);
 
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboardData, 30000);
 
     return () => clearInterval(interval);
   }, []);
+
+  const fetchDashboardData = async (refresh) => {
+    refresh = (refresh === undefined) ? false : refresh;
+    try {
+      setLoading(true);
+
+      // Fetch data in parallel
+      // const [statusResponse, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
+      // Fetch data sequentially because otherwise DBdict gets overwritten
+      const statusResponse = await getServerStatus();
+      const accountsResponse = await getAccounts(refresh);
+      const aliasesResponse = await getAliases(refresh);
+
+      setStatus(statusResponse);
+      setAccountsCount(accountsResponse.length);
+      setAliasesCount(aliasesResponse.length);
+      setError(null);
+    } catch (err) {
+      console.error(t('api.errors.fetchServerStatus'), err);
+      setError('api.errors.fetchServerStatus');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const getStatusColor = () => {
     if (status.status === 'running') return 'success';
@@ -77,6 +83,7 @@ const Dashboard = () => {
             iconColor={getStatusColor()}
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
+            version={status.version}
           />
         </Col>
         <Col md={3} className="mb-3">
