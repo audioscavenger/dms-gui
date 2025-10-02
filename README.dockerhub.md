@@ -44,7 +44,7 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 
 ## Configuration
 
-Copy `./config/.dms-gui.env.example` ro `./config/.dms-gui.env` and update with your own environment:
+Copy `./config/.dms-gui.env.example` to `./config/.dms-gui.env` and update with your own environment:
 
 ```
 # Server port
@@ -123,7 +123,7 @@ services:
       - NODE_ENV=production
 
     expose:
-      - 3001
+      - 80
     
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -171,7 +171,7 @@ server {
     include /config/nginx/resolver.conf;
 
     set $upstream_app dms-gui;
-    set $upstream_port 3001;
+    set $upstream_port 80;
     set $upstream_proto http;
     proxy_pass $upstream_proto://$upstream_app:$upstream_port;
 
@@ -188,7 +188,7 @@ As stated above, no security is in place yet. You must as a form of authenticati
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 3001:3001 \
+  -p 80:80 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
