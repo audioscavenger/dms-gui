@@ -1,7 +1,4 @@
 ## BUGS:
-* [ ] - Newly created account doesn't appear on the list immediately (requires manual refresh)
-* [x] - Translations do not update immediately after language change (requires manual refresh)
-* [x] 1.0.3 - Fails to show accounts when QUOTA is disabled: now handles both cases
 ## TODO:
 * [ ] - add a login page
 * [ ] - docker.sock seems frowned upon, how do we do without it?
@@ -14,15 +11,16 @@
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove?
 * [ ] - find a way for compose to only access dms and no other containers because it freaks out some
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
-* [ ] - Should we rely on setup script or more simply read the files off dms directly?
-* [ ] - Dashboard/aliases are correctly sorted
-* [ ] - frontend/api.js and plenty other files could also use translate for their messages
+* [ ] - Dashboard/aliases are correctly sorted OR use agGrid for headers sorting
+* [ ] - frontend/api.js and plenty other files could also use translate for their error messages
 * [ ] - frontend: find a way to force the first dashboard call to refresh=true
-* [ ] - frontend/Settings: split data into multiple forms and columns
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [ ] 1.0.6.2 - backend: formatError removes colors too
-* [ ] 1.0.6.2 - frontend/index: all routes return actual error.message
-* [ ] 1.0.6.2 - frontend/accounts: addAccount correctly refresh after adding
+* [ ] - frontend/Settings: split data into multiple forms and columns
+* [x] 1.0.6.3 - update README with trick to access /docs
+* [x] 1.0.6.3 - Should we rely on setup script or more simply read the regex/virtual files.cf off dms directly? --> NO because we still need to send commands anyway
+* [x] 1.0.6.2 - backend: formatError removes colors too
+* [x] 1.0.6.2 - frontend/index: all routes return actual error.message
+* [x] 1.0.6.2 - frontend/accounts: addAccount correctly refresh after adding
 * [x] 1.0.6.1 - frontend/settings show both backend and frontend versions
 * [x] 1.0.6 - now using node:slim for build and 24-alpine for prod
 * [x] 1.0.5.8 - massing update of all README
@@ -44,7 +42,9 @@
 * [x] 1.0.4 - upgrade to 24-alpine
 * [x] 1.0.4 - show node and project version at start
 * [x] 1.0.4 - find a way to get the version from package.json into /api/status
-* [x] 1.0.3 - Add information for future contributors (e.g., contribution guidelines).
+* [x] 1.0.3 - Translations do not update immediately after language change (requires manual refresh)
+* [x] 1.0.3 - Fails to show accounts when QUOTA is disabled: now handles both cases
+* [x] 1.0.3 - Add non-woke code of conduct
 * [x] 1.0.3 - Fix account regex when QUOTA is enabled or not
 * [x] 1.0.3 - Better debug logging
 * [x] 1.0.3 - Variabilize SETUP_SCRIPT

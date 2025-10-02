@@ -119,7 +119,8 @@ services:
       - NODE_ENV=production
 
     expose:
-      - 80
+      - 80    # frontend
+      - 3001  # /docs
     
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -157,6 +158,22 @@ server {
   
   server_name dms.*;
 
+  location /docs {
+
+    # enable the next two lines for http auth
+    auth_basic "Restricted";
+    auth_basic_user_file /config/nginx/.htpasswd;
+
+    include /config/nginx/proxy.conf;
+    include /config/nginx/resolver.conf;
+
+    set $upstream_app dms-gui;
+    set $upstream_port 3001;
+    set $upstream_proto http;
+    proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+  }
+
   location / {
 
     # enable the next two lines for http auth
@@ -185,6 +202,7 @@ As stated above, no security is in place yet. You must as a form of authenticati
 docker run -d \
   --name dms-gui \
   -p 80:80 \
+  -p 3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \

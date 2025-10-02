@@ -1,6 +1,6 @@
 {
   "name": "dms-gui-backend",
-  "version": "1.0.6.2",
+  "version": "1.0.6.3",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
