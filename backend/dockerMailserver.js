@@ -22,27 +22,6 @@ const DEBUG = process.env.DEBUG === 'true';
 // const mutex = new Mutex();
 // let DBdict = {};
 
-/**
- * getJson to get the version fo this project from package.json
- * @param {string} package - json to read, defaults to /package.json
- */
-async function getJson(jsonFile = '/package.json') {
-  const jsonFilePath = process.cwd() + jsonFile;
-  var json = {};
-
-  if (fs.existsSync(jsonFilePath)) {
-    try {
-      // json = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
-      const data = await fsp.readFile(jsonFilePath, "utf8");
-      json = JSON.parse(Buffer.from(data));
-      
-    } catch (error) {
-      throw error;
-    }
-  }
-  return json;
-}
-
 
 async function formatError(errorMsg, error) {
   var patterns = [
@@ -151,27 +130,34 @@ async function execInContainer(command) {
   }
 }
 
-async function readDB(DB_JSON) {
-  var DBdict = {};
-  // await mutex.runExclusive(async () => {
-    try {
-      if (fs.existsSync(DB_JSON)) {
-        // DBdict = JSON.parse(fs.readFileSync(DB_JSON, "utf8"));
-        const data = await fsp.readFile(DB_JSON, "utf8");
-        DBdict = JSON.parse(Buffer.from(data));
-        debugLog(`readDB: got DBdict from ${DB_JSON}`);
-      }
+
+async function readJson(jsonFile) {
+  var json = {};
+
+  debugLog(`readJson: start trying to read ${jsonFile}`);
+  try {
+    debugLog(`readJson: now checking if exist ${jsonFile}`);
+    
+    if (fs.existsSync(jsonFile)) {
+      debugLog(`readJson: now trying to read ${jsonFile}`);
       
-    } catch (error) {
-      debugLog(`readDB: ${DB_JSON} read error:`, error);
-      throw new Error('readDB Error reading DB_JSON');
+      const data = await fsp.readFile(jsonFile, "utf8");
+      json = JSON.parse(Buffer.from(data));
+      debugLog(`readJson: got json from ${jsonFile}`);
+      
+    } else {
+      debugLog(`readJson: empty ${jsonFile}`);
     }
-  // })
-  return DBdict;
+  } catch (error) {
+    debugLog(`readJson: ${jsonFile} read error:`, error);
+    throw new Error('readJson Error reading '+jsonFile);
+  }
+  return json;
 }
 
 
-async function writeDB(DB_JSON, DBdict) {
+
+async function writeJson(DB_JSON, DBdict) {
   // await mutex.runExclusive(async () => {
     
     if (DBdict.constructor == Object) {
@@ -179,18 +165,73 @@ async function writeDB(DB_JSON, DBdict) {
 
         // fs.writeFileSync(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
         await fsp.writeFile(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
-        debugLog(`writeDB: Wrote DBdict into ${DB_JSON}`);
+        console.log(`writeJson: Wrote DBdict into ${DB_JSON}`);
 
         
       } catch (error) {
-        debugLog(`writeDB: ${DB_JSON} write error:`, error);
+        debugLog(`writeJson: ${DB_JSON} write error:`, error);
         throw new Error('Error writting DB_JSON');
       }
     } else {
-      debugLog(`writeDB: DBdict not an Object:`, DBdict);
-      throw new Error('writeDB Error: DBdict not an Object');
+      debugLog(`writeJson: DBdict not an Object:`, DBdict);
+      throw new Error('writeJson Error: DBdict not an Object');
     }
   // });
+}
+
+
+// Function to retrieve settings
+async function getSettings() {
+  var DBdict = {};
+  var settings = {};
+  debugLog(`${arguments.callee.name}: start`);
+  
+  try {
+    
+    debugLog(`${arguments.callee.name}: calling DBdict readJson(${DB_Settings})`);
+    DBdict = await readJson(DB_Settings);
+    debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+    
+    // we could read DB_Settings and it is valid
+    if (DBdict.constructor == Object && 'settings' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['settings']).length} settings in DBdict`);
+      return DBdict['settings'];
+      
+    // we could not read DB_Settings or it is invalid
+    } else {
+      console.log(`${arguments.callee.name}: ${DB_Settings} is empty`);
+    }
+    
+    return settings;
+    
+  } catch (error) {
+    let backendError = 'Error retrieving settings';
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
+  }
+}
+
+
+// Function to save settings
+async function saveSettings(containerName, setupPath, username, email, password) {
+  DBdict = {settings:{}};
+  try {
+    DBdict.settings['containerName'] = containerName;
+    DBdict.settings['setupPath'] = setupPath;
+    DBdict.settings['username'] = username;
+    DBdict.settings['email'] = email;
+    DBdict.settings['password'] = password;
+    
+    debugLog(`${arguments.callee.name}: Saving settings:`,DBdict.settings);
+    await writeJson(DB_Settings, DBdict);
+    return { success: true, containerName };
+  } catch (error) {
+    let backendError = 'Error saving settings';
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
+  }
 }
 
 
@@ -207,10 +248,10 @@ async function getAccounts(refresh) {
       debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
       
       // try {
-        DBdict = await readDB(DB_Accounts);
-        debugLog(`${arguments.callee.name}: DBdict[accounts]:`, DBdict['accounts'].length);
+        DBdict = await readJson(DB_Accounts);
+        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
       // } catch (error) {
-        // debugLog(`${arguments.callee.name}: readDB() error:`, error);
+        // debugLog(`${arguments.callee.name}: readJson() error:`, error);
       // }
     }
     
@@ -218,7 +259,7 @@ async function getAccounts(refresh) {
     // we could read DB_Accounts and it is valid
     if (DBdict.constructor == Object && 'accounts' in DBdict) {
       debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
-      return DBdict.accounts;
+      return DBdict['accounts'];
       
     // we could not read DB_Accounts or it is invalid
     } else {
@@ -237,9 +278,9 @@ async function getAccounts(refresh) {
       // console.debug('ddebug ----------------------------- DBdict',DBdict);
       
       // try {
-        await writeDB(DB_Accounts, DBdict);
+        await writeJson(DB_Accounts, DBdict);
       // } catch (error) {
-        // console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
+        // console.error(`${arguments.callee.name}:writeJson(DBdict) error:`, error);
       // }
       
     // unknown error
@@ -253,7 +294,7 @@ async function getAccounts(refresh) {
   } catch (error) {
     let backendError = 'Error retrieving accounts';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -329,7 +370,7 @@ async function getAccountsFromDMS() {
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -344,7 +385,7 @@ async function addAccount(email, password) {
   } catch (error) {
     let backendError = 'Error adding account';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -359,7 +400,7 @@ async function updateAccountPassword(email, password) {
   } catch (error) {
     let backendError = 'Error updating account password';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -374,7 +415,7 @@ async function deleteAccount(email) {
   } catch (error) {
     let backendError = 'Error deleting account';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -394,10 +435,10 @@ async function getAliases(refresh) {
       debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
       
       // try {
-        DBdict = await readDB(DB_Aliases);
-        debugLog(`${arguments.callee.name}: DBdict[aliases]:`, DBdict['aliases'].length);
+        DBdict = await readJson(DB_Aliases);
+        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
       // } catch (error) {
-        // debugLog(`${arguments.callee.name}: readDB() error:`, error);
+        // debugLog(`${arguments.callee.name}: readJson() error:`, error);
       // }
     }
     
@@ -405,7 +446,7 @@ async function getAliases(refresh) {
     // we could read DB_Aliases and it is valid
     if (DBdict.constructor == Object && 'aliases' in DBdict) {
       debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
-      return DBdict.aliases;
+      return DBdict['aliases'];
       
     // we could not read DB_Aliases or it is invalid
     } else {
@@ -424,9 +465,9 @@ async function getAliases(refresh) {
       // console.debug('ddebug ----------------------------- DBdict',DBdict);
       
       // try {
-        await writeDB(DB_Aliases, DBdict);
+        await writeJson(DB_Aliases, DBdict);
       // } catch (error) {
-        // console.error(`${arguments.callee.name}: writeDB(DBdict) error:`, error);
+        // console.error(`${arguments.callee.name}: writeJson(DBdict) error:`, error);
       // }
       
     // unknown error
@@ -440,7 +481,7 @@ async function getAliases(refresh) {
   } catch (error) {
     let backendError = 'Error retrieving aliases';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -488,7 +529,7 @@ async function getAliasesFromDMS() {
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -533,7 +574,7 @@ async function getAliasesOLD() {
   } catch (error) {
     let backendError = 'Error retrieving aliases';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -548,7 +589,7 @@ async function addAlias(source, destination) {
   } catch (error) {
     let backendError = 'Unable to add alias';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -563,7 +604,7 @@ async function deleteAlias(source, destination) {
   } catch (error) {
     let backendError = 'Unable to delete alias';
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -574,7 +615,8 @@ async function getServerStatus() {
     debugLog(`${arguments.callee.name}: Getting server status`);
 
     // Get this project version
-    const { name, version } = await getJson();
+    // const { name, version } = await readJson(process.cwd() + '/../package.json');
+    const { name, version } = await readJson('/app/package.json');
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
@@ -632,7 +674,7 @@ async function getServerStatus() {
   } catch (error) {
     let backendError = `Server status error: ${error}`;
     let ErrorMsg = await formatError(backendError, error)
-    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     return {
       status: 'unknown',
       error: error.message,
@@ -661,6 +703,8 @@ module.exports = {
   addAlias,
   deleteAlias,
   getServerStatus,
-  getJson,
+  readJson,
+  getSettings,
+  saveSettings,
 };
 // );

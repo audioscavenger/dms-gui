@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -76,6 +76,7 @@ const Aliases = () => {
       });
     }
   };
+
 
   const validateForm = () => {
     const errors = {};

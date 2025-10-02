@@ -9,7 +9,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const [status, setStatus] = useState({
     status: 'loading',
-    version: '1.0.52',
+    version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
   });
   const [accountsCount, setAccountsCount] = useState(0);

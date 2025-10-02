@@ -1,8 +1,8 @@
 {
   "name": "dms-gui",
-  "version": "1.0.5.7",
-  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)",
+  "version": "1.0.6",
   "main": "index.js",
+  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky"

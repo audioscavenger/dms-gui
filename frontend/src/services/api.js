@@ -1,4 +1,4 @@
-const debug true;
+const debug = true;
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
@@ -37,6 +37,27 @@ export const getAccounts = async (refresh) => {
     throw error;
   }
 };
+
+export const getSettings = async () => {
+  try {
+    const response = await api.get(`/settings`);
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error getting settings:', error);
+    throw error;
+  }
+};
+
+export const saveSettings = async (containerName, setupPath, username, email, password) => {
+  try {
+    const response = await api.post('/settings', { containerName, setupPath, username, email, password });
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error saving settings:', error);
+    throw error;
+  }
+};
+
 
 export const addAccount = async (email, password) => {
   try {

@@ -1,9 +1,9 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing [Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
+A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, UI settings, indexes, etc.
 
-Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api call can do anything!
+Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything!
 
 ## Features
 
@@ -17,10 +17,11 @@ Warning: no authentication security has been added yet! Anyone with access to yo
 ![Dashboard](/assets/dms-gui-Dashboard.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
+![Settings](/assets/dms-gui-Settings.webp)
 
 ## Requirements
 
-- Node.js (v24+)
+- Node.js (node:slim)
 - npm
 - [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
@@ -39,12 +40,13 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 
 ## Configuration
 
-Copy `dms-gui/backend/.env.example` ro `dms-gui/backend/.env` and update with your own environment:
+Copy `./config/.env.example` ro `./config/.env` and update with your own environment:
 
 ```
 # Server port
 PORT_NODEJS=3001
-DB_JSON=/app/config/db.json
+REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
+DB_PATH=/app/config
 
 # Docker Mailserver Configuration
 SETUP_SCRIPT=/usr/local/bin/setup
@@ -55,6 +57,7 @@ DMS_CONTAINER=dms
 #DEBUG=true
 
 # Environment
+# NODE_ENV=development
 NODE_ENV=production
 ```
 
@@ -93,7 +96,7 @@ services:
       - dms
     
     # use either ones: env_file or the environment section:
-    env_file: ./dms-gui/backend/.env
+    env_file: ./config/.env
     
     environment:
       TZ: ${TZ}
@@ -102,7 +105,7 @@ services:
       DEBUG: false
 
     expose:
-      - 80
+      - 3001
     
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -150,7 +153,7 @@ server {
     include /config/nginx/resolver.conf;
 
     set $upstream_app dms-gui;
-    set $upstream_port 80;
+    set $upstream_port 3001;
     set $upstream_proto http;
     proxy_pass $upstream_proto://$upstream_app:$upstream_port;
 
@@ -167,9 +170,12 @@ As stated above, no security is in place yet. You must as a form of authenticati
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:80 \
+  -p 3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v /etc/timezone:/etc/timezone:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v./dms-gui/config/:/app/config/ \
   audioscavenger/dms-gui:latest
 ```
 
@@ -186,9 +192,9 @@ docker run -d \
 ### Docker Features
 
 - Single container with both frontend and backend
-- Nginx serves the React frontend and proxies API requests with http
 - Communication with docker-mailserver via Docker API
 - Minimal configuration (just set the container name)
+- optional Nginx to serve the React frontend and proxies API requests with http, disabled in Dockerfile
 
 For detailed Docker setup instructions, please refer to:
 - [README.docker.md](README.docker.md) - Detailed Docker setup guide
@@ -225,7 +231,7 @@ npm run format:check
 cd backend
 npm install
 ```
-Configure the `.env` file with the appropriate [#environment-variables], using `.env.example`
+Configure the `./config/.env` file with the appropriate [#environment-variables], using `./config/.env.example`
 
 ### Frontend
 
@@ -238,4 +244,4 @@ After running both parts, the application will be available at http://localhost:
 
 ## License
 
-MIT
+AGPL-3.0-only

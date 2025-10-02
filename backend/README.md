@@ -31,7 +31,8 @@ SETUP_SCRIPT=/usr/local/bin/setup
 
 ## Available endpoints
 
-- `GET /api/status` - Server status
+- `GET /api/settings` - Get settings
+- `POST /api/settings` - Save settings
 - `GET /api/accounts` - List of email accounts [?refresh=true to force refresh]
 - `POST /api/accounts` - Add a new account
 - `DELETE /api/accounts/:email` - Delete an account

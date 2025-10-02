@@ -11,17 +11,15 @@ services:
     expose:
       - 80
     # ports:
-      # - 81:80
+      # - 80:80
       
-    env_file: ./backend/.env
+    env_file: ./config/.env
     environment:
-      TZ: ${TZ}
-      PORT_NODEJS: 3001
-      NODE_ENV: development
-      # The name of the docker-mailserver container
-      DMS_CONTAINER: dms
-      DEBUG: true
-      
+      - TZ=${TZ}
+
+      # Set to true to enable debug logs for Docker commands
+      # - DEBUG=true
+
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -31,10 +29,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
       # if you want to develop locally... mount anything you want and reload
-      - ./backend/dockerMailserver.js:/app/backend/dockerMailserver.js:ro
-      - ./backend/index.js:/app/backend/index.js:ro
-      - ./backend/.env:/app/backend/.env:ro
-      - ./frontend/.env:/app/frontend/.env:ro
+      # - ./backend/dockerMailserver.js:/app/backend/dockerMailserver.js:ro
+      # - ./backend/index.js:/app/backend/index.js:ro
 
       # if you want to update the packages... mount those and run ncu+npm install from the container and poof
       # - ./backend/package.json:/app/backend/package.json
@@ -55,10 +51,11 @@ networks:
 ## build commands: https://hub.docker.com/r/dunajdev/docker-mailserver-gui
 ## build commands: https://hub.docker.com/repositories/audioscavenger
 
-# alias buildup='docker-compose up --build'
+# docker rm dms-gui dms-gui-dms-gui; docker image prune -f
+# alias buildup='docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
-# docker build -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.5 .
+# docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .
 # docker push audioscavenger/dms-gui --all-tags
 
 

@@ -1,9 +1,9 @@
 ## BUGS:
-* [ ] - downloadable font: rejected by sanitizer, we lost all icons since upgrade to node 24
-* [ ] - Newly created account doesn't appear on the list immediately (requires manual refresh after a few seconds).
-* [x] - Translations do not update immediately after language change (requires manual refresh).
-* [x] 1.0.3 - Fails to show accounts when QUOTA is disabled
+* [ ] - Newly created account doesn't appear on the list immediately (requires manual refresh)
+* [x] - Translations do not update immediately after language change (requires manual refresh)
+* [x] 1.0.3 - Fails to show accounts when QUOTA is disabled: now handles both cases
 ## TODO:
+* [ ] - add a login page
 * [ ] - docker.sock seems frowned upon, how do we do without it?
 * [ ] - docker.sock could be ssh: https://docs.docker.com/engine/security/protect-access/
 * [ ] - PORT_NODEJS: package.json .env webpack etc... use hard coded 3001
@@ -17,7 +17,17 @@
 * [ ] - Implement functionality for the Settings page or remove it (currently mocked).
 * [ ] - Should we rely on setup script or more simply read the files off dms directly?
 * [ ] - Dashboard/aliases are correclty sorted
-* [ ] 1.0.5.5 - addAlias correctly refresh after adding, updated api.js and index.js
+* [ ] - frontend/api.js and plenty other files could also use translate for their messages
+* [ ] - frontend: find a way to force the first dashboard call to refresh=true
+* [ ] - frontend/Settings: split data into multiple forms and columns
+* [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
+* [ ] - frontend/accounts: addAccount correctly refresh after adding
+* [x] 1.0.6 - removed nginx, now using node:slim as this is supposed to hide behind a proxy
+* [x] 1.0.5.7 - backend:      add getSettings and saveSettings to db.settings.json
+* [x] 1.0.5.7 - frontend/api: add getSettings and saveSettings to db.settings.json
+* [x] 1.0.5.6 - frontend/Aliases: add the actual json response from backend/dM.js rather than the axios http 500 from services/api
+* [x] 1.0.5.6 - addAlias correctly refresh after adding, updated api.js and index.js
+* [x] 1.0.5.5 - implement DB_PATH
 * [x] 1.0.5.4 - implement refresh on start
 * [x] 1.0.5.3 - DB_JSON holds Aliases
 * [x] 1.0.5.2 - Dashboard shows version next to server status
@@ -33,3 +43,4 @@
 * [x] 1.0.3 - Fix account regex when QUOTA is enabled or not
 * [x] 1.0.3 - Better debug logging
 * [x] 1.0.3 - Variabilize SETUP_SCRIPT
+* [x] 1.0.3 - Initial commit from someone else's AI slop

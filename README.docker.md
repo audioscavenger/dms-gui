@@ -51,15 +51,18 @@ The application is available as a pre-built Docker image on Docker Hub:
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:80 \
+  -p 3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v /etc/timezone:/etc/timezone:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v./dms-gui/config/:/app/config/ \
   audioscavenger/dms-gui:latest
 ```
 
 Where:
 - `dms` is the name of your docker-mailserver container
-- Port 80 is mapped to your host
+- Port 3001 is mapped to your host
 
 For more information about the Docker Hub image, visit:
 https://hub.docker.com/r/audioscavenger/dms-gui
@@ -91,7 +94,7 @@ docker-compose up -d
 This will:
 1. Build the Docker image that includes both frontend and backend
 2. Start the container in detached mode
-3. Map port 80 for the web interface
+3. Map port 3001 for the web interface
 
 ## Accessing the Application
 
@@ -136,9 +139,11 @@ The Docker setup uses a multi-stage build process:
 
 When the container starts:
 1. The backend Node.js server runs on port 3001 inside the container
-2. Nginx serves the frontend static files
-3. Nginx proxies API requests (/api/*) to the Node.js backend
-4. The backend communicates with your docker-mailserver container via Docker API
+2. The backend communicates with your docker-mailserver container via Docker API
+
+Optional, to be unlocked in Dockerfile:
+1. Nginx serves the frontend static files
+2. Nginx proxies API requests (/api/*) to the Node.js backend
 
 The application uses Docker API directly (via the dockerode library) to:
 1. Execute commands in the docker-mailserver container

@@ -110,7 +110,10 @@ const Accounts = () => {
     }
 
     try {
-      await addAccount(formData.email, formData.password);
+      await addAccount(
+        formData.email,
+        formData.password,
+      );
       setSuccessMessage('accounts.accountCreated');
       setFormData({
         email: '',

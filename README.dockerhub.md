@@ -1,81 +1,265 @@
 # Docker Mailserver GUI
-
-A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status.
-
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
+
+A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, UI settings, indexes, etc.
+
+Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
+
+Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything!
 
 ## Features
 
 - 📊 Dashboard with server status information
 - 👤 Email account management (add, delete)
 - ↔️ Email alias management
-- 🔧 Docker Mailserver connection configuration
+- 🔧 Docker-Mailserver connection configuration
 - 🌐 Multilingual support (English, Polish)
 
-## Quick Start
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
+<!-- 
+![Dashboard](/assets/dms-gui-Dashboard.webp)
+![Accounts](/assets/dms-gui-Accounts.webp)
+![Aliases](/assets/dms-gui-Aliases.webp)
+![Settings](/assets/dms-gui-Settings.webp)
+ -->
+
+## Requirements
+
+- Node.js (node:slim)
+- npm
+- [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
+
+## Project Structure
+
+The application consists of two parts:
+
+- **Backend**: Node.js/Express API for communicating with Docker-Mailserver
+- **Frontend**: React user interface with i18n support
+
+## Installation
+
+You have nothing to install, this is an all-included docker service for your MS compose, that provides a UI for DMS.
+
+If you want to develop/pull requests and test, see README.docker.md and each README under the subfolders `backend` and `frontend`.
+
+## Configuration
+
+Copy `./config/.env.example` ro `./config/.env` and update with your own environment:
+
+```
+# Server port
+PORT_NODEJS=3001
+REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
+DB_PATH=/app/config
+
+# Docker Mailserver Configuration
+SETUP_SCRIPT=/usr/local/bin/setup
+DMS_CONTAINER=dms
+
+# Debugging
+# Set to true to enable debug logs for Docker commands
+#DEBUG=true
+
+# Environment
+# NODE_ENV=development
+NODE_ENV=production
+```
+
+## Language Support
+
+The application supports multiple languages throught i18n.js:
+
+- English
+- Polish
+
+Languages can be switched using the language selector in the top navigation bar.
+
+## Docker Deployment
+
+There are two ways to deploy using Docker:
+
+### Option 1: Docker Compose with dms + proxy (Recommended)
+
+#### Compose for dms + dms-gui
+Sample extract from `docker-compose.yml`, rename `dms` to the actual name of your docket-Mailserver container!
+```yaml
+---
+services:
+  dms:
+    <your dms compose here>
+    ...
+    networks:
+      frontend:
+  
+  gui:
+    container_name: dms-gui
+    hostname: dms-gui
+    image: audioscavenger/dms-gui:latest
+    restart: unless-stopped
+    depends_on:
+      - dms
+    
+    # use either ones: env_file or the environment section:
+    env_file: ./config/.env
+    
+    environment:
+      - TZ=${TZ}
+
+      # Server port
+      - PORT_NODEJS=3001
+      - REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
+      - DB_PATH=/app/config
+
+      # Docker Mailserver Configuration
+      - SETUP_SCRIPT=/usr/local/bin/setup
+      - DMS_CONTAINER=dms
+
+      # Debugging
+      # Set to true to enable debug logs for Docker commands
+      # - DEBUG=true
+
+      # Environment
+      # - NODE_ENV=development
+      - NODE_ENV=production
+
+    expose:
+      - 3001
+    
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./dms-gui/config/:/app/config/
+      
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    
+    networks:
+      frontend:
+
+# use the network of your choice
+networks:
+  frontend:
+    external: true
+    name: frontend
+```
+
+**Note:** Replace `dms` with the name of your docker-mailserver container.
+
+**Note:** Replace `frontend` with the name of the external network your proxy also uses
+
+#### Reverse proxy
+
+We recommend this reverse proxy for its simplicity: [swag](https://docs.linuxserver.io/general/swag/).
+
+Sample proxy configuration:
+
+```nginx
+server {
+    listen 443 ssl;
+   listen 443 quic;
+    listen [::]:443 ssl;
+   listen [::]:443 quic;
+  
+  server_name dms.*;
+
+  location / {
+
+    # enable the next two lines for http auth
+    auth_basic "Restricted";
+    auth_basic_user_file /config/nginx/.htpasswd;
+
+    include /config/nginx/proxy.conf;
+    include /config/nginx/resolver.conf;
+
+    set $upstream_app dms-gui;
+    set $upstream_port 3001;
+    set $upstream_proto http;
+    proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+  }
+
+}
+```
+
+As stated above, no security is in place yet. You must as a form of authentication at the proxy level.
+
+
+### Option 2: Manual using the pre-built image from Docker Hub
 
 ```bash
 docker run -d \
-  --name mailserver-gui \
-  -p 80:80 \
-  -e DMS_CONTAINER=mailserver \
+  --name dms-gui \
+  -p 3001:3001 \
+  -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v /etc/timezone:/etc/timezone:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v./dms-gui/config/:/app/config/ \
   audioscavenger/dms-gui:latest
 ```
 
-The application will be available at http://localhost
-
-## Configuration
+**Note:** Replace `dms` with the name of your docker-mailserver container.
 
 ### Environment Variables
 
 - `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-- `PORT`: Internal port for the Node.js server (defaults to 3001)
-- `NODE_ENV`: Node.js environment (defaults to production)
+- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
+- `DEBUG`: Node.js environment: (*production or development)
+- `NODE_ENV`: Node.js environment: (*production or development)
+- `SETUP_SCRIPT`: the internal path the docker-mailserver setup script: normally `/usr/local/bin/setup`
 
-### Prerequisites
+### Docker Features
 
-- Running docker-mailserver container
-- Docker socket access
+- Single container with both frontend and backend
+- Communication with docker-mailserver via Docker API
+- Minimal configuration (just set the container name)
+- optional Nginx to serve the React frontend and proxies API requests with http, disabled in Dockerfile
 
-## How It Works
+For detailed Docker setup instructions, please refer to:
+- [README.docker.md](README.docker.md) - Detailed Docker setup guide
+- [README.dockerhub.md](README.dockerhub.md) - Docker Hub specific information
 
-The Docker image includes:
-- React frontend served by Nginx
-- Node.js backend API
-- Docker client for communicating with docker-mailserver
+## Code Formatting
 
-When the container starts:
-1. The backend Node.js server runs on port 3001 inside the container
-2. Nginx serves the frontend static files
-3. Nginx proxies API requests (/api/*) to the Node.js backend
-4. The backend communicates with your docker-mailserver container via Docker API
+This project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
 
-## Troubleshooting
+### Automatic Formatting
 
-### Connection to docker-mailserver fails
+Formatting is automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensures that all committed code adheres to the defined style guide.
 
-- Ensure the docker-mailserver container is running
-- Check that the container name matches the `DMS_CONTAINER` environment variable
-- Check that the `/var/run/docker.sock` volume is correctly mounted
-- Verify that your host user has permissions to access the Docker socket
+### Manual Formatting
 
-### Docker API connection issues
+You can also manually format the code using the npm scripts available in both the `backend` and `frontend` directories:
 
-- Check that the Docker socket is correctly mounted in the container
-- Ensure your user has permissions to access the Docker socket
+```bash
+# Navigate to the respective directory (backend or frontend)
+cd backend # or cd frontend
 
-## Security Considerations
+# Format all relevant files
+npm run format
 
-- The container has access to the Docker socket, which is a security risk. Make sure to restrict access to the container.
-- Consider setting up HTTPS for production deployments
-- Add authentication to the web interface for production use
+# Check if all relevant files are formatted correctly
+npm run format:check
+```
+
+## Development
+
+### Backend
+
+```bash
+cd backend
+npm install
+```
+Configure the `./config/.env` file with the appropriate [#environment-variables], using `./config/.env.example`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+After running both parts, the application will be available at http://localhost:3000
 
 ## License
 
 MIT
-
-## Links
-
-- [GitHub Repository](https://github.com/audioscavenger/dms-gui)
-- [Bug Reports](https://github.com/audioscavenger/dms-gui/issues)

@@ -5,7 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const dockerMailserver = require('./dockerMailserver');
 
-dotenv.config();
+dotenv.config({ path: '/app/config/.env' });
 
 const app = express();
 const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
@@ -316,8 +316,86 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
   }
 });
 
+// Endpoint for retrieving settings
+/**
+ * @swagger
+ * /api/settings:
+ *   get:
+ *     summary: Get settings
+ *     description: Retrieve all settings
+ *     responses:
+ *       200:
+ *         description: all settings even if empty
+ *       500:
+ *         description: Unable to retrieve settings
+ */
+app.get('/api/settings', async (req, res) => {
+  try {
+    await dockerMailserver.debugLog(`index /api/settings`);
+    const settings = await dockerMailserver.getSettings();
+    res.json(settings);
+  } catch (error) {
+    // res.status(500).json({ error: 'Unable to retrieve settings' });
+    await dockerMailserver.debugLog(`index /api/settings: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for saving settings
+/**
+ * @swagger
+ * /api/settings:
+ *   post:
+ *     summary: save settings
+ *     description: save settings
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               containerName:
+ *                 type: string
+ *               setupPath:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 description: Email address of the new account
+ *               password:
+ *                 type: string
+ *                 description: Password for the new account
+ *     responses:
+ *       201:
+ *         description: settings saved successfully
+ *       400:
+ *         description: something is missing
+ *       500:
+ *         description: Unable to save settings
+ */
+app.post('/api/settings', async (req, res) => {
+  try {
+    const { containerName, setupPath, username, email, password } = req.body;
+    if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
+    if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
+    if (!username) return res.status(400).json({ error: 'username is missing' });
+    if (!password) return res.status(400).json({ error: 'password is missing' });
+
+    const result = await dockerMailserver.saveSettings(containerName, setupPath, username, email, password);
+    res.status(201).json({ message: 'Settings saved successfully', email });
+  } catch (error) {
+    // res.status(500).json({ error: 'Unable to save settings' });
+    await dockerMailserver.debugLog(`index /api/settings: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 app.listen(PORT_NODEJS, async () => {
-  const { name, version } = await dockerMailserver.getJson('/package.json');
+  // const { name, version } = await dockerMailserver.readJson(process.cwd() + '/../package.json');
+  const { name, version } = await dockerMailserver.readJson('/app/package.json');
   console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status
