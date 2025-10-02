@@ -4,12 +4,14 @@ import { getServerStatus, getAccounts, getAliases } from '../services/api';
 import { AlertMessage, DashboardCard, LoadingSpinner } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
+const { name, version, description } = require('../../package.json');  
 
 const Dashboard = () => {
   const { t } = useTranslation();
   const [status, setStatus] = useState({
     status: 'loading',
-    version: '1.0.0',
+    name: name,
+    version: version,
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
   });
   const [accountsCount, setAccountsCount] = useState(0);

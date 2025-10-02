@@ -9,25 +9,36 @@ dotenv.config({ path: '/app/config/.dms-gui.env' });
 
 const app = express();
 const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
+const { name, version, description } = require('./package.json');  
 
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Docker Mailserver GUI API',
-      version: '1.0.0',
-      description: 'API for Docker Mailserver GUI',
-    },
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    version: version,
+    title: description,
+    description: description,
   },
-  apis: ['./*.js'], // files containing annotations as above
 };
 
-const specs = swaggerJsdoc(options);
+const options = {
+  swaggerDefinition,
+  // Paths to files containing OpenAPI definitions
+  apis: ['./*.js'],
+};
+
+
+const oasDefinition = swaggerJsdoc(options);
+
+// const swaggerOptions = {
+  // // http://imaginativethinking.ca/swaggerize-your-api-documentation/
+  // customSiteTitle: 'My Service',
+  // customCss: '.topbar { display: none }',
+// }; 
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
 
 // Routes
 /**
@@ -47,7 +58,9 @@ app.get('/api/status', async (req, res) => {
     const status = await dockerMailserver.getServerStatus();
     res.json(status);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    await dockerMailserver.debugLog(`index /api/status: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -65,12 +78,13 @@ app.get('/api/status', async (req, res) => {
  *         description: Unable to retrieve accounts
  */
 app.get('/api/accounts', async (req, res) => {
-  await dockerMailserver.debugLog(`index /api/accounts?${req.query.refresh}`);
   try {
-    const accounts = await dockerMailserver.getAccounts();
+    const accounts = await dockerMailserver.getAccounts(JSON.parse(req.query.refresh) ? true : false);
     res.json(accounts);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to retrieve accounts' });
+    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve accounts' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -111,7 +125,9 @@ app.post('/api/accounts', async (req, res) => {
     const result = await dockerMailserver.addAccount(email, password);
     res.status(201).json({ message: 'Account created successfully', email });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to create account' });
+    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to create account' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -146,7 +162,9 @@ app.delete('/api/accounts/:email', async (req, res) => {
     await dockerMailserver.deleteAccount(email);
     res.json({ message: 'Account deleted successfully', email });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to delete account' });
+    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to delete account' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -197,7 +215,9 @@ app.put('/api/accounts/:email/password', async (req, res) => {
     await dockerMailserver.updateAccountPassword(email, password);
     res.json({ message: 'Password updated successfully', email });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to update password' });
+    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to update password' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -216,11 +236,12 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  */
 app.get('/api/aliases', async (req, res) => {
   try {
-    await dockerMailserver.debugLog(`index /api/aliases?${req.query.refresh}`);
     const aliases = await dockerMailserver.getAliases(JSON.parse(req.query.refresh) ? true : false);
     res.json(aliases);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to retrieve aliases' });
+    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve aliases' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -312,7 +333,9 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
     await dockerMailserver.deleteAlias(source, destination);
     res.json({ message: 'Alias deleted successfully', source, destination });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to delete alias' });
+    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to delete alias' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -331,12 +354,11 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
  */
 app.get('/api/settings', async (req, res) => {
   try {
-    await dockerMailserver.debugLog(`index /api/settings`);
     const settings = await dockerMailserver.getSettings();
     res.json(settings);
   } catch (error) {
-    // res.status(500).json({ error: 'Unable to retrieve settings' });
     await dockerMailserver.debugLog(`index /api/settings: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -386,8 +408,8 @@ app.post('/api/settings', async (req, res) => {
     const result = await dockerMailserver.saveSettings(containerName, setupPath, username, email, password);
     res.status(201).json({ message: 'Settings saved successfully', email });
   } catch (error) {
+    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
-    await dockerMailserver.debugLog(`index /api/settings: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -395,7 +417,7 @@ app.post('/api/settings', async (req, res) => {
 
 app.listen(PORT_NODEJS, async () => {
   // const { name, version } = await dockerMailserver.readJson(process.cwd() + '/../package.json');
-  const { name, version } = await dockerMailserver.readJson('/app/package.json');
+  // const { name, version } = await dockerMailserver.readJson('/app/package.json');
   console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status

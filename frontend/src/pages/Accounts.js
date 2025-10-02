@@ -1,3 +1,4 @@
+const debug = (process.env.DEBUG === 'true') ? true : false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -19,6 +20,7 @@ import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
+// const { name, version, description } = require('../../package.json');  
 
 const Accounts = () => {
   const passwordFormRef = useRef(null);
@@ -44,15 +46,22 @@ const Accounts = () => {
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
   useEffect(() => {
-    fetchAccounts();
+    fetchAccounts(false);
   }, []);
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = async (refresh) => {
+    refresh = (refresh === undefined) ? false : refresh;
+    if (debug) console.debug(`ddebug: ------------- fetchAccounts call getAccounts(${refresh})`);
     try {
       setLoading(true);
-      const data = await getAccounts();
-      setAccounts(data);
+      const [accountsData] = await Promise.all([
+        getAccounts(refresh),
+      ]);
+      setAccounts(accountsData);
       setError(null);
+      
+      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
+      
     } catch (err) {
       console.error(t('api.errors.fetchAccounts'), err);
       setError('api.errors.fetchAccounts');
@@ -120,10 +129,11 @@ const Accounts = () => {
         password: '',
         confirmPassword: '',
       });
-      fetchAccounts(); // Refresh the accounts list
+      fetchAccounts(true); // Refresh the accounts list
     } catch (err) {
       console.error(t('api.errors.addAccount'), err);
       setError('api.errors.addAccount');
+      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.addAccount');
     }
   };
 
@@ -132,10 +142,11 @@ const Accounts = () => {
       try {
         await deleteAccount(email);
         setSuccessMessage('accounts.accountDeleted');
-        fetchAccounts(); // Refresh the accounts list
+        fetchAccounts(true); // Refresh the accounts list
       } catch (err) {
         console.error(t('api.errors.deleteAccount'), err);
         setError('api.errors.deleteAccount');
+        (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAccount');
       }
     }
   };

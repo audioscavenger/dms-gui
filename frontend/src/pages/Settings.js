@@ -1,4 +1,4 @@
-const debug = false;
+const debug = (process.env.DEBUG === 'true') ? true : false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,17 +12,17 @@ import {
   Card, 
   FormField 
 } from '../components';
+const { name, version, description } = require('../../package.json');  
 
 const Settings = () => {
   const { t } = useTranslation();
   const [status, setStatus] = useState({
     status: 'loading',
-    version: '1.0.0',
+    name: '',
+    version: version,
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
   });
-          // const [setupPath, setSetupPath] = useState('/usr/local/bin/setup');
-          // const [containerName, setContainerName] = useState('mailserver');
-          
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // presetting formData with anything else then blanks results in this error:
@@ -248,7 +248,12 @@ const Settings = () => {
         <Card.Text>
           {' '}
           {/* Use Card.Text */}
-          <strong>{t('settings.version')}:</strong> {status.version}
+          <strong>{name}</strong> {t('settings.version')}: {version}
+        </Card.Text>
+        <Card.Text>
+          {' '}
+          {/* Use Card.Text */}
+          <strong>{status.name}</strong> {t('settings.version')}: {status.version}
         </Card.Text>
         <Card.Text>
           {' '}

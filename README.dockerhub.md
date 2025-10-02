@@ -262,4 +262,4 @@ After running both parts, the application will be available at http://localhost:
 
 ## License
 
-MIT
+AGPL-3.0-only

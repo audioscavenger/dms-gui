@@ -1,4 +1,4 @@
-const debug = false;
+const debug = (process.env.DEBUG === 'true') ? true : false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,6 +18,7 @@ import {
 } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
+// const { name, version, description } = require('../../package.json');  
 
 const Aliases = () => {
   const { t } = useTranslation();
@@ -34,12 +35,12 @@ const Aliases = () => {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAliasesData(false);
+    fetchAliases(false);
   }, []);
 
-  const fetchAliasesData = async (refresh) => {
+  const fetchAliases = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAliasesData call getAliases(${refresh}) and getAccounts(false)`);
+    if (debug) console.debug(`ddebug: ------------- fetchAliases call getAliases(${refresh}) and getAccounts(false)`);
     
     try {
       setLoading(true);
@@ -54,7 +55,7 @@ const Aliases = () => {
       if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
 
     } catch (err) {
-      if (debug) console.debug(t('api.errors.fetchAliases'), err);
+      console.error(t('api.errors.fetchAliases'), err);
       setError('api.errors.fetchAliases');
     } finally {
       setLoading(false);
@@ -113,10 +114,10 @@ const Aliases = () => {
         source: '',
         destination: '',
       });
-      if (debug) console.debug('ddebug: ------------- call fetchAliasesData(true)');
-      fetchAliasesData(true); // Refresh the aliases list
+      if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+      fetchAliases(true); // Refresh the aliases list
     } catch (err) {
-      if (debug) console.error('page Aliases', t('api.errors.addAlias'), err);
+      console.error(t('api.errors.addAlias'), err);
       (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.addAlias');
     }
   };
@@ -126,10 +127,10 @@ const Aliases = () => {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
-        if (debug) console.debug('ddebug: ------------- call fetchAliasesData(true)');
-        fetchAliasesData(true); // Refresh the aliases list
+        if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+        fetchAliases(true); // Refresh the aliases list
       } catch (err) {
-        if (debug) console.debug('page Aliases', t('api.errors.deleteAlias'), err);
+        console.error(t('api.errors.deleteAlias'), err);
         (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAlias');
       }
     }

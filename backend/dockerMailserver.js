@@ -3,6 +3,7 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
 const fsp = fs.promises;
 // const { promises: fs } = require("fs");
+const { name, version, description } = require('./package.json');  
 
 // Docker container name for docker-mailserver
 const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
@@ -12,30 +13,48 @@ const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
 
+const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
+// const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
+const regexPrintOnly = /[^\S]/;
+
 // Debug flag
-const DEBUG = process.env.DEBUG === 'true';
+const debug = (process.env.DEBUG === 'true') ? true : false;
 
 // While global values are discouraged for production code, we use it to serve as a shared source of state.
 // Well locking files to save or read proves too difficult, I give up
 // import { Mutex } from 'async-mutex';
 // const Mutex = require('async-mutex').Mutex;
 // const mutex = new Mutex();
-// let DBdict = {};
+// var DBdict = {};
 
 
 async function formatError(errorMsg, error) {
-  var patterns = [
-    /'?\S+'? is already an alias for recipient: '?\S+'?/i,
-  ]
+  // Unfortunately, we cannot list all the error types from dms just here
+  // var patterns = [
+    // /'?\S+'? is already an alias for recipient: '?\S+'?/i,
+  // ]
   
-  patterns.forEach(function(regex){
-    if (typeof error == "string") {
-      if (error.match(regex)) errorMsg = `${errorMsg}: ` + error.match(regex)[0].replace(/[\"\'\:]/g, "");
-    } else {
-      if (error.message.match(regex)) errorMsg = `${errorMsg}: ` + error.message.match(regex)[0].replace(/[\"\'\:]/g, "");
-    }
-  });
+  // patterns.forEach(function(regex){
+    // if (typeof error == "string") {
+      // if (error.match(regex)) errorMsg = `${errorMsg}: ` + error.match(regex)[0].replace(/[\"\'\:]/g, "");
+    // } else {
+      // if (error.message.match(regex)) errorMsg = `${errorMsg}: ` + error.message.match(regex)[0].replace(/[\"\'\:]/g, "");
+    // }
+  // });
   
+  debugLog(`${arguments.callee.name}: error(${typeof error})=`,error);
+  var split;
+  const regexSplit = /ERROR:?|\n/i;
+  const regexCleanup = /[\"\'\:\`]/g;
+  
+  if (typeof error == "string") {
+    split = error.split(regexSplit);
+  } else {
+    split = error.message.split(regexSplit);
+  }
+  let splitError = (split.length > 1) ? split[1] : split;
+  
+  errorMsg = `${errorMsg}: ` + splitError.replace(regexColors,"").replace(regexPrintOnly,"").replace(regexCleanup, "");
   return errorMsg;
 }
 
@@ -45,7 +64,7 @@ async function debugLog(message, data = null) {
     // throw new Error('stack hack to get callee.caller in strict mode')
   // } catch (error) {
     
-    // console.log(`[DEBUG] error.stack:`, error.stack.split('\n')[2]);
+    // console.log(`[debug] error.stack:`, error.stack.split('\n')[2]);
       // error.stack: Error: First one
     // at debugLog (/app/backend/dockerMailserver.js:18:11)
     // at Object.getAccounts (/app/backend/dockerMailserver.js:150:11)
@@ -53,7 +72,7 @@ async function debugLog(message, data = null) {
     // at async /app/backend/index.js:69:22
   // }
   
-  if (DEBUG) {
+  if (debug) {
     if (data) {
       console.log(`[DEBUG] ${message}`, data);
     } else {
@@ -247,12 +266,8 @@ async function getAccounts(refresh) {
      if (!refresh) {
       debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
       
-      // try {
         DBdict = await readJson(DB_Accounts);
-        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
-      // } catch (error) {
-        // debugLog(`${arguments.callee.name}: readJson() error:`, error);
-      // }
+        // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
     }
     
 
@@ -434,12 +449,7 @@ async function getAliases(refresh) {
     if (!refresh) {
       debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
       
-      // try {
         DBdict = await readJson(DB_Aliases);
-        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
-      // } catch (error) {
-        // debugLog(`${arguments.callee.name}: readJson() error:`, error);
-      // }
     }
     
 
@@ -616,7 +626,7 @@ async function getServerStatus() {
 
     // Get this project version
     // const { name, version } = await readJson(process.cwd() + '/../package.json');
-    const { name, version } = await readJson('/app/package.json');
+    // const { name, version } = await readJson('/app/package.json');
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);

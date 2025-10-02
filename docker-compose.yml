@@ -9,7 +9,8 @@ services:
     restart: unless-stopped
     
     expose:
-      - 80
+      - 80      // frontend
+      - 3001    // docs
     # ports:
       # - 80:80
       

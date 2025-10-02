@@ -1,4 +1,4 @@
-const debug = true;
+const debug = (process.env.DEBUG === 'true') ? true : false;
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
