@@ -1,6 +1,5 @@
 # ---> gitsync
 **/backup
-**/config
 git*.cmd
 commit.*.txt
 README.cmd
@@ -9,6 +8,7 @@ README.cmd
 node_modules/
 
 # Environment variables
+**/.env
 !.env.example
 
 # Logs
