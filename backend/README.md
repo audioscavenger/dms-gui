@@ -25,7 +25,7 @@ npm start
 Configure the `.env` file with the appropriate environment variables:
 
 ```
-PORT=3001
+PORT_NODEJS=3001
 SETUP_SCRIPT=/usr/local/bin/setup
 ```
 

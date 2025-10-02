@@ -1,6 +1,6 @@
 {
-  "name": "docker-mailserver-gui-backend",
-  "version": "1.0.0",
+  "name": "dms-gui-backend",
+  "version": "1.0.4",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -18,19 +18,19 @@
   ],
   "author": "",
   "license": "ISC",
-  "description": "Backend API dla GUI docker-mailserver",
+  "description": "Backend API for GUI docker-mailserver",
   "dependencies": {
-    "axios": "^1.8.4",
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
-    "dockerode": "^4.0.2",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "dockerode": "^4.0.8",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "json-server": "^1.0.0-beta.3",
-    "nodemon": "^3.1.9",
-    "prettier": "3.5.3"
+    "nodemon": "^3.1.10",
+    "prettier": "3.6.2"
   }
 }

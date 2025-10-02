@@ -1,7 +1,7 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status.
+A graphical user interface for managing [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver). The application allows easy management of email accounts, aliases, and monitoring of server status. Forked from [docker-mailserver-gui](dunaj-dev/docker-mailserver-gui)
 
 ## Features
 
@@ -78,11 +78,11 @@ services:
     environment:
       TZ: ${TZ}
       PORT_NODEJS: 3001
-      DOCKER_CONTAINER: dms
+      DMS_CONTAINER: dms
       DEBUG: false
 
     expose:
-      - 3001
+      - 80
     
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -93,6 +93,7 @@ services:
     networks:
       frontend:
 
+# use the network of your choice
 networks:
   frontend:
     external: true
@@ -107,8 +108,8 @@ networks:
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:3001 \
-  -e DOCKER_CONTAINER=dms \
+  -p 80:80 \
+  -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   audioscavenger/dms-gui:latest
 ```
@@ -117,7 +118,7 @@ docker run -d \
 
 ### Environment Variables
 
-- `DOCKER_CONTAINER`: Name of your docker-mailserver container (required)
+- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `DEBUG`: Node.js environment: (*production or development)
 - `NODE_ENV`: Node.js environment: (*production or development)
@@ -194,4 +195,4 @@ After running both parts, the application will be available at http://localhost:
 
 ## License
 
-AGPL-3.0-only
+MIT

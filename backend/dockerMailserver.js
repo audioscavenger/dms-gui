@@ -1,12 +1,24 @@
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+const fs = require("fs");
 
 // Docker container name for docker-mailserver
-const DOCKER_CONTAINER = process.env.DOCKER_CONTAINER || 'mailserver';
+const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
 const SETUP_SCRIPT = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
 
 // Debug flag
 const DEBUG = process.env.DEBUG === 'true';
+
+/**
+ * getPackageJson to get the version fo this project from package.json
+ * @param {string} package - json to read, defaults to /package.json
+ */
+function getPackageJson(package = '/package.json') {
+  //Reach the package.json file
+  const path = `${process.cwd()}/${package}`;
+  const packageData = JSON.parse(fs.readFileSync(path, "utf8"));
+  return packageData;
+}
 
 /**
  * Debug logger that only logs if DEBUG is true
@@ -14,6 +26,18 @@ const DEBUG = process.env.DEBUG === 'true';
  * @param {any} data - Optional data to log
  */
 function debugLog(message, data = null) {
+  // try {
+    // throw new Error('First one')
+  // } catch (error) {
+    
+    // console.log(`[DEBUG] error.stack:`, error.stack.split('\n')[2]);
+      // error.stack: Error: First one
+    // at debugLog (/app/backend/dockerMailserver.js:18:11)
+    // at Object.getAccounts (/app/backend/dockerMailserver.js:150:11)
+    // at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    // at async /app/backend/index.js:69:22
+  // }
+  
   if (DEBUG) {
     if (data) {
       console.log(`[DEBUG] ${message}`, data);
@@ -30,10 +54,10 @@ function debugLog(message, data = null) {
  */
 async function execInContainer(command) {
   try {
-    debugLog(`${arguments.callee.name}: Executing command in container ${DOCKER_CONTAINER}: ${command}`);
+    debugLog(`${arguments.callee.name}: Executing command in container ${DMS_CONTAINER}: ${command}`);
 
     // Get container instance
-    const container = docker.getContainer(DOCKER_CONTAINER);
+    const container = docker.getContainer(DMS_CONTAINER);
 
     // Create exec instance
     const exec = await container.exec({
@@ -80,6 +104,7 @@ async function execInContainer(command) {
  */
 async function execSetup(setupCommand) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
+  
   debugLog(`${arguments.callee.name}: Executing setup command: ${setupCommand}`);
   return execInContainer(`${SETUP_SCRIPT} ${setupCommand}`);
 }
@@ -277,9 +302,13 @@ async function getServerStatus() {
   try {
     debugLog(`${arguments.callee.name}: Getting server status`);
 
+    // Get this project version
+    const { name, version } = getPackageJson();
+    
     // Get container info
-    const container = docker.getContainer(DOCKER_CONTAINER);
+    const container = docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
+    // debugLog(`${arguments.callee.name}: ddebug containerInfo:`, containerInfo);
 
     // Check if container is running
     const isRunning = containerInfo.State.Running === true;
@@ -296,8 +325,8 @@ async function getServerStatus() {
 
       // Calculate CPU usage percentage
       const cpuDelta =
-        stats.cpu_stats.cpu_usage.total_usage -
-        stats.precpu_stats.cpu_usage.total_usage;
+          stats.cpu_stats.cpu_usage.total_usage
+        - stats.precpu_stats.cpu_usage.total_usage;
       const systemCpuDelta =
         stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
       const cpuPercent =
@@ -319,6 +348,8 @@ async function getServerStatus() {
     const result = {
       status: isRunning ? 'running' : 'stopped',
       resources: {
+        name: name,
+        version: version,
         cpu: cpuUsage,
         memory: memoryUsage,
         disk: diskUsage,
@@ -357,4 +388,5 @@ module.exports = {
   addAlias,
   deleteAlias,
   getServerStatus,
+  getPackageJson,
 };
