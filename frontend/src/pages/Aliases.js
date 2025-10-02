@@ -1,4 +1,4 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+const debug = true;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,7 +39,7 @@ const Aliases = () => {
 
   const fetchAliasesData = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debug && console.debug(`ddebug: ------------- fetchAliasesData call getAliases(${refresh}) and getAccounts(false)`);
+    if (debug) console.debug(`ddebug: ------------- fetchAliasesData call getAliases(${refresh}) and getAccounts(false)`);
     
     try {
       setLoading(true);
@@ -51,10 +51,10 @@ const Aliases = () => {
       setAliases(aliasesData);
       setError(null);
 
-      debug && console.debug('ddebug: ------------- aliasesData', aliasesData);
+      if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
 
     } catch (err) {
-      debug && console.error(t('api.errors.fetchAliases'), err);
+      if (debug) console.debug(t('api.errors.fetchAliases'), err);
       setError('api.errors.fetchAliases');
     } finally {
       setLoading(false);
@@ -112,11 +112,11 @@ const Aliases = () => {
         source: '',
         destination: '',
       });
-      debug && console.debug('ddebug: ------------- call fetchAliasesData(true)');
+      if (debug) console.debug('ddebug: ------------- call fetchAliasesData(true)');
       fetchAliasesData(true); // Refresh the aliases list
     } catch (err) {
-      debug && console.error(t('api.errors.addAlias'), err);
-      setError('api.errors.addAlias');
+      if (debug) console.error('page Aliases', t('api.errors.addAlias'), err);
+      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.addAlias');
     }
   };
 
@@ -125,11 +125,11 @@ const Aliases = () => {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
-        debug && console.debug('ddebug: ------------- call fetchAliasesData(true)');
+        if (debug) console.debug('ddebug: ------------- call fetchAliasesData(true)');
         fetchAliasesData(true); // Refresh the aliases list
       } catch (err) {
-        debug && console.error(t('api.errors.deleteAlias'), err);
-        setError('api.errors.deleteAlias');
+        if (debug) console.debug('page Aliases', t('api.errors.deleteAlias'), err);
+        (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAlias');
       }
     }
   };

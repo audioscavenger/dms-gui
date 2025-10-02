@@ -10,6 +10,7 @@ const SETUP_SCRIPT  = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
 const DB_PATH       = process.env.DB_PATH || '/app/config';
 const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
+const DB_Settings   = DB_PATH + '/db.settings.json';
 
 // Debug flag
 const DEBUG = process.env.DEBUG === 'true';
@@ -28,7 +29,7 @@ const DEBUG = process.env.DEBUG === 'true';
 async function getJson(jsonFile = '/package.json') {
   const jsonFilePath = process.cwd() + jsonFile;
   var json = {};
-  console.debug('ddebug fs.existsSync(jsonFilePath)=', fs.existsSync(jsonFilePath));
+
   if (fs.existsSync(jsonFilePath)) {
     try {
       // json = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
@@ -42,11 +43,24 @@ async function getJson(jsonFile = '/package.json') {
   return json;
 }
 
-/**
- * Debug logger that only logs if DEBUG is true
- * @param {string} message - Message to log
- * @param {any} data - Optional data to log
- */
+
+async function formatError(errorMsg, error) {
+  var patterns = [
+    /'?\S+'? is already an alias for recipient: '?\S+'?/i,
+  ]
+  
+  patterns.forEach(function(regex){
+    if (typeof error == "string") {
+      if (error.match(regex)) errorMsg = `${errorMsg}: ` + error.match(regex)[0].replace(/[\"\'\:]/g, "");
+    } else {
+      if (error.message.match(regex)) errorMsg = `${errorMsg}: ` + error.message.match(regex)[0].replace(/[\"\'\:]/g, "");
+    }
+  });
+  
+  return errorMsg;
+}
+
+
 async function debugLog(message, data = null) {
   // try {
     // throw new Error('stack hack to get callee.caller in strict mode')
@@ -130,9 +144,10 @@ async function execInContainer(command) {
       });
     });
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error executing command in container: ${command}`, error);
-    debugLog(`${arguments.callee.name}: Execution error:`, error);
-    throw error;
+    let backendError = 'Execution error for '+command ;
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, error);
+    throw new Error(error);
   }
 }
 
@@ -236,9 +251,10 @@ async function getAccounts(refresh) {
     return accounts;
     
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error retrieving accounts:`, error);
-    debugLog(`${arguments.callee.name}: Error retrieving accounts:`, error);
-    throw new Error(`${arguments.callee.name}: Error retrieving accounts:`);
+    let backendError = 'Error retrieving accounts';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -311,9 +327,10 @@ async function getAccountsFromDMS() {
     debugLog(`${arguments.callee.name}: Found ${accounts.length} accounts`);
     return accounts;
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error execSetup(${command}):`, error);
-    debugLog(`${arguments.callee.name}: Error execSetup(${command}):`, error);
-    throw new Error(`${arguments.callee.name}: Error execSetup(${command})`);
+    let backendError = `Error execSetup(${command}): ${error}`;
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -325,9 +342,10 @@ async function addAccount(email, password) {
     debugLog(`${arguments.callee.name}: Account created: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error adding account:`, error);
-    debugLog(`${arguments.callee.name}: Account creation error:`, error);
-    throw new Error('Unable to add email account');
+    let backendError = 'Error adding account';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -339,9 +357,10 @@ async function updateAccountPassword(email, password) {
     debugLog(`${arguments.callee.name}: Password updated for account: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error updating account password:`, error);
-    debugLog(`${arguments.callee.name}: Account password update error:`, error);
-    throw new Error('Unable to update email account password');
+    let backendError = 'Error updating account password';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -353,9 +372,10 @@ async function deleteAccount(email) {
     debugLog(`${arguments.callee.name}: Account deleted: ${email}`);
     return { success: true, email };
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error deleting account:`, error);
-    debugLog(`${arguments.callee.name}: Account deletion error:`, error);
-    throw new Error('Unable to delete email account');
+    let backendError = 'Error deleting account';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -368,13 +388,7 @@ async function getAliases(refresh) {
   debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   try {
-    console.debug(`ddebug getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
-    
-    if (refresh) {
-      debugLog(`ddebug true:  refresh=${refresh}`);
-    } else {
-      debugLog(`ddebug false: refresh=${refresh}`);
-    }
+    debugLog(`ddebug getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
     
     if (!refresh) {
       debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
@@ -424,9 +438,10 @@ async function getAliases(refresh) {
     return aliases;
     
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error retrieving aliases:`, error);
-    debugLog(`${arguments.callee.name}: Error retrieving aliases:`, error);
-    throw new Error(`${arguments.callee.name}: Error retrieving aliases`);
+    let backendError = 'Error retrieving aliases';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -471,9 +486,10 @@ async function getAliasesFromDMS() {
     debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
     return aliases;
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error execSetup(${command}):`, error);
-    debugLog(`${arguments.callee.name}: Error execSetup(${command}):`, error);
-    throw new Error(`${arguments.callee.name}: Error execSetup(${command})`);
+    let backendError = `Error execSetup(${command}): ${error}`;
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -515,9 +531,10 @@ async function getAliasesOLD() {
     debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
     return aliases;
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error retrieving aliases:`, error);
-    debugLog(`${arguments.callee.name}: Alias retrieval error:`, error);
-    throw new Error('Unable to retrieve alias list');
+    let backendError = 'Error retrieving aliases';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -529,9 +546,10 @@ async function addAlias(source, destination) {
     debugLog(`${arguments.callee.name}: Alias created: ${source} -> ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error adding alias:`, error);
-    debugLog(`${arguments.callee.name}: Alias creation error:`, error);
-    throw new Error('Unable to add alias');
+    let backendError = 'Unable to add alias';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -543,9 +561,10 @@ async function deleteAlias(source, destination) {
     debugLog(`${arguments.callee.name}: Alias deleted: ${source} => ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error deleting alias:`, error);
-    debugLog(`${arguments.callee.name}: Alias deletion error:`, error);
-    throw new Error('Unable to delete alias');
+    let backendError = 'Unable to delete alias';
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -611,8 +630,9 @@ async function getServerStatus() {
     debugLog(`${arguments.callee.name}: Server status result:`, result);
     return result;
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error checking server status:`, error);
-    debugLog(`${arguments.callee.name}: Server status error:`, error);
+    let backendError = `Server status error: ${error}`;
+    let ErrorMsg = await formatError(backendError, error)
+    debugLog(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     return {
       status: 'unknown',
       error: error.message,

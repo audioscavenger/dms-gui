@@ -65,7 +65,7 @@ app.get('/api/status', async (req, res) => {
  *         description: Unable to retrieve accounts
  */
 app.get('/api/accounts', async (req, res) => {
-  await dockerMailserver.debugLog(`[DEBUG] backend /api/accounts?${req.query.refresh}`);
+  await dockerMailserver.debugLog(`index /api/accounts?${req.query.refresh}`);
   try {
     const accounts = await dockerMailserver.getAccounts();
     res.json(accounts);
@@ -216,7 +216,7 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  */
 app.get('/api/aliases', async (req, res) => {
   try {
-    await dockerMailserver.debugLog(`[DEBUG] backend /api/aliases?${req.query.refresh}`);
+    await dockerMailserver.debugLog(`index /api/aliases?${req.query.refresh}`);
     const aliases = await dockerMailserver.getAliases(JSON.parse(req.query.refresh) ? true : false);
     res.json(aliases);
   } catch (error) {
@@ -265,7 +265,9 @@ app.post('/api/aliases', async (req, res) => {
       .status(201)
       .json({ message: 'Alias created successfully', source, destination });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to create alias' });
+    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to create alias' });
+    res.status(500).json({ error: error.message });
   }
 });
 
