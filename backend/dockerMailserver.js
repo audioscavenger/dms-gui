@@ -151,7 +151,7 @@ async function getAccounts() {
       
       try {
         DBdict = await readDB();
-        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+        debugLog(`${arguments.callee.name}: DBdict[accounts]:`, DBdict['accounts']);
       } catch (error) {
         debugLog(`${arguments.callee.name}: readDB(DBdict) error:`, error);
       }
@@ -160,14 +160,14 @@ async function getAccounts() {
 
     // we could read DB_JSON and it is valid
     if (DBdict.constructor == Object && 'accounts' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found accounts in DBdict`);
+      debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
       return DBdict.accounts;
       
     // we could not read DB_JSON or it is invalid
     } else {
       try {
         accounts = await getAccountsFromDMS();
-        debugLog(`${arguments.callee.name}: got accounts from getAccountsFromDMS()`);
+        debugLog(`${arguments.callee.name}: got ${accounts.length} from getAccountsFromDMS()`);
       } catch (error) {
         console.error(`${arguments.callee.name}: Error with getAccountsFromDMS():`, error);
       }
@@ -195,7 +195,7 @@ async function getAccounts() {
   } catch (error) {
     console.error(`${arguments.callee.name}: Error retrieving accounts:`, error);
     debugLog(`${arguments.callee.name}: Error retrieving accounts:`, error);
-    throw new Error('Error retrieving accounts');
+    throw new Error(`${arguments.callee.name}: Error retrieving accounts:`);
   }
 }
 
@@ -205,14 +205,14 @@ async function getAccountsFromDMS() {
   try {
     debugLog(`${arguments.callee.name}: execSetup(${command})`);
     const stdout = await execSetup(command);
+    const accounts = [];
 
     // Parse multiline output with regex to extract email and size information
-    const accounts = [];
     // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
     const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
     // const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\.\S+)\s+\(\s+([\w\.\~]+)\s+\/\s+([\w\.\~]+)\s+\)\s+\[(\d+)%\]/;
-    const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\.\S+)\s+([\w\.\~]+)\s+([\w\.\~]+)\s+(\d+)%/;
-    const accountLineRegexQuotaOFF = /(\*\s+)(\S+)@(\S+\.\S+)/;
+    const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\S+)\s+([\w\.\~]+)\s+([\w\.\~]+)\s+(\d+)%/;
+    const accountLineRegexQuotaOFF = /(\*\s+)(\S+)@(\S+\S+)/;
 
     // Process each line individually
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
@@ -270,7 +270,7 @@ async function getAccountsFromDMS() {
   } catch (error) {
     console.error(`${arguments.callee.name}: Error execSetup(${command}):`, error);
     debugLog(`${arguments.callee.name}: Error execSetup(${command}):`, error);
-    throw new Error(`Error execSetup(${command})`);
+    throw new Error(`${arguments.callee.name}: Error execSetup(${command})`);
   }
 }
 
@@ -318,6 +318,115 @@ async function deleteAccount(email) {
 
 // Function to retrieve aliases
 async function getAliases() {
+  var force = false;
+  var DBdict = {};
+  var aliases = [];
+  debugLog(`${arguments.callee.name}: start (force=${force})`);
+  
+  try {
+    
+     if (!force && fs.existsSync(DB_JSON)) {
+      debugLog(`${arguments.callee.name}: read DBdict from ${DB_JSON} (force=${force})`);
+      
+      try {
+        DBdict = await readDB();
+        debugLog(`${arguments.callee.name}: DBdict[aliases]:`, DBdict['aliases']);
+      } catch (error) {
+        debugLog(`${arguments.callee.name}: readDB(DBdict) error:`, error);
+      }
+    }
+    
+
+    // we could read DB_JSON and it is valid
+    if (DBdict.constructor == Object && 'aliases' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found DBdict['aliases'].length aliases in DBdict`);
+      return DBdict.aliases;
+      
+    // we could not read DB_JSON or it is invalid
+    } else {
+      try {
+        aliases = await getAliasesFromDMS();
+        debugLog(`${arguments.callee.name}: got ${aliases.length} from getAliasesFromDMS()`);
+      } catch (error) {
+        console.error(`${arguments.callee.name}: Error with getAliasesFromDMS():`, error);
+      }
+    }
+    
+    // since we had to call getAliasesFromDMS, we save DB_JSON
+    if (Array.isArray(aliases) && aliases.length) {
+      DBdict["aliases"] = aliases;
+      // DBdict = { ...DBdict, "aliases": aliases };
+      
+      try {
+        await writeDB(DBdict);
+      } catch (error) {
+        console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
+      }
+      
+    // unknown error
+    } else {
+      console.error(`${arguments.callee.name}: Unknown error retrieving aliases`);
+    }
+
+
+    return aliases;
+    
+  } catch (error) {
+    console.error(`${arguments.callee.name}: Error retrieving aliases:`, error);
+    debugLog(`${arguments.callee.name}: Error retrieving aliases:`, error);
+    throw new Error(`${arguments.callee.name}: Error retrieving aliases`);
+  }
+}
+
+
+// Function to retrieve aliases from DMS
+async function getAliasesFromDMS() {
+  const command = 'alias list';
+  try {
+    debugLog(`${arguments.callee.name}: execSetup(${command})`);
+    const stdout = await execSetup(command);
+    const aliases = [];
+
+    // Parse each line in the format "* source destination"
+    const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
+    debugLog(`${arguments.callee.name}: Raw alias list response:`, lines);
+
+    // Modified regex to be more tolerant of control characters that might appear in the output
+    const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
+    const aliasRegex = /\*\s+(\S+@\S+)\s+(\S+@\S+)/;
+
+    for (let i = 0; i < lines.length; i++) {
+      // Clean the line from binary control characters
+      const line = lines[i].replace(emailLineValidChars, '').trim();
+
+      if (line.includes('*')) {
+        const match = line.match(aliasRegex);
+        if (match) {
+          const source = match[1];
+          const destination = match[2];
+          debugLog(`${arguments.callee.name}: Parsed alias: ${source} -> ${destination}`);
+
+          aliases.push({
+            source,
+            destination,
+          });
+        } else {
+          debugLog(`${arguments.callee.name}: Failed to parse alias line: ${line}`);
+        }
+      }
+    }
+
+    debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
+    return aliases;
+  } catch (error) {
+    console.error(`${arguments.callee.name}: Error execSetup(${command}):`, error);
+    debugLog(`${arguments.callee.name}: Error execSetup(${command}):`, error);
+    throw new Error(`${arguments.callee.name}: Error execSetup(${command})`);
+  }
+}
+
+// Function to retrieve aliases
+async function getAliasesOLD() {
   try {
     debugLog(`${arguments.callee.name}: Getting aliases list`);
     const stdout = await execSetup('alias list');
@@ -438,9 +547,9 @@ async function getServerStatus() {
 
     const result = {
       status: isRunning ? 'running' : 'stopped',
+      name: name,
+      version: version,
       resources: {
-        name: name,
-        version: version,
         cpu: cpuUsage,
         memory: memoryUsage,
         disk: diskUsage,
