@@ -1,12 +1,12 @@
 {
   "name": "dms-gui-backend",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "mock": "json-server --watch db.json --port 3001",
+    "mock": "json-server --watch /app/backend/db.json --port 3001",
     "format": "prettier --write \"**/*.{js,json}\"",
     "format:check": "prettier --check \"**/*.{js,json}\""
   },

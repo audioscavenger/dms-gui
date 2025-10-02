@@ -1,6 +1,6 @@
 {
   "name": "dms-gui",
-  "version": "1.0.5.2",
+  "version": "1.0.5.3",
   "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)",
   "main": "index.js",
   "scripts": {

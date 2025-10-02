@@ -58,6 +58,8 @@ services:
 # docker login -u audioscavenger
 # docker build -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.4 .
 # docker push audioscavenger/dms-gui --all-tags
+# docker build -t audioscavenger/dms-gui:test .
+# docker push audioscavenger/dms-gui:test
 
 
 ## upgrade commands:

@@ -1,23 +1,23 @@
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
+const fsPromises = fs.promises;
 
 // Docker container name for docker-mailserver
 const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
 const SETUP_SCRIPT = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
+const DB_JSON = process.env.DB_JSON || '/app/config/db.json';
 
 // Debug flag
 const DEBUG = process.env.DEBUG === 'true';
 
 /**
- * getPackageJson to get the version fo this project from package.json
+ * getJson to get the version fo this project from package.json
  * @param {string} package - json to read, defaults to /package.json
  */
-function getPackageJson(package = '/package.json') {
-  //Reach the package.json file
-  const path = `${process.cwd()}/${package}`;
-  const packageData = JSON.parse(fs.readFileSync(path, "utf8"));
-  return packageData;
+function getJson(jsonFile = '/package.json') {
+  const jsonFilePath = `${process.cwd()}/${jsonFile}`;
+  return JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
 }
 
 /**
@@ -25,9 +25,9 @@ function getPackageJson(package = '/package.json') {
  * @param {string} message - Message to log
  * @param {any} data - Optional data to log
  */
-function debugLog(message, data = null) {
+async function debugLog(message, data = null) {
   // try {
-    // throw new Error('First one')
+    // throw new Error('stack hack to get callee.caller in strict mode')
   // } catch (error) {
     
     // console.log(`[DEBUG] error.stack:`, error.stack.split('\n')[2]);
@@ -109,11 +109,102 @@ async function execSetup(setupCommand) {
   return execInContainer(`${SETUP_SCRIPT} ${setupCommand}`);
 }
 
+
+async function readDB() {
+  try {
+    DBdict = JSON.parse(fs.readFileSync(DB_JSON, "utf8"));
+    debugLog(`${arguments.callee.name}: got DBdict from ${DB_JSON}`);
+    return DBdict;
+  } catch (error) {
+    debugLog(`${arguments.callee.name}: ${DB_JSON} read error:`, error);
+    throw new Error('readDB Error reading DB_JSON');
+  }
+}
+
+
+async function writeDB(DBdict) {
+  if (DBdict.constructor == Object) {
+    try {
+      fs.writeFileSync(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
+      debugLog(`${arguments.callee.name}: Wrote DBdict into ${DB_JSON}`);
+    } catch (error) {
+      debugLog(`${arguments.callee.name}: ${DB_JSON} write error:`, error);
+      throw new Error('Error writting DB_JSON');
+    }
+  } else {
+    throw new Error('writeDB Error: DBdict not an Object');
+  }
+}
+
+
 // Function to retrieve email accounts
 async function getAccounts() {
+  var force = false;
+  var DBdict = {};
+  var accounts = [];
+  debugLog(`${arguments.callee.name}: start (force=${force})`);
+  
   try {
-    debugLog(`${arguments.callee.name}: Getting email accounts list`);
-    const stdout = await execSetup('email list');
+    
+     if (!force && fs.existsSync(DB_JSON)) {
+      debugLog(`${arguments.callee.name}: read DBdict from ${DB_JSON} (force=${force})`);
+      
+      try {
+        DBdict = await readDB();
+        debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+      } catch (error) {
+        debugLog(`${arguments.callee.name}: readDB(DBdict) error:`, error);
+      }
+    }
+    
+
+    // we could read DB_JSON and it is valid
+    if (DBdict.constructor == Object && 'accounts' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found accounts in DBdict`);
+      return DBdict.accounts;
+      
+    // we could not read DB_JSON or it is invalid
+    } else {
+      try {
+        accounts = await getAccountsFromDMS();
+        debugLog(`${arguments.callee.name}: got accounts from getAccountsFromDMS()`);
+      } catch (error) {
+        console.error(`${arguments.callee.name}: Error with getAccountsFromDMS():`, error);
+      }
+    }
+    
+    // since we had to call getAccountsFromDMS, we save DB_JSON
+    if (Array.isArray(accounts) && accounts.length) {
+      DBdict["accounts"] = accounts;
+      // DBdict = { ...DBdict, "accounts": accounts };
+      
+      try {
+        await writeDB(DBdict);
+      } catch (error) {
+        console.error(`${arguments.callee.name}:writeDB(DBdict) error:`, error);
+      }
+      
+    // unknown error
+    } else {
+      console.error(`${arguments.callee.name}: Unknown error retrieving accounts`);
+    }
+
+
+    return accounts;
+    
+  } catch (error) {
+    console.error(`${arguments.callee.name}: Error retrieving accounts:`, error);
+    debugLog(`${arguments.callee.name}: Error retrieving accounts:`, error);
+    throw new Error('Error retrieving accounts');
+  }
+}
+
+// Function to retrieve email accounts from DMS
+async function getAccountsFromDMS() {
+  const command = 'email list';
+  try {
+    debugLog(`${arguments.callee.name}: execSetup(${command})`);
+    const stdout = await execSetup(command);
 
     // Parse multiline output with regex to extract email and size information
     const accounts = [];
@@ -177,9 +268,9 @@ async function getAccounts() {
     debugLog(`${arguments.callee.name}: Found ${accounts.length} accounts`);
     return accounts;
   } catch (error) {
-    console.error(`${arguments.callee.name}: Error retrieving accounts:`, error);
-    debugLog(`${arguments.callee.name}: Account retrieval error:`, error);
-    throw new Error('Unable to retrieve account list');
+    console.error(`${arguments.callee.name}: Error execSetup(${command}):`, error);
+    debugLog(`${arguments.callee.name}: Error execSetup(${command}):`, error);
+    throw new Error(`Error execSetup(${command})`);
   }
 }
 
@@ -303,7 +394,7 @@ async function getServerStatus() {
     debugLog(`${arguments.callee.name}: Getting server status`);
 
     // Get this project version
-    const { name, version } = getPackageJson();
+    const { name, version } = getJson();
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
@@ -388,5 +479,5 @@ module.exports = {
   addAlias,
   deleteAlias,
   getServerStatus,
-  getPackageJson,
+  getJson,
 };

@@ -17,9 +17,9 @@ A graphical user interface for managing [Docker Mailserver](https://github.com/d
 
 ## Requirements
 
-- Node.js (v16+)
+- Node.js (v24)
 - npm
-- Docker Mailserver (installed and configured)
+- [Docker Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
 ## Project Structure
 
