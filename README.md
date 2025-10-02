@@ -40,7 +40,7 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 
 ## Configuration
 
-Copy `./config/.env.example` ro `./config/.env` and update with your own environment:
+Copy `./config/.dms-gui.env.example` ro `./config/.dms-gui.env` and update with your own environment:
 
 ```
 # Server port
@@ -96,7 +96,7 @@ services:
       - dms
     
     # use either ones: env_file or the environment section:
-    env_file: ./config/.env
+    env_file: ./config/.dms-gui.env
     
     environment:
       TZ: ${TZ}
@@ -110,7 +110,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./dms-gui/config/:/app/config/
+      - ./config/:/app/config/
       
       - /var/run/docker.sock:/var/run/docker.sock:ro
     
@@ -175,7 +175,7 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
   -v /etc/localtime:/etc/localtime:ro \
-  -v./dms-gui/config/:/app/config/ \
+  -v./config/:/app/config/ \
   audioscavenger/dms-gui:latest
 ```
 
@@ -231,7 +231,7 @@ npm run format:check
 cd backend
 npm install
 ```
-Configure the `./config/.env` file with the appropriate [#environment-variables], using `./config/.env.example`
+Configure the `./config/.dms-gui.env` file with the appropriate [#environment-variables], using `./config/.dms-gui.env.example`
 
 ### Frontend
 

@@ -9,7 +9,7 @@ README.cmd
 node_modules/
 
 # Environment variables
-!.env.example
+!.dms-gui.env.example
 
 # Logs
 logs

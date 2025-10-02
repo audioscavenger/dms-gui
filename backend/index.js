@@ -5,7 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const dockerMailserver = require('./dockerMailserver');
 
-dotenv.config({ path: '/app/config/.env' });
+dotenv.config({ path: '/app/config/.dms-gui.env' });
 
 const app = express();
 const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
