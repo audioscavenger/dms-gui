@@ -33,11 +33,11 @@ services:
       # - ./backend/dockerMailserver.js:/app/backend/dockerMailserver.js:ro
       # - ./backend/index.js:/app/backend/index.js:ro
 
-      # if you want to update the packages... mount those and run ncu+npm install from the container and poof
-      # - ./backend/package.json:/app/backend/package.json
-      # - ./backend/package-lock.json:/app/backend/package-lock.json
-      # - ./frontend/package.json:/app/frontend/package.json
-      # - ./frontend/package-lock.json:/app/frontend/package-lock.json
+      # always keep packages up to date... mount those and run npx+npm install from the container and then same them
+      - ./backend/package.json:/app/backend/package.json
+      - ./backend/package-lock.json:/app/backend/package-lock.json
+      - ./frontend/package.json:/app/frontend/package.json
+      - ./frontend/package-lock.json:/app/frontend/package-lock.json
       
     # # add your proxy network if you need:
     networks:
@@ -52,8 +52,8 @@ networks:
 ## build commands: https://hub.docker.com/r/dunajdev/docker-mailserver-gui
 ## build commands: https://hub.docker.com/repositories/audioscavenger
 
-# docker rm dms-gui dms-gui-dms-gui; docker image prune -f
-# alias buildup='docker-compose up --build --force-recreate'
+# docker container prune -f && docker image prune -f
+# alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
 # docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .

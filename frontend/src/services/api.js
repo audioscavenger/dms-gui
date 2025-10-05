@@ -1,4 +1,4 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+const debug = true;
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
@@ -48,12 +48,33 @@ export const getSettings = async () => {
   }
 };
 
-export const saveSettings = async (containerName, setupPath, username, email, password) => {
+export const saveSettings = async (containerName, setupPath) => {
   try {
-    const response = await api.post('/settings', { containerName, setupPath, username, email, password });
+    const response = await api.post('/settings', { containerName, setupPath });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error saving settings:', error);
+    throw error;
+  }
+};
+
+
+export const getLogins = async () => {
+  try {
+    const response = await api.get(`/logins`);
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error getting logins:', error);
+    throw error;
+  }
+};
+
+export const saveLogins = async (username, email, password) => {
+  try {
+    const response = await api.post('/logins', { username, email, password });
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error saving logins:', error);
     throw error;
   }
 };

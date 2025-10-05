@@ -15,18 +15,19 @@ import {
   FormField,
   LoadingSpinner,
 } from '../components';
+// const { name, version, description } = require('../../package.json');  
+
 import { useRef } from 'react';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
-// const { name, version, description } = require('../../package.json');  
 
 const Accounts = () => {
   const passwordFormRef = useRef(null);
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -112,7 +113,7 @@ const Accounts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
+    setSuccessMessage(null);
 
     if (!validateForm()) {
       return;
@@ -207,7 +208,7 @@ const Accounts = () => {
   const handleSubmitPasswordChange = async (e) => {
     e.preventDefault();
     setError(null);
-    setSuccessMessage('');
+    setSuccessMessage(null);
 
     if (!validatePasswordForm()) {
       return;
@@ -279,9 +280,11 @@ const Accounts = () => {
       <h2 className="mb-4">{t('accounts.title')}</h2>
       <AlertMessage type="danger" message={error} />
       <AlertMessage type="success" message={successMessage} />
+      
       <Row>
         {' '}
         {/* Use Row component */}
+        
         <Col md={6} className="mb-4">
           {' '}
           {/* Use Col component */}
@@ -332,6 +335,7 @@ const Accounts = () => {
           </Card>
         </Col>{' '}
         {/* Close first Col */}
+        
         <Col md={6}>
           {' '}
           {/* Use Col component */}
@@ -346,8 +350,10 @@ const Accounts = () => {
           </Card>
         </Col>{' '}
         {/* Close second Col */}
+        
       </Row>{' '}
       {/* Close Row */}
+      
       {/* Password Change Modal using react-bootstrap */}
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>

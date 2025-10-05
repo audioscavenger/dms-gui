@@ -12,6 +12,7 @@ const DB_PATH       = process.env.DB_PATH || '/app/config';
 const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
+const DB_Logins     = DB_PATH + '/db.logins.json';
 
 const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
@@ -44,6 +45,7 @@ async function formatError(errorMsg, error) {
   
   debugLog(`${arguments.callee.name}: error(${typeof error})=`,error);
   var split;
+  var splitError;
   const regexSplit = /ERROR:?|\n/i;
   const regexCleanup = /[\"\'\:\`]/g;
   
@@ -52,7 +54,7 @@ async function formatError(errorMsg, error) {
   } else {
     split = error.message.split(regexSplit);
   }
-  let splitError = (split.length > 1) ? split[1] : split;
+  splitError = (split.length > 1) ? split[1] : split;
   
   errorMsg = `${errorMsg}: ` + splitError.replace(regexColors,"").replace(regexPrintOnly,"").replace(regexCleanup, "");
   return errorMsg;
@@ -213,7 +215,7 @@ async function getSettings() {
     
     // we could read DB_Settings and it is valid
     if (DBdict.constructor == Object && 'settings' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['settings']).length} settings in DBdict`);
+      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['settings']).length} settings in DB_Settings`);
       return DBdict['settings'];
       
     // we could not read DB_Settings or it is invalid
@@ -233,20 +235,70 @@ async function getSettings() {
 
 
 // Function to save settings
-async function saveSettings(containerName, setupPath, username, email, password) {
+async function saveSettings(containerName, setupPath) {
   DBdict = {settings:{}};
   try {
     DBdict.settings['containerName'] = containerName;
     DBdict.settings['setupPath'] = setupPath;
-    DBdict.settings['username'] = username;
-    DBdict.settings['email'] = email;
-    DBdict.settings['password'] = password;
     
     debugLog(`${arguments.callee.name}: Saving settings:`,DBdict.settings);
     await writeJson(DB_Settings, DBdict);
-    return { success: true, containerName };
+    return { success: true };
   } catch (error) {
     let backendError = 'Error saving settings';
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
+  }
+}
+
+
+// Function to retrieve logins
+async function getLogins() {
+  var DBdict = {};
+  var logins = {};
+  debugLog(`${arguments.callee.name}: start`);
+  
+  try {
+    
+    debugLog(`${arguments.callee.name}: calling DBdict readJson(${DB_Logins})`);
+    DBdict = await readJson(DB_Logins);
+    debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+    
+    // we could read DB_Logins and it is valid
+    if (DBdict.constructor == Object && 'logins' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['logins']).length} entries in DB_Logins`);
+      return DBdict['logins'];
+      
+    // we could not read DB_Logins or it is invalid
+    } else {
+      console.log(`${arguments.callee.name}: ${DB_Logins} is empty`);
+    }
+    
+    return logins;
+    
+  } catch (error) {
+    let backendError = 'Error retrieving logins';
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
+  }
+}
+
+
+// Function to save logins
+async function saveLogins(username, email, password) {
+  DBdict = {logins:{}};
+  try {
+    DBdict.logins['username'] = username;
+    DBdict.logins['email'] = email;
+    DBdict.logins['password'] = password;
+    
+    debugLog(`${arguments.callee.name}: Saving logins:`,DBdict.logins);
+    await writeJson(DB_Logins, DBdict);
+    return { success: true };
+  } catch (error) {
+    let backendError = 'Error saving logins';
     let ErrorMsg = await formatError(backendError, error)
     console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
@@ -716,5 +768,7 @@ module.exports = {
   readJson,
   getSettings,
   saveSettings,
+  getLogins,
+  saveLogins,
 };
 // );

@@ -1,21 +1,29 @@
 ## BUGS:
+* [ ] - the left menu is only as high as the windows on first load
 ## TODO:
 * [ ] - add a login page
-* [ ] - docker.sock seems frowned upon, how do we do without it?
-* [ ] - docker.sock could be ssh: https://docs.docker.com/engine/security/protect-access/
 * [ ] - PORT_NODEJS: package.json .env webpack etc... use hard coded 3001
-* [ ] - Dashboard: add index section
-* [ ] - backend/API: add index update command
-* [ ] - Dashboard: add index update command
-* [ ] - Dashboard: add current hacking attempts
-* [ ] - Dashboard: there is no such thing as disk usage with docker. remove?
-* [ ] - find a way for compose to only access dms and no other containers because it freaks out some
+* [ ] - Settings:   add indexing section
+* [ ] - Dashboard:  add indexing section
+* [ ] - Dashboard:  add index update command
+* [ ] - Dashboard:  add current hacking attempts
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 * [ ] - Dashboard/aliases are correctly sorted OR use agGrid for headers sorting
+* [ ] - translation: what are all those cannot* messages? no module uses them
 * [ ] - frontend/api.js and plenty other files could also use translate for their error messages
-* [ ] - frontend: find a way to force the first dashboard call to refresh=true
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [ ] - frontend/Settings: split data into multiple forms and columns
+* [x] 1.0.6.4 - frontend/Settings: refactor FormFields and load independent JSX forms
+* [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
+* [ ] - frontend/pages: refactor validate*Form and load them from individual files
+* [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
+* [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
+* [x] 1.0.6.4 - backend/index: add api POST /api/logins
+* [x] 1.0.6.4 - backend: add functions getLogins saveLogins
+* [x] 1.0.6.4 - frontend/api: add api call getLogins saveLogins
+* [x] 1.0.6.4 - frontend/Settings: split data into multiple forms and columns
+* [x] 1.0.6.3 - removed python3 as octoDNS will be separate container
+* [x] 1.0.6.3 - added python3 for octoDNS but I cannot get it working after 3 hours of labor
+* [x] 1.0.6.3 - frontend/Dashboard: find a way to force the first load only to refresh=true
 * [x] 1.0.6.3 - update README with trick to access /docs
 * [x] 1.0.6.3 - Should we rely on setup script or more simply read the regex/virtual files.cf off dms directly? --> NO because we still need to send commands anyway
 * [x] 1.0.6.2 - backend: formatError removes colors too
@@ -49,3 +57,83 @@
 * [x] 1.0.3 - Better debug logging
 * [x] 1.0.3 - Variabilize SETUP_SCRIPT
 * [x] 1.0.3 - Initial commit from someone else's AI slop
+## DECISIONS
+* [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
+* [ ] - docker.sock seems frowned upon, how do we do without it? answer from @polarathene:
+  - The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
+* [ ] - docker rootless seems simple enough but I am afraid of other consequences: https://docs.docker.com/engine/security/rootless/
+* [ ] - docker.sock could become caddy: see https://github.com/orgs/docker-mailserver/discussions/4584
+* [ ] - add fail2ban management?
+* [ ] - add fail2ban status?
+* [ ] - add mailbox statistics?
+* [ ] - offer DKIM DMARC display etc?
+* [x] - add clouflare API calls to update DKIM etc? see https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
+* [x] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. I doubt this is used by anyone
+* [x] - octodns will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
+* [ ] - frontend/Settings: explore refactoring idea from @polarathene
+
+<!--
+search for base image with nodejs+py3:
+| image | size | comment |
+| ------------------------------------------- | ----- | ----------------------------------------- |
+| node:24-alpine                              | 168MB |                                           |
+| node:24-alpine dms-gui                      | 217MB | (virtual 217MB) has node v24              |
+| node:24-alpine dms-gui +py3                 | 255MB | (virtual 255MB) has node v24              |
+| node:24-alpine dms-gui +py3+pip             | 276MB | (virtual 276MB) has node v24              |
+| debian:12-slim                              | 75MB  |                                           |
+| debian:12-slim dms-gui +node18+py3          | 366MB | (virtual 366MB)                           |
+| debian:13-slim                              | 79MB  |                                           |
+| debian:13-slim dms-gui +node20+py3          | 393MB | (virtual 392MB)                           |
+| docker-mailserver/docker-mailserver:latest  | 762MB | has py3 and requires +70MB for nodejs v18 |
+| debian:13-slim                              | 79MB  | (virtual 261MB)                           |
+| debian:13-slim +node20                      | 79MB  | +127MB                                    |
+| debian:13-slim +node20-recommends           | 79MB  | +105MB                                    |
+| debian:13-slim +py3                         | 79MB  | +443MB                                    |
+| debian:13-slim +py3-recommends              | 79MB  | +38MB                                     |
+| debian:13-slim +node20+py3-recommends       | 79MB  | +143MB                                    |
+```
+docker buildx build --no-cache -t dms-gui-24-alpine .
+docker buildx build --no-cache -t dms-gui-12-slim .
+docker buildx build --no-cache -t dms-gui-13-slim .
+
+docker image pull debian:12-slim
+docker image pull debian:13-slim
+docker run --name debian13 debian:13-slim sleep infinity
+docker exec -it debian13 sh
+apt update
+apt install nodejs
+apt install nodejs --no-install-recommends
+apt install python3 python3-pip
+apt install python3 python3-pip --no-install-recommends
+apt install python3 python3-pip --no-install-recommends
+apt install nodejs python3 python3-pip
+apt install nodejs python3 python3-pip --no-install-recommends
+docker kill debian13
+docker rm debian13
+```
+
+
+https://octodns.readthedocs.io/en/latest/index.html#providers
+test https://octodns.readthedocs.io/en/latest/getting-started.html = total 302MB
+mkdir -p octodns/config/octodns
+cd octodns
+
+# provider-specific-requirements would be things like: octodns-route53 octodns-azure
+python -m venv env
+source /app/octodns/env/bin/activate
+pip install octodns octodns-cloudflare
+
+# https://github.com/octodns/octodns-cloudflare/
+vi /app/config/octodns/octodns.cloudflare.yaml
+vi /app/config/octodns/domain.com.yaml
+
+# https://octodns.readthedocs.io/en/latest/getting-started.html
+octodns-validate  --config-file=/app/config/octodns.cloudflare.yaml
+octodns-sync      --config-file=/app/config/octodns.cloudflare.yaml
+octodns-sync      --config-file=/app/config/octodns.cloudflare.yaml --doit
+
+octodns-sync --version
+  # octoDNS 1.13.0
+
+-->
+

@@ -1,3 +1,4 @@
+const debug = (process.env.DEBUG === 'true') ? true : false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getServerStatus, getAccounts, getAliases } from '../services/api';
@@ -5,10 +6,11 @@ import { AlertMessage, DashboardCard, LoadingSpinner } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 const { name, version, description } = require('../../package.json');  
+var refresh = true;
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const [status, setStatus] = useState({
+  const [status, setServerStatus] = useState({
     status: 'loading',
     name: name,
     version: version,
@@ -16,31 +18,33 @@ const Dashboard = () => {
   });
   const [accountsCount, setAccountsCount] = useState(0);
   const [aliasesCount, setAliasesCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDashboardData(false);
+    fetchDashboard(refresh);
+    refresh = false;
 
     // Refresh data every 30 seconds
-    const interval = setInterval(fetchDashboardData, 30000);
+    const interval = setInterval(fetchDashboard, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardData = async (refresh) => {
+  const fetchDashboard = async (refresh) => {
+    if (debug) console.debug('ddebug fetchDashboard refresh',refresh);
     refresh = (refresh === undefined) ? false : refresh;
     try {
       setLoading(true);
 
       // Fetch data in parallel
-      // const [statusResponse, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
+      // const [statusData, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
       // Fetch data sequentially because otherwise DBdict gets overwritten
-      const statusResponse = await getServerStatus();
+      const statusData = await getServerStatus();
       const accountsResponse = await getAccounts(refresh);
       const aliasesResponse = await getAliases(refresh);
 
-      setStatus(statusResponse);
+      setServerStatus(statusData);
       setAccountsCount(accountsResponse.length);
       setAliasesCount(aliasesResponse.length);
       setError(null);
@@ -65,7 +69,7 @@ const Dashboard = () => {
     return 'dashboard.status.unknown';
   };
 
-  if (loading && !status) {
+  if (isLoading && !status) {
     return <LoadingSpinner />;
   }
 

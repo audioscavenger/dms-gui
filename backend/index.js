@@ -1,3 +1,4 @@
+const debug = (process.env.DEBUG === 'true') ? true : false;
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -357,7 +358,7 @@ app.get('/api/settings', async (req, res) => {
     const settings = await dockerMailserver.getSettings();
     res.json(settings);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/settings: ${error.message}`);
+    await dockerMailserver.debugLog(`index GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
@@ -381,14 +382,6 @@ app.get('/api/settings', async (req, res) => {
  *                 type: string
  *               setupPath:
  *                 type: string
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *                 description: Email address of the new account
- *               password:
- *                 type: string
- *                 description: Password for the new account
  *     responses:
  *       201:
  *         description: settings saved successfully
@@ -399,17 +392,86 @@ app.get('/api/settings', async (req, res) => {
  */
 app.post('/api/settings', async (req, res) => {
   try {
-    const { containerName, setupPath, username, email, password } = req.body;
+    const { containerName, setupPath } = req.body;
     if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
     if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
-    if (!username) return res.status(400).json({ error: 'username is missing' });
-    if (!password) return res.status(400).json({ error: 'password is missing' });
 
-    const result = await dockerMailserver.saveSettings(containerName, setupPath, username, email, password);
-    res.status(201).json({ message: 'Settings saved successfully', email });
+    const result = await dockerMailserver.saveSettings(containerName, setupPath);
+    res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    await dockerMailserver.debugLog(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Endpoint for retrieving logins
+/**
+ * @swagger
+ * /api/logins:
+ *   get:
+ *     summary: Get logins
+ *     description: Retrieve all logins
+ *     responses:
+ *       200:
+ *         description: all logins even if empty
+ *       500:
+ *         description: Unable to retrieve logins
+ */
+app.get('/api/logins', async (req, res) => {
+  try {
+    const logins = await dockerMailserver.getLogins();
+    res.json(logins);
+  } catch (error) {
+    await dockerMailserver.debugLog(`index GET /api/logins: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve logins' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for saving logins
+/**
+ * @swagger
+ * /api/logins:
+ *   post:
+ *     summary: save Admin credentials
+ *     description: save Admin credentials
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 description: Email address of the new account
+ *               password:
+ *                 type: string
+ *                 description: Password for the new account
+ *     responses:
+ *       201:
+ *         description: Admin credentials saved successfully
+ *       400:
+ *         description: something is missing
+ *       500:
+ *         description: Unable to save Admin credentials
+ */
+app.post('/api/logins', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    // if (!email)     return res.status(400).json({ error: 'email missing' });
+    if (!username)  return res.status(400).json({ error: 'username is missing' });
+    if (!password)  return res.status(400).json({ error: 'password is missing' });
+
+    const result = await dockerMailserver.saveLogins(username, email, password);
+    res.status(201).json({ message: 'Admin credentials saved successfully' });
+  } catch (error) {
+    await dockerMailserver.debugLog(`index POST /api/logins: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to save Admin credentials' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -421,7 +483,5 @@ app.listen(PORT_NODEJS, async () => {
   console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status
-  if (process.env.DEBUG === 'true') {
-    console.debug('🐞 debug mode is ENABLED');
-  }
+  if (debug) console.debug('🐞 debug mode is ENABLED');
 });

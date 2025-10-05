@@ -24,7 +24,7 @@ const Aliases = () => {
   const { t } = useTranslation();
   const [aliases, setAliases] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     source: '',
@@ -101,7 +101,8 @@ const Aliases = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
+    setError(null);
+    setSuccessMessage(null);
 
     if (!validateForm()) {
       return;

@@ -21,7 +21,7 @@ Warning: no authentication security has been added yet! Anyone with access to yo
 
 ## Requirements
 
-- Node.js (node:slim)
+- Node.js (v18+)
 - npm
 - [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
