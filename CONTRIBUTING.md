@@ -16,27 +16,28 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## BUGS:
 
-* [ ] - the left menu is only as high as the window on first load
+* [ ] - the left menu is only as high as the window on first load, when you scroll down it's blank
 
 ## TODO:
 
+* [ ] - frontend+backend: refactoring in progress as advised by @polarathene
 * [ ] - add a login page
-* [ ] - PORT_NODEJS: package.json .env webpack etc... use hard coded 3001
-* [ ] - Settings:   add indexing section
-* [ ] - Dashboard:  add indexing section
-* [ ] - Dashboard:  add index update command
-* [ ] - Dashboard:  add current hacking attempts
+* [ ] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001
+* [ ] - translation: what are all those cannot* messages? no module uses them
+
 * [ ] - backend: encrypt password in db.logins.json
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
-* [ ] - Dashboard/accounts are correctly sorted OR use agGrid for headers sorting
-* [ ] - Dashboard/aliases are correctly sorted OR use agGrid for headers sorting
-* [ ] - translation: what are all those cannot* messages? no module uses them
-* [ ] - frontend/api.js and plenty other files could also use translate for their error messages
-* [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
 * [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
+* [ ] - frontend/Dashboard:  add indexing status
+* [ ] - frontend/Accounts:  add index reset/update commands with detection of DMS env
+* [ ] - frontend/Dashboard:  add current hacking attempts
+* [ ] - frontend/Accounts are correctly sorted OR use agGrid for headers sorting
+* [ ] - frontend/Aliases are correctly sorted OR use agGrid for headers sorting
+* [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
+* [ ] - frontend/api.js and plenty other files could also use translate for their error messages
 * [x] 1.0.7.1 - Renamed TODO.md as CONTRIBUTING.md
 * [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all is working, release.
 * [x] 1.0.6.5 - frontend/pages: loadingSpinner across the board
@@ -92,19 +93,20 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 ## DECISIONS
 
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
-* [ ] - docker.sock seems frowned upon, how do we do without it? answer from @polarathene:
-  - The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
-* [ ] - docker rootless seems simple enough but I am afraid of other consequences: https://docs.docker.com/engine/security/rootless/
+* [ ] - docker.sock seems frowned upon, why is it? Response from @polarathene:
+  > The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
+* [ ] - docker.sock seems frowned upon, how do we do without it? Maybe with Caddy and DMS api calls
+* [-] - docker rootless seems simple enough but I am afraid of other consequences: https://docs.docker.com/engine/security/rootless/
 * [ ] - docker.sock could become caddy: see https://github.com/orgs/docker-mailserver/discussions/4584
 * [ ] - add fail2ban management?
 * [ ] - add fail2ban status?
 * [ ] - add mailbox statistics?
 * [ ] - offer DKIM DMARC display etc?
 * [-] - add clouflare API calls to update DKIM etc? see https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
-* [x] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. Research needed
+* [-] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. Research needed
 * [x] - octodns will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
-* [x] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
-* [ ] - frontend/Settings: explore refactoring idea from @polarathene
+* [ ] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
+* [ ] - do we add multiple logins and roles?
 
 <!--
 search for base image with nodejs+py3:
