@@ -27,7 +27,7 @@ The ones you should never alter unless you want to develop:
 - `REACT_APP_API_URL`: defaults to `http://localhost:3001`
 - `DB_PATH`= defaults to `/app/config`
 
-### Deployment Options
+## Deployment Options
 
 You can deploy Docker Mailserver GUI in two ways:
 
@@ -36,29 +36,16 @@ You can deploy Docker Mailserver GUI in two ways:
 
 Each option is detailed in the sections below.
 
-## Project Structure
 
-```
-dms-gui/
-├── backend/               # Backend API
-├── frontend/              # Frontend React app
-├── docker/                # Docker configuration files
-│   ├── nginx.conf         # Nginx configuration
-│   └── start.sh           # Container startup script
-├── Dockerfile             # Docker image configuration
-├── docker-compose.yml     # Docker Compose configuration
-└── README.docker.md       # Docker setup documentation
-```
-
-## Option 1: Using Docker Hub Image
+### Option 1: Using Docker Hub Image
 
 The application is available as a pre-built Docker image on Docker Hub:
 
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:80 \
-  -p 3001:3001 \
+  -p 127.0.0.1:80:80 \
+  -p 127.0.0.1:3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
@@ -70,11 +57,11 @@ docker run -d \
 Where:
 - `dms` is the name of your docker-mailserver container
 - Port 80 is the gui
-- Port 3001 is for /docs
+- Port 3001 is for swagger `/docs`
 
-## Option 2: Building Locally with Docker Compose
+### Option 2: Building Locally with Docker Compose
 
-### Configuration
+#### Configuration
 
 Before building the application, adjust the `docker-compose.yml` file to match your docker-mailserver setup:
 
@@ -88,7 +75,7 @@ environment:
 
 That's it! Since we're using Docker API via the socket, no network configuration is needed. The application will communicate with docker-mailserver through the Docker daemon on the host.
 
-### Building and Running
+#### Building and Running
 
 To build and start the application:
 
@@ -101,7 +88,7 @@ This will:
 2. Start the container in detached mode
 3. Map port 3001 for the web interface
 
-## Accessing the Application
+#### Accessing the Application
 
 Once the container is running, you can access the web interface at:
 
@@ -109,7 +96,7 @@ Once the container is running, you can access the web interface at:
 http://localhost
 ```
 
-## Stopping the Application
+#### Stopping the Application
 
 To stop the application:
 
@@ -117,7 +104,7 @@ To stop the application:
 docker-compose down
 ```
 
-## Logs
+#### Logs
 
 To view logs from the container:
 
@@ -125,7 +112,7 @@ To view logs from the container:
 docker-compose logs -f mailserver-gui
 ```
 
-## Updating
+#### Updating
 
 To update the application after making changes (replace `image: audioscavenger/dms-gui` by `build: .` in the compose):
 
@@ -138,13 +125,14 @@ docker-compose up -d
 ## How It Works
 
 The Docker setup uses a multi-stage build process:
-1. First stage builds the React frontend
-2. Second stage prepares the Node.js backend
-3. Final stage combines both into a single image with Nginx and Docker client
+1. First stage builds the React frontend FROM `node:slim`
+2. Second stage prepares the Node.js backend FROM `node:slim`
+3. Final stage combines both into a single image with Nginx and Docker client FROM `node:24-alpine`
 
 When the container starts:
-1. The backend Node.js server runs on port 3001 inside the container
-2. The backend communicates with your docker-mailserver container via Docker API
+1. `/app/start.sh` is called
+2. The backend Node.js server runs on port 3001 inside the container
+3. nginx starts as a deamon and proxifies port 3001 to 80
 
 Optional, to be unlocked in Dockerfile:
 1. Nginx serves the frontend static files

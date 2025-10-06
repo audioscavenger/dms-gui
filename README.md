@@ -3,7 +3,7 @@
 
 A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
 
-Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything!
+Warning: NO authentication has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything! Use a proxy like [swag](https://docs.linuxserver.io/general/swag/).
 
 Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this risk.
 
@@ -212,8 +212,8 @@ As stated above, no security is in place yet. You must as a form of authenticati
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:80 \
-  -p 3001:3001 \
+  -p 127.0.0.1:80:80 \
+  -p 127.0.0.1:3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
@@ -253,8 +253,8 @@ For detailed Docker setup instructions, please refer to:
 ### Swagger API docs
 
 OAS description of all API endpoints is available at:
-* using compose + proxy: https://dms.domain.com/docs
-* using raw ports: https://dms.domain.com:3001/
+* using compose + proxy: http://localhost/docs or https://dms.domain.com/docs (with proxy)
+* using raw ports: http://localhost:3001/
 
 ![API](/assets/dms-gui-docs.webp)
 

@@ -1,6 +1,8 @@
 # Backend GUI for Docker Mailserver
 
-This is a backend API for the [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver) user interface, enabling management of email accounts, aliases, and other mail server functions.
+This is the heart of this project: backend + API. It receives calls with [express](https://www.npmjs.com/package/express) and caries system commands on the DMS container via `/var/run/docker.sock`.
+
+This is frowned upon for obvious security reasons. The alternative is to add a [Caddy](https://github.com/lucaslorentz/caddy-docker-proxy) api once DMS permits it, or maybe I will add the injection method one day. Don't trust some random dev project and read the code before trying on production data.
 
 ## Installation
 
@@ -29,6 +31,34 @@ PORT_NODEJS=3001
 SETUP_SCRIPT=/usr/local/bin/setup
 ```
 
+## Project Structure
+
+It's a very small size and classic React structure. Most has been factored but some other Forms could be refactored. Just follow the structure, it's fairly easy to grasp and with tools like [VScodium](https://vscodium.com/), it's even easier to handle.
+
+```
+dms-gui/
+├── backend/                    # Backend API
+│   ├── index.js                # /api server
+│   └── dockerMailserver.js     # Heart of the system
+├── frontend/                   # Frontend React app
+│   ├── public                  # favicon and index template
+│   └── src                     # Frontend sources build in step 1 & 2
+│       └── components          # Classic React factored components
+│       └── forms               # Classic React factored components
+│       └── locales             # Language packs for i18n
+│       └── pages               # the left menu items
+│       └── api                 # The internal API calls to the backend
+├── docker/                     # Docker configuration files
+│   ├── nginx.conf              # Nginx configuration
+│   └── start.sh                # Container startup script
+├── config/                     # Local config as db.json
+│   ├── db.*.json               # Local databases
+│   └── .dms-gui.env            # Your env variables
+├── Dockerfile                  # Docker image configuration
+├── docker-compose.yml          # Docker Compose configuration
+└── README.md                   # Docker setup documentation
+```
+
 ## Available endpoints
 
 - `GET /api/logins` - Get admin credentials
@@ -43,6 +73,7 @@ SETUP_SCRIPT=/usr/local/bin/setup
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases/:source/:destination` - Delete an alias
 
+The parsing of queries is done with [qs](https://www.npmjs.com/package/qs), a querystring parsing and stringifying library with some added security.
 
 ### API docs
 
@@ -60,3 +91,4 @@ Result:
 ```json
 {"status":"running","name":"dms-gui-backend","version":"1.0.6.3","resources":{"cpu":"3.22%","memory":"138.93MB","disk":"N/A"}}
 ```
+

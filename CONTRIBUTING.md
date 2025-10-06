@@ -1,3 +1,19 @@
+I work on this solo, until someone finds an interest like I do. Not claiming I can get to the level of complexity `Mailu` admin UI offers, but the goal is to have some usability.
+
+The `setup` offered by DMS is quite good tbh, and sufficient for 90% of your daily operations. But sometimes a quick glance at a modern dashboard is also beneficial.
+
+The primary goals are:
+
+1. kick start the project: **done**, thanks to dunajdev
+2. refactor, fix all the bugs, document and define scope: **done**
+3. ability to load/save/refresh data from json files or dms commands: **done**
+4. add rebuild/refresh xapian index buttons in Accounts page
+5. add DNS entries page
+6. add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
+7. Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
+
+After (7) my life will be complete and I won't need to work on this anymore :D
+
 ## BUGS:
 * [ ] - the left menu is only as high as the windows on first load
 ## TODO:
@@ -7,6 +23,7 @@
 * [ ] - Dashboard:  add indexing section
 * [ ] - Dashboard:  add index update command
 * [ ] - Dashboard:  add current hacking attempts
+* [ ] - backend: encrypt password in db.logins.json
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 * [ ] - Dashboard/accounts are correctly sorted OR use agGrid for headers sorting
 * [ ] - Dashboard/aliases are correctly sorted OR use agGrid for headers sorting
@@ -17,7 +34,8 @@
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
 * [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
-* [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all it working, release.
+* [x] 1.0.7.1 - Renamed TODO.md as CONTRIBUTING.md
+* [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all is working, release.
 * [x] 1.0.6.5 - frontend/pages: loadingSpinner across the board
 * [x] 1.0.6.5 - frontend/aliases: widen aliases table a little to accomodate 2 columns
 * [x] 1.0.6.5 - frontend/accounts: widen accounts table a little to recieve the xapian sync buttons
@@ -56,7 +74,7 @@
 * [x] 1.0.5 - backend: add DB_JSON=/app/config/db.json
 * [x] 1.0.5 - frontend: add favicon.png with webpack.config.js; tried everything for 30mn, I give up
 * [x] 1.0.4 - Implement shields.io badge
-* [x] 1.0.4 - Upload my forked container to hub.docker.com
+* [x] 1.0.4 - Upload my hard-forked container to hub.docker.com
 * [x] 1.0.4 - upgrade to 24-alpine
 * [x] 1.0.4 - show node and project version at start
 * [x] 1.0.4 - find a way to get the version from package.json into /api/status
