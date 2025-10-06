@@ -15,8 +15,11 @@ The primary goals are:
 After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## BUGS:
-* [ ] - the left menu is only as high as the windows on first load
+
+* [ ] - the left menu is only as high as the window on first load
+
 ## TODO:
+
 * [ ] - add a login page
 * [ ] - PORT_NODEJS: package.json .env webpack etc... use hard coded 3001
 * [ ] - Settings:   add indexing section
@@ -85,7 +88,9 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 * [x] 1.0.3 - Better debug logging
 * [x] 1.0.3 - Variabilize SETUP_SCRIPT
 * [x] 1.0.3 - Initial commit from someone else's AI slop
+
 ## DECISIONS
+
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
 * [ ] - docker.sock seems frowned upon, how do we do without it? answer from @polarathene:
   - The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
