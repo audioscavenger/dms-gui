@@ -4,28 +4,10 @@
 #   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .
 #   docker push audioscavenger/dms-gui --all-tags
 
-# ARG DEBIAN_FRONTEND=noninteractive
-# FROM debian:12-slim AS base
-# # FROM debian:13-slim AS base
-
-# # install nodejs
-# RUN apt update
-
-# # +127MB
-# RUN apt -y install nodejs
-# # + 932MB
-# # RUN apt -y install npm
-# # + 141MB
-# RUN apt -y install npm procps --no-install-recommends
-
-# RUN apt -y clean
-
-
 # -----------------------------------------------------
 # Stage 1: Build frontend https://hub.docker.com/_/node
 # https://dev.to/ptuladhar3/avoid-using-bloated-nodejs-docker-image-in-production-3doc
 FROM node:slim AS frontend-builder
-# FROM base AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -45,7 +27,6 @@ RUN npm audit fix
 # -----------------------------------------------------
 # Stage 2: Build backend
 FROM node:slim AS backend-builder
-# FROM base AS backend-builder
 
 WORKDIR /app/backend
 
@@ -66,20 +47,15 @@ COPY backend/ ./
 # RUN apk add --no-cache docker-cli
 
 # -----------------------------------------------------
-# Stage 3: Final image with Nginx and Node.js + python3
+# Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
-# FROM base
 
-# Install Python, needed for OctoDNS
-# RUN apk add python3 py3-pip
+ARG DMSGUI_VERSION=1.0.7
+ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
 # RUN apk add --no-cache docker-cli
 RUN apk add --no-cache nginx
-# RUN apk add --no-cache nginx python3 py3-pip  // nope we will add a separacte octoDNS container
-# # debian Install Nginx and Docker client - what is docker-cli for?
-# RUN apt -y install nginx python3 --no-install-recommends
-# RUN apt -y clean
 
 # Create app directories
 WORKDIR /app
@@ -99,8 +75,6 @@ RUN mkdir -p /run/nginx
 
 # nginx from alpine:
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-# # nginx from debian:
-# COPY docker/nginx.conf /etc/nginx/sites-available/default
 
 # Copy startup script
 COPY docker/start.sh /app/start.sh
@@ -112,3 +86,20 @@ EXPOSE 3001
 # Start Nginx and Node.js OR just node itself when slim is used for main stage
 # CMD ["node", "/app/backend/index.js"]
 CMD ["/app/start.sh"]
+
+
+# Add metadata to image:
+LABEL org.opencontainers.image.title="dms-gui"
+LABEL org.opencontainers.image.vendor="audioscavenger"
+LABEL org.opencontainers.image.authors="audioscavenger on GitHub"
+LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
+LABEL org.opencontainers.image.description=${DMSGUI_DESCRIPTION}
+LABEL org.opencontainers.image.url="https://github.com/audioscavenger/dms-gui"
+LABEL org.opencontainers.image.documentation="https://github.com/audioscavenger/dms-gui/blob/master/README.md"
+LABEL org.opencontainers.image.source="https://github.com/docker-mailserver/docker-mailserver"
+# ARG invalidates cache when it is used by a layer (implicitly affects RUN)
+# Thus to maximize cache, keep these lines last:
+LABEL org.opencontainers.image.revision=${DMSGUI_VERSION}
+LABEL org.opencontainers.image.version=${DMSGUI_VERSION}
+ENV DMSGUI_VERSION=${DMSGUI_VERSION}
+ENV DMSGUI_DESCRIPTION=${DMSGUI_DESCRIPTION}

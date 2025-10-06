@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,8 +17,7 @@ import {
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 // function FormSettings() {
-const FormSettings = () => {
-// const FormSettings = ({ onSettingsSubmit }) => {
+const FormSettings = ({ onStatusSubmit }) => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   const [submissionStatus, setSubmissionStatus] = useState(null); // 'idle', 'submitting', 'success', 'error'
@@ -32,12 +31,12 @@ const FormSettings = () => {
     setupPath: '',
   });
 
-  const { name, version, description } = require('../../package.json');  
   const [status, setServerStatus] = useState({
     status: 'loading',
-    name: '',
-    version: version,
+    name: 'dms-gui',
+    version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
+    internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
   });
 
 
@@ -54,8 +53,9 @@ const FormSettings = () => {
     const statusData    = await fetchServerStatus();
     const settingsData  = await fetchSettings();
 
-    setServerStatus(statusData);
     setSettings(settingsData);
+    setServerStatus(statusData);
+    onStatusSubmit(statusData);
 
     setLoading(false);
 
@@ -162,7 +162,6 @@ const FormSettings = () => {
         settings.containerName,
         settings.setupPath,
       );
-      // await onSettingsSubmit(settings);
       setSubmissionStatus('success');
       setSuccessMessage('settings.settingsSaved');
       fetchSettings(); // Refresh the settings
@@ -176,44 +175,45 @@ const FormSettings = () => {
 
   if (isLoading && !status) {
     return <LoadingSpinner />;
-  } else {
-    return (
-      <>
-        <AlertMessage type="danger" message={errorMessage} />
-        <AlertMessage type="success" message={successMessage} />
-
-        <form onSubmit={handleSubmitSettings} className="form-wrapper">
-          <FormField
-            type="text"
-            id="containerName"
-            name="containerName"
-            label="settings.containerName"
-            value={settings.containerName}
-            onChange={handleChangeSettings}
-            placeholder="dms"
-            error={formErrors.containerName}
-            helpText="settings.containerNameHelp"
-            required
-          />
-
-          <FormField
-            type="text"
-            id="setupPath"
-            name="setupPath"
-            label="settings.setupPath"
-            value={settings.setupPath}
-            onChange={handleChangeSettings}
-            placeholder="/usr/local/bin/setup"
-            error={formErrors.setupPath}
-            helpText="settings.setupPathHelp"
-            required
-          />
-        
-          <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
-        </form>
-      </>
-    );
   }
+  
+  return (
+    <>
+      <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="success" message={successMessage} />
+
+      <form onSubmit={handleSubmitSettings} className="form-wrapper">
+        <FormField
+          type="text"
+          id="containerName"
+          name="containerName"
+          label="settings.containerName"
+          value={settings.containerName}
+          onChange={handleChangeSettings}
+          placeholder="dms"
+          error={formErrors.containerName}
+          helpText="settings.containerNameHelp"
+          required
+        />
+
+        <FormField
+          type="text"
+          id="setupPath"
+          name="setupPath"
+          label="settings.setupPath"
+          value={settings.setupPath}
+          onChange={handleChangeSettings}
+          placeholder="/usr/local/bin/setup"
+          error={formErrors.setupPath}
+          helpText="settings.setupPathHelp"
+          required
+        />
+      
+        <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
+      </form>
+    </>
+  );
+
 }
 
 export default FormSettings;

@@ -106,6 +106,7 @@
     "settingsSaved": "Settings saved successfully!",
     "setupPath": "Setup.sh Script Path",
     "setupPathHelp": "Full path to the setup.sh script in your docker-mailserver installation.",
+    "name": "Name",
     "title": "Settings",
     "version": "Version"
   },

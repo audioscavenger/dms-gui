@@ -1,11 +1,11 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, UI settings, indexes, etc.
-
-Forked from [docker-mailserver-gui](https://github.com/dunaj-dev/docker-mailserver-gui)
+A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
 
 Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything!
+
+Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this risk.
 
 ## Features
 
@@ -14,19 +14,18 @@ Warning: no authentication security has been added yet! Anyone with access to yo
 - ↔️ Email alias management
 - 🔧 Docker-Mailserver connection configuration
 - 🌐 Multilingual support (English, Polish)
+- 👌 Cutting edge Node.JS v24
 
 ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
-<!-- 
-![Dashboard](/assets/dms-gui-Dashboard.webp)
+<!-- ![Dashboard](/assets/dms-gui-Dashboard.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
-![Settings](/assets/dms-gui-Settings.webp)
- -->
+![Settings](/assets/dms-gui-Settings.webp) -->
 
 ## Requirements
 
-- Node.js (node:slim)
-- npm
+- Node.js (v18+)
+- npm and dozens of packages
 - [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
 ## Project Structure
@@ -38,32 +37,46 @@ The application consists of two parts:
 
 ## Installation
 
-You have nothing to install, this is an all-included docker service for your MS compose, that provides a UI for DMS.
+You have nothing to install, this is an all-included docker image that provides a GUI for DMS.
 
 If you want to develop/pull requests and test, see README.docker.md and each README under the subfolders `backend` and `frontend`.
 
 ## Configuration
 
-Copy `./config/.dms-gui.env.example` to `./config/.dms-gui.env` and update with your own environment:
+Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for your own environment:
 
 ```
-# Server port
-PORT_NODEJS=3001
-REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
-DB_PATH=/app/config
-
 # Docker Mailserver Configuration
 SETUP_SCRIPT=/usr/local/bin/setup
 DMS_CONTAINER=dms
 
-# Debugging
-# Set to true to enable debug logs for Docker commands
-#DEBUG=true
+# backend port
+PORT_NODEJS=3001
 
-# Environment
+# Debugging
+# DEBUG=true
+
+# Dev Environment
+REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
+DB_PATH=/app/config
 # NODE_ENV=development
 NODE_ENV=production
 ```
+
+### Environment Variables
+
+- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
+
+- `SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
+- `DEBUG`: Node.js environment: (*production or development)
+
+The ones you should never alter unless you want to develop:
+
+- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
+- `NODE_ENV`: Node.js environment: (*production or development)
+- `REACT_APP_API_URL`: defaults to `http://localhost:3001`
+- `DB_PATH`= defaults to `/app/config`
+
 
 ## Language Support
 
@@ -103,24 +116,17 @@ services:
     env_file: ./config/.dms-gui.env
     
     environment:
-      - TZ=${TZ}
-
-      # Server port
-      - PORT_NODEJS=3001
-      - REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
-      - DB_PATH=/app/config
-
+      - TZ=${TZ:-UTC}
+      
       # Docker Mailserver Configuration
       - SETUP_SCRIPT=/usr/local/bin/setup
       - DMS_CONTAINER=dms
 
-      # Debugging
-      # Set to true to enable debug logs for Docker commands
-      # - DEBUG=true
+      # backend port
+      - PORT_NODEJS=3001
 
-      # Environment
-      # - NODE_ENV=development
-      - NODE_ENV=production
+      # Debugging
+      # - DEBUG=true
 
     expose:
       - 80    # frontend
@@ -162,6 +168,7 @@ server {
   
   server_name dms.*;
 
+  # swagger API docs
   location /docs {
 
     # enable the next two lines for http auth
@@ -217,15 +224,7 @@ docker run -d \
 
 **Note:** Replace `dms` with the name of your docker-mailserver container.
 
-### Environment Variables
-
-- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
-- `DEBUG`: Node.js environment: (*production or development)
-- `NODE_ENV`: Node.js environment: (*production or development)
-- `SETUP_SCRIPT`: the internal path the docker-mailserver setup script: normally `/usr/local/bin/setup`
-
-### Docker Features
+## Docker Features
 
 - Single container with both frontend and backend
 - Communication with docker-mailserver via Docker API
@@ -236,9 +235,69 @@ For detailed Docker setup instructions, please refer to:
 - [README.docker.md](README.docker.md) - Detailed Docker setup guide
 - [README.dockerhub.md](README.dockerhub.md) - Docker Hub specific information
 
-## Code Formatting
+## Available endpoints
 
-This project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
+- `GET /api/logins` - Get admin credentials
+- `POST /api/logins` - Save admin credentials
+- `GET /api/settings` - Get settings
+- `POST /api/settings` - Save settings
+- `GET /api/status` - Server status
+- `GET /api/accounts` - List email accounts [?refresh=true]
+- `POST /api/accounts` - Add a new account
+- `DELETE /api/accounts/:email` - Delete an account
+- `GET /api/aliases` - List aliases [?refresh=true]
+- `POST /api/aliases` - Add a new alias
+- `DELETE /api/aliases/:source/:destination` - Delete an alias
+
+
+### Swagger API docs
+
+OAS description of all API endpoints is available at:
+* using compose + proxy: https://dms.domain.com/docs
+* using raw ports: https://dms.domain.com:3001/
+
+![API](/assets/dms-gui-docs.webp)
+
+
+### API call Example:
+
+```shell
+curl -sSL https://dms.domain.com/api/status
+```
+
+Result:
+
+```json
+{
+  "status": "running",
+  "name": "dms-gui-backend",
+  "version": "1.0.6.5",
+  "internals": [
+    {
+      "name": "NODE_VERSION",
+      "value": "v24.9.0"
+    },
+    {
+      "name": "NODE_ENV",
+      "value": "development"
+    },
+    {
+      "name": "PORT_NODEJS",
+      "value": "3001"
+    }
+  ],
+  "resources": {
+    "cpu": "1.68%",
+    "memory": "587.98MB",
+    "disk": "N/A"
+  }
+}
+```
+
+
+## Behind the Scenes
+
+Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
 
 ### Automatic Formatting
 
@@ -265,15 +324,18 @@ npm run format:check
 
 ```bash
 cd backend
+npx npm-check-updates -u
 npm install
+npm audit fix
 ```
-Configure the `./config/.dms-gui.env` file with the appropriate [#environment-variables], using `./config/.dms-gui.env.example`
 
 ### Frontend
 
 ```bash
 cd frontend
+npx npm-check-updates -u
 npm install
+npm audit fix
 ```
 
 After running both parts, the application will be available at http://localhost:3000

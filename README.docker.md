@@ -1,6 +1,6 @@
 # Docker Mailserver GUI - Detailed Docker Setup
 
-This document provides detailed instructions for deploying and managing the [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver) GUI using Docker.
+This document provides detailed instructions for deploying and managing the [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver) GUI with compose. [Docker Hub image](https://hub.docker.com/r/audioscavenger/dms-gui).
 
 ## Prerequisites
 
@@ -16,10 +16,16 @@ This document provides detailed instructions for deploying and managing the [Doc
 Both deployment options use the same environment variables:
 
 - `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
+
+- `SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
 - `DEBUG`: Node.js environment: (*production or development)
+
+The ones you should never alter unless you want to develop:
+
+- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `NODE_ENV`: Node.js environment: (*production or development)
-- `SETUP_SCRIPT`: the internal path the docker-mailserver setup script: normally `/usr/local/bin/setup`
+- `REACT_APP_API_URL`: defaults to `http://localhost:3001`
+- `DB_PATH`= defaults to `/app/config`
 
 ### Deployment Options
 
@@ -51,21 +57,20 @@ The application is available as a pre-built Docker image on Docker Hub:
 ```bash
 docker run -d \
   --name dms-gui \
+  -p 80:80 \
   -p 3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
   -v /etc/localtime:/etc/localtime:ro \
-  -v./dms-gui/config/:/app/config/ \
+  -v./config/:/app/config/ \
   audioscavenger/dms-gui:latest
 ```
 
 Where:
 - `dms` is the name of your docker-mailserver container
-- Port 3001 is mapped to your host
-
-For more information about the Docker Hub image, visit:
-https://hub.docker.com/r/audioscavenger/dms-gui
+- Port 80 is the gui
+- Port 3001 is for /docs
 
 ## Option 2: Building Locally with Docker Compose
 
@@ -78,7 +83,7 @@ Before building the application, adjust the `docker-compose.yml` file to match y
 Example:
 ```yaml
 environment:
-  - DMS_CONTAINER=mail-server  # Your docker-mailserver container name
+  - DMS_CONTAINER=dms  # Your docker-mailserver container name
 ```
 
 That's it! Since we're using Docker API via the socket, no network configuration is needed. The application will communicate with docker-mailserver through the Docker daemon on the host.
@@ -122,11 +127,11 @@ docker-compose logs -f mailserver-gui
 
 ## Updating
 
-To update the application after making changes:
+To update the application after making changes (replace `image: audioscavenger/dms-gui` by `build: .` in the compose):
 
 ```bash
 docker-compose down
-docker-compose build
+docker-compose build .
 docker-compose up -d
 ```
 

@@ -8,15 +8,25 @@
 * [ ] - Dashboard:  add index update command
 * [ ] - Dashboard:  add current hacking attempts
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
+* [ ] - Dashboard/accounts are correctly sorted OR use agGrid for headers sorting
 * [ ] - Dashboard/aliases are correctly sorted OR use agGrid for headers sorting
 * [ ] - translation: what are all those cannot* messages? no module uses them
 * [ ] - frontend/api.js and plenty other files could also use translate for their error messages
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [x] 1.0.6.4 - frontend/Settings: refactor FormFields and load independent JSX forms
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
 * [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
+* [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all it working, release.
+* [x] 1.0.6.5 - frontend/pages: loadingSpinner across the board
+* [x] 1.0.6.5 - frontend/aliases: widen aliases table a little to accomodate 2 columns
+* [x] 1.0.6.5 - frontend/accounts: widen accounts table a little to recieve the xapian sync buttons
+* [x] 1.0.6.5 - backend/status: added bunch of internals to display on frontend/Settings
+* [x] 1.0.6.5 - backend/index: correctly handle optional boolean query parameters with qs
+* [x] 1.0.6.5 - backend/index: updated API calls descriptions
+* [x] 1.0.6.5 - docker: create DMSGUI_VERSION and DMSGUI_DESCRIPTION entries in Dockerfile instead of relying on package.json
+* [x] 1.0.6.4 - frontend/Settings: refactor FormFields and load independent JSX forms
+* [x] 1.0.6.4 - docker: added chaingen.sh to generate TLSA entries for smtp and imap
 * [x] 1.0.6.4 - backend/index: add api POST /api/logins
 * [x] 1.0.6.4 - backend: add functions getLogins saveLogins
 * [x] 1.0.6.4 - frontend/api: add api call getLogins saveLogins
@@ -67,9 +77,10 @@
 * [ ] - add fail2ban status?
 * [ ] - add mailbox statistics?
 * [ ] - offer DKIM DMARC display etc?
-* [x] - add clouflare API calls to update DKIM etc? see https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
-* [x] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. I doubt this is used by anyone
+* [-] - add clouflare API calls to update DKIM etc? see https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
+* [x] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. Research needed
 * [x] - octodns will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
+* [x] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
 * [ ] - frontend/Settings: explore refactoring idea from @polarathene
 
 <!--

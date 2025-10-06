@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,6 +14,8 @@ import {
   AlertMessage,
   Button,
   Card,
+  DataTable,
+  LoadingSpinner,
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
@@ -24,17 +26,36 @@ import {
 import FormSettings from '../forms/FormSettings';
 import FormLogins   from '../forms/FormLogins';
 
-const { name, version, description } = require('../../package.json');  
-
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 const Settings = () => {
   // const passwordFormRef = useRef(null);
   const { t } = useTranslation();
-  // const [errorMessage, setErrorMessage] = useState(null);
-  // const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setLoading] = useState(true);
 
+  const [error, setError] = useState(null);
+  const [receivedStatus, setReceivedServerStatus] = useState(null);
+
+  const handleStatusReceived = (status) => {
+    try {
+      setLoading(true);
+      setReceivedServerStatus(status);
+      setError(null);
+      if (debug) console.debug('handleStatusReceived status.internals=',status.internals);
+    } catch (err) {
+      console.error(t('api.errors.fetchServerStatus'), err);
+      setError('api.errors.fetchServerStatus');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Column definitions for aliases table
+  const columns = [
+    { key: 'name', label: 'settings.name' },
+    { key: 'value', label: 'settings.version' },
+  ];
 
   return (
     <div>
@@ -53,7 +74,7 @@ const Settings = () => {
           {' '}
           {/* Use Col component */}
           <Card title="settings.titleSettings" className="mb-4">
-            <FormSettings />
+            <FormSettings onStatusSubmit={handleStatusReceived} />
           </Card>
         </Col>{' '}
         {/* Close first Col */}
@@ -78,16 +99,28 @@ const Settings = () => {
           {/* Use Card.Text */}
           {t('settings.aboutDescription')}
         </Card.Text>
-        <Card.Text>
-          {' '}
-          {/* Use Card.Text */}
-          <strong>{name}</strong> {t('settings.version')}: {version}
-        </Card.Text>
-        <Card.Text>
-          {' '}
-          {/* Use Card.Text */}
-          <strong>{status.name}</strong> {t('settings.version')}: {status.version}
-        </Card.Text>
+        
+        {(isLoading && !receivedStatus) ? (
+          <>
+            <LoadingSpinner />
+          </>
+        ) : (
+          <>
+            <Card.Text>
+              {' '}
+              {/* Use Card.Text */}
+              <strong>{receivedStatus.name}</strong> {t('settings.version')}: {receivedStatus.version}
+            </Card.Text>
+            <DataTable
+              columns={columns}
+              data={receivedStatus.internals}
+              keyExtractor={(variable) => variable.name}
+              loading={isLoading}
+              emptyMessage="N/A"
+            />
+          </>
+        )}
+        
         <Card.Text>
           {' '}
           {/* Use Card.Text */}
@@ -110,3 +143,31 @@ const Settings = () => {
 };
 
 export default Settings;
+        // <>
+        // {(isLoading && !receivedStatus) && (
+        // <LoadingSpinner />
+        // ) || (
+        // <Card.Text>
+          // {' '}
+          // {/* Use Card.Text */}
+          // <strong>{receivedStatus.name}</strong> {t('settings.version')}: {receivedStatus.version}
+        // </Card.Text>
+        
+        // <Card.Text>
+          // {' '}
+          // {/* Use Card.Text */}
+          // <strong>{receivedStatus.internals[0].name}</strong> {t('settings.version')}: {receivedStatus.internals[0].value}
+          // <strong>{receivedStatus.internals[1].name}</strong> {t('settings.version')}: {receivedStatus.internals[1].value}
+          // <strong>{receivedStatus.internals[2].name}</strong> {t('settings.version')}: {receivedStatus.internals[2].value}
+        // </Card.Text>
+          
+          // {/* Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?
+          // <DataTable
+            // columns={columns}
+            // data={receivedStatus.internals}
+            // loading={isLoading}
+            // emptyMessage="N/A"
+          // />
+          // */}
+        // )}
+        // </>

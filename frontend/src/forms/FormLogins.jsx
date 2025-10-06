@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -173,65 +173,65 @@ const FormLogins = () => {
 
   if (isLoading && !logins) {
     return <LoadingSpinner />;
-  } else {
-    return (
-      <>
-        <AlertMessage type="danger" message={errorMessage} />
-        <AlertMessage type="success" message={successMessage} />
-        
-        <form onSubmit={handleSubmitLogins} className="form-wrapper">
-          <FormField
-            type="text"
-            id="username"
-            name="username"
-            label="settings.username"
-            value={logins.username}
-            onChange={handleChangeLogins}
-            error={formErrors.username}
-            placeholder="admin"
-            helpText="settings.usernameHelp"
-            required
-          />
-
-          <FormField
-            type="text"
-            id="email"
-            name="email"
-            label="settings.email"
-            value={logins.email}
-            onChange={handleChangeLogins}
-            error={formErrors.email}
-            placeholder="admin@domain.com"
-            helpText="settings.emailHelp"
-          />
-
-          <FormField
-            type="password"
-            id="password"
-            name="password"
-            label="accounts.password"
-            value={logins.password}
-            onChange={handleChangeLogins}
-            error={formErrors.password}
-            required
-          />
-
-          <FormField
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            label="accounts.confirmPassword"
-            value={logins.confirmPassword}
-            onChange={handleChangeLogins}
-            error={formErrors.confirmPassword}
-            required
-          />
-          
-          <Button type="submit" variant="primary" text="settings.saveButtonLogin" />
-        </form>
-      </>
-    );
   }
+
+  return (
+    <>
+      <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="success" message={successMessage} />
+      
+      <form onSubmit={handleSubmitLogins} className="form-wrapper">
+        <FormField
+          type="text"
+          id="username"
+          name="username"
+          label="settings.username"
+          value={logins.username}
+          onChange={handleChangeLogins}
+          error={formErrors.username}
+          placeholder="admin"
+          helpText="settings.usernameHelp"
+          required
+        />
+
+        <FormField
+          type="text"
+          id="email"
+          name="email"
+          label="settings.email"
+          value={logins.email}
+          onChange={handleChangeLogins}
+          error={formErrors.email}
+          placeholder="admin@domain.com"
+          helpText="settings.emailHelp"
+        />
+
+        <FormField
+          type="password"
+          id="password"
+          name="password"
+          label="accounts.password"
+          value={logins.password}
+          onChange={handleChangeLogins}
+          error={formErrors.password}
+          required
+        />
+
+        <FormField
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          label="accounts.confirmPassword"
+          value={logins.confirmPassword}
+          onChange={handleChangeLogins}
+          error={formErrors.confirmPassword}
+          required
+        />
+        
+        <Button type="submit" variant="primary" text="settings.saveButtonLogin" />
+      </form>
+    </>
+  );
 }
 
 export default FormLogins;

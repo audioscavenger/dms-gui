@@ -1,5 +1,6 @@
 const debug = (process.env.DEBUG === 'true') ? true : false;
 const express = require('express');
+const qs = require('qs');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const swaggerUi = require('swagger-ui-express');
@@ -10,14 +11,15 @@ dotenv.config({ path: '/app/config/.dms-gui.env' });
 
 const app = express();
 const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
-const { name, version, description } = require('./package.json');  
+const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
+const DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
 
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    version: version,
-    title: description,
-    description: description,
+    version: DMSGUI_VERSION,
+    title: 'dms-gui-backend',
+    description: DMSGUI_DESCRIPTION,
   },
 };
 
@@ -26,22 +28,35 @@ const options = {
   // Paths to files containing OpenAPI definitions
   apis: ['./*.js'],
 };
-
-
 const oasDefinition = swaggerJsdoc(options);
 
-// const swaggerOptions = {
-  // // http://imaginativethinking.ca/swaggerize-your-api-documentation/
-  // customSiteTitle: 'My Service',
-  // customCss: '.topbar { display: none }',
-// }; 
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
 
+// Parser
+// https://www.codemzy.com/blog/parse-booleans-express-query-params
+app.set('query parser', function (str) {
+  return qs.parse(str, {
+    decoder: function (str, defaultDecoder, charset, type) {
+      let bools = {
+        true: true,
+        false: false,
+      };
+      if (type === 'value' && typeof bools[str] === "boolean") {
+        return bools[str];
+      } else {
+        return defaultDecoder(str);
+      }
+    }
+  })
+});
+
+
 // Routes
+// @swagger descriptions based off https://swagger.io/docs/specification/v3_0/describing-parameters/
 /**
  * @swagger
  * /api/status:
@@ -72,6 +87,14 @@ app.get('/api/status', async (req, res) => {
  *   get:
  *     summary: Get email accounts
  *     description: Retrieve all email accounts
+ *     parameters:
+ *       - in: query
+ *         name: refresh
+ *         required: false
+ *         default: false
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
  *         description: List of email accounts
@@ -80,7 +103,8 @@ app.get('/api/status', async (req, res) => {
  */
 app.get('/api/accounts', async (req, res) => {
   try {
-    const accounts = await dockerMailserver.getAccounts(JSON.parse(req.query.refresh) ? true : false);
+    const refresh = (req.query.refresh) ? req.query.refresh : false;
+    const accounts = await dockerMailserver.getAccounts(refresh);
     res.json(accounts);
   } catch (error) {
     await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
@@ -229,6 +253,14 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  *   get:
  *     summary: Get aliases
  *     description: Retrieve all email aliases
+ *     parameters:
+ *       - in: query
+ *         name: refresh
+ *         required: false
+ *         default: false
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
  *         description: List of email aliases
@@ -237,7 +269,8 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  */
 app.get('/api/aliases', async (req, res) => {
   try {
-    const aliases = await dockerMailserver.getAliases(JSON.parse(req.query.refresh) ? true : false);
+    const refresh = (req.query.refresh) ? req.query.refresh : false;
+    const aliases = await dockerMailserver.getAliases(refresh);
     res.json(aliases);
   } catch (error) {
     await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
@@ -412,7 +445,7 @@ app.post('/api/settings', async (req, res) => {
  * /api/logins:
  *   get:
  *     summary: Get logins
- *     description: Retrieve all logins
+ *     description: Retrieve all admin logins
  *     responses:
  *       200:
  *         description: all logins even if empty
@@ -446,17 +479,18 @@ app.get('/api/logins', async (req, res) => {
  *             properties:
  *               username:
  *                 type: string
+ *                 description: Login name of the new admin account
  *               email:
  *                 type: string
- *                 description: Email address of the new account
+ *                 description: Email address of the new admin account
  *               password:
  *                 type: string
- *                 description: Password for the new account
+ *                 description: Password for the new admin account
  *     responses:
  *       201:
  *         description: Admin credentials saved successfully
  *       400:
- *         description: something is missing
+ *         description: Something is missing
  *       500:
  *         description: Unable to save Admin credentials
  */
@@ -478,9 +512,8 @@ app.post('/api/logins', async (req, res) => {
 
 
 app.listen(PORT_NODEJS, async () => {
-  // const { name, version } = await dockerMailserver.readJson(process.cwd() + '/../package.json');
   // const { name, version } = await dockerMailserver.readJson('/app/package.json');
-  console.log(`${name} ${version} Server ${process.version} running on port ${PORT_NODEJS}`);
+  console.log(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
 
   // Log debug status
   if (debug) console.debug('🐞 debug mode is ENABLED');

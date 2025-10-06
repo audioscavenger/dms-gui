@@ -1,20 +1,21 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getServerStatus, getAccounts, getAliases } from '../services/api';
 import { AlertMessage, DashboardCard, LoadingSpinner } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
-const { name, version, description } = require('../../package.json');  
+
 var refresh = true;
 
 const Dashboard = () => {
   const { t } = useTranslation();
   const [status, setServerStatus] = useState({
     status: 'loading',
-    name: name,
-    version: version,
+    name: 'dms-gui',
+    version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
+    internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
   });
   const [accountsCount, setAccountsCount] = useState(0);
   const [aliasesCount, setAliasesCount] = useState(0);

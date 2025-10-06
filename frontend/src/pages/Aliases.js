@@ -1,4 +1,4 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,13 +18,14 @@ import {
 } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
-// const { name, version, description } = require('../../package.json');  
 
 const Aliases = () => {
   const { t } = useTranslation();
+  const [isLoading, setLoading] = useState(true);
+  
   const [aliases, setAliases] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [isLoading, setLoading] = useState(true);
+  
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     source: '',
@@ -161,15 +162,22 @@ const Aliases = () => {
     label: account.email,
   }));
 
+
+  if (isLoading && !aliases) {
+    return <LoadingSpinner />;
+  }
+  
   return (
     <div>
       <h2 className="mb-4">{t('aliases.title')}</h2>
+      
       <AlertMessage type="danger" message={error} />
       <AlertMessage type="success" message={successMessage} />
+      
       <Row>
         {' '}
         {/* Use Row component */}
-        <Col md={6} className="mb-4">
+        <Col md={5} className="mb-4">
           {' '}
           {/* Use Col component */}
           <Card title="aliases.newAlias">
@@ -207,7 +215,7 @@ const Aliases = () => {
           </Card>
         </Col>{' '}
         {/* Close first Col */}
-        <Col md={6}>
+        <Col md={7}>
           {' '}
           {/* Use Col component */}
           <Card title="aliases.existingAliases">
@@ -215,7 +223,7 @@ const Aliases = () => {
               columns={columns}
               data={aliases}
               keyExtractor={(alias) => alias.source}
-              loading={loading}
+              loading={isLoading}
               emptyMessage="aliases.noAliases"
             />
           </Card>

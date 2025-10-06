@@ -3,7 +3,13 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
 const fsp = fs.promises;
 // const { promises: fs } = require("fs");
-const { name, version, description } = require('./package.json');  
+// const { name, version, description } = require('./package.json');  
+const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
+const DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
+const HOSTNAME = process.env.HOSTNAME;
+const NODE_ENV = process.env.NODE_ENV || 'production';
+const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
+const TZ = process.env.TZ || 'UTC';
 
 // Docker container name for docker-mailserver
 const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
@@ -722,8 +728,13 @@ async function getServerStatus() {
 
     const result = {
       status: isRunning ? 'running' : 'stopped',
-      name: name,
-      version: version,
+      name: 'dms-gui-backend',
+      version: DMSGUI_VERSION,
+      internals: [
+        { name: 'NODE_VERSION', value: process.version },
+        { name: 'NODE_ENV', value: NODE_ENV },
+        { name: 'PORT_NODEJS', value: PORT_NODEJS }
+      ],
       resources: {
         cpu: cpuUsage,
         memory: memoryUsage,

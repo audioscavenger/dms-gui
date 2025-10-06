@@ -16,7 +16,7 @@ services:
       
     env_file: ./config/.dms-gui.env
     environment:
-      - TZ=${TZ}
+      - TZ=${TZ:-UTC}
 
       # Set to true to enable debug logs for Docker commands
       # - DEBUG=true
@@ -57,7 +57,7 @@ networks:
 
 # docker login -u audioscavenger
 # docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .
-# docker push audioscavenger/dms-gui --all-tags
+# docker push ghcr.io/audioscavenger/dms-gui --all-tags
 
 
 ## upgrade commands:

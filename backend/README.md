@@ -31,11 +31,32 @@ SETUP_SCRIPT=/usr/local/bin/setup
 
 ## Available endpoints
 
+- `GET /api/logins` - Get admin credentials
+- `POST /api/logins` - Save admin credentials
 - `GET /api/settings` - Get settings
 - `POST /api/settings` - Save settings
-- `GET /api/accounts` - List of email accounts [?refresh=true to force refresh]
+- `GET /api/status` - Server status
+- `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
 - `DELETE /api/accounts/:email` - Delete an account
-- `GET /api/aliases` - List of aliases [?refresh=true to force refresh]
+- `GET /api/aliases` - List aliases [?refresh=true]
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases/:source/:destination` - Delete an alias
+
+
+### API docs
+
+OAS description of all API endpoints is available at https://dms.domain.com/docs
+
+
+### API call Example:
+
+```shell
+curl -sSL https://dms.domain.com/api/status
+```
+
+Result:
+
+```json
+{"status":"running","name":"dms-gui-backend","version":"1.0.6.3","resources":{"cpu":"3.22%","memory":"138.93MB","disk":"N/A"}}
+```

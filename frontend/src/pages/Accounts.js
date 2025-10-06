@@ -1,4 +1,4 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,7 +15,6 @@ import {
   FormField,
   LoadingSpinner,
 } from '../components';
-// const { name, version, description } = require('../../package.json');  
 
 import { useRef } from 'react';
 import Row from 'react-bootstrap/Row'; // Import Row
@@ -275,6 +274,11 @@ const Accounts = () => {
     },
   ];
 
+
+  if (isLoading && !accounts) {
+    return <LoadingSpinner />;
+  }
+  
   return (
     <div>
       <h2 className="mb-4">{t('accounts.title')}</h2>
@@ -285,7 +289,7 @@ const Accounts = () => {
         {' '}
         {/* Use Row component */}
         
-        <Col md={6} className="mb-4">
+        <Col md={5} className="mb-4">
           {' '}
           {/* Use Col component */}
           <Card title="accounts.newAccount">
@@ -336,7 +340,7 @@ const Accounts = () => {
         </Col>{' '}
         {/* Close first Col */}
         
-        <Col md={6}>
+        <Col md={7}>
           {' '}
           {/* Use Col component */}
           <Card title="accounts.existingAccounts">
@@ -344,7 +348,7 @@ const Accounts = () => {
               columns={columns}
               data={accounts}
               keyExtractor={(account) => account.email}
-              loading={loading}
+              loading={isLoading}
               emptyMessage="accounts.noAccounts"
             />
           </Card>
