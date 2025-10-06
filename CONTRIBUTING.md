@@ -20,6 +20,8 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## TODO:
 
+The list is in reverse order, as you naturally read from top to bottom.
+
 * [ ] - frontend+backend: refactoring in progress as advised by @polarathene
 * [ ] - add a login page
 * [ ] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001

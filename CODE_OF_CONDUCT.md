@@ -67,30 +67,30 @@ Community leaders will follow these Community Impact Guidelines in determining t
 ## Definitions
 
 - communism: aka `socialism` or `marxism`, a doctrine of social organization in which all property is owned by the 'community' and each person contributes and receives according to their needs; In practice: you will own nothing and you will be happy. Since inception, all communist governments have failed or are failing, see current status of Venezuella, Cuba, China, North Korea, or Vietnam for instance. Here are some key elements of Marxism and their consequences:
-  - [x] Centralisation of all powers: leads to authoritarinism and cult of the leader
+  - [x] Centralisation of all powers: leads to authoritarianism and cult of the leader
   - [x] Centralisation of credit, means of communication and means of production: you will be a slave, and economy falters
-  - [x] Abolition of all right of inheritance: you will own nothing
-  - [x] Confiscation of the property of everyone: you will own nothing
+  - [x] Abolition of all rights of inheritance: you will own nothing
+  - [x] Confiscation of the property of everyone: you will own nothing (and be happy)
   - [x] Equal distribution of resources based off your needs: since you are not the one defining your own needs, you will starve eventually
-  - [x] Equal distribution of resources: entitlement over merit, leading to zero incentive for progress and innovation, and economy falters
+  - [x] Equal distribution of resources: aka entitlement over merit, leading to zero incentive for progress and innovation, and economy falters
   - [x] Equal liability of all to labour: you will be a slave
   - [x] Equitable distribution of the population over the country: you will be forcefully displaced
 
 - community: a group of people living in the same place and/or having a particular characteristic in common; NOT a synonym nor a root for the word `communism`.
 
-- DEI: Destruction, Exclusion and Indoctrination: a system that pledges to give more to certain groups despite their lack of merit, aka `discrimination` or `racism`.
+- DEI: **D**estruction, **E**xclusion and **I**ndoctrination: a systemic social rule that pledges to give more to certain groups despite their lack of merit, aka `discrimination` or `racism`.
 
 - doxxing: act of purposefully diffusing physical PII about someone without their agreement, with the intent to have others reach out and cause harm to that person.
 
-- equity: the quality of being fair and just, especially in a way that takes account of and seeks to address existing inequalities, aka `discrimination` or `racism`. In practive, act of promoting entitlement over merit, and active discrimination against certain groups of people.
+- equity: "the quality of being fair and just", especially in a way that takes account of and seeks to address existing inequalities, aka `discrimination` or `racism`. In practive, act of promoting entitlement over merit, and active discrimination against certain groups of people.
 
 - gender: aka `grammatical gender`, applies only to words from a gendered language such as Latin, Spanish, etc. Not related to the hacks `gender identity` or `transgenderism`, invented by the CSAM hack called John Money in the 60's.
 
-- identity politics: political or social activity by or on behalf of an ethnic, cultural, religious, sex, or other group, usually undertaken with the goal of rectifying injustices suffered by group members, aka `racism`.
+- identity politics: political or social activity by or on behalf of an ethnic, cultural, religious, sex, or other group; usually undertaken with the goal of rectifying past injustices suffered by ancestors of said group members, aka `modern racism`.
 
-- PII: Personally Identifying Information: email, full name, postal address, phone number, SSN, etc/
+- PII: **P**ersonally **I**dentifying **I**nformation: anything like email, full name, postal address, phone number, SSN, etc that can trace you.
 
-- racism: the act of defining biological races among the human race, rather than using the sub-group called `ethnicity`. There is only one human race and the very fact of mentioning `race` among human beings is racist by definition.
+- racism: the act of defining biological races among the human race, rather than using the sub-group called `ethnicity`. The concept of Race is controvertial and not a [biological taxonomy](https://en.wikipedia.org/wiki/Kingdom_(biology)) rank. There is only one human race and the very fact of mentioning `race` among human beings is racist by definition. 
 
 - trolling: act of arguing and gaslighing online discussions, leading to frustration and chaos. Attack vectors are unacceptable behavior and also include:
   - ad hominem attacks
@@ -104,5 +104,5 @@ Community leaders will follow these Community Impact Guidelines in determining t
 
 ## Attribution
 
-This Code of Conduct is liberally inspired from the [Contributor Covenant][homepage], version 2.0, available at <https://www.contributor-covenant.org/version/2/0/code_of_conduct.html>. Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
+This Code of Conduct is liberally inspired from the [Contributor Covenant][homepage], version 2.0, available at <https://www.contributor-covenant.org/version/2/0/code_of_conduct.html>. Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity) and liberaly liberated.
 
