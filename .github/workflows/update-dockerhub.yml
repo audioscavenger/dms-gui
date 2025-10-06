@@ -1,0 +1,23 @@
+name: Update Docker Hub Description
+
+on:
+  push:
+    branches:
+      - master  # or main, depending on your default branch
+    paths:
+      - 'README.dockerhub.md'
+
+jobs:
+  update-dockerhub-description:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: audioscavenger/dms-gui
+          readme-filepath: ./README.dockerhub.md
+          short-description: "A graphical user interface for managing DMS"
