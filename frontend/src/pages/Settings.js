@@ -1,6 +1,11 @@
-const debug = false;
+const debug = true;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { 
+  obj2ArrayOfObj,
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} from '../../functions.js';
 
 import {
   getServerStatus,
@@ -40,9 +45,18 @@ const Settings = () => {
   const handleStatusReceived = (status) => {
     try {
       setLoading(true);
+      
+      // first we reformat the environment object into an array of objects
+      if (debug) console.debug('handleStatusReceived status=', status);
+      if (debug) console.debug('handleStatusReceived status.internals=', status.internals);
+      if (debug) console.debug('handleStatusReceived status.env=', status.env);
+      
+      status['envTable'] = obj2ArrayOfObj(status.env);
       setReceivedServerStatus(status);
       setError(null);
-      if (debug) console.debug('handleStatusReceived status.internals=',status.internals);
+      
+      if (debug) console.debug('handleStatusReceived status.envTable=', status.envTable);
+      
     } catch (err) {
       console.error(t('api.errors.fetchServerStatus'), err);
       setError('api.errors.fetchServerStatus');
@@ -51,10 +65,16 @@ const Settings = () => {
     }
   };
 
-  // Column definitions for aliases table
-  const columns = [
+  // Column definitions for settings table
+  const columnsVersions = [
     { key: 'name', label: 'settings.name' },
     { key: 'value', label: 'settings.version' },
+  ];
+
+  // Column definitions for environment table
+  const columnsEnv = [
+    { key: 'name', label: 'settings.name' },
+    { key: 'value', label: 'settings.value' },
   ];
 
   return (
@@ -112,8 +132,15 @@ const Settings = () => {
               <strong>{receivedStatus.name}</strong> {t('settings.version')}: {receivedStatus.version}
             </Card.Text>
             <DataTable
-              columns={columns}
+              columns={columnsVersions}
               data={receivedStatus.internals}
+              keyExtractor={(variable) => variable.name}
+              loading={isLoading}
+              emptyMessage="N/A"
+            />
+            <DataTable
+              columns={columnsEnv}
+              data={receivedStatus.envTable}
               keyExtractor={(variable) => variable.name}
               loading={isLoading}
               emptyMessage="N/A"

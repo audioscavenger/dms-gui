@@ -29,6 +29,8 @@ The list is in reverse order, as you naturally read from top to bottom.
 
 * [ ] - backend: encrypt password in db.logins.json
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
+
+* [ ] - frontend/pages: add proxy to rspamd page?
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
@@ -39,7 +41,10 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Accounts are correctly sorted OR use agGrid for headers sorting
 * [ ] - frontend/Aliases are correctly sorted OR use agGrid for headers sorting
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [ ] - frontend/api.js and plenty other files could also use translate for their error messages
+* [ ] - frontend: api.js and plenty other files could also use translate for their error messages
+
+* [x] 1.0.7.2 - frontend/Settings: convert status.env into array of objects for DataTable
+* [x] 1.0.7.2 - backend: getServerStatus also pulls environment
 * [x] 1.0.7.1 - Renamed TODO.md as CONTRIBUTING.md
 * [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all is working, release.
 * [x] 1.0.6.5 - frontend/pages: loadingSpinner across the board
@@ -64,6 +69,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] 1.0.6.2 - frontend/index: all routes return actual error.message
 * [x] 1.0.6.2 - frontend/accounts: addAccount correctly refresh after adding
 * [x] 1.0.6.1 - frontend/settings show both backend and frontend versions
+
 * [x] 1.0.6 - now using node:slim for build and 24-alpine for prod
 * [x] 1.0.5.8 - massing update of all README
 * [x] 1.0.5.8 - moved .env to /app/config/.dms-gui.env where it should be
@@ -76,14 +82,17 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] 1.0.5.4 - implement refresh on start
 * [x] 1.0.5.3 - DB_JSON holds Aliases
 * [x] 1.0.5.2 - Dashboard shows version next to server status
+
 * [x] 1.0.5 - DB_JSON holds Accounts
 * [x] 1.0.5 - backend: add DB_JSON=/app/config/db.json
 * [x] 1.0.5 - frontend: add favicon.png with webpack.config.js; tried everything for 30mn, I give up
+
 * [x] 1.0.4 - Implement shields.io badge
 * [x] 1.0.4 - Upload my hard-forked container to hub.docker.com
 * [x] 1.0.4 - upgrade to 24-alpine
 * [x] 1.0.4 - show node and project version at start
 * [x] 1.0.4 - find a way to get the version from package.json into /api/status
+
 * [x] 1.0.3 - Translations do not update immediately after language change (requires manual refresh)
 * [x] 1.0.3 - Fails to show accounts when QUOTA is disabled: now handles both cases
 * [x] 1.0.3 - Add non-woke code of conduct
@@ -109,6 +118,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] - octodns will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
 * [ ] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
 * [ ] - do we add multiple logins and roles?
+* [-] - backend: separate server status from server info
 
 <!--
 search for base image with nodejs+py3:

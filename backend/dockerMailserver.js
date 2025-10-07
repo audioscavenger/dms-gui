@@ -3,6 +3,9 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
 const fsp = fs.promises;
 // const { promises: fs } = require("fs");
+
+const common = require ('./functions.js');
+
 // const { name, version, description } = require('./package.json');  
 const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
 const DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
@@ -19,6 +22,23 @@ const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
 const DB_Logins     = DB_PATH + '/db.logins.json';
+
+const DMS_OPTIONS   = [
+'DMS_RELEASE',
+'ENABLE_RSPAMD',
+'ENABLE_XAPIAN',
+'ENABLE_MTA_STS',
+'PERMIT_DOCKER',
+'DOVECOT_MAILBOX_FORMAT',
+];
+
+// const array   = [
+// 'ENABLE_RSPAMD=1',
+// 'ENABLE_XAPIAN=1',
+// 'ENABLE_MTA_STS=0',
+// 'PERMIT_DOCKER=none',
+// 'DOVECOT_MAILBOX_FORMAT=mailbox',
+// ];
 
 const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
@@ -49,20 +69,23 @@ async function formatError(errorMsg, error) {
     // }
   // });
   
-  debugLog(`${arguments.callee.name}: error(${typeof error})=`,error);
-  var split;
-  var splitError;
-  const regexSplit = /ERROR:?|\n/i;
-  const regexCleanup = /[\"\'\:\`]/g;
-  
-  if (typeof error == "string") {
-    split = error.split(regexSplit);
-  } else {
-    split = error.message.split(regexSplit);
+  var splitErrorClean = '';
+  if (error) {
+    var split;
+    const regexSplit = /ERROR:?|\n/i;
+    const regexCleanup = /[\"\'\:\`]/g;
+    
+    if (typeof error == "string") {
+      split = error.split(regexSplit);
+    } else {
+      split = error.message.split(regexSplit);
+    }
+    
+    const splitError = (split.length > 1) ? split[1] : split[0];
+    splitErrorClean = splitError.replace(regexColors,"").replace(regexPrintOnly,"").replace(regexCleanup, "")
   }
-  splitError = (split.length > 1) ? split[1] : split;
   
-  errorMsg = `${errorMsg}: ` + splitError.replace(regexColors,"").replace(regexPrintOnly,"").replace(regexCleanup, "");
+  errorMsg = `${errorMsg}: ${splitErrorClean}`;
   return errorMsg;
 }
 
@@ -507,10 +530,9 @@ async function getAliases(refresh) {
     if (!refresh) {
       debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
       
-        DBdict = await readJson(DB_Aliases);
+      DBdict = await readJson(DB_Aliases);
     }
     
-
     // we could read DB_Aliases and it is valid
     if (DBdict.constructor == Object && 'aliases' in DBdict) {
       debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
@@ -518,12 +540,8 @@ async function getAliases(refresh) {
       
     // we could not read DB_Aliases or it is invalid
     } else {
-      // try {
         aliases = await getAliasesFromDMS();
         debugLog(`${arguments.callee.name}: got ${aliases.length} aliases from getAliasesFromDMS()`);
-      // } catch (error) {
-        // console.error(`${arguments.callee.name}: Error with getAliasesFromDMS():`, error);
-      // }
     }
     
     // since we had to call getAliasesFromDMS, we save DB_Aliases
@@ -531,12 +549,7 @@ async function getAliases(refresh) {
       DBdict["aliases"] = aliases;
       // DBdict = { ...DBdict, "aliases": aliases };
       // console.debug('ddebug ----------------------------- DBdict',DBdict);
-      
-      // try {
-        await writeJson(DB_Aliases, DBdict);
-      // } catch (error) {
-        // console.error(`${arguments.callee.name}: writeJson(DBdict) error:`, error);
-      // }
+      await writeJson(DB_Aliases, DBdict);
       
     // unknown error
     } else {
@@ -677,8 +690,26 @@ async function deleteAlias(source, destination) {
   }
 }
 
+
 // Function to check server status
 async function getServerStatus() {
+  var status = {
+    status: 'stopped',
+    name: 'dms-gui-backend',
+    version: DMSGUI_VERSION,
+    resources: {
+      cpu: '0%',
+      memory: '0MB',
+      disk: '0%',
+    },
+    internals: [
+      { name: 'NODE_VERSION', value: process.version },
+      { name: 'NODE_ENV', value: NODE_ENV },
+      { name: 'PORT_NODEJS', value: PORT_NODEJS }
+    ],
+    env: {},
+  };
+
   try {
     debugLog(`${arguments.callee.name}: Getting server status`);
 
@@ -695,15 +726,23 @@ async function getServerStatus() {
     const isRunning = containerInfo.State.Running === true;
     debugLog(`${arguments.callee.name}: Container running: ${isRunning}`);
 
-    let diskUsage = '0%';
-    let cpuUsage = '0%';
-    let memoryUsage = '0MB';
+    // get and conver DMS environment to dict
+    dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
+    debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
+    
+    // we keep only some options not all
+    dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+    debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+    
+    status['env'] = dictEnvDMSredux;
 
     if (isRunning) {
+      status.status = 'running';
+      
       // Get container stats
       debugLog(`${arguments.callee.name}: Getting container stats`);
       const stats = await container.stats({ stream: false });
-
+      
       // Calculate CPU usage percentage
       const cpuDelta =
           stats.cpu_stats.cpu_usage.total_usage
@@ -712,38 +751,23 @@ async function getServerStatus() {
         stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
       const cpuPercent =
         (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
-      cpuUsage = `${cpuPercent.toFixed(2)}%`;
+      status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
 
       // Calculate memory usage
       const memoryUsageBytes = stats.memory_stats.usage;
-      memoryUsage = formatMemorySize(memoryUsageBytes);
+      status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
 
-      debugLog(`${arguments.callee.name}: Resources - CPU: ${cpuUsage}, Memory: ${memoryUsage}`);
+      debugLog(`${arguments.callee.name}: Resources:`, status.resources);
 
       // For disk usage, we would need to run a command inside the container
       // This could be a more complex operation involving checking specific directories
       // For simplicity, we'll set this to "N/A" or implement a basic check
-      diskUsage = 'N/A';
+      status.resources.diskUsage = 'N/A';
     }
 
-    const result = {
-      status: isRunning ? 'running' : 'stopped',
-      name: 'dms-gui-backend',
-      version: DMSGUI_VERSION,
-      internals: [
-        { name: 'NODE_VERSION', value: process.version },
-        { name: 'NODE_ENV', value: NODE_ENV },
-        { name: 'PORT_NODEJS', value: PORT_NODEJS }
-      ],
-      resources: {
-        cpu: cpuUsage,
-        memory: memoryUsage,
-        disk: diskUsage,
-      },
-    };
-
-    debugLog(`${arguments.callee.name}: Server status result:`, result);
-    return result;
+    debugLog(`${arguments.callee.name}: Server status result:`, status);
+    return status;
+    
   } catch (error) {
     let backendError = `Server status error: ${error}`;
     let ErrorMsg = await formatError(backendError, error)
@@ -783,3 +807,134 @@ module.exports = {
   saveLogins,
 };
 // );
+
+
+
+// interesting stuff to pull from containerInfo:
+/*
+State: {
+  Status: 'running',
+  Running: true,
+  Paused: false,
+  Restarting: false,
+  OOMKilled: false,
+  Dead: false,
+  Pid: 1871534,
+  ExitCode: 0,
+  Error: '',
+  StartedAt: '2025-10-05T23:17:51.535552398Z',
+  FinishedAt: '0001-01-01T00:00:00Z',
+  Health: { Status: 'healthy', FailingStreak: 0, Log: [Array] }
+},
+PortBindings: {
+  '143/tcp': [Array],
+  '25/tcp': [Array],
+  '465/tcp': [Array],
+  '587/tcp': [Array],
+  '993/tcp': [Array]
+},
+Env: [
+  'ENABLE_IMAP=1',
+  'POSTFIX_INET_PROTOCOLS=ipv4',
+  'ENABLE_UPDATE_CHECK=1',
+  'DOVECOT_INET_PROTOCOLS=ipv4',
+  'SSL_ALT_CERT_PATH=',
+  'RSPAMD_HFILTER=1',
+  'FETCHMAIL_POLL=300',
+  'SASLAUTHD_LDAP_FILTER=',
+  'DOVECOT_AUTH_BIND=',
+  'SPAMASSASSIN_SPAM_TO_INBOX=1',
+  'ENABLE_POSTGREY=0',
+  'POSTGREY_TEXT=Delayed by Postgrey',
+  'RSPAMD_CHECK_AUTHENTICATED=0',
+  'SASLAUTHD_LDAP_PASSWORD_ATTR=',
+  'MARK_SPAM_AS_READ=1',
+  'SUPERVISOR_LOGLEVEL=info',
+  'SASLAUTHD_LDAP_AUTH_METHOD=',
+  'ENABLE_SPAMASSASSIN_KAM=1',
+  'ENABLE_POP3=0',
+  'LOGWATCH_INTERVAL=',
+  'ENABLE_DNSBL=0',
+  'AMAVIS_LOGLEVEL=0',
+  'LDAP_SERVER_HOST=',
+  'LDAP_BIND_DN=',
+  'SRS_SENDER_CLASSES=envelope_sender',
+  'POSTMASTER_ADDRESS=',
+  'POSTGREY_AUTO_WHITELIST_CLIENTS=5',
+  'DOVECOT_USER_FILTER=',
+  'RSPAMD_LEARN=1',
+  'LOGWATCH_SENDER=',
+  'NETWORK_INTERFACE=',
+  'ENABLE_SPAMASSASSIN=0',
+  'SA_TAG=2.0',
+  'TLS_LEVEL=modern',
+  'RSPAMD_HFILTER_HOSTNAME_UNKNOWN_SCORE=6',
+  'LOGROTATE_INTERVAL=weekly',
+  'SRS_SECRET=',
+  'SPOOF_PROTECTION=0',
+  'SASLAUTHD_LDAP_SERVER=',
+  'TZ=UTC',
+  'OVERRIDE_HOSTNAME=',
+  'ENABLE_OPENDKIM=0',
+  'DEFAULT_RELAY_HOST=',
+  'SASLAUTHD_LDAP_START_TLS=',
+  'RSPAMD_GREYLISTING=1',
+  'ENABLE_CLAMAV=0',
+  'LDAP_BIND_PW=',
+  'SASLAUTHD_LDAP_TLS_CACERT_DIR=',
+  'SASLAUTHD_LDAP_TLS_CACERT_FILE=',
+  'LDAP_QUERY_FILTER_DOMAIN=',
+  'LDAP_SEARCH_BASE=',
+  'SSL_KEY_PATH=/certs/key.pem',
+  'SASLAUTHD_LDAP_PASSWORD=',
+  'LDAP_QUERY_FILTER_GROUP=',
+  'POSTGREY_DELAY=300',
+  'SSL_TYPE=letsencrypt',
+  'PERMIT_DOCKER=none',
+  'PFLOGSUMM_TRIGGER=',
+  'LOGROTATE_COUNT=4',
+  'ENABLE_MANAGESIEVE=1',
+  'LDAP_QUERY_FILTER_USER=',
+  'SASLAUTHD_LDAP_TLS_CHECK_PEER=',
+  'ENABLE_OAUTH2=',
+  'DOVECOT_MAILBOX_FORMAT=maildir',
+  'GETMAIL_POLL=5',
+  'PFLOGSUMM_SENDER=',
+  'POSTFIX_DAGENT=',
+  'UPDATE_CHECK_INTERVAL=1d',
+  'SASLAUTHD_LDAP_BIND_DN=',
+  'REPORT_RECIPIENT=',
+  'DOVECOT_PASS_FILTER=',
+  'POSTSCREEN_ACTION=enforce',
+  'POSTFIX_REJECT_UNKNOWN_CLIENT_HOSTNAME=0',
+  'RSPAMD_NEURAL=0',
+  'ENABLE_OPENDMARC=0',
+  'RELAY_PORT=25',
+  'POSTGREY_MAX_AGE=35',
+  'SASLAUTHD_LDAP_SEARCH_BASE=',
+  'PFLOGSUMM_RECIPIENT=',
+  'MOVE_SPAM_TO_JUNK=1',
+  'ENABLE_SASLAUTHD=0',
+  'SASLAUTHD_LDAP_MECH=',
+  'RELAY_PASSWORD=',
+  'LOGWATCH_RECIPIENT=audioscavenger@gmail.com',
+  'SASLAUTHD_MECH_OPTIONS=',
+  'DMS_VMAIL_UID=',
+  'SASLAUTHD_MECHANISMS=',
+  'POSTFIX_MAILBOX_SIZE_LIMIT=5242880000',
+  'ENABLE_SRS=0',
+  'SA_KILL=10.0',
+  'LDAP_QUERY_FILTER_ALIAS=',
+  'POSTFIX_MESSAGE_SIZE_LIMIT=314572800',
+  'ENABLE_QUOTAS=1',
+  'RELAY_HOST=',
+  'FAIL2BAN_BLOCKTYPE=drop',
+  'OAUTH2_INTROSPECTION_URL=',
+  'ENABLE_AMAVIS=0',
+  'ENABLE_GETMAIL=0',
+  'ENABLE_FETCHMAIL=0',
+  'ENABLE_RSPAMD=1',
+  ... 22 more items
+],
+*/
+
