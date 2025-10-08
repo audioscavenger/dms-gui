@@ -36,16 +36,17 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
 * [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
 * [ ] - frontend/Dashboard:  add indexing status
-* [ ] - frontend/Accounts:  add index reset/update commands with detection of DMS env
+* [ ] - frontend/Accounts:  add index reset/update commands
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
 
+* [x] 1.0.7.5 - DataTable sorting algorith is perfect
 * [x] 1.0.7.4 - removed @tanstack/react-table
 * [x] 1.0.7.4 - added solumn sorting in DataTable
 * [x] 1.0.7.3 - upgraded i18next react-dom webpack and added @tanstack/react-table
 * [x] 1.0.7.2 - frontend/Settings: convert status.env into array of objects for DataTable
-* [x] 1.0.7.2 - backend: getServerStatus also pulls environment
+* [x] 1.0.7.2 - backend: getServerStatus also pulls docker env
 * [x] 1.0.7.1 - Renamed TODO.md as CONTRIBUTING.md
 * [x] 1.0.7 - massing cleanup, updated all README, updated swagger, all is working, release.
 * [x] 1.0.6.5 - frontend/pages: loadingSpinner across the board

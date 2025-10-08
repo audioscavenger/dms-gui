@@ -25,9 +25,10 @@ const DataTable = ({
   columns,
   data,
   keyExtractor,
+  renderRow,
+  sortKeys = [],
   isLoading= false,
   emptyMessage = 'common.noData',
-  renderRow,
   striped = true, // Default to striped
   bordered = false,
   hover = false,
@@ -37,6 +38,7 @@ const DataTable = ({
   const { t } = useTranslation();
   const [sortedData, setSortedData] = useState([]);
   const [sortOrder, setSortOrder] = useState(0);
+  
   const sortClick = (col) => {
     // we test the data type of the first row of that column
     // if (data.length > 1 && ['string','number'].includes(typeof data[0][col])) {
@@ -44,15 +46,49 @@ const DataTable = ({
       sortFunction(col);
     // }
   }
+  
   const sortFunction = (col) => {
     console.debug(`ddebug sortOrder=${sortOrder} col=${col}`);
     console.debug('sortFunction, data=',data);
     console.debug('sortFunction, data[0][col]=',data[0][col]);
-    // console.debug('sortFunction, sortedData=',sortedData);
-    if (sortOrder == 0) {
-      data.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+    
+    // if columns is a dictionary
+    if (typeof data[0][col] == 'object') {
+      // find the first object in an array which exists in another array
+      let sortKey = null;
+      if (sortKeys) sortKey = Object.keys(data[0][col]).find((o2) => sortKeys.some((o1) => o1 == o2));
+      
+      // sort by the sortKey found
+      if (sortKey) {
+        console.debug('sortFunction, sortKey=',sortKey);
+        if (parseInt(data[0][col][sortKey])) {
+          if (sortOrder == 0) data.sort((a, b) => parseInt(a[col][sortKey]) - parseInt(b[col][sortKey]) );
+          else                data.sort((b, a) => parseInt(a[col][sortKey]) - parseInt(b[col][sortKey]) );
+        } else {
+          if (sortOrder == 0) data.sort((a, b) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
+          else                data.sort((b, a) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
+        }
+
+      // sort by the first key whatever it is
+      } else {
+        if (parseInt(Object.values(data[0][col])[0])) {
+          if (sortOrder == 0) data.sort((a, b) => parseInt(Object.values(a[col])[0]) - parseInt(Object.values(b[col])[0]) );
+          else                data.sort((b, a) => parseInt(Object.values(a[col])[0]) - parseInt(Object.values(b[col])[0]) );
+        } else {
+          if (sortOrder == 0) data.sort((a, b) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
+          else                data.sort((b, a) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
+        }
+      }
+      
+    // or else stringify the data
     } else {
-      data.sort((a, b) => JSON.stringify(b[col]).localeCompare(JSON.stringify(a[col])) );
+      if (parseInt(data[0][col])) {
+        if (sortOrder == 0) data.sort((a, b) => parseInt(a[col]) - parseInt(b[col]) );
+        else                data.sort((b, a) => parseInt(a[col]) - parseInt(b[col]) );
+      } else {
+        if (sortOrder == 0) data.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+        else                data.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+      }
     }
     setSortedData(data);
   }
