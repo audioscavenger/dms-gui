@@ -108,6 +108,7 @@
     "setupPathHelp": "Full path to the setup.sh script in your docker-mailserver installation.",
     "name": "Name",
     "title": "Settings",
+    "value": "Value",
     "version": "Version"
   },
   "common": {

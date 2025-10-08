@@ -38,11 +38,12 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Dashboard:  add indexing status
 * [ ] - frontend/Accounts:  add index reset/update commands with detection of DMS env
 * [ ] - frontend/Dashboard:  add current hacking attempts
-* [ ] - frontend/Accounts are correctly sorted OR use agGrid for headers sorting
-* [ ] - frontend/Aliases are correctly sorted OR use agGrid for headers sorting
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
 
+* [x] 1.0.7.4 - removed @tanstack/react-table
+* [x] 1.0.7.4 - added solumn sorting in DataTable
+* [x] 1.0.7.3 - upgraded i18next react-dom webpack and added @tanstack/react-table
 * [x] 1.0.7.2 - frontend/Settings: convert status.env into array of objects for DataTable
 * [x] 1.0.7.2 - backend: getServerStatus also pulls environment
 * [x] 1.0.7.1 - Renamed TODO.md as CONTRIBUTING.md

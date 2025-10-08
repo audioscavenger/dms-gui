@@ -728,11 +728,11 @@ async function getServerStatus() {
 
     // get and conver DMS environment to dict
     dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
-    debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
+    // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
     
     // we keep only some options not all
     dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-    debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+    // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
     
     status['env'] = dictEnvDMSredux;
 

@@ -22,11 +22,11 @@
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "i18next": "^25.5.2",
+    "i18next": "^25.5.3",
     "i18next-browser-languagedetector": "^8.2.0",
-    "react": "^19.1.1",
+    "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
-    "react-dom": "^19.1.1",
+    "react-dom": "^19.2.0",
     "react-i18next": "^16.0.0",
     "react-router-dom": "^7.9.3"
   },
@@ -39,7 +39,7 @@
     "html-webpack-plugin": "^5.6.4",
     "prettier": "3.6.2",
     "style-loader": "^4.0.0",
-    "webpack": "^5.101.3",
+    "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2"
   }

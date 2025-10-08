@@ -1,3 +1,4 @@
+// backup of the original Accounts page as we transition to TanStack
 const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +23,7 @@ import Col from 'react-bootstrap/Col'; // Import Col
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
-const Accounts = () => {
+const AccountsBoostrap = () => {
   const passwordFormRef = useRef(null);
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
@@ -348,7 +349,7 @@ const Accounts = () => {
               columns={columns}
               data={accounts}
               keyExtractor={(account) => account.email}
-              isLoading={isLoading}
+              loading={isLoading}
               emptyMessage="accounts.noAccounts"
             />
           </Card>
@@ -411,4 +412,4 @@ const Accounts = () => {
   );
 };
 
-export default Accounts;
+export default AccountsBoostrap;

@@ -223,7 +223,7 @@ const Aliases = () => {
               columns={columns}
               data={aliases}
               keyExtractor={(alias) => alias.source}
-              loading={isLoading}
+              isLoading={isLoading}
               emptyMessage="aliases.noAliases"
             />
           </Card>

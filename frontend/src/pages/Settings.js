@@ -135,14 +135,14 @@ const Settings = () => {
               columns={columnsVersions}
               data={receivedStatus.internals}
               keyExtractor={(variable) => variable.name}
-              loading={isLoading}
+              isLoading={isLoading}
               emptyMessage="N/A"
             />
             <DataTable
               columns={columnsEnv}
               data={receivedStatus.envTable}
               keyExtractor={(variable) => variable.name}
-              loading={isLoading}
+              isLoading={isLoading}
               emptyMessage="N/A"
             />
           </>
@@ -192,7 +192,7 @@ export default Settings;
           // <DataTable
             // columns={columns}
             // data={receivedStatus.internals}
-            // loading={isLoading}
+            // isLoading={isLoading}
             // emptyMessage="N/A"
           // />
           // */}

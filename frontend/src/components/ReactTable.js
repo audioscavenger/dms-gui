@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import LoadingSpinner from './LoadingSpinner';
 import AlertMessage from './AlertMessage'; // Import refactored AlertMessage
-// https://www.npmjs.com/package/react-bootstrap
-// https://react-bootstrap.netlify.app/docs/components/table/
-import RBTable from 'react-bootstrap/Table';
-// import "bootstrap-icons/font/bootstrap-icons.css";   // https://icons.getbootstrap.com/
+import RBTable from 'react-bootstrap/Table'; // Import react-bootstrap Table
 
 /**
  * Reusable data table component using react-bootstrap
@@ -25,7 +22,7 @@ const DataTable = ({
   columns,
   data,
   keyExtractor,
-  isLoading= false,
+  loading = false,
   emptyMessage = 'common.noData',
   renderRow,
   striped = true, // Default to striped
@@ -35,34 +32,8 @@ const DataTable = ({
   ...rest // Pass other props to RBTable
 }) => {
   const { t } = useTranslation();
-  const [sortedData, setSortedData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(0);
-  const sortClick = (col) => {
-    // we test the data type of the first row of that column
-    // if (data.length > 1 && ['string','number'].includes(typeof data[0][col])) {
-      setSortOrder(sortOrder === 0 ? 1 : 0);
-      sortFunction(col);
-    // }
-  }
-  const sortFunction = (col) => {
-    console.debug(`ddebug sortOrder=${sortOrder} col=${col}`);
-    console.debug('sortFunction, data=',data);
-    console.debug('sortFunction, data[0][col]=',data[0][col]);
-    // console.debug('sortFunction, sortedData=',sortedData);
-    if (sortOrder == 0) {
-      data.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
-    } else {
-      data.sort((a, b) => JSON.stringify(b[col]).localeCompare(JSON.stringify(a[col])) );
-    }
-    setSortedData(data);
-  }
 
-  useEffect(() => {
-    setSortedData(data);
-  }, []);
-
-
-  if (isLoading && !data) {
+  if (loading) {
     return <LoadingSpinner />;
   }
 
@@ -70,7 +41,6 @@ const DataTable = ({
     // Use the refactored AlertMessage component
     return <AlertMessage type="info" message={emptyMessage} />;
   }
-
 
   return (
     <RBTable
@@ -83,9 +53,7 @@ const DataTable = ({
       <thead>
         <tr>
           {columns.map((column) => (
-            <th key={column.key} onClick={() => sortClick(column.key)}>{t(column.label)}
-            {(sortOrder === 0) ? <i className="bi bi-arrow-up cursor-pointer"></i> : <i className="bi bi-arrow-down cursor-pointer"></i>}
-            </th>
+            <th key={column.key}>{t(column.label)}</th>
           ))}
         </tr>
       </thead>

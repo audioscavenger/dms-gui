@@ -64,3 +64,5 @@ body {
   max-width: 600px;
   margin: 0 auto;
 }
+
+.cursor-pointer {cursor: pointer;}
