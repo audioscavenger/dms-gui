@@ -1,4 +1,4 @@
-const debug = false;
+const debug = true;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -23,6 +23,7 @@ import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 const Accounts = () => {
+  const sortKeys = ['email', 'percent'];
   const passwordFormRef = useRef(null);
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
@@ -52,6 +53,7 @@ const Accounts = () => {
   const fetchAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
     if (debug) console.debug(`ddebug: ------------- fetchAccounts call getAccounts(${refresh})`);
+    
     try {
       setLoading(true);
       const [accountsData] = await Promise.all([
@@ -350,6 +352,7 @@ const Accounts = () => {
               keyExtractor={(account) => account.email}
               isLoading={isLoading}
               emptyMessage="accounts.noAccounts"
+              sortKeys={sortKeys}
             />
           </Card>
         </Col>{' '}

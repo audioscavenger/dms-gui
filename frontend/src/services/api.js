@@ -1,4 +1,4 @@
-const debug = false;
+const debug = true;
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
@@ -16,9 +16,12 @@ const api = axios.create({
 });
 
 // Server status API
-export const getServerStatus = async () => {
+// export const getServerStatus = async () => {
+export async function getServerStatus(refresh) {
+  refresh = (refresh === undefined) ? true : refresh;
   try {
-    const response = await api.get('/status');
+    if (debug) console.debug(`ddebug frontend call to /status?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    const response = await api.get(`/status?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error fetching server status:', error);
@@ -26,7 +29,8 @@ export const getServerStatus = async () => {
   }
 };
 
-export const getAccounts = async (refresh) => {
+// export const getAccounts = async (refresh) => {
+export async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
     if (debug) console.debug(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
@@ -38,7 +42,8 @@ export const getAccounts = async (refresh) => {
   }
 };
 
-export const getSettings = async () => {
+// export const getSettings = async () => {
+export async function getSettings() {
   try {
     const response = await api.get(`/settings`);
     return response.data;
@@ -48,9 +53,10 @@ export const getSettings = async () => {
   }
 };
 
-export const saveSettings = async (containerName, setupPath) => {
+// export const saveSettings = async (containerName, setupPath) => {
+export async function saveSettings(containerName, setupPath) {
   try {
-    const response = await api.post('/settings', { containerName, setupPath });
+    const response = await api.post(`/settings`, { containerName, setupPath });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error saving settings:', error);
@@ -59,7 +65,8 @@ export const saveSettings = async (containerName, setupPath) => {
 };
 
 
-export const getLogins = async () => {
+// export const getLogins = async () => {
+export async function getLogins() {
   try {
     const response = await api.get(`/logins`);
     return response.data;
@@ -69,9 +76,10 @@ export const getLogins = async () => {
   }
 };
 
-export const saveLogins = async (username, email, password) => {
+// export const saveLogins = async (username, email, password) => {
+export async function saveLogins(username, email, password) {
   try {
-    const response = await api.post('/logins', { username, email, password });
+    const response = await api.post(`/logins`, { username, email, password });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error saving logins:', error);
@@ -80,9 +88,10 @@ export const saveLogins = async (username, email, password) => {
 };
 
 
-export const addAccount = async (email, password) => {
+// export const addAccount = async (email, password) => {
+export async function addAccount(email, password) {
   try {
-    const response = await api.post('/accounts', { email, password });
+    const response = await api.post(`/accounts`, { email, password });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error adding account:', error);
@@ -90,7 +99,8 @@ export const addAccount = async (email, password) => {
   }
 };
 
-export const deleteAccount = async (email) => {
+// export const deleteAccount = async (email) => {
+export async function deleteAccount(email) {
   try {
     const response = await api.delete(`/accounts/${email}`);
     return response.data;
@@ -100,7 +110,8 @@ export const deleteAccount = async (email) => {
   }
 };
 
-export const updateAccountPassword = async (email, password) => {
+// export const updateAccountPassword = async (email, password) => {
+export async function updateAccountPassword(email, password) {
   try {
     const response = await api.put(`/accounts/${email}/password`, { password });
     return response.data;
@@ -123,9 +134,10 @@ export async function getAliases(refresh) {
   }
 };
 
-export const addAlias = async (source, destination) => {
+// export const addAlias = async (source, destination) => {
+export async function addAlias(source, destination) {
   try {
-    const response = await api.post('/aliases', { source, destination });
+    const response = await api.post(`/aliases`, { source, destination });
     return response.data;
   } catch (error) {
     if (debug) if (debug) console.error('api: Error adding alias:', error);
@@ -133,7 +145,8 @@ export const addAlias = async (source, destination) => {
   }
 };
 
-export const deleteAlias = async (source, destination) => {
+// export const deleteAlias = async (source, destination) => {
+export async function deleteAlias(source, destination) {
   try {
     const response = await api.delete(`/aliases/${source}/${destination}`);
     return response.data;

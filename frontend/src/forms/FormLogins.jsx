@@ -48,10 +48,7 @@ const FormLogins = () => {
 
     const loginsData    = await fetchLogins();
 
-    // not setting all logins keys at once results in this error:
-    // A component is changing an uncontrolled input to be controlled.
     setLogins(loginsData);
-    setLogins['confirmPassword'] = loginsData.password;
 
     setLoading(false);
 
@@ -69,13 +66,7 @@ const FormLogins = () => {
       ]);
       if (debug) console.debug('ddebug: ------------- loginsData', loginsData);
 
-      // setLogins(loginsData);
-
-      // // not setting all logins keys at once results in this error:
-      // // A component is changing an uncontrolled input to be controlled.
-      // setLogins(loginsData);
-      // setLogins['confirmPassword'] = loginsData.password;
-      loginsData['confirmPassword'] = loginsData.password;
+      if (loginsData.password) loginsData['confirmPassword'] = loginsData.password;
 
       setErrorMessage(null);
       return loginsData;

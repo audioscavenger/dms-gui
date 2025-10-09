@@ -1,4 +1,4 @@
-const debug = false;
+const debug = true;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,6 +37,7 @@ const FormSettings = ({ onStatusSubmit }) => {
     version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
     internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
+    env: {},
   });
 
 
@@ -62,12 +63,12 @@ const FormSettings = ({ onStatusSubmit }) => {
   };
 
   const fetchServerStatus = async () => {
-    if (debug) console.debug(`ddebug: ------------- fetchServerStatus call getSettings getServerStatus`);
+    if (debug) console.debug(`ddebug: ------------- fetchServerStatus call getSettings getServerStatus(false)`);
 
     try {
       // setLoading(true);
       const [statusData] = await Promise.all([
-        getServerStatus(),
+        getServerStatus(false),
       ]);
       if (debug) console.debug('ddebug: ------------- statusData', statusData);
 

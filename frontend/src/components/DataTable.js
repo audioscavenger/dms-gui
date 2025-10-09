@@ -36,7 +36,6 @@ const DataTable = ({
   ...rest // Pass other props to RBTable
 }) => {
   const { t } = useTranslation();
-  const [sortedData, setSortedData] = useState([]);
   const [sortOrder, setSortOrder] = useState(0);
   
   const sortClick = (col) => {
@@ -90,12 +89,7 @@ const DataTable = ({
         else                data.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
       }
     }
-    setSortedData(data);
   }
-
-  useEffect(() => {
-    setSortedData(data);
-  }, []);
 
 
   if (isLoading && !data) {
@@ -120,7 +114,7 @@ const DataTable = ({
         <tr>
           {columns.map((column) => (
             <th key={column.key} onClick={() => sortClick(column.key)}>{t(column.label)}
-            {(sortOrder === 0) ? <i className="bi bi-arrow-up cursor-pointer"></i> : <i className="bi bi-arrow-down cursor-pointer"></i>}
+            {(data[column.key] && sortOrder === 0) ? <i className="bi bi-arrow-up cursor-pointer"></i> : <i className="bi bi-arrow-down cursor-pointer"></i>}
             </th>
           ))}
         </tr>

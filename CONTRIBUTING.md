@@ -41,6 +41,9 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
 
+* [x] 1.0.7.6 - bugfix in FormLogins.jsx as you cannot alter a const
+* [x] 1.0.7.6 - api.js are all default export functions
+* [x] 1.0.7.6 - getServerStatus can be refreshed, saves status in db
 * [x] 1.0.7.5 - DataTable sorting algorith is perfect
 * [x] 1.0.7.4 - removed @tanstack/react-table
 * [x] 1.0.7.4 - added solumn sorting in DataTable

@@ -46,11 +46,11 @@ const Settings = () => {
     try {
       setLoading(true);
       
-      // first we reformat the environment object into an array of objects
       if (debug) console.debug('handleStatusReceived status=', status);
       if (debug) console.debug('handleStatusReceived status.internals=', status.internals);
       if (debug) console.debug('handleStatusReceived status.env=', status.env);
       
+      // first we reformat the environment object into an array of objects
       status['envTable'] = obj2ArrayOfObj(status.env);
       setReceivedServerStatus(status);
       setError(null);
@@ -170,31 +170,3 @@ const Settings = () => {
 };
 
 export default Settings;
-        // <>
-        // {(isLoading && !receivedStatus) && (
-        // <LoadingSpinner />
-        // ) || (
-        // <Card.Text>
-          // {' '}
-          // {/* Use Card.Text */}
-          // <strong>{receivedStatus.name}</strong> {t('settings.version')}: {receivedStatus.version}
-        // </Card.Text>
-        
-        // <Card.Text>
-          // {' '}
-          // {/* Use Card.Text */}
-          // <strong>{receivedStatus.internals[0].name}</strong> {t('settings.version')}: {receivedStatus.internals[0].value}
-          // <strong>{receivedStatus.internals[1].name}</strong> {t('settings.version')}: {receivedStatus.internals[1].value}
-          // <strong>{receivedStatus.internals[2].name}</strong> {t('settings.version')}: {receivedStatus.internals[2].value}
-        // </Card.Text>
-          
-          // {/* Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?
-          // <DataTable
-            // columns={columns}
-            // data={receivedStatus.internals}
-            // isLoading={isLoading}
-            // emptyMessage="N/A"
-          // />
-          // */}
-        // )}
-        // </>

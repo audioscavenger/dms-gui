@@ -63,6 +63,14 @@ app.set('query parser', function (str) {
  *   get:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
+ *     parameters:
+ *       - in: query
+ *         name: refresh
+ *         required: false
+ *         default: false
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
  *         description: Server status
@@ -71,7 +79,9 @@ app.set('query parser', function (str) {
  */
 app.get('/api/status', async (req, res) => {
   try {
-    const status = await dockerMailserver.getServerStatus();
+    const refresh = ('refresh' in req.query) ? req.query.refresh : true;
+    if (debug) console.debug(`/api/status?refresh=${req.query.refresh} -> ${refresh}`);
+    const status = await dockerMailserver.getServerStatus(refresh);
     res.json(status);
   } catch (error) {
     await dockerMailserver.debugLog(`index /api/status: ${error.message}`);
@@ -103,7 +113,7 @@ app.get('/api/status', async (req, res) => {
  */
 app.get('/api/accounts', async (req, res) => {
   try {
-    const refresh = (req.query.refresh) ? req.query.refresh : false;
+    const refresh = ('refresh' in req.query) ? req.query.refresh : false;
     const accounts = await dockerMailserver.getAccounts(refresh);
     res.json(accounts);
   } catch (error) {
@@ -269,7 +279,7 @@ app.put('/api/accounts/:email/password', async (req, res) => {
  */
 app.get('/api/aliases', async (req, res) => {
   try {
-    const refresh = (req.query.refresh) ? req.query.refresh : false;
+    const refresh = ('refresh' in req.query) ? req.query.refresh : false;
     const aliases = await dockerMailserver.getAliases(refresh);
     res.json(aliases);
   } catch (error) {

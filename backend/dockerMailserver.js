@@ -22,6 +22,7 @@ const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
 const DB_Logins     = DB_PATH + '/db.logins.json';
+const DB_Status     = DB_PATH + '/db.status.json';
 
 const DMS_OPTIONS   = [
 'DMS_RELEASE',
@@ -30,6 +31,7 @@ const DMS_OPTIONS   = [
 'ENABLE_MTA_STS',
 'PERMIT_DOCKER',
 'DOVECOT_MAILBOX_FORMAT',
+'POSTFIX_MAILBOX_SIZE_LIMIT',
 ];
 
 // const array   = [
@@ -338,9 +340,10 @@ async function saveLogins(username, email, password) {
 // Function to retrieve email accounts
 async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
+  debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
+
   var DBdict = {};
   var accounts = [];
-  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   try {
     
@@ -519,10 +522,10 @@ async function deleteAccount(email) {
 // Function to retrieve aliases
 async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
+  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   var DBdict = {};
   var aliases = [];
-  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
   
   try {
     debugLog(`ddebug getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
@@ -691,8 +694,9 @@ async function deleteAlias(source, destination) {
 }
 
 
-// Function to check server status
-async function getServerStatus() {
+// Function to pull server status
+async function pullServerStatus() {
+  var DBdict = {};
   var status = {
     status: 'stopped',
     name: 'dms-gui-backend',
@@ -711,11 +715,7 @@ async function getServerStatus() {
   };
 
   try {
-    debugLog(`${arguments.callee.name}: Getting server status`);
-
-    // Get this project version
-    // const { name, version } = await readJson(process.cwd() + '/../package.json');
-    // const { name, version } = await readJson('/app/package.json');
+    debugLog(`${arguments.callee.name}: Pulling server status`);
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
@@ -765,11 +765,11 @@ async function getServerStatus() {
       status.resources.diskUsage = 'N/A';
     }
 
-    debugLog(`${arguments.callee.name}: Server status result:`, status);
+    debugLog(`${arguments.callee.name}: Server pull status result:`, status);
     return status;
     
   } catch (error) {
-    let backendError = `Server status error: ${error}`;
+    let backendError = `Server pull status error: ${error}`;
     let ErrorMsg = await formatError(backendError, error)
     console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     return {
@@ -778,6 +778,76 @@ async function getServerStatus() {
     };
   }
 }
+
+
+// Function to check server status
+async function getServerStatus(refresh) {
+  refresh = (refresh === undefined) ? true : refresh;
+  debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
+  
+  var DBdict = {};
+  var status = {
+    status: 'stopped',
+    name: 'dms-gui-backend',
+    version: DMSGUI_VERSION,
+    resources: {
+      cpu: '0%',
+      memory: '0MB',
+      disk: '0%',
+    },
+    internals: [
+      { name: 'NODE_VERSION', value: process.version },
+      { name: 'NODE_ENV', value: NODE_ENV },
+      { name: 'PORT_NODEJS', value: PORT_NODEJS }
+    ],
+    env: {},
+  };
+
+  try {
+
+    if (!refresh) {
+      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Status} (refresh=${refresh})`);
+      DBdict = await readJson(DB_Status);
+      // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+    }
+    
+    // we could read DB_Status and it is valid
+    if (DBdict.constructor == Object && 'status' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['status']).length} status in DBdict`);
+      return DBdict['status'];
+      
+    // we could not read DB_Status or it is invalid
+    } else {
+      status = await pullServerStatus();
+      debugLog(`${arguments.callee.name}: got ${Object.keys(status).length} status from pullServerStatus()`);
+    }
+    
+    // since we had to call pullServerStatus, we save DB_Status
+    if (typeof status == 'object' && Object.keys(status).length) {
+      DBdict["status"] = status;
+      // DBdict = { ...DBdict, "status": status };
+      await writeJson(DB_Status, DBdict);
+      
+    // unknown error
+    } else {
+      console.error(`${arguments.callee.name}: error with read status:`, status);
+    }
+
+
+    debugLog(`${arguments.callee.name}: Server read status result:`, status);
+    return status;
+    
+  } catch (error) {
+    let backendError = `Server read status error: ${error}`;
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    return {
+      status: 'unknown',
+      error: error.message,
+    };
+  }
+}
+
 
 // Helper function to format memory size
 function formatMemorySize(bytes) {

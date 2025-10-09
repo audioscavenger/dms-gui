@@ -16,6 +16,7 @@ const Dashboard = () => {
     version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
     internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
+    env: {},
   });
   const [accountsCount, setAccountsCount] = useState(0);
   const [aliasesCount, setAliasesCount] = useState(0);
@@ -35,13 +36,14 @@ const Dashboard = () => {
   const fetchDashboard = async (refresh) => {
     if (debug) console.debug('ddebug fetchDashboard refresh',refresh);
     refresh = (refresh === undefined) ? false : refresh;
+    
     try {
       setLoading(true);
 
       // Fetch data in parallel
       // const [statusData, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
       // Fetch data sequentially because otherwise DBdict gets overwritten
-      const statusData = await getServerStatus();
+      const statusData = await getServerStatus(true);
       const accountsResponse = await getAccounts(refresh);
       const aliasesResponse = await getAliases(refresh);
 
