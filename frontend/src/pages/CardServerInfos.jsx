@@ -17,12 +17,12 @@ import {
 } from '../components';
 
 
-const CardServerInfos = () => {
+const CardServerInfos = ({ onRefresh }) => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
 
   const [errorMessage, setErrorMessage] = useState(null);
-  const [infos, setServerInfos] = useState(null);
+  const [infos, setServerInfos] = useState({});
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -74,15 +74,11 @@ const CardServerInfos = () => {
     <>
       <AlertMessage type="danger" message={errorMessage} />
       
-      <Card title="settings.serverInfosTitle">
+      <Card title="settings.serverInfosTitle" incon="gear-wide-connected" collapse="true" refresh="true" onClickRefresh={() => fetchServerInfos(true)}>
+      
         <Card.Text>
           {' '}
           {t('settings.serverInternalsDescription')}
-        </Card.Text>
-        
-        <Card.Text>
-          {' '}
-          <strong>{infos.name}</strong> {t('settings.version')}: {infos.version}
         </Card.Text>
         <DataTable
           columns={columnsInternals}

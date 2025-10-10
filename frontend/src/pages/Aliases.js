@@ -26,7 +26,7 @@ const Aliases = () => {
   const [aliases, setAliases] = useState([]);
   const [accounts, setAccounts] = useState([]);
   
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [formData, setFormData] = useState({
     source: '',
@@ -220,7 +220,7 @@ const Aliases = () => {
         <Col md={7}>
           {' '}
           {/* Use Col component */}
-          <Card title="aliases.existingAliases" titleExtra={howMany} icon="person-lines-fill">
+          <Card title="aliases.existingAliases" titleExtra={howMany} icon="person-lines-fill" refresh="true" onClickRefresh={() => fetchAliases(true)}>
             <DataTable
               columns={columns}
               data={aliases}

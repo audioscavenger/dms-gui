@@ -27,7 +27,7 @@ const Accordion = ({
   ...rest
 }) => {
   const { t } = useTranslation();
-  const bodyClassName = noPadding ? 'p-0' : '';
+  const bodyClassName = noPadding == "true" ? 'p-0' : '';
 
   // not very clear what they want:
   // -key +eventKey: it works but we have an error

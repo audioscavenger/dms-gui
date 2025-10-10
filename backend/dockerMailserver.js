@@ -333,12 +333,16 @@ async function getLogins() {
 
 
 // Function to save logins
-async function saveLogins(username, email, password) {
-  DBdict = {logins:{}};
+async function saveLogins(username, password, email='') {
+  DBdict = {
+    logins:{
+      username: username,
+      email: email,
+      password: password,
+    }
+  };
+  
   try {
-    DBdict.logins['username'] = username;
-    DBdict.logins['email'] = email;
-    DBdict.logins['password'] = password;
     
     debugLog(`${arguments.callee.name}: Saving logins:`,DBdict.logins);
     await writeJson(DB_Logins, DBdict);
@@ -362,28 +366,23 @@ async function getAccounts(refresh) {
   
   try {
     
-     if (!refresh) {
-      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
-      
+      if (!refresh) {
+        debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
+        
         DBdict = await readJson(DB_Accounts);
         // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
-    }
-    
 
-    // we could read DB_Accounts and it is valid
-    if (DBdict.constructor == Object && 'accounts' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
-      return DBdict['accounts'];
-      
-    // we could not read DB_Accounts or it is invalid
-    } else {
-      // try {
+        // we could read DB_Accounts and it is valid
+        if (DBdict.constructor == Object && 'accounts' in DBdict) {
+          debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
+          return DBdict['accounts'];
+        }
+        
+      // we could not read DB_Accounts or it is invalid
+      } else {
         accounts = await getAccountsFromDMS();
         debugLog(`${arguments.callee.name}: got ${accounts.length} accounts from getAccountsFromDMS()`);
-      // } catch (error) {
-        // console.error(`${arguments.callee.name}: Error with getAccountsFromDMS():`, error);
-      // }
-    }
+      }
     
     // since we had to call getAccountsFromDMS, we save DB_Accounts
     if (Array.isArray(accounts) && accounts.length) {
@@ -558,20 +557,19 @@ async function getAliases(refresh) {
   var aliases = [];
   
   try {
-    debugLog(`ddebug getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
+    debugLog(`getAliases refresh=${refresh} from DB_Aliases=${DB_Aliases} ifexist=${fs.existsSync(DB_Aliases)}`);
     
     if (!refresh) {
-      debugLog(`ddebug getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
-      
+      debugLog(`getAliases read DBdict from ${DB_Aliases} (refresh=${refresh})`);
       DBdict = await readJson(DB_Aliases);
-    }
     
-    // we could read DB_Aliases and it is valid
-    if (DBdict.constructor == Object && 'aliases' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
-      return DBdict['aliases'];
-      
-    // we could not read DB_Aliases or it is invalid
+      // we could read DB_Aliases and it is valid
+      if (DBdict.constructor == Object && 'aliases' in DBdict) {
+        debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
+        return DBdict['aliases'];
+      }
+        
+      // we could not read DB_Aliases or it is invalid
     } else {
         aliases = await getAliasesFromDMS();
         debugLog(`${arguments.callee.name}: got ${aliases.length} aliases from getAliasesFromDMS()`);
@@ -725,7 +723,7 @@ async function deleteAlias(source, destination) {
 
 
 // function readDovecotConfFile will convert dovecot conf file syntax to JSON
-function readDovecotConfFile(stdout) {
+async function readDovecotConfFile(stdout) {
   // what we get
   /*
   mail_plugins = $mail_plugins fts fts_xapian
@@ -896,9 +894,9 @@ async function pullServerInfos() {
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
-    // debugLog(`${arguments.callee.name}: ddebug containerInfo:`, containerInfo);
 
     if (containerInfo.Id) {
+      debugLog(`${arguments.callee.name}: containerInfo found, Id=`, containerInfo.Id);
       
       // get and conver DMS environment to dict
       dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
@@ -906,33 +904,48 @@ async function pullServerInfos() {
       
       // we keep only some options not all
       dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+      debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
       // infos['env'] = dictEnvDMSredux;
+      // console.debug('ddebug --------------- 1 infos.env',infos.env);
       infos.env = { ...infos.env, ...dictEnvDMSredux };
+      // console.debug('ddebug --------------- 2 infos.env',infos.env);
 
       // pull bindings and look for FTS
+      var ftsMount = '';
       containerInfo.Mounts.forEach( async (mount) => {
         if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
         if (mount.Destination.match(/fts.*\.conf$/i)) {
-          // we found fts override plugin, let's load it
-          try {
-            const stdout = await execCommand(`cat ${mount.Destination}`);
-            if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
-            const ftsConfig = readDovecotConfFile(stdout);
-            if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
-            
-            if (ftsConfig.plugin && ftsConfig.plugin.fts) {
-              infos.env.FTS_PLUGIN = ftsConfig.plugin.fts;
-              infos.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-            }
-          } catch (error) {
-            console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
-          }
+          ftsMount = mount.Destination;
+          // console.debug('ddebug --------------- 4');
         }
+        // console.debug('ddebug --------------- 5 mounbt analyzed');
       });
+      // console.debug('ddebug --------------- 6');
+
+      // we found fts override plugin, let's load it
+      try {
+        const stdout = await execCommand(`cat ${ftsMount}`);
+        if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
+        const ftsConfig = await readDovecotConfFile(stdout);
+        if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
+        
+        if (ftsConfig.plugin && ftsConfig.plugin.fts) {
+          // console.debug('ddebug --------------- ftsConfig pulled:',ftsConfig);
+          infos.env.FTS_PLUGIN = ftsConfig.plugin.fts;
+          infos.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+          // console.debug('ddebug --------------- ftsConfig pulled infos.env:',infos.env);
+        }
+        // console.debug('ddebug --------------- 7');
+      } catch (error) {
+        // console.debug('ddebug --------------- 8');
+        console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
+      }
+
     }
-      
+    // console.debug('ddebug --------------- 9');
+    
     debugLog(`${arguments.callee.name}: Server pull infos result:`, infos);
+    // console.debug('ddebug --------------- infos pulled:',infos);
     return infos;
     
   } catch (error) {
@@ -950,7 +963,7 @@ async function pullServerInfos() {
 // Function to get server infos
 async function getServerInfos(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
-  debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
+  debugLog(`${arguments.callee.name}: refresh=${refresh} (${typeof refresh})`);
   
   var DBdict = {};
   var pulledInfos = {};
@@ -967,26 +980,31 @@ async function getServerInfos(refresh) {
     ],
     env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
   };
+  // console.debug('ddebug ----------  before try, typeof refresh=',typeof refresh);
 
   try {
 
     if (!refresh) {
-      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Infos} (refresh=${refresh})`);
+      // console.debug('ddebug ----------  refresh=',refresh);
+       debugLog(`${arguments.callee.name}: read DBdict from ${DB_Infos} (refresh=${refresh})`);
       DBdict = await readJson(DB_Infos);
       // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
-    }
     
-    // we could read DB_Infos and it is valid
-    if (DBdict.constructor == Object && 'infos' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
-      return DBdict['infos'];
+      // we could read DB_Infos and it is valid
+      if (DBdict.constructor == Object && 'infos' in DBdict) {
+        debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
+        return DBdict['infos'];
+      }
       
-    // we could not read DB_Infos or it is invalid, pull it from container (costly)
+      // we could not read DB_Infos or it is invalid, pull it from container (costly)
     } else {
+      // console.debug('ddebug ---------- else Calling pullServerInfos()...');
       pulledInfos = await pullServerInfos();
       debugLog(`${arguments.callee.name}: got ${Object.keys(pulledInfos).length} pulledInfos from pullServerInfos()`);
     }
     
+    // console.debug('ddebug ----------  after if, pulledInfos=',pulledInfos);
+    // console.debug('ddebug ----------  pulledInfos length=',Object.keys(pulledInfos).length);
     // since we had to call pullServerInfos, we save DB_Infos
     if (pulledInfos && Object.keys(pulledInfos).length) {
       infos = { ...infos, ...pulledInfos };

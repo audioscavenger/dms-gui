@@ -554,12 +554,12 @@ app.get('/api/logins', async (req, res) => {
  *               username:
  *                 type: string
  *                 description: Login name of the new admin account
- *               email:
- *                 type: string
- *                 description: Email address of the new admin account
  *               password:
  *                 type: string
  *                 description: Password for the new admin account
+ *               email:
+ *                 type: string
+ *                 description: Email address of the new admin account
  *     responses:
  *       201:
  *         description: Admin credentials saved successfully
@@ -570,12 +570,11 @@ app.get('/api/logins', async (req, res) => {
  */
 app.post('/api/logins', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    // if (!email)     return res.status(400).json({ error: 'email missing' });
+    const { username, password, email } = req.body;
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await dockerMailserver.saveLogins(username, email, password);
+    const result = await dockerMailserver.saveLogins(username, password, email);
     res.status(201).json({ message: 'Admin credentials saved successfully' });
   } catch (error) {
     await dockerMailserver.debugLog(`index POST /api/logins: ${error.message}`);

@@ -88,10 +88,10 @@ export async function getLogins() {
   }
 };
 
-// export const saveLogins = async (username, email, password) => {
-export async function saveLogins(username, email, password) {
+// export const saveLogins = async (username, password, email='') => {
+export async function saveLogins(username, password, email='') {
   try {
-    const response = await api.post(`/logins`, { username, email, password });
+    const response = await api.post(`/logins`, { username, password, email });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error saving logins:', error);

@@ -16,6 +16,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## BUGS:
 
+* [ ] - frontend/CardFormLogins+Settings: pops an error saying A component is changing an uncontrolled input to be controlled.
 * [ ] - the left menu is only as high as the window on first load, when you scroll down it's blank
 
 ## TODO:
@@ -43,6 +44,11 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
 * [ ] - frontend/Settings: move receivedSettings call to its own form, this page code looks terrible
 
+* [x] 1.0.8.1 - frontend/Card: icon, title, titleExtra and collapse+refresh icons are now properly aligned
+* [x] 1.0.8.1 - frontend/pages: all Forms are now CardForm*
+* [x] 1.0.8.1 - backend: bugfix in the refresh/pull container mechanic
+* [x] 1.0.8.1 - frontend/Card: add refresh button, recieves a function
+* [x] 1.0.8.1 - frontend/Card: add collapse buttonm using react-bootstrap/Collapse
 * [x] 1.0.8 - looks good! release!
 * [x] 1.0.7.9 - frontend/pages: cleanup and standardize variable names round 1
 * [x] 1.0.7.9 - frontend/Settings: complete revamp

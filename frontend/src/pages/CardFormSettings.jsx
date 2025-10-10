@@ -9,6 +9,7 @@ import {
 
 import { 
   AlertMessage,
+  Card,
   Button,
   FormField,
   LoadingSpinner,
@@ -16,8 +17,8 @@ import {
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 // This is how to pass back onInfosSubmit to the parent page
-// const FormSettings = ({ onInfosSubmit }) => {
-function FormSettings() {
+// const CardFormSettings = ({ onInfosSubmit }) => {
+function CardFormSettings() {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
@@ -93,9 +94,9 @@ function FormSettings() {
     }
   };
 
-  const validateFormSettings = () => {
+  const validateCardFormSettings = () => {
     const errors = {};
-    // if (debug) console.debug('ddebug validateFormSettings settings=',settings);
+    // if (debug) console.debug('ddebug validateCardFormSettings settings=',settings);
 
     if (settings.containerName.length == 0) {
       errors.containerName = 'settings.containerNameRequired';
@@ -115,8 +116,8 @@ function FormSettings() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // if (debug) console.debug('ddebug validateFormSettings()=',validateFormSettings());
-    if (!validateFormSettings()) {
+    // if (debug) console.debug('ddebug validateCardFormSettings()=',validateCardFormSettings());
+    if (!validateCardFormSettings()) {
       return;
     }
 
@@ -146,51 +147,53 @@ function FormSettings() {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
 
-      <form onSubmit={handleSubmitSettings} className="form-wrapper">
-        <FormField
-          type="text"
-          id="containerName"
-          name="containerName"
-          label="settings.containerName"
-          value={settings.containerName}
-          onChange={handleChangeSettings}
-          placeholder="dms"
-          error={formErrors.containerName}
-          helpText="settings.containerNameHelp"
-          required
-        />
+      <Card title="settings.titleSettings" className="mb-4" icon="gear-fill" collapse="true" refresh="true" onClickRefresh={() => fetchSettings()}>
+        <form onSubmit={handleSubmitSettings} className="form-wrapper">
+          <FormField
+            type="text"
+            id="containerName"
+            name="containerName"
+            label="settings.containerName"
+            value={settings.containerName}
+            onChange={handleChangeSettings}
+            placeholder="dms"
+            error={formErrors.containerName}
+            helpText="settings.containerNameHelp"
+            required
+          />
 
-        <FormField
-          type="text"
-          id="setupPath"
-          name="setupPath"
-          label="settings.setupPath"
-          value={settings.setupPath}
-          onChange={handleChangeSettings}
-          placeholder="/usr/local/bin/setup"
-          error={formErrors.setupPath}
-          helpText="settings.setupPathHelp"
-          required
-        />
-      
-        <FormField
-          type="text"
-          id="dnsProvider"
-          name="dnsProvider"
-          label="settings.dnsProvider"
-          value={settings.dnsProvider}
-          onChange={handleChangeSettings}
-          placeholder="CloudFlare"
-          error={formErrors.dnsProvider}
-          helpText="settings.dnsProviderHelp"
-        />
-      
-        <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
-      </form>
+          <FormField
+            type="text"
+            id="setupPath"
+            name="setupPath"
+            label="settings.setupPath"
+            value={settings.setupPath}
+            onChange={handleChangeSettings}
+            placeholder="/usr/local/bin/setup"
+            error={formErrors.setupPath}
+            helpText="settings.setupPathHelp"
+            required
+          />
+        
+          <FormField
+            type="text"
+            id="dnsProvider"
+            name="dnsProvider"
+            label="settings.dnsProvider"
+            value={settings.dnsProvider}
+            onChange={handleChangeSettings}
+            placeholder="CloudFlare"
+            error={formErrors.dnsProvider}
+            helpText="settings.dnsProviderHelp"
+          />
+        
+          <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
+        </form>
+      </Card>
     </>
   );
 
 }
 
-export default FormSettings;
+export default CardFormSettings;
 

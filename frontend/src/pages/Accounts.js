@@ -37,7 +37,7 @@ const Accounts = () => {
   const [infos, setServerInfos] = useState({});
 
   // Common states -------------------------------------------------
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   
   // State for new account inputs ----------------------------------
@@ -60,10 +60,7 @@ const Accounts = () => {
   // State for DNS change modal ------------------------------------
   const dnsFormRef = useRef(null);
   const [showDNSModal, setShowDNSModal] = useState(false);
-  const [dnsFormData, setDNSFormData] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const [dnsFormData, setDNSFormData] = useState({});
   const [dnsFormErrors, setDNSFormErrors] = useState({});
 
 

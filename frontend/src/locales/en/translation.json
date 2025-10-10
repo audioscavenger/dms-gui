@@ -114,8 +114,8 @@
     "setupPath": "Setup.sh Script Path",
     "setupPathHelp": "Full path to the setup.sh script in your docker-mailserver installation.",
     "serverInfosTitle": "Internals and Environment.",
-    "serverInternalsDescription": "Internals of dms-gui.",
-    "serverEnvDescription": "Environment variables from DMS.",
+    "serverInternalsDescription": "Internals of dms-gui:",
+    "serverEnvDescription": "Environment variables from DMS:",
     "name": "Name",
     "title": "Settings",
     "value": "Value",
@@ -125,7 +125,8 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "refresh": "Refresh"
   },
   "api": {
     "errors": {
