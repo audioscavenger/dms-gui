@@ -13,6 +13,8 @@ const app = express();
 const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
 const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
 const DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
+const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
+const SETUP_SCRIPT  = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -63,6 +65,29 @@ app.set('query parser', function (str) {
  *   get:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
+ *     responses:
+ *       200:
+ *         description: Server status
+ *       500:
+ *         description: Unable to connect to docker-mailserver
+ */
+app.get('/api/status', async (req, res) => {
+  try {
+    const status = await dockerMailserver.getServerStatus();
+    res.json(status);
+  } catch (error) {
+    await dockerMailserver.debugLog(`index /api/status: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/infos:
+ *   get:
+ *     summary: Get server infos
+ *     description: Retrieve the infos of the docker-mailserver
  *     parameters:
  *       - in: query
  *         name: refresh
@@ -73,20 +98,20 @@ app.set('query parser', function (str) {
  *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
- *         description: Server status
+ *         description: Server infos
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/status', async (req, res) => {
+app.get('/api/infos', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : true;
-    if (debug) console.debug(`/api/status?refresh=${req.query.refresh} -> ${refresh}`);
-    const status = await dockerMailserver.getServerStatus(refresh);
-    res.json(status);
+    if (debug) console.debug(`/api/infos?refresh=${req.query.refresh} -> ${refresh}`);
+    const infos = await dockerMailserver.getServerInfos(refresh);
+    res.json(infos);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/status: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    res.status(500).json({ error: error.message });
+    await dockerMailserver.debugLog(`index /api/infos: ${error.message}`);
+    // res.infos(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.infos(500).json({ error: error.message });
   }
 });
 
@@ -474,10 +499,9 @@ app.get('/api/settings', async (req, res) => {
  */
 app.post('/api/settings', async (req, res) => {
   try {
-    const { containerName, setupPath, dnsProvider } = req.body;
+    const { containerName, setupPath=SETUP_SCRIPT, dnsProvider='' } = req.body;
     if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
-    if (!setupPath) setupPath = '';
-    if (!dnsProvider) dnsProvider = '';
+    if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
 
     const result = await dockerMailserver.saveSettings(containerName, setupPath, dnsProvider);
     res.status(201).json({ message: 'Settings saved successfully' });

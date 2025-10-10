@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -26,13 +26,13 @@ const Aliases = () => {
   const [aliases, setAliases] = useState([]);
   const [accounts, setAccounts] = useState([]);
   
-  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState(null);
   const [formData, setFormData] = useState({
     source: '',
     destination: '',
   });
   const [formErrors, setFormErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -51,13 +51,13 @@ const Aliases = () => {
       ]);
       setAccounts(accountsData);
       setAliases(aliasesData);
-      setError(null);
+      setErrorMessage(null);
 
       // if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
 
     } catch (err) {
       console.error(t('api.errors.fetchAliases'), err);
-      setError('api.errors.fetchAliases');
+      setErrorMessage('api.errors.fetchAliases');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ const Aliases = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (!validateForm()) {
@@ -120,7 +120,7 @@ const Aliases = () => {
       fetchAliases(true); // Refresh the aliases list
     } catch (err) {
       console.error(t('api.errors.addAlias'), err);
-      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.addAlias');
+      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.addAlias');
     }
   };
 
@@ -133,7 +133,7 @@ const Aliases = () => {
         fetchAliases(true); // Refresh the aliases list
       } catch (err) {
         console.error(t('api.errors.deleteAlias'), err);
-        (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAlias');
+        (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.deleteAlias');
       }
     }
   };
@@ -167,11 +167,13 @@ const Aliases = () => {
     return <LoadingSpinner />;
   }
   
+  const howMany = `(${aliases.length})`;
+  
   return (
     <div>
       <h2 className="mb-4">{t('aliases.title')}</h2>
       
-      <AlertMessage type="danger" message={error} />
+      <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
       <Row>
@@ -180,7 +182,7 @@ const Aliases = () => {
         <Col md={5} className="mb-4">
           {' '}
           {/* Use Col component */}
-          <Card title="aliases.newAlias">
+          <Card title="aliases.newAlias" icon="person-plus-fill">
             {' '}
             {/* Removed mb-4 from Card, added to Col */}
             <form onSubmit={handleSubmit} className="form-wrapper">
@@ -218,7 +220,7 @@ const Aliases = () => {
         <Col md={7}>
           {' '}
           {/* Use Col component */}
-          <Card title="aliases.existingAliases">
+          <Card title="aliases.existingAliases" titleExtra={howMany} icon="person-lines-fill">
             <DataTable
               columns={columns}
               data={aliases}

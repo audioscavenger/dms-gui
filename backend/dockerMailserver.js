@@ -23,7 +23,7 @@ const DB_Accounts   = DB_PATH + '/db.accounts.json';
 const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
 const DB_Logins     = DB_PATH + '/db.logins.json';
-const DB_Status     = DB_PATH + '/db.status.json';
+const DB_Infos      = DB_PATH + '/db.infos.json';
 
 const DMS_OPTIONS   = [
 'DMS_RELEASE',
@@ -212,7 +212,7 @@ async function readJson(jsonFile) {
       debugLog(`readJson: empty ${jsonFile}`);
     }
   } catch (error) {
-    debugLog(`readJson: ${jsonFile} read error:`, error);
+    console.error(`readJson: ${jsonFile} read error:`, error);
     throw new Error('readJson Error reading '+jsonFile);
   }
   return json;
@@ -232,11 +232,11 @@ async function writeJson(DB_JSON, DBdict) {
 
         
       } catch (error) {
-        debugLog(`writeJson: ${DB_JSON} write error:`, error);
+        console.error(`writeJson: ${DB_JSON} write error:`, error);
         throw new Error('Error writting DB_JSON');
       }
     } else {
-      debugLog(`writeJson: DBdict not an Object:`, DBdict);
+      console.error(`writeJson: DBdict not an Object:`, DBdict);
       throw new Error('writeJson Error: DBdict not an Object');
     }
   // });
@@ -277,14 +277,17 @@ async function getSettings() {
 
 
 // Function to save settings
-async function saveSettings(containerName, setupPath='', dnsProvider='') {
-  DBdict = {settings:{}};
+async function saveSettings(containerName, setupPath=SETUP_SCRIPT, dnsProvider='') {
+  DBdict = {
+    settings: {
+      containerName: containerName,
+      setupPath: setupPath,
+      dnsProvider: dnsProvider,
+    }
+  };
+  
   try {
-    DBdict.settings['containerName'] = containerName;
-    DBdict.settings['setupPath'] = setupPath;
-    DBdict.settings['dnsProvider'] = dnsProvider;
-    
-    debugLog(`${arguments.callee.name}: Saving settings:`,DBdict.settings);
+    debugLog(`saveSettings: Saving settings:`, DBdict.settings);
     await writeJson(DB_Settings, DBdict);
     return { success: true };
   } catch (error) {
@@ -793,8 +796,8 @@ function readDovecotConfFile(stdout) {
   }
 }
 
-// Function to pull server status
-async function pullServerStatus() {
+// Function to get server status
+async function getServerStatus() {
   var DBdict = {};
   var status = {
     status: {
@@ -809,7 +812,6 @@ async function pullServerStatus() {
       memory: '0MB',
       disk: '0%',
     },
-    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
   };
 
   try {
@@ -835,38 +837,6 @@ async function pullServerStatus() {
       status.status.FinishedAt = containerInfo.State.FinishedAt;
       status.status.Health = containerInfo.State.Health.Status;
 
-      // get and conver DMS environment to dict
-      dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
-      // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
-      
-      // we keep only some options not all
-      dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
-      // status['env'] = dictEnvDMSredux;
-      status.env = { ...status.env, ...dictEnvDMSredux };
-
-      // pull bindings and look for FTS
-      containerInfo.Mounts.forEach( async (mount) => {
-        if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
-        if (mount.Destination.match(/fts.*\.conf$/i)) {
-          // we found fts override plugin, let's load it
-          try {
-            const stdout = await execCommand(`cat ${mount.Destination}`);
-            if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
-            const ftsConfig = readDovecotConfFile(stdout);
-            if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
-            
-            if (ftsConfig.plugin && ftsConfig.plugin.fts) {
-              status.env.FTS_PLUGIN = ftsConfig.plugin.fts;
-              status.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-            }
-          } catch (error) {
-            console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
-          }
-        }
-      });
-      
-      
       // pull cpu stats if isRunning
       if (isRunning) {
         status.status.status = 'running';
@@ -913,28 +883,80 @@ async function pullServerStatus() {
 }
 
 
-// Function to check server status
-async function getServerStatus(refresh) {
+// Function to pull server infos
+async function pullServerInfos() {
+  var DBdict = {};
+  var infos = {
+    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
+  };
+
+  try {
+    debugLog(`${arguments.callee.name}: Pulling server infos`);
+    
+    // Get container info
+    const container = docker.getContainer(DMS_CONTAINER);
+    const containerInfo = await container.inspect();
+    // debugLog(`${arguments.callee.name}: ddebug containerInfo:`, containerInfo);
+
+    if (containerInfo.Id) {
+      
+      // get and conver DMS environment to dict
+      dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
+      // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
+      
+      // we keep only some options not all
+      dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+      // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+      // infos['env'] = dictEnvDMSredux;
+      infos.env = { ...infos.env, ...dictEnvDMSredux };
+
+      // pull bindings and look for FTS
+      containerInfo.Mounts.forEach( async (mount) => {
+        if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
+        if (mount.Destination.match(/fts.*\.conf$/i)) {
+          // we found fts override plugin, let's load it
+          try {
+            const stdout = await execCommand(`cat ${mount.Destination}`);
+            if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
+            const ftsConfig = readDovecotConfFile(stdout);
+            if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
+            
+            if (ftsConfig.plugin && ftsConfig.plugin.fts) {
+              infos.env.FTS_PLUGIN = ftsConfig.plugin.fts;
+              infos.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+            }
+          } catch (error) {
+            console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
+          }
+        }
+      });
+    }
+      
+    debugLog(`${arguments.callee.name}: Server pull infos result:`, infos);
+    return infos;
+    
+  } catch (error) {
+    let backendError = `Server pull infos error: ${error}`;
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    return {
+      infos: 'unknown',
+      error: error.message,
+    };
+  }
+}
+
+
+// Function to get server infos
+async function getServerInfos(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
   debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
   
   var DBdict = {};
-  var pulledStatus = {};
-  var status = {
+  var pulledInfos = {};
+  var infos = {
     name: 'dms-gui-backend',
     version: DMSGUI_VERSION,
-    status: {
-      status: 'unknown',
-      Error: '',
-      StartedAt: '',
-      FinishedAt: '',
-      Health: '',
-    },
-    resources: {
-      cpu: '0%',
-      memory: '0MB',
-      disk: '0%',
-    },
     internals: [
       { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
       { name: 'HOSTNAME', value: HOSTNAME },
@@ -949,43 +971,43 @@ async function getServerStatus(refresh) {
   try {
 
     if (!refresh) {
-      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Status} (refresh=${refresh})`);
-      DBdict = await readJson(DB_Status);
+      debugLog(`${arguments.callee.name}: read DBdict from ${DB_Infos} (refresh=${refresh})`);
+      DBdict = await readJson(DB_Infos);
       // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
     }
     
-    // we could read DB_Status and it is valid
-    if (DBdict.constructor == Object && 'status' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['status']).length} status in DBdict`);
-      return DBdict['status'];
+    // we could read DB_Infos and it is valid
+    if (DBdict.constructor == Object && 'infos' in DBdict) {
+      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
+      return DBdict['infos'];
       
-    // we could not read DB_Status or it is invalid, pull it from container (costly)
+    // we could not read DB_Infos or it is invalid, pull it from container (costly)
     } else {
-      pulledStatus = await pullServerStatus();
-      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledStatus).length} pulledStatus from pullServerStatus()`);
+      pulledInfos = await pullServerInfos();
+      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledInfos).length} pulledInfos from pullServerInfos()`);
     }
     
-    // since we had to call pullServerStatus, we save DB_Status
-    if (pulledStatus && Object.keys(pulledStatus).length) {
-      status = { ...status, ...pulledStatus };
-      DBdict["status"] = status;
-      await writeJson(DB_Status, DBdict);
+    // since we had to call pullServerInfos, we save DB_Infos
+    if (pulledInfos && Object.keys(pulledInfos).length) {
+      infos = { ...infos, ...pulledInfos };
+      DBdict["infos"] = infos;
+      await writeJson(DB_Infos, DBdict);
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with read status:`, pulledStatus);
+      console.error(`${arguments.callee.name}: error with read infos:`, pulledInfos);
     }
 
 
-    debugLog(`${arguments.callee.name}: Server read status result:`, pulledStatus);
-    return DBdict.status;
+    debugLog(`${arguments.callee.name}: Server read infos result:`, pulledInfos);
+    return DBdict.infos;
     
   } catch (error) {
-    let backendError = `Server read status error: ${error}`;
+    let backendError = `Server read infos error: ${error}`;
     let ErrorMsg = await formatError(backendError, error)
     console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
     return {
-      status: 'unknown',
+      infos: 'unknown',
       error: error.message,
     };
   }
@@ -1003,6 +1025,7 @@ module.exports = {
   addAlias,
   deleteAlias,
   getServerStatus,
+  getServerInfos,
   readJson,
   getSettings,
   saveSettings,

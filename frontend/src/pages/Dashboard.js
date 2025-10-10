@@ -1,12 +1,10 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getServerStatus, getAccounts, getAliases } from '../services/api';
 import { AlertMessage, DashboardCard, LoadingSpinner } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
-
-var refresh = true;
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -30,8 +28,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDashboard(refresh);
-    refresh = false;
+    fetchDashboard();
 
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboard, 30000);
@@ -39,9 +36,7 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboard = async (refresh) => {
-    if (debug) console.debug('ddebug fetchDashboard refresh',refresh);
-    refresh = (refresh === undefined) ? false : refresh;
+  const fetchDashboard = async () => {
     
     try {
       setLoading(true);
@@ -50,8 +45,8 @@ const Dashboard = () => {
       // const [statusData, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
       // Fetch data sequentially because otherwise DBdict gets overwritten
       const statusData = await getServerStatus(true);
-      const accountsResponse = await getAccounts(refresh);
-      const aliasesResponse = await getAliases(refresh);
+      const accountsResponse = await getAccounts();
+      const aliasesResponse = await getAliases();
 
       setServerStatus(statusData);
       setAccountsCount(accountsResponse.length);

@@ -1,10 +1,10 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getAccounts,
   getSettings,
-  getServerStatus,
+  getServerInfos,
   addAccount,
   deleteAccount,
   reindexAccount,
@@ -30,11 +30,11 @@ const Accounts = () => {
   const sortKeys = ['email', 'percent'];
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const [accounts, setAccounts] = useState([]);
   const [settings, setSettings] = useState({});
-  const [status, setServerStatus] = useState({});
+  const [infos, setServerInfos] = useState({});
 
   // Common states -------------------------------------------------
   const [successMessage, setSuccessMessage] = useState('');
@@ -77,23 +77,23 @@ const Accounts = () => {
     
     try {
       setLoading(true);
-      const [accountsData, settingsData, statusData] = await Promise.all([
+      const [accountsData, settingsData, infosData] = await Promise.all([
         getAccounts(refresh),
         getSettings(false),
-        getServerStatus(false),
+        getServerInfos(false),
       ]);
       setAccounts(accountsData);
       setSettings(settingsData);
-      setServerStatus(statusData);
-      setError(null);
+      setServerInfos(infosData);
+      setErrorMessage(null);
       
       // if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
       // if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
-      // if (debug) console.debug('ddebug: ------------- statusData', statusData);
+      // if (debug) console.debug('ddebug: ------------- infosData', infosData);
       
     } catch (err) {
       console.error(t('api.errors.fetchAllAccounts'), err);
-      setError('api.errors.fetchAllAccounts');
+      setErrorMessage('api.errors.fetchAllAccounts');
     } finally {
       setLoading(false);
     }
@@ -161,8 +161,8 @@ const Accounts = () => {
       fetchAllAccounts(true); // Refresh the accounts list
     } catch (err) {
       console.error(t('api.errors.addAccount'), err);
-      setError('api.errors.addAccount');
-      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.addAccount');
+      setErrorMessage('api.errors.addAccount');
+      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.addAccount');
     }
   };
 
@@ -174,8 +174,8 @@ const Accounts = () => {
         fetchAllAccounts(true); // Refresh the accounts list
       } catch (err) {
         console.error(t('api.errors.deleteAccount'), err);
-        setError('api.errors.deleteAccount');
-        (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAccount');
+        setErrorMessage('api.errors.deleteAccount');
+        (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.deleteAccount');
       }
     }
   };
@@ -186,8 +186,8 @@ const Accounts = () => {
       setSuccessMessage('accounts.reindexStarted');
     } catch (err) {
       console.error(t('api.errors.reindexAccount'), err);
-      setError('api.errors.reindexAccount');
-      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.reindexAccount');
+      setErrorMessage('api.errors.reindexAccount');
+      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.reindexAccount');
     }
   };
 
@@ -248,7 +248,7 @@ const Accounts = () => {
   // Submit password change
   const handleSubmitPasswordChange = async (e) => {
     e.preventDefault();
-    setError(null);
+    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (!validatePasswordForm()) {
@@ -264,7 +264,7 @@ const Accounts = () => {
       handleClosePasswordModal(); // Close the modal
     } catch (err) {
       console.error(t('api.errors.updatePassword'), err);
-      setError('api.errors.updatePassword');
+      setErrorMessage('api.errors.updatePassword');
     }
   };
   
@@ -325,7 +325,7 @@ const Accounts = () => {
   // Submit password change
   const handleSubmitDNSChange = async (e) => {
     e.preventDefault();
-    setError(null);
+    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (!validateDNSForm()) {
@@ -341,12 +341,15 @@ const Accounts = () => {
       handleCloseDNSModal(); // Close the modal
     } catch (err) {
       console.error(t('api.errors.updateDNS'), err);
-      setError('api.errors.updateDNS');
+      setErrorMessage('api.errors.updateDNS');
     }
   };
 
 
-
+  if (isLoading && !accounts && !infos) {
+    return <LoadingSpinner />;
+  }
+  
   // Column definitions for existing accounts table
   const columns = [
     { key: 'email', label: 'accounts.email' },
@@ -391,7 +394,7 @@ const Accounts = () => {
             onClick={() => handleDelete(account.email)}
             className="me-2"
           />
-          {(status.env.FTS_PLUGIN != "none") && (
+          {(infos.env.FTS_PLUGIN != "none") && (
           <Button
             variant="info"
             size="sm"
@@ -417,10 +420,6 @@ const Accounts = () => {
   ];
 
 
-  if (isLoading && !accounts) {
-    return <LoadingSpinner />;
-  }
-  
   const Form1 = (
           <form onSubmit={handleSubmit} className="form-wrapper">
             <FormField
@@ -477,8 +476,8 @@ const Accounts = () => {
   );
   
   const tabs = [
-  { id: 1, title: "accounts.newAccount",        icon: "person-plus-fill", content: Form1 },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "person-lines-fill", content: DataTable1 }
+  { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: Form1 },
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", content: DataTable1 }
   ];
 
   // BUG: passing defaultActiveKey as string does not activate said key
@@ -486,7 +485,7 @@ const Accounts = () => {
   return (
     <div>
       <h2 className="mb-4">{t('accounts.title')}</h2>
-      <AlertMessage type="danger" message={error} />
+      <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
         <Accordion

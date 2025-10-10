@@ -6,6 +6,8 @@ import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
  * Reusable card component using react-bootstrap, exposing sub-components like Card.Text
  * @param {Object} props Component props
  * @param {string} props.title Card title (translation key)
+ * @param {string} props.titleExtra Card titleExtra
+ * @param {string} props.icon Card icon
  * @param {React.ReactNode} props.children Card content
  * @param {string} props.className Additional CSS classes
  * @param {boolean} props.noPadding Remove padding from card body
@@ -13,6 +15,8 @@ import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
  */
 const Card = ({
   title,
+  titleExtra,
+  icon,
   children,
   className = '',
   noPadding = false,
@@ -28,7 +32,7 @@ const Card = ({
         <RBCard.Header>
           {title && (
             <RBCard.Title as="h5" className="mb-0">
-              {t(title)}
+            {(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {t(title)} {t(titleExtra)}
             </RBCard.Title>
           )}
           {headerContent}

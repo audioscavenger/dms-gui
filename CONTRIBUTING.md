@@ -43,7 +43,10 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
 * [ ] - frontend/Settings: move receivedSettings call to its own form, this page code looks terrible
 
-* [x] 1.0.7.8 - clear separation between infos and status
+* [x] 1.0.8 - looks good! release!
+* [x] 1.0.7.9 - frontend/pages: cleanup and standardize variable names round 1
+* [x] 1.0.7.9 - frontend/Settings: complete revamp
+* [x] 1.0.7.9 - clear separation between infos and status
 * [x] 1.0.7.8 - frontend/Card: added icons to Cards
 * [x] 1.0.7.8 - backend/api: added dnsProvider storage in db
 * [x] 1.0.7.8 - frontend/Settings: added dnsProvider entry, TODO: transform into dropdown

@@ -1,9 +1,8 @@
-const debug = true;
+const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  getServerStatus,
   getSettings,
   saveSettings,
 } from '../services/api';
@@ -16,19 +15,18 @@ import {
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-// function FormSettings() {
-const FormSettings = ({ onStatusSubmit }) => {
+// This is how to pass back onInfosSubmit to the parent page
+// const FormSettings = ({ onInfosSubmit }) => {
+function FormSettings() {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
-  const [submissionStatus, setSubmissionStatus] = useState(null); // 'idle', 'submitting', 'success', 'error'
+  const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
 
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
   const [formErrors, setFormErrors] = useState({});
   const [settings, setSettings] = useState({});
-
-  const [status, setServerStatus] = useState({});
 
 
   useEffect(() => {
@@ -41,43 +39,17 @@ const FormSettings = ({ onStatusSubmit }) => {
     if (debug) console.debug(`ddebug: ------------- fetchAllSettings call fetchSettings fetchLogins`);
     setLoading(true);
 
-    const statusData    = await fetchServerStatus();
     const settingsData  = await fetchSettings();
 
     setSettings(settingsData);
-    setServerStatus(statusData);
-    onStatusSubmit(statusData);
+    // onInfosSubmit(infosData);  // that's what you send back to the parent page
 
     setLoading(false);
 
   };
 
-  const fetchServerStatus = async () => {
-    if (debug) console.debug(`ddebug: ------------- fetchServerStatus call getSettings getServerStatus(false)`);
-
-    try {
-      // setLoading(true);
-      const [statusData] = await Promise.all([
-        getServerStatus(false),
-      ]);
-      // if (debug) console.debug('ddebug: ------------- statusData', statusData);
-
-      // setSettings(settingsData);
-      // setServerStatus(statusData);
-
-      setErrorMessage(null);
-      return statusData;
-
-    } catch (err) {
-      console.error(t('api.errors.fetchServerStatus'), err);
-      setErrorMessage('api.errors.fetchServerStatus');
-    // } finally {
-      // setLoading(false);
-    }
-  };
-
   const fetchSettings = async () => {
-    if (debug) console.debug(`ddebug: ------------- fetchSettings call getSettings getServerStatus`);
+    if (debug) console.debug(`ddebug: ------------- fetchSettings call getSettings`);
 
     try {
       // setLoading(true);
@@ -139,7 +111,7 @@ const FormSettings = ({ onStatusSubmit }) => {
     e.preventDefault();
     if (debug) console.debug('Form settings Submitted:', settings);
     
-    setSubmissionStatus('submitting');
+    setSubmissionSettings('submitting');
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -154,18 +126,18 @@ const FormSettings = ({ onStatusSubmit }) => {
         settings.setupPath,
         settings.dnsProvider,
       );
-      setSubmissionStatus('success');
+      setSubmissionSettings('success');
       setSuccessMessage('settings.settingsSaved');
       fetchSettings(); // Refresh the settings
     } catch (err) {
-      setSubmissionStatus('error');
+      setSubmissionSettings('error');
       console.error(t('api.errors.saveSettings'), err);
       setErrorMessage('api.errors.saveSettings');
     }
   };
 
 
-  if (isLoading && !status) {
+  if (isLoading && !settings) {
     return <LoadingSpinner />;
   }
   
@@ -203,8 +175,8 @@ const FormSettings = ({ onStatusSubmit }) => {
       
         <FormField
           type="text"
-          id="dns"
-          name="dns"
+          id="dnsProvider"
+          name="dnsProvider"
           label="settings.dnsProvider"
           value={settings.dnsProvider}
           onChange={handleChangeSettings}

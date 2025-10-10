@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
@@ -17,14 +17,26 @@ const api = axios.create({
 
 // Server status API
 // export const getServerStatus = async () => {
-export async function getServerStatus(refresh) {
-  refresh = (refresh === undefined) ? true : refresh;
+export async function getServerStatus() {
   try {
-    // if (debug) console.debug(`ddebug frontend call to /status?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
-    const response = await api.get(`/status?refresh=${refresh.toString()}`);
+    const response = await api.get(`/status`);
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error fetching server status:', error);
+    throw error;
+  }
+};
+
+// Server infos API
+// export const getServerStatus = async () => {
+export async function getServerInfos(refresh) {
+  refresh = (refresh === undefined) ? true : refresh;
+  try {
+    // if (debug) console.debug(`ddebug frontend call to /infos?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    const response = await api.get(`/infos?refresh=${refresh.toString()}`);
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error fetching server infos:', error);
     throw error;
   }
 };
@@ -53,10 +65,10 @@ export async function getSettings() {
   }
 };
 
-// export const saveSettings = async (containerName, setupPath) => {
-export async function saveSettings(containerName, setupPath) {
+// export const saveSettings = async (containerName, setupPath, dnsProvider) => {
+export async function saveSettings(containerName, setupPath, dnsProvider) {
   try {
-    const response = await api.post(`/settings`, { containerName, setupPath });
+    const response = await api.post(`/settings`, { containerName, setupPath, dnsProvider });
     return response.data;
   } catch (error) {
     if (debug) console.error('api: Error saving settings:', error);

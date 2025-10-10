@@ -38,7 +38,7 @@ const Accordion = ({
     <RBAccordion className={className} defaultActiveKey={defaultActiveKey} {...rest}>
       {tabs.map(tab => (
         <RBAccordion.Item key={tab.id} eventKey={tab.id}>
-          <RBAccordion.Header>{(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>}{t(tab.title)} {t(tab.titleExtra)}</RBAccordion.Header>
+          <RBAccordion.Header>{(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {t(tab.title)} {t(tab.titleExtra)}</RBAccordion.Header>
           <RBAccordion.Body className={bodyClassName}>{tab.content}</RBAccordion.Body>
         </RBAccordion.Item>
       ))}
