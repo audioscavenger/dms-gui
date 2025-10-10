@@ -110,6 +110,17 @@ export async function deleteAccount(email) {
   }
 };
 
+// export const reindexAccount = async (email) => {
+export async function reindexAccount(email) {
+  try {
+    const response = await api.put(`/reindex/${email}`);
+    return response.data;
+  } catch (error) {
+    if (debug) console.error('api: Error reindexing account:', error);
+    throw error;
+  }
+};
+
 // export const updateAccountPassword = async (email, password) => {
 export async function updateAccountPassword(email, password) {
   try {

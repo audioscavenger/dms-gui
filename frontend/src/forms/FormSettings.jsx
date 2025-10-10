@@ -32,11 +32,17 @@ const FormSettings = ({ onStatusSubmit }) => {
   });
 
   const [status, setServerStatus] = useState({
-    status: 'loading',
+    status: {
+      status: 'loading',
+      Error: '',
+      StartedAt: '',
+      FinishedAt: '',
+      Health: '',
+    },
     name: 'dms-gui',
     version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
-    internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
+    internals: [],
     env: {},
   });
 

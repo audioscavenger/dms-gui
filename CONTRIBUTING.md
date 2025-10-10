@@ -30,21 +30,31 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - backend: encrypt password in db.logins.json
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 
+* [ ] - frontend: convert all the db.*.json into browser json storage? the only settings we need to save are related to the UI
 * [ ] - frontend/pages: add proxy to rspamd page?
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
 * [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
 * [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
-* [ ] - frontend/Dashboard:  add indexing status
-* [ ] - frontend/Accounts:  add index reset/update commands
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
+* [ ] - frontend/Dashboard: where do we display Health StartedAt etc?
 
-* [x] 1.0.7.6 - bugfix in FormLogins.jsx as you cannot alter a const
-* [x] 1.0.7.6 - api.js are all default export functions
-* [x] 1.0.7.6 - getServerStatus can be refreshed, saves status in db
-* [x] 1.0.7.5 - DataTable sorting algorith is perfect
+* [x] 1.0.7.7 - frontend/Accounts: reindex buttons only show if 
+* [x] 1.0.7.7 - frontend/Accounts: add reindex buttons with 1s duration animation
+* [x] 1.0.7.7 - frontend: added reindexAccount and /reindex call
+* [x] 1.0.7.7 - backend: added reindexAccount and /api/reindex
+* [x] 1.0.7.7 - backend: added jsonFixTrailingCommas and readDovecotConfFile
+* [x] 1.0.7.7 - backend: pullServerStatus always pulls status, getServerStatus does it if refresh=true
+* [x] 1.0.7.7 - backend: pullServerStatus should look for "fts = xapian" in /etc/dovecot/conf.d/*.conf
+* [x] 1.0.7.7 - backend: pullServerStatus pulls status.status with Rrror StartedAt Health etc
+* [x] 1.0.7.7 - backend: fix isRunning=unknown when stopped as container status returns all usual data even when stopped
+* [x] 1.0.7.7 - backend: handle missing container or bad name
+* [x] 1.0.7.6 - frontend/forms: bugfix in FormLogins.jsx as you cannot alter a const
+* [x] 1.0.7.6 - frontend: api.js are all default export functions
+* [x] 1.0.7.6 - backend: getServerStatus can be refreshed, saves status in db
+* [x] 1.0.7.5 - frontend/DataTable: sorting algorith is perfect
 * [x] 1.0.7.4 - removed @tanstack/react-table
 * [x] 1.0.7.4 - added solumn sorting in DataTable
 * [x] 1.0.7.3 - upgraded i18next react-dom webpack and added @tanstack/react-table
@@ -124,6 +134,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
 * [ ] - do we add multiple logins and roles?
 * [-] - backend: separate server status from server info
+* [ ] - reindex: doveadm index requires mailbox folder name, or can do it for all with `doveadm index -A -q \*`; where do we add this option?
 
 <!--
 search for base image with nodejs+py3:

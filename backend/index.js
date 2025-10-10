@@ -2,11 +2,11 @@ const debug = (process.env.DEBUG === 'true') ? true : false;
 const express = require('express');
 const qs = require('qs');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const dockerMailserver = require('./dockerMailserver');
 
+const dotenv = require('dotenv');
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 
 const app = express();
@@ -199,6 +199,43 @@ app.delete('/api/accounts/:email', async (req, res) => {
   } catch (error) {
     await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for reindexing an email account
+/**
+ * @swagger
+ * /api/reindex/{email}:
+ *   put:
+ *     summary: Reindex an email account
+ *     description: Reindex an email account by doveadm
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email address of the account to reindex
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       400:
+ *         description: Email is required
+ *       500:
+ *         description: Unable to reindex account
+ */
+app.put('/api/reindex/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    await dockerMailserver.reindexAccount(email);
+    res.json({ message: 'Reindex started for account', email });
+  } catch (error) {
+    await dockerMailserver.debugLog(`index /api/reindex: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to reindex account' });
     res.status(500).json({ error: error.message });
   }
 });

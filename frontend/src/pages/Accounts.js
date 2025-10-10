@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getAccounts,
+  getServerStatus,
   addAccount,
   deleteAccount,
+  reindexAccount,
   updateAccountPassword,
 } from '../services/api';
 import {
@@ -27,6 +29,7 @@ const Accounts = () => {
   const passwordFormRef = useRef(null);
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
+  const [status, setServerStatus] = useState({});
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
@@ -47,26 +50,29 @@ const Accounts = () => {
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
   useEffect(() => {
-    fetchAccounts(false);
+    fetchAllAccounts(false);
   }, []);
 
-  const fetchAccounts = async (refresh) => {
+  const fetchAllAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAccounts call getAccounts(${refresh})`);
+    if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
     
     try {
       setLoading(true);
-      const [accountsData] = await Promise.all([
+      const [accountsData, statusData] = await Promise.all([
         getAccounts(refresh),
+        getServerStatus(false),
       ]);
       setAccounts(accountsData);
+      setServerStatus(statusData);
       setError(null);
       
       if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
+      if (debug) console.debug('ddebug: ------------- statusData', statusData);
       
     } catch (err) {
-      console.error(t('api.errors.fetchAccounts'), err);
-      setError('api.errors.fetchAccounts');
+      console.error(t('api.errors.fetchAllAccounts'), err);
+      setError('api.errors.fetchAllAccounts');
     } finally {
       setLoading(false);
     }
@@ -131,7 +137,7 @@ const Accounts = () => {
         password: '',
         confirmPassword: '',
       });
-      fetchAccounts(true); // Refresh the accounts list
+      fetchAllAccounts(true); // Refresh the accounts list
     } catch (err) {
       console.error(t('api.errors.addAccount'), err);
       setError('api.errors.addAccount');
@@ -144,12 +150,23 @@ const Accounts = () => {
       try {
         await deleteAccount(email);
         setSuccessMessage('accounts.accountDeleted');
-        fetchAccounts(true); // Refresh the accounts list
+        fetchAllAccounts(true); // Refresh the accounts list
       } catch (err) {
         console.error(t('api.errors.deleteAccount'), err);
         setError('api.errors.deleteAccount');
         (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.deleteAccount');
       }
+    }
+  };
+
+  const handleReindex = async (email) => {
+    try {
+      await reindexAccount(email);
+      setSuccessMessage('accounts.reindexStarted');
+    } catch (err) {
+      console.error(t('api.errors.reindexAccount'), err);
+      setError('api.errors.reindexAccount');
+      (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.reindexAccount');
     }
   };
 
@@ -270,7 +287,17 @@ const Accounts = () => {
             icon="trash"
             title={t('accounts.confirmDelete', { email: account.email })}
             onClick={() => handleDelete(account.email)}
+            className="me-2"
           />
+          {(status.env.FTS_PLUGIN != "none") && (
+          <Button
+            variant="info"
+            size="sm"
+            icon="recycle"
+            title={t('accounts.reindex')}
+            onClick={() => handleReindex(account.email)}
+          />
+          )}
         </div>
       ),
     },
@@ -281,6 +308,7 @@ const Accounts = () => {
     return <LoadingSpinner />;
   }
   
+  // icons: https://icons.getbootstrap.com/
   return (
     <div>
       <h2 className="mb-4">{t('accounts.title')}</h2>

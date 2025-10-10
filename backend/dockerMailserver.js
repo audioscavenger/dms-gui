@@ -5,6 +5,7 @@ const fsp = fs.promises;
 // const { promises: fs } = require("fs");
 
 const common = require ('./functions.js');
+const debug = (process.env.DEBUG === 'true') ? true : false;
 
 // const { name, version, description } = require('./package.json');  
 const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
@@ -34,27 +35,10 @@ const DMS_OPTIONS   = [
 'POSTFIX_MAILBOX_SIZE_LIMIT',
 ];
 
-// const array   = [
-// 'ENABLE_RSPAMD=1',
-// 'ENABLE_XAPIAN=1',
-// 'ENABLE_MTA_STS=0',
-// 'PERMIT_DOCKER=none',
-// 'DOVECOT_MAILBOX_FORMAT=mailbox',
-// ];
 
 const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
 const regexPrintOnly = /[^\S]/;
-
-// Debug flag
-const debug = (process.env.DEBUG === 'true') ? true : false;
-
-// While global values are discouraged for production code, we use it to serve as a shared source of state.
-// Well locking files to save or read proves too difficult, I give up
-// import { Mutex } from 'async-mutex';
-// const Mutex = require('async-mutex').Mutex;
-// const mutex = new Mutex();
-// var DBdict = {};
 
 
 async function formatError(errorMsg, error) {
@@ -89,6 +73,25 @@ async function formatError(errorMsg, error) {
   
   errorMsg = `${errorMsg}: ${splitErrorClean}`;
   return errorMsg;
+}
+
+
+var jsonFixTrailingCommas = function (jsonString, returnJson=false) {
+  var jsonObj;
+  eval('jsonObj = ' + jsonString);
+  if (returnJson) return jsonObj;
+  else return JSON.stringify(jsonObj);
+}
+
+
+// Helper function to format memory size
+function formatMemorySize(bytes) {
+  if (bytes === 0) return '0B';
+
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + sizes[i];
 }
 
 
@@ -128,6 +131,14 @@ async function execSetup(setupCommand) {
 }
 
 
+async function execCommand(command) {
+  // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
+  
+  debugLog(`${arguments.callee.name}: Executing system command: ${command}`);
+  return execInContainer(command);
+}
+
+
 /**
  * Executes a command in the docker-mailserver container
  * @param {string} command Command to execute
@@ -162,7 +173,7 @@ async function execInContainer(command) {
       });
 
       stream.on('end', () => {
-        debugLog(`${arguments.callee.name}: Command completed. Output:`, stdoutData);
+        // debugLog(`${arguments.callee.name}: Command completed. Output:`, stdoutData);
         if (stdoutData.match(/ERROR/))
           reject(stdoutData);
         else
@@ -372,8 +383,8 @@ async function getAccounts(refresh) {
     
     // since we had to call getAccountsFromDMS, we save DB_Accounts
     if (Array.isArray(accounts) && accounts.length) {
-      DBdict["accounts"] = accounts;
-      // DBdict = { ...DBdict, "accounts": accounts };
+      // DBdict["accounts"] = accounts;
+      DBdict = { ...DBdict, "accounts": accounts };
       // console.debug('ddebug ----------------------------- DBdict',DBdict);
       
       // try {
@@ -519,6 +530,21 @@ async function deleteAccount(email) {
   }
 }
 
+// Function to reindex an email account
+async function reindexAccount(email) {
+  try {
+    debugLog(`${arguments.callee.name}: Reindexing email account: ${email}`);
+    await execSetup(`doveadm index -u ${email} -q \\*`);
+    debugLog(`${arguments.callee.name}: Account reindex started for ${email}`);
+    return { success: true, email };
+  } catch (error) {
+    let backendError = 'Error reindexing account';
+    let ErrorMsg = await formatError(backendError, error)
+    console.error(`${arguments.callee.name}: ${backendError}:`, ErrorMsg);
+    throw new Error(ErrorMsg);
+  }
+}
+
 // Function to retrieve aliases
 async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
@@ -549,8 +575,8 @@ async function getAliases(refresh) {
     
     // since we had to call getAliasesFromDMS, we save DB_Aliases
     if (Array.isArray(aliases) && aliases.length) {
-      DBdict["aliases"] = aliases;
-      // DBdict = { ...DBdict, "aliases": aliases };
+      // DBdict["aliases"] = aliases;
+      DBdict = { ...DBdict, "aliases": aliases };
       // console.debug('ddebug ----------------------------- DBdict',DBdict);
       await writeJson(DB_Aliases, DBdict);
       
@@ -694,24 +720,95 @@ async function deleteAlias(source, destination) {
 }
 
 
+// function readDovecotConfFile will convert dovecot conf file syntax to JSON
+function readDovecotConfFile(stdout) {
+  // what we get
+  /*
+  mail_plugins = $mail_plugins fts fts_xapian
+  plugin {
+    fts = xapian
+    fts_xapian = partial=3 full=20 verbose=0
+
+    fts_autoindex = yes
+    fts_enforced = yes
+    # https://doc.dovecot.org/2.3/settings/plugin/fts-plugin/#plugin_setting-fts-fts_autoindex_max_recent_msgs
+    # fts_autoindex_max_recent_msgs = 999
+
+    # https://doc.dovecot.org/2.3/settings/plugin/fts-plugin/#plugin_setting-fts-fts_autoindex_exclude
+    fts_autoindex_exclude = \Trash
+    fts_autoindex_exclude2 = \Junk
+
+    # https://doc.dovecot.org/2.3/settings/plugin/fts-plugin/#plugin_setting-fts-fts_decoder
+    # fts_decoder = decode2text
+  }
+  service indexer-worker {
+    # limit size of indexer-worker RAM usage, ex: 512MB, 1GB, 2GB
+    vsz_limit = 2GB
+  }
+  */
+
+  // what we want
+  // plugin: {
+    // fts: "xapian",
+    // fts_xapian: "partial=3 full=20 verbose=0",
+    // fts_autoindex: "yes",
+    // fts_enforced: "yes",
+    // fts_autoindex_exclude: "\Trash",
+    // fts_autoindex_exclude2: "\Junk",
+  // }
+
+  // TODO: not capture trailing spaces in a set of words /[\s+]?=[\s+]?([\S\s]+)[\s+]?$/
+  const regexConfComments = /^(\s+)?#(.*?)$/;
+  // " mail_plugins = $mail_plugins fts fts_xapian ".replace(/(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/, "'$2': '$5',") -> "'mail_plugins': '$mail_plugins fts fts_xapian ',"
+  const regexConfDeclare = /(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/;
+  // " ssss indexer-worker { ".replace(/(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/, "'$2': $5") -> " 'ssss': {"
+  const regexConfObjOpen = /(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/;
+  const regexConfObjClose = /(\s+)?([\]\}])(\s+)?$/;
+  const regexEmpty = /^\s*[\r\n]/gm;
+
+
+  const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
+  const cleanlines = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].replace(regexEmpty, '')
+                         .replace(regexConfComments, '')
+                         .replace(regexConfDeclare, '"$2": "$5",')
+                         .replace(regexConfObjOpen, '"$2": $5')
+                         .replace(regexConfObjClose, '$2,')
+                         .trim();
+    if (line) cleanlines.push(line);
+  }
+
+  const cleanData = `{${cleanlines.join('\n')}}`;
+  if (debug) console.debug(`${arguments.callee.name}: cleanData:`, cleanData);
+
+  try {
+    const json = jsonFixTrailingCommas(cleanData, true);
+    if (debug) console.debug(`${arguments.callee.name}: json:`, json);
+    return json;
+  } catch (error) {
+    console.error(`${arguments.callee.name}: cleanData not valid JSON:`, error);
+    return {};
+  }
+}
+
 // Function to pull server status
 async function pullServerStatus() {
   var DBdict = {};
   var status = {
-    status: 'stopped',
-    name: 'dms-gui-backend',
-    version: DMSGUI_VERSION,
+    status: {
+      status: 'stopped',
+      Error: '',
+      StartedAt: '',
+      FinishedAt: '',
+      Health: '',
+    },
     resources: {
       cpu: '0%',
       memory: '0MB',
       disk: '0%',
     },
-    internals: [
-      { name: 'NODE_VERSION', value: process.version },
-      { name: 'NODE_ENV', value: NODE_ENV },
-      { name: 'PORT_NODEJS', value: PORT_NODEJS }
-    ],
-    env: {},
+    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
   };
 
   try {
@@ -722,47 +819,82 @@ async function pullServerStatus() {
     const containerInfo = await container.inspect();
     // debugLog(`${arguments.callee.name}: ddebug containerInfo:`, containerInfo);
 
-    // Check if container is running
-    const isRunning = containerInfo.State.Running === true;
-    debugLog(`${arguments.callee.name}: Container running: ${isRunning}`);
-
-    // get and conver DMS environment to dict
-    dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
-    // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
+    // Check if container exist
+    status.status.status = (containerInfo.Id) ? "stopped" : "missing";
     
-    // we keep only some options not all
-    dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-    // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
-    
-    status['env'] = dictEnvDMSredux;
-
-    if (isRunning) {
-      status.status = 'running';
+    if ( status.status.status != "missing") {
       
-      // Get container stats
-      debugLog(`${arguments.callee.name}: Getting container stats`);
-      const stats = await container.stats({ stream: false });
+      // Check if container is running
+      const isRunning = containerInfo.State.Running === true;
+      debugLog(`${arguments.callee.name}: Container running: ${isRunning} status.status=`,status.status);
+
+      // get also errors and stuff
+      status.status.Error = containerInfo.State.Error;
+      status.status.StartedAt = containerInfo.State.StartedAt;
+      status.status.FinishedAt = containerInfo.State.FinishedAt;
+      status.status.Health = containerInfo.State.Health.Status;
+
+      // get and conver DMS environment to dict
+      dictEnvDMS = common.arrayOfStringToDict(containerInfo.Config.Env, '=');
+      // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
       
-      // Calculate CPU usage percentage
-      const cpuDelta =
-          stats.cpu_stats.cpu_usage.total_usage
-        - stats.precpu_stats.cpu_usage.total_usage;
-      const systemCpuDelta =
-        stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
-      const cpuPercent =
-        (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
-      status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
+      // we keep only some options not all
+      dictEnvDMSredux = common.reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+      // debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+      // status['env'] = dictEnvDMSredux;
+      status.env = { ...status.env, ...dictEnvDMSredux };
 
-      // Calculate memory usage
-      const memoryUsageBytes = stats.memory_stats.usage;
-      status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
+      // pull bindings and look for FTS
+      containerInfo.Mounts.forEach( async (mount) => {
+        if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
+        if (mount.Destination.match(/fts.*\.conf$/i)) {
+          // we found fts override plugin, let's load it
+          try {
+            const stdout = await execCommand(`cat ${mount.Destination}`);
+            if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
+            const ftsConfig = readDovecotConfFile(stdout);
+            if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
+            
+            if (ftsConfig.plugin && ftsConfig.plugin.fts) {
+              status.env.FTS_PLUGIN = ftsConfig.plugin.fts;
+              status.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+            }
+          } catch (error) {
+            console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
+          }
+        }
+      });
+      
+      
+      // pull cpu stats if isRunning
+      if (isRunning) {
+        status.status.status = 'running';
+        
+        // Get container stats
+        debugLog(`${arguments.callee.name}: Getting container stats`);
+        const stats = await container.stats({ stream: false });
+        
+        // Calculate CPU usage percentage
+        const cpuDelta =
+            stats.cpu_stats.cpu_usage.total_usage
+          - stats.precpu_stats.cpu_usage.total_usage;
+        const systemCpuDelta =
+          stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+        const cpuPercent =
+          (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
+        status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
 
-      debugLog(`${arguments.callee.name}: Resources:`, status.resources);
+        // Calculate memory usage
+        const memoryUsageBytes = stats.memory_stats.usage;
+        status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
 
-      // For disk usage, we would need to run a command inside the container
-      // This could be a more complex operation involving checking specific directories
-      // For simplicity, we'll set this to "N/A" or implement a basic check
-      status.resources.diskUsage = 'N/A';
+        debugLog(`${arguments.callee.name}: Resources:`, status.resources);
+
+        // For disk usage, we would need to run a command inside the container
+        // This could be a more complex operation involving checking specific directories
+        // For simplicity, we'll set this to "N/A" or implement a basic check
+        status.resources.diskUsage = 'N/A';
+      }
     }
 
     debugLog(`${arguments.callee.name}: Server pull status result:`, status);
@@ -786,21 +918,31 @@ async function getServerStatus(refresh) {
   debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
   
   var DBdict = {};
+  var pulledStatus = {};
   var status = {
-    status: 'stopped',
     name: 'dms-gui-backend',
     version: DMSGUI_VERSION,
+    status: {
+      status: 'unknown',
+      Error: '',
+      StartedAt: '',
+      FinishedAt: '',
+      Health: '',
+    },
     resources: {
       cpu: '0%',
       memory: '0MB',
       disk: '0%',
     },
     internals: [
+      { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
+      { name: 'HOSTNAME', value: HOSTNAME },
+      { name: 'TZ', value: TZ },
       { name: 'NODE_VERSION', value: process.version },
       { name: 'NODE_ENV', value: NODE_ENV },
-      { name: 'PORT_NODEJS', value: PORT_NODEJS }
+      { name: 'PORT_NODEJS', value: PORT_NODEJS },
     ],
-    env: {},
+    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
   };
 
   try {
@@ -816,26 +958,26 @@ async function getServerStatus(refresh) {
       debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['status']).length} status in DBdict`);
       return DBdict['status'];
       
-    // we could not read DB_Status or it is invalid
+    // we could not read DB_Status or it is invalid, pull it from container (costly)
     } else {
-      status = await pullServerStatus();
-      debugLog(`${arguments.callee.name}: got ${Object.keys(status).length} status from pullServerStatus()`);
+      pulledStatus = await pullServerStatus();
+      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledStatus).length} pulledStatus from pullServerStatus()`);
     }
     
     // since we had to call pullServerStatus, we save DB_Status
-    if (typeof status == 'object' && Object.keys(status).length) {
+    if (pulledStatus && Object.keys(pulledStatus).length) {
+      status = { ...status, ...pulledStatus };
       DBdict["status"] = status;
-      // DBdict = { ...DBdict, "status": status };
       await writeJson(DB_Status, DBdict);
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with read status:`, status);
+      console.error(`${arguments.callee.name}: error with read status:`, pulledStatus);
     }
 
 
-    debugLog(`${arguments.callee.name}: Server read status result:`, status);
-    return status;
+    debugLog(`${arguments.callee.name}: Server read status result:`, pulledStatus);
+    return DBdict.status;
     
   } catch (error) {
     let backendError = `Server read status error: ${error}`;
@@ -848,16 +990,6 @@ async function getServerStatus(refresh) {
   }
 }
 
-
-// Helper function to format memory size
-function formatMemorySize(bytes) {
-  if (bytes === 0) return '0B';
-
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + sizes[i];
-}
 
 // export default (
 module.exports = {
@@ -875,9 +1007,9 @@ module.exports = {
   saveSettings,
   getLogins,
   saveLogins,
+  reindexAccount,
 };
 // );
-
 
 
 // interesting stuff to pull from containerInfo:

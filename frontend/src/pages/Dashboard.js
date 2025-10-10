@@ -11,11 +11,17 @@ var refresh = true;
 const Dashboard = () => {
   const { t } = useTranslation();
   const [status, setServerStatus] = useState({
-    status: 'loading',
+    status: {
+      status: 'loading',
+      Error: '',
+      StartedAt: '',
+      FinishedAt: '',
+      Health: '',
+    },
     name: 'dms-gui',
     version: '1.0.0',
     resources: { cpu: '0%', memory: '0MB', disk: '0%' },
-    internals: [{ name: 'NODE_VERSION', value: 'v24' },{ name: 'NODE_ENV', value: 'production' },{ name: 'PORT_NODEJS', value: '3001' }],
+    internals: [],
     env: {},
   });
   const [accountsCount, setAccountsCount] = useState(0);
@@ -61,14 +67,15 @@ const Dashboard = () => {
 
 
   const getStatusColor = () => {
-    if (status.status === 'running') return 'success';
-    if (status.status === 'stopped') return 'danger';
+    if (status.status.status === 'running') return 'success';
+    if (status.status.status === 'stopped') return 'danger';
     return 'warning';
   };
 
   const getStatusText = () => {
-    if (status.status === 'running') return 'dashboard.status.running';
-    if (status.status === 'stopped') return 'dashboard.status.stopped';
+    console.debug('ddebug status.status=',status.status)
+    if (status.status.status === 'running') return 'dashboard.status.running';
+    if (status.status.status === 'stopped') return 'dashboard.status.stopped';
     return 'dashboard.status.unknown';
   };
 

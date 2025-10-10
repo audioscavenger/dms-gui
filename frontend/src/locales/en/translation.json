@@ -51,6 +51,8 @@
     "passwordRequired": "Password is required",
     "passwordUpdated": "Password updated successfully!",
     "passwordsNotMatch": "Passwords do not match",
+    "reindex": "Force reindex",
+    "reindexStarted": "Reindex started",
     "storage": "Storage Usage",
     "title": "Email Accounts Management",
     "updatePassword": "Update Password"
@@ -130,7 +132,8 @@
       "updatePassword": "Error updating password",
       "fetchAliases": "Error fetching aliases",
       "addAlias": "Error adding alias",
-      "deleteAlias": "Error deleting alias"
+      "deleteAlias": "Error deleting alias",
+      "reindexAccount": "Error reindexing account"
     }
   },
   "language": {
