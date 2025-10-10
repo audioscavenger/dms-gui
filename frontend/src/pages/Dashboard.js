@@ -73,7 +73,7 @@ const Dashboard = () => {
   };
 
   const getStatusText = () => {
-    console.debug('ddebug status.status=',status.status)
+    if (debug) console.debug('ddebug status.status=',status.status)
     if (status.status.status === 'running') return 'dashboard.status.running';
     if (status.status.status === 'stopped') return 'dashboard.status.stopped';
     return 'dashboard.status.unknown';

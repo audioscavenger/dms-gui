@@ -1,5 +1,6 @@
 // Export all components for easier imports
 export { default as AlertMessage } from './AlertMessage';
+export { default as Accordion } from './Accordion';
 export { default as Button } from './Button';
 export { default as Card } from './Card';
 export { default as DashboardCard } from './DashboardCard';

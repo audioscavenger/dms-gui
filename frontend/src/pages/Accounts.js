@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getAccounts,
+  getSettings,
   getServerStatus,
   addAccount,
   deleteAccount,
@@ -11,6 +12,7 @@ import {
 } from '../services/api';
 import {
   AlertMessage,
+  Accordion,
   Button,
   Card,
   DataTable,
@@ -26,28 +28,44 @@ import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 const Accounts = () => {
   const sortKeys = ['email', 'percent'];
-  const passwordFormRef = useRef(null);
   const { t } = useTranslation();
-  const [accounts, setAccounts] = useState([]);
-  const [status, setServerStatus] = useState({});
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
+
+  const [accounts, setAccounts] = useState([]);
+  const [settings, setSettings] = useState({});
+  const [status, setServerStatus] = useState({});
+
+  // Common states -------------------------------------------------
+  const [successMessage, setSuccessMessage] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  
+  // State for new account inputs ----------------------------------
+  const [newAccountformData, setNewAccountFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
 
-  // State for password change modal
+  // State for password change modal -------------------------------
+  const passwordFormRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(null);
   const [passwordFormData, setPasswordFormData] = useState({
     newPassword: '',
     confirmPassword: '',
   });
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
+
+  // State for DNS change modal ------------------------------------
+  const dnsFormRef = useRef(null);
+  const [showDNSModal, setShowDNSModal] = useState(false);
+  const [dnsFormData, setDNSFormData] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [dnsFormErrors, setDNSFormErrors] = useState({});
+
 
   useEffect(() => {
     fetchAllAccounts(false);
@@ -55,20 +73,23 @@ const Accounts = () => {
 
   const fetchAllAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
+    // if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
     
     try {
       setLoading(true);
-      const [accountsData, statusData] = await Promise.all([
+      const [accountsData, settingsData, statusData] = await Promise.all([
         getAccounts(refresh),
+        getSettings(false),
         getServerStatus(false),
       ]);
       setAccounts(accountsData);
+      setSettings(settingsData);
       setServerStatus(statusData);
       setError(null);
       
-      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
-      if (debug) console.debug('ddebug: ------------- statusData', statusData);
+      // if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
+      // if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
+      // if (debug) console.debug('ddebug: ------------- statusData', statusData);
       
     } catch (err) {
       console.error(t('api.errors.fetchAllAccounts'), err);
@@ -78,43 +99,43 @@ const Accounts = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleNewAccountInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setNewAccountFormData({
+      ...newAccountformData,
       [name]: value,
     });
 
     // Clear the error for this field while typing
-    if (formErrors[name]) {
-      setFormErrors({
-        ...formErrors,
+    if (newAccountFormErrors[name]) {
+      setNewAccountFormErrors({
+        ...newAccountFormErrors,
         [name]: null,
       });
     }
   };
 
-  const validateForm = () => {
+  const validateNewAccountForm = () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!formData.email.trim()) {
+    if (!newAccountformData.email.trim()) {
       errors.email = 'accounts.emailRequired';
-    } else if (!emailRegex.test(formData.email)) {
+    } else if (!emailRegex.test(newAccountformData.email)) {
       errors.email = 'accounts.invalidEmail';
     }
 
-    if (!formData.password) {
+    if (!newAccountformData.password) {
       errors.password = 'accounts.passwordRequired';
-    } else if (formData.password.length < 8) {
+    } else if (newAccountformData.password.length < 8) {
       errors.password = 'accounts.passwordLength';
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (newAccountformData.password !== newAccountformData.confirmPassword) {
       errors.confirmPassword = 'accounts.passwordsNotMatch';
     }
 
-    setFormErrors(errors);
+    setNewAccountFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -122,17 +143,17 @@ const Accounts = () => {
     e.preventDefault();
     setSuccessMessage(null);
 
-    if (!validateForm()) {
+    if (!validateNewAccountForm()) {
       return;
     }
 
     try {
       await addAccount(
-        formData.email,
-        formData.password,
+        newAccountformData.email,
+        newAccountformData.password,
       );
       setSuccessMessage('accounts.accountCreated');
-      setFormData({
+      setNewAccountFormData({
         email: '',
         password: '',
         confirmPassword: '',
@@ -169,6 +190,8 @@ const Accounts = () => {
       (err.response.data.error) ? setError(err.response.data.error.toString()) : setError('api.errors.reindexAccount');
     }
   };
+
+
 
   // Open password change modal for an account
   const handleChangePassword = (account) => {
@@ -244,8 +267,87 @@ const Accounts = () => {
       setError('api.errors.updatePassword');
     }
   };
+  
+  
+  
+  // Open DNS change modal for an account
+  const handleChangeDNS = (account) => {
+    setSelectedAccount(account);
+    setPasswordFormData({
+      newPassword: '',
+      confirmPassword: '',
+    });
+    setDNSFormErrors({});
+    setShowDNSModal(true);
+  };
 
-  // Column definitions for accounts table
+  // Close password change modal
+  const handleCloseDNSModal = () => {
+    setShowDNSModal(false);
+    setSelectedAccount(null);
+  };
+
+  // Handle input changes for password change form
+  const handleDNSInputChange = (e) => {
+    const { name, value } = e.target;
+    setDNSFormData({
+      ...dnsFormData,
+      [name]: value,
+    });
+
+    // Clear the error for this field while typing
+    if (dnsFormErrors[name]) {
+      setDNSFormErrors({
+        ...dnsFormErrors,
+        [name]: null,
+      });
+    }
+  };
+
+  // Validate DNS change form
+  const validateDNSForm = () => {
+    const errors = {};
+
+    if (!dnsFormData.newPassword) {
+      errors.newPassword = 'accounts.passwordRequired';
+    } else if (dnsFormData.newPassword.length < 8) {
+      errors.newPassword = 'accounts.passwordLength';
+    }
+
+    if (dnsFormData.newPassword !== dnsFormData.confirmPassword) {
+      errors.confirmPassword = 'accounts.passwordsNotMatch';
+    }
+
+    setDNSFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Submit password change
+  const handleSubmitDNSChange = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!validateDNSForm()) {
+      return;
+    }
+
+    try {
+      await updateDNS(
+        selectedAccount.email,
+        passwordFormData.newPassword
+      );
+      setSuccessMessage('accounts.dnsUpdated');
+      handleCloseDNSModal(); // Close the modal
+    } catch (err) {
+      console.error(t('api.errors.updateDNS'), err);
+      setError('api.errors.updateDNS');
+    }
+  };
+
+
+
+  // Column definitions for existing accounts table
   const columns = [
     { key: 'email', label: 'accounts.email' },
     {
@@ -296,6 +398,17 @@ const Accounts = () => {
             icon="recycle"
             title={t('accounts.reindex')}
             onClick={() => handleReindex(account.email)}
+            className="me-2"
+          />
+          )}
+          {(settings.dnsProvider != "") && (
+          <Button
+            variant="info"
+            size="sm"
+            icon="globe"
+            title={t('accounts.manageDNS')}
+            onClick={() => handleChangeDNS(account.email)}
+            className="me-2"
           />
           )}
         </div>
@@ -308,6 +421,67 @@ const Accounts = () => {
     return <LoadingSpinner />;
   }
   
+  const Form1 = (
+          <form onSubmit={handleSubmit} className="form-wrapper">
+            <FormField
+              type="email"
+              id="email"
+              name="email"
+              label="accounts.email"
+              value={newAccountformData.email}
+              onChange={handleNewAccountInputChange}
+              placeholder="user@domain.com"
+              error={newAccountFormErrors.email}
+              required
+            />
+
+            <FormField
+              type="password"
+              id="password"
+              name="password"
+              label="accounts.password"
+              value={newAccountformData.password}
+              onChange={handleNewAccountInputChange}
+              error={newAccountFormErrors.password}
+              required
+            />
+
+            <FormField
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              label="accounts.confirmPassword"
+              value={newAccountformData.confirmPassword}
+              onChange={handleNewAccountInputChange}
+              error={newAccountFormErrors.confirmPassword}
+              required
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              text="accounts.addAccount"
+            />
+          </form>
+  );
+  
+  const DataTable1 = (
+            <DataTable
+            columns={columns}
+            data={accounts}
+            keyExtractor={(account) => account.email}
+            isLoading={isLoading}
+            emptyMessage="accounts.noAccounts"
+            sortKeys={sortKeys}
+            />
+  );
+  
+  const tabs = [
+  { id: 1, title: "accounts.newAccount",        icon: "person-plus-fill", content: Form1 },
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "person-lines-fill", content: DataTable1 }
+  ];
+
+  // BUG: passing defaultActiveKey as string does not activate said key
   // icons: https://icons.getbootstrap.com/
   return (
     <div>
@@ -315,80 +489,11 @@ const Accounts = () => {
       <AlertMessage type="danger" message={error} />
       <AlertMessage type="success" message={successMessage} />
       
-      <Row>
-        {' '}
-        {/* Use Row component */}
-        
-        <Col md={5} className="mb-4">
-          {' '}
-          {/* Use Col component */}
-          <Card title="accounts.newAccount">
-            {' '}
-            {/* Removed mb-4 from Card, added to Col */}
-            <form onSubmit={handleSubmit} className="form-wrapper">
-              <FormField
-                type="email"
-                id="email"
-                name="email"
-                label="accounts.email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="user@domain.com"
-                error={formErrors.email}
-                required
-              />
+        <Accordion
+        tabs={tabs} 
+        >
+        </Accordion>
 
-              <FormField
-                type="password"
-                id="password"
-                name="password"
-                label="accounts.password"
-                value={formData.password}
-                onChange={handleInputChange}
-                error={formErrors.password}
-                required
-              />
-
-              <FormField
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                label="accounts.confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                error={formErrors.confirmPassword}
-                required
-              />
-
-              <Button
-                type="submit"
-                variant="primary"
-                text="accounts.addAccount"
-              />
-            </form>
-          </Card>
-        </Col>{' '}
-        {/* Close first Col */}
-        
-        <Col md={7}>
-          {' '}
-          {/* Use Col component */}
-          <Card title="accounts.existingAccounts">
-            <DataTable
-              columns={columns}
-              data={accounts}
-              keyExtractor={(account) => account.email}
-              isLoading={isLoading}
-              emptyMessage="accounts.noAccounts"
-              sortKeys={sortKeys}
-            />
-          </Card>
-        </Col>{' '}
-        {/* Close second Col */}
-        
-      </Row>{' '}
-      {/* Close Row */}
-      
       {/* Password Change Modal using react-bootstrap */}
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
@@ -438,6 +543,37 @@ const Accounts = () => {
           />
         </Modal.Footer>
       </Modal>
+
+      {/* DNS Modal using react-bootstrap */}
+      <Modal show={showDNSModal} onHide={handleCloseDNSModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {t('accounts.manageDNS')} - {selectedAccount?.email}{' '}
+            {/* Use optional chaining */}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedAccount && ( // Ensure selectedAccount exists before rendering form
+            <form onSubmit={handleSubmitDNSChange} ref={dnsFormRef}>
+              TBD
+            </form>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {/* Use refactored Button component */}
+          <Button
+            variant="secondary"
+            onClick={handleCloseDNSModal}
+            text="common.cancel"
+          />
+          <Button
+            variant="primary"
+            onClick={handleSubmitDNSChange}
+            text="accounts.updateDNS"
+          />
+        </Modal.Footer>
+      </Modal>
+      
     </div>
   );
 };

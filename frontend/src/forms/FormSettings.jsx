@@ -26,25 +26,9 @@ const FormSettings = ({ onStatusSubmit }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   
   const [formErrors, setFormErrors] = useState({});
-  const [settings, setSettings] = useState({
-    containerName: '',
-    setupPath: '',
-  });
+  const [settings, setSettings] = useState({});
 
-  const [status, setServerStatus] = useState({
-    status: {
-      status: 'loading',
-      Error: '',
-      StartedAt: '',
-      FinishedAt: '',
-      Health: '',
-    },
-    name: 'dms-gui',
-    version: '1.0.0',
-    resources: { cpu: '0%', memory: '0MB', disk: '0%' },
-    internals: [],
-    env: {},
-  });
+  const [status, setServerStatus] = useState({});
 
 
   useEffect(() => {
@@ -76,7 +60,7 @@ const FormSettings = ({ onStatusSubmit }) => {
       const [statusData] = await Promise.all([
         getServerStatus(false),
       ]);
-      if (debug) console.debug('ddebug: ------------- statusData', statusData);
+      // if (debug) console.debug('ddebug: ------------- statusData', statusData);
 
       // setSettings(settingsData);
       // setServerStatus(statusData);
@@ -100,7 +84,7 @@ const FormSettings = ({ onStatusSubmit }) => {
       const [settingsData] = await Promise.all([
         getSettings(),
       ]);
-      if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
+      // if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
 
       // setSettings(settingsData);
 
@@ -139,7 +123,7 @@ const FormSettings = ({ onStatusSubmit }) => {
 
   const validateFormSettings = () => {
     const errors = {};
-    if (debug) console.debug('ddebug validateFormSettings settings=',settings);
+    // if (debug) console.debug('ddebug validateFormSettings settings=',settings);
 
     if (settings.containerName.length == 0) {
       errors.containerName = 'settings.containerNameRequired';
@@ -159,7 +143,7 @@ const FormSettings = ({ onStatusSubmit }) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (debug) console.debug('ddebug validateFormSettings()=',validateFormSettings());
+    // if (debug) console.debug('ddebug validateFormSettings()=',validateFormSettings());
     if (!validateFormSettings()) {
       return;
     }
@@ -168,6 +152,7 @@ const FormSettings = ({ onStatusSubmit }) => {
       await saveSettings(
         settings.containerName,
         settings.setupPath,
+        settings.dnsProvider,
       );
       setSubmissionStatus('success');
       setSuccessMessage('settings.settingsSaved');
@@ -216,6 +201,18 @@ const FormSettings = ({ onStatusSubmit }) => {
           required
         />
       
+        <FormField
+          type="text"
+          id="dns"
+          name="dns"
+          label="settings.dnsProvider"
+          value={settings.dnsProvider}
+          onChange={handleChangeSettings}
+          placeholder="CloudFlare"
+          error={formErrors.dnsProvider}
+          helpText="settings.dnsProviderHelp"
+        />
+      
         <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
       </form>
     </>
@@ -225,42 +222,3 @@ const FormSettings = ({ onStatusSubmit }) => {
 
 export default FormSettings;
 
-
-/*
-// https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-// FormOne.jsx
-import React, { useState } from 'react';
-
-function FormOne() {
-  const [settings, setSettings] = useState({ field1: '', field2: '' });
-
-  const handleChangeSettings = (e) => {
-    setSettings({ ...settings, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmitSettings = (e) => {
-    e.preventDefault(); // Prevent default browser form submission
-    console.log('Form One Submitted:', settings);
-    // Add your submission logic for Form One here (e.g., API call)
-  };
-
-  return (
-    <form onSubmit={handleSubmitSettings}>
-      <h2>Form One</h2>
-      <label>
-        Field 1:
-        <input type="text" name="field1" value={settings.field1} onChange={handleChangeSettings} />
-      </label>
-      <br />
-      <label>
-        Field 2:
-        <input type="text" name="field2" value={settings.field2} onChange={handleChangeSettings} />
-      </label>
-      <br />
-      <button type="submit">Submit Form One</button>
-    </form>
-  );
-}
-
-export default FormOne;
-*/

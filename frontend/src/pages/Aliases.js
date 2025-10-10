@@ -53,7 +53,7 @@ const Aliases = () => {
       setAliases(aliasesData);
       setError(null);
 
-      if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
+      // if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
 
     } catch (err) {
       console.error(t('api.errors.fetchAliases'), err);
@@ -116,7 +116,7 @@ const Aliases = () => {
         source: '',
         destination: '',
       });
-      if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+      // if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
       fetchAliases(true); // Refresh the aliases list
     } catch (err) {
       console.error(t('api.errors.addAlias'), err);
@@ -129,7 +129,7 @@ const Aliases = () => {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
-        if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+        // if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
         fetchAliases(true); // Refresh the aliases list
       } catch (err) {
         console.error(t('api.errors.deleteAlias'), err);

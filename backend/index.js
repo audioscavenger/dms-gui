@@ -462,6 +462,8 @@ app.get('/api/settings', async (req, res) => {
  *                 type: string
  *               setupPath:
  *                 type: string
+ *               dnsProvider:
+ *                 type: string
  *     responses:
  *       201:
  *         description: settings saved successfully
@@ -472,11 +474,12 @@ app.get('/api/settings', async (req, res) => {
  */
 app.post('/api/settings', async (req, res) => {
   try {
-    const { containerName, setupPath } = req.body;
+    const { containerName, setupPath, dnsProvider } = req.body;
     if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
-    if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
+    if (!setupPath) setupPath = '';
+    if (!dnsProvider) dnsProvider = '';
 
-    const result = await dockerMailserver.saveSettings(containerName, setupPath);
+    const result = await dockerMailserver.saveSettings(containerName, setupPath, dnsProvider);
     res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
     await dockerMailserver.debugLog(`index POST /api/settings: ${error.message}`);

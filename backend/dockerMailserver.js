@@ -277,11 +277,12 @@ async function getSettings() {
 
 
 // Function to save settings
-async function saveSettings(containerName, setupPath) {
+async function saveSettings(containerName, setupPath='', dnsProvider='') {
   DBdict = {settings:{}};
   try {
     DBdict.settings['containerName'] = containerName;
     DBdict.settings['setupPath'] = setupPath;
+    DBdict.settings['dnsProvider'] = dnsProvider;
     
     debugLog(`${arguments.callee.name}: Saving settings:`,DBdict.settings);
     await writeJson(DB_Settings, DBdict);
@@ -385,7 +386,7 @@ async function getAccounts(refresh) {
     if (Array.isArray(accounts) && accounts.length) {
       // DBdict["accounts"] = accounts;
       DBdict = { ...DBdict, "accounts": accounts };
-      // console.debug('ddebug ----------------------------- DBdict',DBdict);
+      // if (debug) console.debug('ddebug ----------------------------- DBdict',DBdict);
       
       // try {
         await writeJson(DB_Accounts, DBdict);
@@ -577,7 +578,7 @@ async function getAliases(refresh) {
     if (Array.isArray(aliases) && aliases.length) {
       // DBdict["aliases"] = aliases;
       DBdict = { ...DBdict, "aliases": aliases };
-      // console.debug('ddebug ----------------------------- DBdict',DBdict);
+      // if (debug) console.debug('ddebug ----------------------------- DBdict',DBdict);
       await writeJson(DB_Aliases, DBdict);
       
     // unknown error

@@ -20,7 +20,7 @@ const api = axios.create({
 export async function getServerStatus(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
   try {
-    if (debug) console.debug(`ddebug frontend call to /status?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    // if (debug) console.debug(`ddebug frontend call to /status?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/status?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
@@ -33,7 +33,7 @@ export async function getServerStatus(refresh) {
 export async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    if (debug) console.debug(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    // if (debug) console.debug(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/accounts?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
@@ -136,7 +136,7 @@ export async function updateAccountPassword(email, password) {
 export async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    if (debug) console.debug(`ddebug frontend call to /aliases?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    // if (debug) console.debug(`ddebug frontend call to /aliases?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/aliases?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {

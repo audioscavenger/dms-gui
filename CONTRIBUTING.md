@@ -40,8 +40,19 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
 * [ ] - frontend/Dashboard: where do we display Health StartedAt etc?
+* [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
+* [ ] - frontend/Settings: move receivedSettings call to its own form, this page code looks terrible
 
-* [x] 1.0.7.7 - frontend/Accounts: reindex buttons only show if 
+* [x] 1.0.7.8 - clear separation between infos and status
+* [x] 1.0.7.8 - frontend/Card: added icons to Cards
+* [x] 1.0.7.8 - backend/api: added dnsProvider storage in db
+* [x] 1.0.7.8 - frontend/Settings: added dnsProvider entry, TODO: transform into dropdown
+* [x] 1.0.7.8 - frontend/Accounts: added icons in Accordion titles
+* [x] 1.0.7.8 - frontend/Accounts: added DNS Modal
+* [x] 1.0.7.8 - frontend/Accounts: added DNS button
+* [x] 1.0.7.8 - frontend/Accounts: new account and accounts list in Accordion
+* [x] 1.0.7.8 - frontend/components: added Accordion
+* [x] 1.0.7.7 - frontend/Accounts: reindex buttons only show if status.env.FTS_PLUGIN != "none"
 * [x] 1.0.7.7 - frontend/Accounts: add reindex buttons with 1s duration animation
 * [x] 1.0.7.7 - frontend: added reindexAccount and /reindex call
 * [x] 1.0.7.7 - backend: added reindexAccount and /api/reindex

@@ -64,7 +64,7 @@ const FormLogins = () => {
       const [loginsData] = await Promise.all([
         getLogins(),
       ]);
-      if (debug) console.debug('ddebug: ------------- loginsData', loginsData);
+      // if (debug) console.debug('ddebug: ------------- loginsData', loginsData);
 
       if (loginsData.password) loginsData['confirmPassword'] = loginsData.password;
 
@@ -105,7 +105,7 @@ const FormLogins = () => {
 
   const validateFormLogins = () => {
     const errors = {};
-    if (debug) console.debug('ddebug validateFormLogins logins=',logins);
+    // if (debug) console.debug('ddebug validateFormLogins logins=',logins);
 
     if (!logins.username.trim()) {
       errors.username = 'settings.usernameRequired';
@@ -140,7 +140,7 @@ const FormLogins = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (debug) console.debug('ddebug validateFormLogins()=',validateFormLogins());
+    // if (debug) console.debug('ddebug validateFormLogins()=',validateFormLogins());
     if (!validateFormLogins()) {
       return;
     }
