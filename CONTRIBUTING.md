@@ -44,6 +44,8 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
 * [ ] - frontend/Settings: move receivedSettings call to its own form, this page code looks terrible
 
+* [x] 1.0.8.1 - frontend/DataTable: removed react-change-highlight and implemented modern react 19 change detection with custom hook and useRef
+* [x] 1.0.8.1 - frontend/DataTable: added ChangeHighlight/react-change-highlight and it kind of works, but slow and deprecated
 * [x] 1.0.8.1 - frontend/Card: icon, title, titleExtra and collapse+refresh icons are now properly aligned
 * [x] 1.0.8.1 - frontend/pages: all Forms are now CardForm*
 * [x] 1.0.8.1 - backend: bugfix in the refresh/pull container mechanic

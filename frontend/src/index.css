@@ -66,3 +66,18 @@ body {
 }
 
 .cursor-pointer {cursor: pointer;}
+
+/* Highlight animation */
+@keyframes highlight {
+  0%    { background-color: yellow; }
+  4%    { background-color: transparent; }
+  5%    { background-color: yellow; }
+  9%    { background-color: transparent; }
+  10%   { background-color: yellow; }
+  100%  { background-color: transparent; }
+}
+
+/* Style for the cell with a recent change */
+.highlight-change {
+  animation: highlight 4s ease-in-out;
+}
