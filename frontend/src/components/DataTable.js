@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
+const debug = false;
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import LoadingSpinner from './LoadingSpinner';
-import AlertMessage from './AlertMessage'; // Import refactored AlertMessage
+import AlertMessage from './AlertMessage';
+
 // https://www.npmjs.com/package/react-bootstrap
 // https://react-bootstrap.netlify.app/docs/components/table/
 import RBTable from 'react-bootstrap/Table';
 // import "bootstrap-icons/font/bootstrap-icons.css";   // https://icons.getbootstrap.com/
+
+function usePrevious(value) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  }); // Note: no dependency array, so it runs on every render
+  return ref.current;
+}
 
 /**
  * Reusable data table component using react-bootstrap
@@ -37,9 +47,31 @@ const DataTable = ({
 }) => {
   const { t } = useTranslation();
   const [sortOrder, setSortOrder] = useState(0);
+
+  // import ChangeHighlight from 'react-change-highlight';
+  // <ChangeHighlight>
+    // warning: Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.
+    // <td .. ref={React.createRef()}>
+
+    // error: Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.
+    // const ref = useRef([]);  
+    // <td .. ref={(element)=> ref.current[index] = element}>
+
+    // error: Uncaught Error: Expected ref to be a function, an object returned by React.createRef(), or undefined/null.
+    // const ref = useRef<HTMLTableCellElement | null>([]);
+    // <td .. ref={ref}>
   
+  // To highlight changes in a React 19 table, you need to store the previous state of your data and compare it with the new data during rendering.
+  // This can be accomplished using the useRef and useEffect hooks. The basic strategy is to maintain a reference to the data from the previous render cycle.
+  // Method: Using useRef and useEffect
+    // This is the standard approach for tracking previous values in React functional components. 
+    // useRef creates a mutable object whose .current property persists across re-renders without causing a re-render when it changes.
+  const previousData = usePrevious(data);
+
+  
+  // Column sorting click: we test the data type of the first row of that column
+  // TODO: also hide the arrows for rendered columns as they have cirtually no data
   const sortClick = (col) => {
-    // we test the data type of the first row of that column
     // if (data.length > 1 && ['string','number'].includes(typeof data[0][col])) {
       setSortOrder(sortOrder === 0 ? 1 : 0);
       sortFunction(col);
@@ -47,9 +79,9 @@ const DataTable = ({
   }
   
   const sortFunction = (col) => {
-    console.debug(`ddebug sortOrder=${sortOrder} col=${col}`);
-    console.debug('sortFunction, data=',data);
-    console.debug('sortFunction, data[0][col]=',data[0][col]);
+    if (debug) console.debug(`ddebug sortOrder=${sortOrder} col=${col}`);
+    if (debug) console.debug('sortFunction, data=',data);
+    if (debug) console.debug('sortFunction, data[0][col]=',data[0][col]);
     
     // if columns is a dictionary
     if (typeof data[0][col] == 'object') {
@@ -59,10 +91,10 @@ const DataTable = ({
       
       // sort by the sortKey found
       if (sortKey) {
-        console.debug('sortFunction, sortKey=',sortKey);
-        if (parseInt(data[0][col][sortKey])) {
-          if (sortOrder == 0) data.sort((a, b) => parseInt(a[col][sortKey]) - parseInt(b[col][sortKey]) );
-          else                data.sort((b, a) => parseInt(a[col][sortKey]) - parseInt(b[col][sortKey]) );
+        if (debug) console.debug('sortFunction, sortKey=',sortKey);
+        if (Number(data[0][col][sortKey])) {
+          if (sortOrder == 0) data.sort((a, b) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
+          else                data.sort((b, a) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
         } else {
           if (sortOrder == 0) data.sort((a, b) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
           else                data.sort((b, a) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
@@ -70,9 +102,9 @@ const DataTable = ({
 
       // sort by the first key whatever it is
       } else {
-        if (parseInt(Object.values(data[0][col])[0])) {
-          if (sortOrder == 0) data.sort((a, b) => parseInt(Object.values(a[col])[0]) - parseInt(Object.values(b[col])[0]) );
-          else                data.sort((b, a) => parseInt(Object.values(a[col])[0]) - parseInt(Object.values(b[col])[0]) );
+        if (Number(Object.values(data[0][col])[0])) {
+          if (sortOrder == 0) data.sort((a, b) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
+          else                data.sort((b, a) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
         } else {
           if (sortOrder == 0) data.sort((a, b) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
           else                data.sort((b, a) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
@@ -81,9 +113,9 @@ const DataTable = ({
       
     // or else stringify the data
     } else {
-      if (parseInt(data[0][col])) {
-        if (sortOrder == 0) data.sort((a, b) => parseInt(a[col]) - parseInt(b[col]) );
-        else                data.sort((b, a) => parseInt(a[col]) - parseInt(b[col]) );
+      if (Number(data[0][col])) {
+        if (sortOrder == 0) data.sort((a, b) => Number(a[col]) - Number(b[col]) );
+        else                data.sort((b, a) => Number(a[col]) - Number(b[col]) );
       } else {
         if (sortOrder == 0) data.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
         else                data.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
@@ -103,6 +135,7 @@ const DataTable = ({
 
 
   return (
+  <>
     <RBTable
       striped={striped}
       bordered={bordered}
@@ -122,17 +155,25 @@ const DataTable = ({
       <tbody>
         {renderRow
           ? data.map((item, index) => renderRow(item, index))
-          : data.map((item) => (
+          : data.map((item, index) => {
+              // Get the corresponding item from the previous data
+              // Then later on, compare previousItem.value to item.value to detect a change and apply .highlight class
+              // This works wonderfully, 
+              const previousItem = previousData ? previousData[index] : null;
+              
+              return (
               <tr key={keyExtractor(item)}>
                 {columns.map((column) => (
-                  <td key={`${keyExtractor(item)}-${column.key}`}>
+                  <td key={`${keyExtractor(item)}-${column.key}`} className={(previousItem && previousItem.value !== item.value) ? 'highlight-change' : ''}>
                     {column.render ? column.render(item) : item[column.key]}
                   </td>
                 ))}
               </tr>
-            ))}
+              );
+          })}
       </tbody>
     </RBTable>
+  </>
   );
 };
 
