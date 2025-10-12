@@ -27,13 +27,13 @@ const DataTable = ({
   data,
   keyExtractor,
   renderRow,
-  sortKeysInObject = [],  // we will sort objects from data only by those keys
+  sortKeys = [],
   isLoading= false,
   emptyMessage = 'common.noData',
-  striped = true,         // Default to striped
+  striped = true, // Default to striped
   bordered = false,
   hover = false,
-  responsive = true,      // Default to responsive
+  responsive = true, // Default to responsive
   ...rest // Pass other props to Table
 }) => {
   const { t } = useTranslation();
@@ -42,59 +42,16 @@ const DataTable = ({
   const [sortOrders, setSortOrders] = useState({});       // { columnName: 0|1 }
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
 
-  // useEffect(() => {
+  useEffect(() => {
     // handleSort(columns[0].key);
     // setSortColumn(columns[0].key);
     // setLiveData(data);   // never works
-  // }, []);
+  }, []);
 
-  const sortFunction = (col, currentData=[]) => {
-    // we escape if currentData[0][col] is undefined == it's a rendered column
-    if (currentData.length && currentData[0][col]) {
-      if (debug) console.debug(`ddebug col=${col} sortOrders=`,sortOrders);
-      if (debug) console.debug('sortFunction, currentData=',currentData);
-      if (debug) console.debug(`sortFunction, currentData[0][${col}]=`,currentData[0][col]);
-
-      // if currentData[0][col] is a dictionary
-      if (typeof currentData[0][col] == 'object') {
-        // find the first object in an array which exists in another array
-        let sortKey = null;
-        // we will filter object data only if a key from this data object was passed
-        if (sortKeysInObject) sortKey = Object.keys(currentData[0][col]).find((o2) => sortKeysInObject.some((o1) => o1 == o2));
-        
-        // sort by the sortKey found
-        if (sortKey) {
-          if (debug) console.debug('sortFunction, sortKey=',sortKey);
-          if (Number(currentData[0][col][sortKey])) {
-            if (sortOrders[col] == 0) currentData.sort((a, b) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
-            else                      currentData.sort((b, a) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
-          } else {
-            if (sortOrders[col] == 0) currentData.sort((a, b) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
-            else                      currentData.sort((b, a) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
-          }
-
-        // optional: try and sort by the first key of object, whatever it is
-        } else {
-          if (Number(Object.values(currentData[0][col])[0])) {
-            if (sortOrders[col] == 0) currentData.sort((a, b) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
-            else                      currentData.sort((b, a) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
-          } else {
-            if (sortOrders[col] == 0) currentData.sort((a, b) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
-            else                      currentData.sort((b, a) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
-          }
-        }
-        
-      // or else stringify/number compare the currentData
-      } else {
-        if (Number(currentData[0][col])) {
-          if (sortOrders[col] == 0) currentData.sort((a, b) => Number(a[col]) - Number(b[col]) );
-          else                      currentData.sort((b, a) => Number(a[col]) - Number(b[col]) );
-        } else {
-          if (sortOrders[col] == 0) currentData.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
-          else                      currentData.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
-        }
-      }
-    } // not a rendered column
+  function showSort(column) {
+    if (sortColumn) {
+      if (sortColumn === column) return (sortOrders === 0) ? '▲' : '▼';
+    } else return '▲';
   }
 
   function usePrevious(value) {
@@ -105,16 +62,21 @@ const DataTable = ({
     return ref.current;
   }
 
+  // TODO: store column: 0|1 in sortColumn and use ({ ...sortOrders, [column]: sort }); or smth like that
   const handleSort = (column) => {
-    if (debug) console.debug(`columns=`,columns);
     if (column in sortOrders) { if (debug) console.debug(`!!!${column} IN  (=${sortColumn}?)`,sortOrders);} else if (debug) console.debug(`!!!${column} NOT (=${sortColumn}?`,sortOrders);
     if (sortColumn === column) {
       if (debug) console.debug(`>>>setSortOrders for ${column} from ${sortOrders[column]} to`,+(!sortOrders[column]));
       setSortOrders({ ...sortOrders, [column]: +(!sortOrders[column]) });  // flip bit 0 <-> 1
     } else {
-      if (debug) console.debug(`---setSortOrders for ${column} to 0 (sortColumn=${sortColumn})`);
       setSortColumn(column);
       setSortOrders({ ...sortOrders, [column]: 0 });
+      // for (const key in sortOrders) {
+        // if (key !== column) {
+          // if (debug) console.debug(`---setSortOrders for ${key} to 0`);
+          // setSortOrders({ ...sortOrders, [key]: 0 });
+        // }
+      // }
     }
     if (debug) console.debug(`^^^final content of sortOrders:`,sortOrders); // never shows updated values
   };
@@ -123,14 +85,11 @@ const DataTable = ({
     setColumnFilters({ ...columnFilters, [column]: value });
   };
 
-  // BUG: crash when filtering objects: right-hand side of 'in' should be an object, got undefined
   const sortedAndFilteredData = useMemo(() => {
     let currentData = [...data];
-    // if (debug) console.debug(`currentData before sortedAndFilteredData`,JSON.stringify(currentData));
-    // if (debug) console.debug(`currentData before sortedAndFilteredData`,currentData);
+    if (debug) console.debug(`currentData before sortedAndFilteredData`,JSON.stringify(currentData));
     // if (debug) console.debug(`                   columnFilters`,columnFilters);
 
-    // TODO: handle objects too
     // Apply columnFilters
     Object.keys(columnFilters).forEach((column) => {
       const filterValue = columnFilters[column].toLowerCase();
@@ -142,15 +101,31 @@ const DataTable = ({
     });
 
     // Apply sorting ? '▲' : '▼'
-    if (currentData.length && sortColumn) {
-      // if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,JSON.stringify(currentData));
-      // if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,currentData);
-      // works:
-      sortFunction(sortColumn, currentData);
+    if (sortColumn) {
+      if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,JSON.stringify(currentData));
+      currentData.sort((a, b) => {
+        const aValue = a[sortColumn];
+        const bValue = b[sortColumn];
+        if (aValue < bValue) return +(!sortOrders[sortColumn]);   // flip bit 0 <-> 1
+        if (aValue > bValue) return +(!sortOrders[sortColumn]);   // flip bit 0 <-> 1
+        return 0;
+      });
     }
+/*     
+      if (Object.keys(data).length) {
+        // init sortOrders
+        if (debug) console.debug(`              -- init sortOrders --`);
+        let resetSort = {};
+        for (const key in data[0]) {
+          if (debug) console.debug(`---setSortOrders for ${key} to 0`);
+          resetSort[key] = 0;
+        }
+        setSortOrders(resetSort);
+        // setSortColumn(Object.keys(data[0])[0]);
+      }
+ */    
     
-    // if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,JSON.stringify(currentData));
-    // if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,currentData);
+    if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,JSON.stringify(currentData));
     return currentData;
   }, [data, sortColumn, sortOrders, columnFilters]);
 
@@ -172,7 +147,7 @@ const DataTable = ({
   // Method: Using useRef and useEffect
     // This is the standard approach for tracking previous values in React functional components. 
     // useRef creates a mutable object whose .current property persists across re-renders without causing a re-render when it changes.
-  const previousData = usePrevious(data);
+  const previousData = usePrevious(sortedAndFilteredData);
 
 
   if (isLoading && !data) {
@@ -184,10 +159,7 @@ const DataTable = ({
     return <AlertMessage type="info" message={emptyMessage} />;
   }
 
-  // TODO: since we handle object columns, find a way to hide sort arrows span for rendered columns name are not in sortedAndFilteredData
-  // BUG:  (column.key in sortedAndFilteredData[0]) should be false for rendered columns keys not in sortedAndFilteredData but it's always true for some reason
-  // BUG:  debug output of currentData in sortFunction clearly shows 'actions' column does not exist, so I am confused
-  
+
   return (
     <>
     <Table
@@ -204,7 +176,7 @@ const DataTable = ({
               key={column.key} 
             >
             {t(column.label)}
-            <span className='cursor-pointer' onClick={() => handleSort(column.key)}> { ((sortColumn === column.key && sortedAndFilteredData[0] && column.key in sortedAndFilteredData[0]) && (!(column.key in sortOrders) || sortOrders[column.key] === 0) ? '▲' : '▼')}</span>
+            <span className='cursor-pointer' onClick={() => handleSort(column.key)}> { ((sortColumn === column.key) && (!(column.key in sortOrders) || sortOrders[column.key] === 0) ? '▲' : '▼')}</span>
             <Form.Control type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
             />
             </th>
@@ -261,8 +233,66 @@ useEffect hook has 3ways to use.
 */
 
 
+/*
+  // Column sorting click: we test the data type of the first row of that column
+  // TODO: also hide the arrows for rendered columns as they have cirtually no data
+  const sortClick = (col) => {
+    // if (data.length > 1 && ['string','number'].includes(typeof data[0][col])) {
+      setSortOrders(sortOrders === 0 ? 1 : 0);
+      sortFunction(col);
+    // }
+  }
+  
+  
+  const sortFunction = (col) => {
+    if (debug) console.debug(`ddebug sortOrders=${sortOrders} col=${col}`);
+    if (debug) console.debug('sortFunction, filteredData=',filteredData);
+    if (debug) console.debug(`sortFunction, filteredData[0][${col}]=`,filteredData[0][col]);
+    
+    // if columns is a dictionary
+    if (typeof filteredData[0][col] == 'object') {
+      // find the first object in an array which exists in another array
+      let sortKey = null;
+      if (sortKeys) sortKey = Object.keys(filteredData[0][col]).find((o2) => sortKeys.some((o1) => o1 == o2));
+      
+      // sort by the sortKey found
+      if (sortKey) {
+        if (debug) console.debug('sortFunction, sortKey=',sortKey);
+        if (Number(filteredData[0][col][sortKey])) {
+          if (sortOrders == 0) filteredData.sort((a, b) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
+          else                filteredData.sort((b, a) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
+        } else {
+          if (sortOrders == 0) filteredData.sort((a, b) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
+          else                filteredData.sort((b, a) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
+        }
+
+      // sort by the first key whatever it is
+      } else {
+        if (Number(Object.values(filteredData[0][col])[0])) {
+          if (sortOrders == 0) filteredData.sort((a, b) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
+          else                filteredData.sort((b, a) => Number(Object.values(a[col])[0]) - Number(Object.values(b[col])[0]) );
+        } else {
+          if (sortOrders == 0) filteredData.sort((a, b) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
+          else                filteredData.sort((b, a) => JSON.stringify(Object.values(a[col])[0]).localeCompare(JSON.stringify(Object.values(b[col])[0])) );
+        }
+      }
+      
+    // or else stringify the filteredData
+    } else {
+      if (Number(filteredData[0][col])) {
+        if (sortOrders == 0) filteredData.sort((a, b) => Number(a[col]) - Number(b[col]) );
+        else                filteredData.sort((b, a) => Number(a[col]) - Number(b[col]) );
+      } else {
+        if (sortOrders == 0) filteredData.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+        else                filteredData.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+      }
+    }
+  }
+*/
+
+
 /* 
-// other approach: separate sort and filter hooks
+// original code I tried to implement:
 import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Form } from 'react-bootstrap';
 
@@ -285,15 +315,21 @@ function MySortableFilterableTable({ initialData }) {
     return currentData;
   }, [data, filters]);
 
-  // Sorted data based on current sort config, AFTER filtering: we sort only filtered data
+  // Sorted data based on current sort config
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return filteredData;
 
     return [...filteredData].sort((a, b) => {
-      return sortConfig.direction === 'ascending'
-        ? JSON.stringify(a[sortConfig.key]).localeCompare(JSON.stringify(b[sortConfig.key]))
-        : JSON.stringify(b[sortConfig.key]).localeCompare(JSON.stringify(a[sortConfig.key]));
-        
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'ascending'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      // Handle other data types (numbers, dates) here
+      return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
     });
   }, [filteredData, sortConfig]);
 

@@ -44,6 +44,11 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
 * [ ] - frontend/Settings: move receivedSettings call to its own form, this page code looks terrible
 
+* [x] 1.0.10 - BUG: find a way to hide the arrows for object columns with no data
+* [x] 1.0.10 - TODO: handle filtering for rendered object columns like we do for sorting
+* [x] 1.0.10 - add column filtering to DataTable: complete rewrite of DataTable with proper use of useRef and useMemo
+* [x] 1.0.9 - back ubuntu-latest worker in update-dockerhub.yml
+* [x] v1.0.8 - back to a versioning scheme that actually makes sense.
 * [x] 1.0.8.1 - frontend/DataTable: removed react-change-highlight and implemented modern react 19 change detection with custom hook and useRef
 * [x] 1.0.8.1 - frontend/DataTable: added ChangeHighlight/react-change-highlight and it kind of works, but slow and deprecated
 * [x] 1.0.8.1 - frontend/Card: icon, title, titleExtra and collapse+refresh icons are now properly aligned

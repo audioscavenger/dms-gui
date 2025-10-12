@@ -120,7 +120,7 @@ const Aliases = () => {
       fetchAliases(true); // Refresh the aliases list
     } catch (err) {
       console.error(t('api.errors.addAlias'), err);
-      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.addAlias');
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAlias');
     }
   };
 
@@ -133,7 +133,7 @@ const Aliases = () => {
         fetchAliases(true); // Refresh the aliases list
       } catch (err) {
         console.error(t('api.errors.deleteAlias'), err);
-        (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.deleteAlias');
+        (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAlias');
       }
     }
   };
@@ -227,6 +227,7 @@ const Aliases = () => {
               keyExtractor={(alias) => alias.source}
               isLoading={isLoading}
               emptyMessage="aliases.noAliases"
+              hover="true"
             />
           </Card>
         </Col>{' '}

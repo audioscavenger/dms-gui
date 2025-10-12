@@ -27,7 +27,7 @@ import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 const Accounts = () => {
-  const sortKeys = ['email', 'percent'];
+  const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -159,7 +159,7 @@ const Accounts = () => {
     } catch (err) {
       console.error(t('api.errors.addAccount'), err);
       setErrorMessage('api.errors.addAccount');
-      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.addAccount');
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAccount');
     }
   };
 
@@ -172,7 +172,7 @@ const Accounts = () => {
       } catch (err) {
         console.error(t('api.errors.deleteAccount'), err);
         setErrorMessage('api.errors.deleteAccount');
-        (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.deleteAccount');
+        (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAccount');
       }
     }
   };
@@ -184,7 +184,7 @@ const Accounts = () => {
     } catch (err) {
       console.error(t('api.errors.reindexAccount'), err);
       setErrorMessage('api.errors.reindexAccount');
-      (err.response.data.error) ? setErrorMessage(err.response.data.error.toString()) : setErrorMessage('api.errors.reindexAccount');
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.reindexAccount');
     }
   };
 
@@ -468,7 +468,7 @@ const Accounts = () => {
             keyExtractor={(account) => account.email}
             isLoading={isLoading}
             emptyMessage="accounts.noAccounts"
-            sortKeys={sortKeys}
+            sortKeysInObject={sortKeysInObject}
             />
   );
   
