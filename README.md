@@ -237,14 +237,17 @@ For detailed Docker setup instructions, please refer to:
 
 ## Available endpoints
 
-- `GET /api/logins` - Get admin credentials
-- `POST /api/logins` - Save admin credentials
+- `GET /api/status` - Server status
+- `GET /api/infos` - Server environment
 - `GET /api/settings` - Get settings
 - `POST /api/settings` - Save settings
-- `GET /api/status` - Server status
+- `GET /api/logins` - Get admin credentials
+- `POST /api/logins` - Save admin credentials
+
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
 - `DELETE /api/accounts/:email` - Delete an account
+- `DELETE /api/accounts/:email/password` - Update account password
 - `GET /api/aliases` - List aliases [?refresh=true]
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases/:source/:destination` - Delete an alias
@@ -256,6 +259,7 @@ OAS description of all API endpoints is available at:
 * using compose + proxy: http://localhost/docs or https://dms.domain.com/docs (with proxy)
 * using raw ports: http://localhost:3001/
 
+<!-- ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true) -->
 ![API](/assets/dms-gui-docs.webp)
 
 

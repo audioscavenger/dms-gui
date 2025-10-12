@@ -1,11 +1,14 @@
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
+# https://github.com/docker/metadata-action
 name: Docker Image CI
 
-on:
-  push:
-    branches: [ "main" ]
-    tags: [ 'v*.*.*' ]
-  # pull_request:
+on: release
+# on:
+  # push:
     # branches: [ "main" ]
+    # tags: [ 'v*.*.*' ]
+  # # pull_request:
+    # # branches: [ "main" ]
 
 env:
   IMAGE_NAME: audioscavenger/dms-gui
@@ -30,6 +33,7 @@ jobs:
         uses: tj-actions/changed-files@v44 # Use a recent version
         with:
           files: |
+            common/**
             backend/**
             frontend/**
             docker/**
@@ -79,15 +83,17 @@ jobs:
         if: steps.check_changes.outputs.any_changed == 'true'
         id: meta
         uses: docker/metadata-action@v5
+        
+        # https://github.com/docker/metadata-action?tab=readme-ov-file#typesemver
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            # {{version}} = shorthand for {{major}}.{{minor}}.{{patch}} (can include pre-release)
+            type=semver,enable={{is_default_branch}},pattern={{version}}
+            #type=ref,event=branch
+            type=ref,enable={{is_default_branch}},prefix=v,suffix=,event=tag
+            type=raw,enable={{is_default_branch}},value=latest
+            type=sha,enable={{is_default_branch}},format=short
 
       - name: Build and push Docker image
         if: steps.check_changes.outputs.any_changed == 'true'
