@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import LeftSidebar from './components/LeftSidebar';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
 import Aliases from './pages/Aliases';
@@ -20,7 +20,7 @@ function App() {
           <Col md={2} className="p-0 sidebar-col">
             {' '}
             {/* Added sidebar-col for potential custom styling */}
-            <Sidebar />
+            <LeftSidebar />
           </Col>
           {/* Main content column */}
           <Col md={10} className="main-content">

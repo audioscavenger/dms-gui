@@ -2,7 +2,7 @@ const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getServerStatus, getAccounts, getAliases } from '../services/api';
-import { AlertMessage, DashboardCard, LoadingSpinner } from '../components';
+import { AlertMessage, DashboardCard, LoadingSpinner, Sidebar } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
@@ -122,7 +122,7 @@ const Dashboard = () => {
           />
         </Col>
       </Row>{' '}
-      {/* Close first Row */}
+      
       <Row className="mt-4">
         {' '}
         {/* Use Row component */}

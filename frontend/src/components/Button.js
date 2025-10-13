@@ -1,6 +1,7 @@
+// https://icons.getbootstrap.com/
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import RBButton from 'react-bootstrap/Button'; // Import react-bootstrap Button
+import RBButton from 'react-bootstrap/Button';
 
 /**
  * Reusable button component using react-bootstrap

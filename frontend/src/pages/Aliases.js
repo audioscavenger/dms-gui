@@ -212,7 +212,7 @@ const Aliases = () => {
                 required
               />
 
-              <Button type="submit" variant="primary" text="aliases.addAlias" />
+              <Button type="submit" variant="primary" text="aliases.addAlias" collapse="true"/>
             </form>
           </Card>
         </Col>{' '}

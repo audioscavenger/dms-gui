@@ -42,6 +42,11 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Dashboard: where do we display Health StartedAt etc?
 * [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
 
+* [ ] - frontend/App: refactor Sidebar to be dynamic, as it is the actual menu
+
+* [ ] 1.0.12 - frontend/Sidebar: .leftsidebar inline-flex is the solution for collapse but then impossible to place the button properly
+* [ ] 1.0.12 - frontend/Aliases: add LeftSidebar collapse button
+* [ ] 1.0.12 - frontend/Aliases: renamed Sidebar to LeftSidebar
 * [x] 1.0.11 - frontend/CardFormSettings: pops an error saying A component is changing an uncontrolled input to be controlled: fixed by testing data properly when isLoading
 * [x] 1.0.11 - backend/getSmth: bugfix yet again when db is empty or missing data: no refresh would ever take place
 * [x] 1.0.11 - frontend/Accounts: add refresh icon to Accordion

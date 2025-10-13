@@ -1,3 +1,4 @@
+// https://icons.getbootstrap.com/
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card';
@@ -34,9 +35,9 @@ const Card = ({
   ...rest
 }) => {
   const { t } = useTranslation();
-  const bodyClassName   = noPadding == "true" ? 'p-0' : '';
-  const collapser       = collapse  == "true" ? true : false;
-  const refresher       = (typeof onClickRefresh == "function") ? true : false;
+  const bodyClassName   = Boolean(noPadding)      == "true" ? 'p-0' : '';
+  const collapser       = Boolean(collapse)       == "true" ? true : false;
+  const refresher       = (typeof onClickRefresh  == "function") ? true : false;
   
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap
   // "d-flex justify-content-between" works only for exactly 2 div as children, not span

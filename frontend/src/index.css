@@ -8,38 +8,63 @@ body {
   background-color: #f8f9fa;
 }
 
-.sidebar {
+/* -------------------- leftsidebar -------------------- */
+
+.leftsidebar {
+  color: rgb(206, 212, 218);
   background-color: #343a40;
   padding-top: 20px;
+  min-width: 50px;
+  display: inline-flex;
 }
 
 /* The "min-width" comes from the "min-width" media attribute on "main-content" */
 @media (min-width: 768px) {
-  .sidebar {
+  .leftsidebar {
     min-height: calc(100vh - 56px);
   }
 }
 
-/* Removed color and background styles as they are set inline in Sidebar.js */
+/* Removed color and background styles as they are set inline in LeftSidebar.js */
 /* Kept basic layout and transition styles */
-.sidebar .nav-link {
-  /* Target .nav-link added by react-bootstrap */
+/* Target .nav-link added by react-bootstrap */
+
+.leftsidebar .nav-link {
   text-decoration: none;
-  display: block;
+  display: inline-block;
   padding: 10px 15px;
   transition: all 0.3s;
 }
 
 /* Kept only the :hover style */
-.sidebar .nav-link:hover {
-  color: #fff !important; /* Use !important to override potential inline styles */
+
+.leftsidebar .nav-link:hover {
+  color: #fff !important;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Icon style - target icon inside the link */
-.sidebar .nav-link i {
+
+.leftsidebar .nav-link i {
   margin-right: 10px;
 }
+.collapsed .nav-link span {
+  display: none;
+}
+
+.leftsidebar-collapse-footer{
+  position: absolute;
+  bottom: 0em;
+  width: inherit;
+}
+.leftsidebar-collapse-btn{
+  /* position: absolute; */
+  /* bottom: .5rem; */
+}
+
+/* -------------------- leftsidebar -------------------- */
+
+
 
 .main-content {
   padding: 20px;
@@ -67,7 +92,7 @@ body {
 
 .cursor-pointer {cursor: pointer;}
 
-/* Highlight animation */
+/* DataTable Highlight animation */
 @keyframes highlight {
   0%    { background-color: yellow; }
   4%    { background-color: transparent; }
@@ -81,3 +106,5 @@ body {
 .highlight-change {
   animation: highlight 4s ease-in-out;
 }
+/* DataTable Highlight animation */
+

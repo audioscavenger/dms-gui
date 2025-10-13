@@ -1,4 +1,5 @@
 const debug = false;
+// https://icons.getbootstrap.com/
 // https://www.npmjs.com/package/react-bootstrap
 // https://react-bootstrap.netlify.app/docs/components/table/
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -6,7 +7,6 @@ import { Table, Form } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import LoadingSpinner from './LoadingSpinner';
 import AlertMessage from './AlertMessage';
-// import "bootstrap-icons/font/bootstrap-icons.css";   // https://icons.getbootstrap.com/
 
 /**
  * Reusable data table component using react-bootstrap

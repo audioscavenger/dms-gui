@@ -10,4 +10,4 @@ export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Navbar } from './Navbar';
 export { default as SelectField } from './SelectField';
-export { default as Sidebar } from './Sidebar';
+export { default as LeftSidebar } from './LeftSidebar';

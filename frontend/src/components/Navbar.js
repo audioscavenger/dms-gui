@@ -1,10 +1,12 @@
+// https://react-bootstrap.netlify.app/docs/components/navbar/
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import RBNavbar from 'react-bootstrap/Navbar'; // Import react-bootstrap Navbar
-import Nav from 'react-bootstrap/Nav'; // Import react-bootstrap Nav
-import Container from 'react-bootstrap/Container'; // Import react-bootstrap Container
+import RBNavbar from 'react-bootstrap/Navbar';
+import Nav from 'react-bootstrap/Nav';
+import Container from 'react-bootstrap/Container';
 
 const Navbar = () => {
   const { t } = useTranslation();
