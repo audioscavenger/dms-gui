@@ -91,10 +91,8 @@ const Settings = () => {
         </Col>{' '}
 
       </Row>{' '}
-
       
       <CardServerInfos />
-      
       
       <Card title="settings.aboutTitle">
         <Card.Text>

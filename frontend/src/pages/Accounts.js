@@ -343,7 +343,7 @@ const Accounts = () => {
   };
 
 
-  if (isLoading && !accounts && !infos) {
+  if (isLoading && !accounts.length && !infos.env) {
     return <LoadingSpinner />;
   }
   
@@ -474,10 +474,10 @@ const Accounts = () => {
   
   const tabs = [
   { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: Form1 },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", content: DataTable1 }
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTable1 }
   ];
 
-  // BUG: passing defaultActiveKey as string does not activate said key
+  // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not
   // icons: https://icons.getbootstrap.com/
   return (
     <div>
@@ -486,7 +486,8 @@ const Accounts = () => {
       <AlertMessage type="success" message={successMessage} />
       
         <Accordion
-        tabs={tabs} 
+          tabs={tabs}
+          refresh="true"
         >
         </Accordion>
 

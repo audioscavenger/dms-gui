@@ -126,6 +126,7 @@
     "error": "Error",
     "success": "Success",
     "cancel": "Cancel",
+    "collapse": "Collapse",
     "refresh": "Refresh"
   },
   "api": {
@@ -134,6 +135,8 @@
       "fetchAccounts": "Error fetching accounts",
       "fetchSettings": "Error fetching settings",
       "fetchLogins": "Error fetching admin credentials",
+      "fetchServerInfos": "Error fetching DMS container info",
+      "fetchServerEnv": "Error fetching DMS container environment",
       "saveSettings": "Error saving settings",
       "saveLogins": "Error saving admin credentials",
       "addAccount": "Error adding account",

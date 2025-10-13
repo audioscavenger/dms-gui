@@ -45,7 +45,7 @@ const CardServerInfos = ({ onRefresh }) => {
       setServerInfos(infosData);
       setErrorMessage(null);
 
-      // if (debug) console.debug('ddebug: ------------- infosData', infosData);
+      if (debug) console.debug('ddebug: ------------- infosData', infosData);
 
     } catch (err) {
       console.error(t('api.errors.fetchServerInfos'), err);
@@ -67,7 +67,7 @@ const CardServerInfos = ({ onRefresh }) => {
     { key: 'value', label: 'settings.value' },
   ];
 
-  if (isLoading && !infos) {
+  if (isLoading && !infos && !'internals' in infos) {
     return <LoadingSpinner />;
   }
 
@@ -75,35 +75,58 @@ const CardServerInfos = ({ onRefresh }) => {
     <>
       <AlertMessage type="danger" message={errorMessage} />
       
-      <Card title="settings.serverInfosTitle" incon="gear-wide-connected" collapse="true" refresh="true" onClickRefresh={() => fetchServerInfos(true)}>
+      <Card title="settings.serverInfosTitle" incon="gear-wide-connected" collapse="true" onClickRefresh={() => fetchServerInfos(true)}>
       
         <Card.Text>
           {' '}
           {t('settings.serverInternalsDescription')}
         </Card.Text>
+        {!infos.env && t('api.errors.fetchServerInfos') ||
         <DataTable
           columns={columnsInternals}
           data={infos.internals}
-          keyExtractor={(variable) => variable.name}
+          keyExtractor={(internal) => internal.name}
           isLoading={isLoading}
           emptyMessage="N/A"
         />
+        }
         
         <Card.Text>
           {' '}
           {t('settings.serverEnvDescription')}
         </Card.Text>
+        {!infos.env && t('api.errors.fetchServerEnv') ||
         <DataTable
           columns={columnsEnv}
           data={infos.envTable}
-          keyExtractor={(variable) => variable.name}
+          keyExtractor={(env) => env.name}
           isLoading={isLoading}
           emptyMessage="N/A"
         />
+        }
         
       </Card>
     </>
   );
-};
+}
 
 export default CardServerInfos;
+        // <DataTable
+          // columns={columnsInternals}
+          // data={infos.internals}
+          // keyExtractor={(internal) => internal.name}
+          // isLoading={isLoading}
+          // emptyMessage="N/A"
+        // />
+        
+        // <Card.Text>
+          // {' '}
+          // {t('settings.serverEnvDescription')}
+        // </Card.Text>
+        // <DataTable
+          // columns={columnsEnv}
+          // data={infos.envTable}
+          // keyExtractor={(env) => env.name}
+          // isLoading={isLoading}
+          // emptyMessage="N/A"
+        // />

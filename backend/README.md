@@ -37,16 +37,16 @@ It's a very small size and classic React structure. Most has been factored but s
 
 ```
 dms-gui/
-├── common/                     # Common functions used by both front and backend
 ├── backend/                    # Backend API
 │   ├── index.js                # /api server
 │   └── dockerMailserver.js     # Heart of the system
 ├── frontend/                   # Frontend React app
-│   ├── public/                 # favicon and index template
+│   ├── public                  # favicon and index template
 │   └── src                     # Frontend sources build in step 1 & 2
-│       ├── components          # Classic React factored components
-│       ├── locales             # Language packs for i18n
-│       ├── pages               # the left menu items
+│       └── components          # Classic React factored components
+│       └── forms               # Classic React factored components
+│       └── locales             # Language packs for i18n
+│       └── pages               # the left menu items
 │       └── api                 # The internal API calls to the backend
 ├── docker/                     # Docker configuration files
 │   ├── nginx.conf              # Nginx configuration
@@ -56,23 +56,19 @@ dms-gui/
 │   └── .dms-gui.env            # Your env variables
 ├── Dockerfile                  # Docker image configuration
 ├── docker-compose.yml          # Docker Compose configuration
-├── README.md                   # Docker setup documentation
-└── CONTRIBUTING.md             # TODO list
+└── README.md                   # Docker setup documentation
 ```
 
 ## Available endpoints
 
-- `GET /api/status` - Server status
-- `GET /api/infos` - Server environment
-- `GET /api/settings` - Get settings
-- `POST /api/settings` - Save settings
 - `GET /api/logins` - Get admin credentials
 - `POST /api/logins` - Save admin credentials
-
+- `GET /api/settings` - Get settings
+- `POST /api/settings` - Save settings
+- `GET /api/status` - Server status
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
 - `DELETE /api/accounts/:email` - Delete an account
-- `DELETE /api/accounts/:email/password` - Update account password
 - `GET /api/aliases` - List aliases [?refresh=true]
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases/:source/:destination` - Delete an alias

@@ -163,7 +163,7 @@ const CardFormLogins = () => {
     }
   };
 
-  if (isLoading && !logins) {
+  if (isLoading && !Object.keys(logins).length) {
     return <LoadingSpinner />;
   }
 
@@ -172,7 +172,7 @@ const CardFormLogins = () => {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
-      <Card title="settings.titleLogin" className="mb-4" icon="person-fill-gear" collapse="true" refresh="true" onClickRefresh={() => fetchLogins()}>
+      <Card title="settings.titleLogin" className="mb-4" icon="person-fill-gear" collapse="true" onClickRefresh={() => fetchLogins()}>
         <form onSubmit={handleSubmitLogins} className="form-wrapper">
           <FormField
             type="text"

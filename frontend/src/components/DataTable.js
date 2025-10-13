@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 // https://www.npmjs.com/package/react-bootstrap
 // https://react-bootstrap.netlify.app/docs/components/table/
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -37,16 +37,9 @@ const DataTable = ({
   ...rest // Pass other props to Table
 }) => {
   const { t } = useTranslation();
-  const [liveData, setLiveData] = useState(data);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrders, setSortOrders] = useState({});       // { columnName: 0|1 }
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
-
-  // useEffect(() => {
-    // handleSort(columns[0].key);
-    // setSortColumn(columns[0].key);
-    // setLiveData(data);   // never works
-  // }, []);
 
   const sortFunction = (col, currentData=[]) => {
     // we escape if currentData[0][col] is undefined == it's a rendered column
@@ -97,7 +90,7 @@ const DataTable = ({
     } // not a rendered column
   }
 
-  function usePrevious(value) {
+   function usePrevious(value) {
     const ref = useRef();
     useEffect(() => {
       ref.current = value;
@@ -126,9 +119,8 @@ const DataTable = ({
   // BUG: crash when filtering objects: right-hand side of 'in' should be an object, got undefined
   const sortedAndFilteredData = useMemo(() => {
     let currentData = [...data];
-    // if (debug) console.debug(`currentData before sortedAndFilteredData`,JSON.stringify(currentData));
-    // if (debug) console.debug(`currentData before sortedAndFilteredData`,currentData);
-    // if (debug) console.debug(`                   columnFilters`,columnFilters);
+    if (debug) console.debug(`currentData before sortedAndFilteredData`,JSON.stringify(currentData));
+    if (debug) console.debug(`                   columnFilters`,columnFilters);
 
     // TODO: handle objects too
     // Apply columnFilters
@@ -143,14 +135,12 @@ const DataTable = ({
 
     // Apply sorting ? '▲' : '▼'
     if (currentData.length && sortColumn) {
-      // if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,JSON.stringify(currentData));
-      // if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,currentData);
+      if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,JSON.stringify(currentData));
       // works:
       sortFunction(sortColumn, currentData);
     }
     
-    // if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,JSON.stringify(currentData));
-    // if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,currentData);
+    if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,JSON.stringify(currentData));
     return currentData;
   }, [data, sortColumn, sortOrders, columnFilters]);
 
@@ -175,7 +165,7 @@ const DataTable = ({
   const previousData = usePrevious(data);
 
 
-  if (isLoading && !data) {
+  if (isLoading && !data.length) {
     return <LoadingSpinner />;
   };
 
@@ -218,7 +208,8 @@ const DataTable = ({
           : sortedAndFilteredData.map((item, index) => {
               // Get the corresponding item from the previous filteredData
               // Then later on, compare previousItem.value to item.value to detect a change and apply .highlight class
-              const previousItem = previousData ? previousData[index] : null;
+              // const previousItem = previousData ? previousData[index] : null;
+              const previousItem = null;
               
               return (
               <tr key={keyExtractor(item)}>
@@ -259,94 +250,3 @@ useEffect hook has 3ways to use.
 
 
 */
-
-
-/* 
-// other approach: separate sort and filter hooks
-import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Form } from 'react-bootstrap';
-
-function MySortableFilterableTable({ initialData }) {
-  const [data, setData] = useState(initialData);
-  const [filters, setFilters] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-
-  // Filtered data based on current filters
-  const filteredData = useMemo(() => {
-    let currentData = [...data];
-    Object.keys(filters).forEach(columnKey => {
-      const filterValue = filters[columnKey].toLowerCase();
-      if (filterValue) {
-        currentData = currentData.filter(row =>
-          String(row[columnKey]).toLowerCase().includes(filterValue)
-        );
-      }
-    });
-    return currentData;
-  }, [data, filters]);
-
-  // Sorted data based on current sort config, AFTER filtering: we sort only filtered data
-  const sortedData = useMemo(() => {
-    if (!sortConfig.key) return filteredData;
-
-    return [...filteredData].sort((a, b) => {
-      return sortConfig.direction === 'ascending'
-        ? JSON.stringify(a[sortConfig.key]).localeCompare(JSON.stringify(b[sortConfig.key]))
-        : JSON.stringify(b[sortConfig.key]).localeCompare(JSON.stringify(a[sortConfig.key]));
-        
-    });
-  }, [filteredData, sortConfig]);
-
-  const handleFilterChange = (columnKey, value) => {
-    setFilters(prevFilters => ({ ...prevFilters, [columnKey]: value }));
-  };
-
-  const handleSort = (columnKey) => {
-    let direction = 'ascending';
-    if (sortConfig.key === columnKey && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key: columnKey, direction });
-  };
-
-  return (
-    <Table striped bordered hover>
-      <thead>
-        <tr>
-          <th>
-            <div onClick={() => handleSort('name')}>
-              Name {sortConfig.key === 'name' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </div>
-            <Form.Control
-              type="text"
-              placeholder="Filter Name"
-              value={filters.name || ''}
-              onChange={(e) => handleFilterChange('name', e.target.value)}
-            />
-          </th>
-          <th>
-            <div onClick={() => handleSort('age')}>
-              Age {sortConfig.key === 'age' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </div>
-            <Form.Control
-              type="text"
-              placeholder="Filter Age"
-              value={filters.age || ''}
-              onChange={(e) => handleFilterChange('age', e.target.value)}
-            />
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {sortedData.map((row, index) => (
-          <tr key={index}>
-            <td>{row.name}</td>
-            <td>{row.age}</td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
-  );
-}
-
- */

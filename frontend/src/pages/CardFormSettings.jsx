@@ -138,7 +138,7 @@ function CardFormSettings() {
   };
 
 
-  if (isLoading && !settings) {
+  if (isLoading && !Object.keys(settings).length) {
     return <LoadingSpinner />;
   }
   
@@ -147,7 +147,7 @@ function CardFormSettings() {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
 
-      <Card title="settings.titleSettings" className="mb-4" icon="gear-fill" collapse="true" refresh="true" onClickRefresh={() => fetchSettings()}>
+      <Card title="settings.titleSettings" className="mb-4" icon="gear-fill" collapse="true" onClickRefresh={() => fetchSettings()}>
         <form onSubmit={handleSubmitSettings} className="form-wrapper">
           <FormField
             type="text"

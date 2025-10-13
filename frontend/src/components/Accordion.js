@@ -1,6 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
+import {
+  Button,
+} from './';
 
 // const tabs = [
   // { id: 1, title: "Tab 1", icon: "person-plus-fill",   content: "Content of Tab 1" },
@@ -14,6 +17,8 @@ import RBAccordion from 'react-bootstrap/Accordion';
  * @param {number} props.tabs.id
  * @param {string} props.tabs.title
  * @param {string} props.tabs.icon
+ * @param {bool} props.refresh Accordion icon action but then you need onClickRefresh in some tabs
+ * @param {function} props.onClickRefresh does smth
  * @param {React.ReactNode} props.tabs.content
  * @param {string} props.className Additional CSS classes
  * @param {boolean} props.noPadding Remove padding from card body
@@ -27,19 +32,37 @@ const Accordion = ({
   ...rest
 }) => {
   const { t } = useTranslation();
-  const bodyClassName = noPadding == "true" ? 'p-0' : '';
+  const bodyClassName   = noPadding == "true" ? 'p-0' : '';
 
   // not very clear what they want:
   // -key +eventKey: it works but we have an error
   // +key -eventKey: nothing works
   // +key +eventKey: all works but nowhere it says we need both
+  
+  // refresh button: Header is actually a button itself, we cannot inject anything inside
   return (
     <>
     <RBAccordion className={className} defaultActiveKey={defaultActiveKey} {...rest}>
       {tabs.map(tab => (
         <RBAccordion.Item key={tab.id} eventKey={tab.id}>
-          <RBAccordion.Header>{(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {t(tab.title)} {t(tab.titleExtra)}</RBAccordion.Header>
-          <RBAccordion.Body className={bodyClassName}>{tab.content}</RBAccordion.Body>
+          <RBAccordion.Header>
+            {(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {t(tab.title)} {t(tab.titleExtra)}
+          </RBAccordion.Header>
+          <RBAccordion.Body className={bodyClassName}>
+            {('onClickRefresh' in tab && typeof tab.onClickRefresh == "function") && (
+              <div className="float-end">
+              <Button
+                variant="info"
+                size="sm"
+                icon="recycle"
+                title={t('common.refresh')}
+                className="me-2"
+                onClick={tab.onClickRefresh}
+              />
+              </div>
+            )}
+            {tab.content}
+          </RBAccordion.Body>
         </RBAccordion.Item>
       ))}
     </RBAccordion>

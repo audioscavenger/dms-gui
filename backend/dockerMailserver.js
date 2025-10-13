@@ -169,7 +169,7 @@ async function execInContainer(command) {
       stream.on('data', (chunk) => {
         // Docker multiplexes stdout/stderr in the same stream
         // First 8 bytes contain header, actual data starts at 8th byte
-        stdoutData += chunk.slice(8).toString();
+        stdoutData += String(chunk.slice(8));
       });
 
       stream.on('end', () => {
@@ -379,7 +379,10 @@ async function getAccounts(refresh) {
         }
         
       // we could not read DB_Accounts or it is invalid
-      } else {
+      }
+
+    // force refresh if no db
+    if (!DBdict.accounts) {
         accounts = await getAccountsFromDMS();
         debugLog(`${arguments.callee.name}: got ${accounts.length} accounts from getAccountsFromDMS()`);
       }
@@ -570,7 +573,10 @@ async function getAliases(refresh) {
       }
         
       // we could not read DB_Aliases or it is invalid
-    } else {
+    }
+
+    // force refresh if no db
+    if (!DBdict.aliases) {
         aliases = await getAliasesFromDMS();
         debugLog(`${arguments.callee.name}: got ${aliases.length} aliases from getAliasesFromDMS()`);
     }
@@ -968,8 +974,6 @@ async function getServerInfos(refresh) {
   var DBdict = {};
   var pulledInfos = {};
   var infos = {
-    name: 'dms-gui-backend',
-    version: DMSGUI_VERSION,
     internals: [
       { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
       { name: 'HOSTNAME', value: HOSTNAME },
@@ -991,22 +995,27 @@ async function getServerInfos(refresh) {
       // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
     
       // we could read DB_Infos and it is valid
-      if (DBdict.constructor == Object && 'infos' in DBdict) {
+      if (DBdict.constructor == Object && 'infos' in DBdict && DBdict.infos.env) {
         debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
         return DBdict['infos'];
       }
       
       // we could not read DB_Infos or it is invalid, pull it from container (costly)
-    } else {
-      // console.debug('ddebug ---------- else Calling pullServerInfos()...');
+    }
+
+    console.debug('ddebug ---------- DBdict.infos',DBdict.infos);
+    console.debug('ddebug ---------- DBdict.infos.env',DBdict.infos.env);
+    // force refresh if no db
+    if (!(DBdict.infos && DBdict.infos.env)) {
+      console.debug('ddebug ---------- else Calling pullServerInfos()...');
       pulledInfos = await pullServerInfos();
       debugLog(`${arguments.callee.name}: got ${Object.keys(pulledInfos).length} pulledInfos from pullServerInfos()`);
     }
     
-    // console.debug('ddebug ----------  after if, pulledInfos=',pulledInfos);
-    // console.debug('ddebug ----------  pulledInfos length=',Object.keys(pulledInfos).length);
+    console.debug('ddebug ----------  after if, pulledInfos=',pulledInfos);
+    console.debug('ddebug ----------  pulledInfos length=',Object.keys(pulledInfos).length);
     // since we had to call pullServerInfos, we save DB_Infos
-    if (pulledInfos && Object.keys(pulledInfos).length) {
+    if (typeof pulledInfos == "object" && Object.keys(pulledInfos).length) {
       infos = { ...infos, ...pulledInfos };
       DBdict["infos"] = infos;
       await writeJson(DB_Infos, DBdict);

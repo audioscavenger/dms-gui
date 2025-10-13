@@ -74,7 +74,7 @@ const Dashboard = () => {
     return 'dashboard.status.unknown';
   };
 
-  if (isLoading && !status) {
+  if (isLoading && !Object.keys(status).length) {
     return <LoadingSpinner />;
   }
 

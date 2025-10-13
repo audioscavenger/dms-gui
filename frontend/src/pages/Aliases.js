@@ -163,7 +163,7 @@ const Aliases = () => {
   }));
 
 
-  if (isLoading && !aliases) {
+  if (isLoading && !aliases.length) {
     return <LoadingSpinner />;
   }
   
@@ -220,7 +220,12 @@ const Aliases = () => {
         <Col md={7}>
           {' '}
           {/* Use Col component */}
-          <Card title="aliases.existingAliases" titleExtra={howMany} icon="person-lines-fill" refresh="true" onClickRefresh={() => fetchAliases(true)}>
+          <Card 
+            title="aliases.existingAliases" 
+            titleExtra={howMany} 
+            icon="person-lines-fill" 
+            onClickRefresh={() => fetchAliases(true)}
+          >
             <DataTable
               columns={columns}
               data={aliases}

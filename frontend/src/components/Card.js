@@ -12,7 +12,7 @@ import {
  * @param {string} props.title Card title (translation key)
  * @param {string} props.titleExtra Card titleExtra
  * @param {string} props.icon Card icon
- * @param {bool} props.refresh Card icon action
+ * @param {function} props.refresh Card refresh action
  * @param {bool} props.collapse Card icon action
  * @param {startOpen} props.startOpen starts the Card open
  * @param {React.ReactNode} props.children Card content
@@ -25,9 +25,8 @@ const Card = ({
   headerContent,
   titleExtra,
   icon,
-  onClickRefresh,
   children,
-  refresh = false,
+  onClickRefresh,
   collapse = true,
   startOpen = true,
   className = '',
@@ -36,8 +35,9 @@ const Card = ({
 }) => {
   const { t } = useTranslation();
   const bodyClassName   = noPadding == "true" ? 'p-0' : '';
-  const refresher       = refresh   == "true" ? true : false;
   const collapser       = collapse  == "true" ? true : false;
+  const refresher       = (typeof onClickRefresh == "function") ? true : false;
+  
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap
   // "d-flex justify-content-between" works only for exactly 2 div as children, not span
   const titleClassName  = (refresher || collapser) ? "mb-0 d-flex justify-content-between" : "mb-0";
@@ -60,7 +60,7 @@ const Card = ({
                   icon="recycle"
                   title={t('common.refresh')}
                   className="me-2"
-                  onClick={onClickRefresh} aria-controls="collapsible" aria-expanded={open}
+                  onClick={onClickRefresh}
                 />
               )}
               {collapser && (
@@ -68,8 +68,10 @@ const Card = ({
                   variant="secondary"
                   size="sm"
                   icon="arrows-collapse"
-                  title={t('common.refresh')}
+                  title={t('common.collapse')}
                   onClick={() => setOpen(!open)}
+                  aria-controls="collapsible"
+                  aria-expanded={open}
                 />
               )}
               </div>
