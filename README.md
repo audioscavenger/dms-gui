@@ -9,10 +9,12 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 
 ## Features
 
+- 🔐 Login page, crypto-secure hashed passwords
 - 📊 Dashboard with server status information
 - 👤 Email account management (add, delete)
 - ↔️ Email alias management
 - 🔧 Docker-Mailserver connection configuration
+- 🛢️ better-sqlite3 database!
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
@@ -43,6 +45,8 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 
 ## Configuration
 
+`./config/` will host dms-gui.sqlite3 and its environment config file.
+
 Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for your own environment:
 
 ```
@@ -58,7 +62,7 @@ PORT_NODEJS=3001
 
 # Dev Environment
 REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
-DB_PATH=/app/config
+CONFIG_PATH=/app/config
 # NODE_ENV=development
 NODE_ENV=production
 ```
@@ -75,7 +79,7 @@ The ones you should never alter unless you want to develop:
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `NODE_ENV`: Node.js environment: (*production or development)
 - `REACT_APP_API_URL`: defaults to `http://localhost:3001`
-- `DB_PATH`= defaults to `/app/config`
+- `CONFIG_PATH`= defaults to `/app/config`
 
 
 ## Language Support

@@ -1,6 +1,13 @@
-const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const {
+  debug,
+  arrayOfStringToDict,
+  obj2ArrayOfObj,
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} = require('../../frontend.js');
 import {
   getAliases,
   addAlias,
@@ -53,7 +60,8 @@ const Aliases = () => {
       setAliases(aliasesData);
       setErrorMessage(null);
 
-      // if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
+      if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
+      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
 
     } catch (err) {
       console.error(t('api.errors.fetchAliases'), err);
@@ -116,7 +124,7 @@ const Aliases = () => {
         source: '',
         destination: '',
       });
-      // if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+      if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
       fetchAliases(true); // Refresh the aliases list
     } catch (err) {
       console.error(t('api.errors.addAlias'), err);
@@ -129,7 +137,7 @@ const Aliases = () => {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
-        // if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+        if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
         fetchAliases(true); // Refresh the aliases list
       } catch (err) {
         console.error(t('api.errors.deleteAlias'), err);
@@ -163,7 +171,7 @@ const Aliases = () => {
   }));
 
 
-  if (isLoading && !aliases.length) {
+  if (isLoading && !aliases && !aliases.length) {
     return <LoadingSpinner />;
   }
   

@@ -1,9 +1,4 @@
-
-function fixStringType(string) {
-  output = parseInt(string) ? parseInt(string) : string;
-  return output;
-}
-
+debug = true;
 
 function arrayOfStringToDict(array, separator) {
   var dict={};
@@ -83,9 +78,9 @@ function reduxPropertiesOfObj(obj, arrayToKeep) {
   
 }
 
-// export default (
+
 module.exports = {
-  fixStringType,
+  debug,
   arrayOfStringToDict,
   obj2ArrayOfObj,
   reduxArrayOfObj,

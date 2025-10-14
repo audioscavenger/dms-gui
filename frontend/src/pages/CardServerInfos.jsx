@@ -1,10 +1,13 @@
-const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { 
+const {
+  debug,
+  arrayOfStringToDict,
   obj2ArrayOfObj,
-} from '../../functions.js';
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} = require('../../frontend.js');
 
 import {
   getServerInfos,
@@ -67,7 +70,7 @@ const CardServerInfos = ({ onRefresh }) => {
     { key: 'value', label: 'settings.value' },
   ];
 
-  if (isLoading && !infos && !'internals' in infos) {
+  if (isLoading && !infos && !infos && !infos.internals) {
     return <LoadingSpinner />;
   }
 

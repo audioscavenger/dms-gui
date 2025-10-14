@@ -1,6 +1,13 @@
-const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const {
+  debug,
+  arrayOfStringToDict,
+  obj2ArrayOfObj,
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} = require('../../frontend.js');
 import {
   getAccounts,
   getSettings,
@@ -70,7 +77,7 @@ const Accounts = () => {
 
   const fetchAllAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    // if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
+    if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
     
     try {
       setLoading(true);
@@ -84,9 +91,9 @@ const Accounts = () => {
       setServerInfos(infosData);
       setErrorMessage(null);
       
-      // if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
-      // if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
-      // if (debug) console.debug('ddebug: ------------- infosData', infosData);
+      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
+      if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
+      if (debug) console.debug('ddebug: ------------- infosData', infosData);
       
     } catch (err) {
       console.error(t('api.errors.fetchAllAccounts'), err);
@@ -343,7 +350,7 @@ const Accounts = () => {
   };
 
 
-  if (isLoading && !accounts.length && !infos.env) {
+  if (isLoading && !accounts && !accounts.length && !infos && !infos.env) {
     return <LoadingSpinner />;
   }
   

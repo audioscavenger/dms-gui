@@ -1,7 +1,19 @@
-const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getServerStatus, getAccounts, getAliases } from '../services/api';
+
+const {
+  debug,
+  arrayOfStringToDict,
+  obj2ArrayOfObj,
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} = require('../../frontend.js');
+import {
+getServerStatus, 
+getAccounts, 
+getAliases 
+} from '../services/api';
+
 import { AlertMessage, DashboardCard, LoadingSpinner, Sidebar } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
@@ -74,7 +86,7 @@ const Dashboard = () => {
     return 'dashboard.status.unknown';
   };
 
-  if (isLoading && !Object.keys(status).length) {
+  if (isLoading && !status && !Object.keys(status).length) {
     return <LoadingSpinner />;
   }
 

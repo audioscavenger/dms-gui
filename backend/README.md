@@ -38,8 +38,10 @@ It's a very small size and classic React structure. Most has been factored but s
 ```
 dms-gui/
 ├── backend/                    # Backend API
+│   ├── env.js                  # Environment variables
 │   ├── index.js                # /api server
-│   └── dockerMailserver.js     # Heart of the system
+│   ├── db.conf                 # database functions
+│   └── backendModule*.js       # Heart of the system
 ├── frontend/                   # Frontend React app
 │   ├── public                  # favicon and index template
 │   └── src                     # Frontend sources build in step 1 & 2
@@ -48,12 +50,16 @@ dms-gui/
 │       └── locales             # Language packs for i18n
 │       └── pages               # the left menu items
 │       └── api                 # The internal API calls to the backend
+├── common/                     # Docker configuration files
+│   ├── backend.conf            # backend functions
+│   └── frontend.conf           # frontend functions
 ├── docker/                     # Docker configuration files
 │   ├── nginx.conf              # Nginx configuration
 │   └── start.sh                # Container startup script
-├── config/                     # Local config as db.json
-│   ├── db.*.json               # Local databases
-│   └── .dms-gui.env            # Your env variables
+├── config/                     # Local config and database
+│   ├── dms-gui.env             # Your environment variables
+│   ├── db.*.json               # Local json databases (deprecated)
+│   └── dms-gui.sqlite3         # As its name suggests
 ├── Dockerfile                  # Docker image configuration
 ├── docker-compose.yml          # Docker Compose configuration
 └── README.md                   # Docker setup documentation
@@ -61,14 +67,17 @@ dms-gui/
 
 ## Available endpoints
 
-- `GET /api/logins` - Get admin credentials
-- `POST /api/logins` - Save admin credentials
+- `GET /api/status` - Server status
+- `GET /api/infos` - Server environment
 - `GET /api/settings` - Get settings
 - `POST /api/settings` - Save settings
-- `GET /api/status` - Server status
+- `GET /api/logins` - Get admin credentials
+- `POST /api/logins` - Save admin credentials
+
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
 - `DELETE /api/accounts/:email` - Delete an account
+- `DELETE /api/accounts/:email/password` - Update account password
 - `GET /api/aliases` - List aliases [?refresh=true]
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases/:source/:destination` - Delete an alias

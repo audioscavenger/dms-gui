@@ -1,10 +1,9 @@
-const debug = false;
+require('../../frontend.js');
 import axios from 'axios';
 
 // Fallback to '/api' if environment variable is not available
 const API_URL =
   (typeof process !== 'undefined' &&
-    process.env &&
     process.env.REACT_APP_API_URL) ||
   '/api';
 
@@ -161,6 +160,7 @@ export async function getAliases(refresh) {
 export async function addAlias(source, destination) {
   try {
     const response = await api.post(`/aliases`, { source, destination });
+    if (debug) console.debug(`ddebug aliases response.data=`,response.data);
     return response.data;
   } catch (error) {
     if (debug) if (debug) console.error('api: Error adding alias:', error);

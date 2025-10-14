@@ -39,11 +39,24 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
-* [ ] - frontend/Dashboard: where do we display Health StartedAt etc?
-* [ ] - frontend/Accounts: transform usage values into bytes so we can sort them
+* [ ] - frontend/Dashboard: where do we display Health/StartedAt etc?
+* [ ] - frontend/Accounts: transform account storage values into bytes so we can sort them
+* [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
+* [ ] - frontend/chore: move all error messages into translation
 
-* [ ] - frontend/App: refactor Sidebar to be dynamic, as it is the actual menu
-
+* [ ] - backend: added sql for aliases; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
+* [ ] - backend: added sql for accounts; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
+* [ ] - backend: added sql for infos
+* [ ] - frontend/Settings/logins: revamp the card entirely as we won't pull passwords anymore, maybe add the handleChangePassword from accounts?
+* [ ] - frontend/App: add auth login page
+* [ ] - frontend/App: add auth bearer token for APIs
+* [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
+* [ ] - backend/db: init the db on start
+* [ ] 1.0.14 - frontend/Settings/logins: test getLogins, saveLogins
+* [x] 1.0.13 - moved all env global variables into env.js
+* [x] 1.0.13 - split all common functions into /app/common/backend.js and frontend.js
+* [x] 1.0.13 - backend/logins: implemented dbGet, dbAll, dbRun, save, get, verifyPassword, hashPassword
+* [x] 1.0.13 - backend: implemented better-sqlite3 and sql for settings and logins
 * [x] 1.0.13 - Dockerfile: switched all base images to node:24-alpine as slim is incompatible with better-sqlite3
 * [x] 1.0.13 - backend: implement sqlite3; wasted 20mn of my life, moving on.
 * [x] 1.0.12 - frontend/Sidebar: .leftsidebar inline-flex is the solution for collapse but then impossible to place the button properly
@@ -129,7 +142,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] 1.0.5.6 - backend: added formatError to extract actual error from module and transmit to front
 * [x] 1.0.5.6 - frontend/Aliases: add the actual json response from backend/dM.js rather than the axios http 500 from services/api
 * [x] 1.0.5.6 - addAlias correctly refresh after adding, updated api.js and index.js
-* [x] 1.0.5.5 - implement DB_PATH
+* [x] 1.0.5.5 - implement CONFIG_PATH
 * [x] 1.0.5.4 - implement refresh on start
 * [x] 1.0.5.3 - DB_JSON holds Aliases
 * [x] 1.0.5.2 - Dashboard shows version next to server status
@@ -157,20 +170,22 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
 * [ ] - docker.sock seems frowned upon, why is it? Response from @polarathene:
   > The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
-* [ ] - docker.sock seems frowned upon, how do we do without it? Maybe with Caddy and DMS api calls
-* [-] - docker rootless seems simple enough but I am afraid of other consequences: https://docs.docker.com/engine/security/rootless/
+
+* [ ] - docker.sock seems frowned upon, how do we do without it? Maybe with Caddy and DMS api calls?
 * [ ] - docker.sock could become caddy: see https://github.com/orgs/docker-mailserver/discussions/4584
 * [ ] - add fail2ban management?
 * [ ] - add fail2ban status?
 * [ ] - add mailbox statistics?
 * [ ] - offer DKIM DMARC display etc?
-* [-] - add clouflare API calls to update DKIM etc? see https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
-* [-] - gave a try to octodns and after 2 hours of labor, i give up. always the same error and bad samples all over the internet, not a single example they give works at all. Research needed
-* [x] - octodns will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
-* [ ] - octodns may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
+* [ ] - octoDNS may lack ability to modify/update and is designed to replace entire zones. Not sure it's the right tool
+* [ ] - octoDNS may be able to pull the zone before pushing it with additions, looks like a lot of work
 * [ ] - do we add multiple logins and roles?
+* [ ] - reindex: doveadm index requires mailbox folder name, or can do it for all with `doveadm index -A -q \*`; and where do we add this option?
+* [x] - octoDNS will have its own container as discussed here https://github.com/orgs/docker-mailserver/discussions/4584
+* [-] - docker rootless seems simple enough but I am afraid of other consequences: https://docs.docker.com/engine/security/rootless/
 * [-] - backend: separate server status from server info
-* [ ] - reindex: doveadm index requires mailbox folder name, or can do it for all with `doveadm index -A -q \*`; where do we add this option?
+* [-] - add octoDNS https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
+* [-] - gave a try to octoDNS and after 2 hours of labor, I give up. Always the same error and bad samples all over the internet, not a single example they give works at all.
 
 
 ## Misc

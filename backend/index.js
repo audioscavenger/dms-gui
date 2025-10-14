@@ -1,20 +1,34 @@
-const debug = (process.env.DEBUG === 'true') ? true : false;
+require('./env.js');
+
+const {
+  getLogins,
+  saveLogins,
+} = require('./backendLogins');
+const {
+  getServerStatus,
+  getServerInfos,
+  getSettings,
+  saveSettings,
+} = require('./backendSettings');
+const {
+  getAccounts,
+  addAccount,
+  updateAccountPassword,
+  deleteAccount,
+} = require('./backendAccounts');
+const {
+  getAliases,
+  addAlias,
+  deleteAlias,
+} = require('./backendAliases');
+
 const express = require('express');
 const qs = require('qs');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const dockerMailserver = require('./dockerMailserver');
-
-const dotenv = require('dotenv');
-dotenv.config({ path: '/app/config/.dms-gui.env' });
-
 const app = express();
-const PORT_NODEJS = process.env.PORT_NODEJS || 3001;
-const DMSGUI_VERSION = process.env.DMSGUI_VERSION;
-const DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
-const DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
-const SETUP_SCRIPT  = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
+
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -73,10 +87,10 @@ app.set('query parser', function (str) {
  */
 app.get('/api/status', async (req, res) => {
   try {
-    const status = await dockerMailserver.getServerStatus();
+    const status = await getServerStatus();
     res.json(status);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/status: ${error.message}`);
+    if (debug) console.debug(`index /api/status: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
     res.status(500).json({ error: error.message });
   }
@@ -106,10 +120,10 @@ app.get('/api/infos', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : true;
     if (debug) console.debug(`/api/infos?refresh=${req.query.refresh} -> ${refresh}`);
-    const infos = await dockerMailserver.getServerInfos(refresh);
+    const infos = await getServerInfos(refresh);
     res.json(infos);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/infos: ${error.message}`);
+    if (debug) console.debug(`index /api/infos: ${error.message}`);
     // res.infos(500).json({ error: 'Unable to connect to docker-mailserver' });
     res.infos(500).json({ error: error.message });
   }
@@ -139,10 +153,10 @@ app.get('/api/infos', async (req, res) => {
 app.get('/api/accounts', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
-    const accounts = await dockerMailserver.getAccounts(refresh);
+    const accounts = await getAccounts(refresh);
     res.json(accounts);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    if (debug) console.debug(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve accounts' });
     res.status(500).json({ error: error.message });
   }
@@ -182,10 +196,10 @@ app.post('/api/accounts', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    const result = await dockerMailserver.addAccount(email, password);
+    const result = await addAccount(email, password);
     res.status(201).json({ message: 'Account created successfully', email });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    if (debug) console.debug(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
     res.status(500).json({ error: error.message });
   }
@@ -219,10 +233,10 @@ app.delete('/api/accounts/:email', async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    await dockerMailserver.deleteAccount(email);
+    await deleteAccount(email);
     res.json({ message: 'Account deleted successfully', email });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    if (debug) console.debug(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
     res.status(500).json({ error: error.message });
   }
@@ -256,10 +270,10 @@ app.put('/api/reindex/:email', async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    await dockerMailserver.reindexAccount(email);
+    await reindexAccount(email);
     res.json({ message: 'Reindex started for account', email });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/reindex: ${error.message}`);
+    if (debug) console.debug(`index /api/reindex: ${error.message}`);
     // res.status(500).json({ error: 'Unable to reindex account' });
     res.status(500).json({ error: error.message });
   }
@@ -309,10 +323,10 @@ app.put('/api/accounts/:email/password', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    await dockerMailserver.updateAccountPassword(email, password);
+    await updateAccountPassword(email, password);
     res.json({ message: 'Password updated successfully', email });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/accounts: ${error.message}`);
+    if (debug) console.debug(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update password' });
     res.status(500).json({ error: error.message });
   }
@@ -342,10 +356,11 @@ app.put('/api/accounts/:email/password', async (req, res) => {
 app.get('/api/aliases', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
-    const aliases = await dockerMailserver.getAliases(refresh);
+    const aliases = await getAliases(refresh);
+    if (debug) console.debug(`index /api/aliases: aliases=`,aliases);
     res.json(aliases);
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    if (debug) console.debug(`ddebug index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve aliases' });
     res.status(500).json({ error: error.message });
   }
@@ -387,12 +402,12 @@ app.post('/api/aliases', async (req, res) => {
         .status(400)
         .json({ error: 'Source and destination are required' });
     }
-    await dockerMailserver.addAlias(source, destination);
+    await addAlias(source, destination);
     res
       .status(201)
       .json({ message: 'Alias created successfully', source, destination });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    if (debug) console.debug(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create alias' });
     res.status(500).json({ error: error.message });
   }
@@ -436,10 +451,10 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
     if (!destination) {
       return res.status(400).json({ error: 'Destination is required' });
     }
-    await dockerMailserver.deleteAlias(source, destination);
+    await deleteAlias(source, destination);
     res.json({ message: 'Alias deleted successfully', source, destination });
   } catch (error) {
-    await dockerMailserver.debugLog(`index /api/aliases: ${error.message}`);
+    if (debug) console.debug(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete alias' });
     res.status(500).json({ error: error.message });
   }
@@ -460,10 +475,10 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
  */
 app.get('/api/settings', async (req, res) => {
   try {
-    const settings = await dockerMailserver.getSettings();
+    const settings = await getSettings();
     res.json(settings);
   } catch (error) {
-    await dockerMailserver.debugLog(`index GET /api/settings: ${error.message}`);
+    if (debug) console.debug(`index GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
@@ -503,10 +518,10 @@ app.post('/api/settings', async (req, res) => {
     if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
     if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
 
-    const result = await dockerMailserver.saveSettings(containerName, setupPath, dnsProvider);
+    const result = await saveSettings(containerName, setupPath, dnsProvider);
     res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
-    await dockerMailserver.debugLog(`index POST /api/settings: ${error.message}`);
+    if (debug) console.debug(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
     res.status(500).json({ error: error.message });
   }
@@ -528,10 +543,10 @@ app.post('/api/settings', async (req, res) => {
  */
 app.get('/api/logins', async (req, res) => {
   try {
-    const logins = await dockerMailserver.getLogins();
+    const logins = await getLogins();
     res.json(logins);
   } catch (error) {
-    await dockerMailserver.debugLog(`index GET /api/logins: ${error.message}`);
+    if (debug) console.debug(`index GET /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
     res.status(500).json({ error: error.message });
   }
@@ -574,10 +589,10 @@ app.post('/api/logins', async (req, res) => {
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await dockerMailserver.saveLogins(username, password, email);
+    const result = await saveLogins(username, password, email);
     res.status(201).json({ message: 'Admin credentials saved successfully' });
   } catch (error) {
-    await dockerMailserver.debugLog(`index POST /api/logins: ${error.message}`);
+    if (debug) console.debug(`index POST /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Admin credentials' });
     res.status(500).json({ error: error.message });
   }

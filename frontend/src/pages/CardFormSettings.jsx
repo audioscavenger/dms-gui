@@ -1,7 +1,13 @@
-const debug = false;
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+const {
+  debug,
+  arrayOfStringToDict,
+  obj2ArrayOfObj,
+  reduxArrayOfObj,
+  reduxPropertiesOfObj,
+} = require('../../frontend.js');
 import {
   getSettings,
   saveSettings,
@@ -138,7 +144,7 @@ function CardFormSettings() {
   };
 
 
-  if (isLoading && !Object.keys(settings).length) {
+  if (isLoading && !settings && !Object.keys(settings).length) {
     return <LoadingSpinner />;
   }
   
