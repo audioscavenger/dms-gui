@@ -7,7 +7,8 @@
 # -----------------------------------------------------
 # Stage 1: Build frontend https://hub.docker.com/_/node
 # https://dev.to/ptuladhar3/avoid-using-bloated-nodejs-docker-image-in-production-3doc
-FROM node:slim AS frontend-builder
+# FROM node:slim AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -23,11 +24,12 @@ RUN npm ci
 # Copy frontend code and build
 COPY frontend/ ./
 RUN npm run build
-RUN npm audit fix
+# RUN npm audit fix
 
 # -----------------------------------------------------
 # Stage 2: Build backend
-FROM node:slim AS backend-builder
+# FROM node:slim AS backend-builder
+FROM node:24-alpine AS backend-builder
 
 WORKDIR /app/backend
 
@@ -40,7 +42,7 @@ RUN npm install
 
 # RUN npm ci --only=production    # https://stackoverflow.com/questions/74599681/npm-warn-config-only-use-omit-dev
 RUN npm ci --omit=dev
-RUN npm audit fix
+# RUN npm audit fix
 
 # Copy backend code
 COPY backend/ ./

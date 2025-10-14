@@ -12,7 +12,6 @@ import RBBadge from 'react-bootstrap/Badge'; // Import react-bootstrap Badge
  * @param {string} props.iconColor Bootstrap text color class
  * @param {string} props.badgeColor Bootstrap badge color (if value should be displayed as badge)
  * @param {string} props.badgeText Text for badge (translation key)
- * @param {string} props.version Version of the UI
  * @param {string} props.className Additional CSS classes
  */
 const DashboardCard = ({
@@ -22,7 +21,6 @@ const DashboardCard = ({
   iconColor = 'primary',
   badgeColor,
   badgeText,
-  version,
   className = '',
   ...rest
 }) => {
@@ -36,7 +34,7 @@ const DashboardCard = ({
         </div>
         <RBCard.Title as="h5">{t(title)}</RBCard.Title>
         {badgeColor ? (
-          <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}{` v${version}`}</RBBadge>
+          <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}</RBBadge>
         ) : (
           <p className="card-text">{value}</p>
         )}

@@ -24,6 +24,33 @@ const DB_Aliases    = DB_PATH + '/db.aliases.json';
 const DB_Settings   = DB_PATH + '/db.settings.json';
 const DB_Logins     = DB_PATH + '/db.logins.json';
 const DB_Infos      = DB_PATH + '/db.infos.json';
+const DB            = DB_PATH + '/db.sqlite3';
+
+const db = require('better-sqlite3')(DB);
+// const Database = require('better-sqlite3');
+// const db = new Database('foobar.db', { verbose: console.log });
+db.pragma('journal_mode = WAL');
+// https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
+process.on('exit', () => db.close());
+process.on('SIGHUP', () => process.exit(128 + 1));
+process.on('SIGINT', () => process.exit(128 + 2));
+process.on('SIGTERM', () => process.exit(128 + 15));
+
+// in-memory database: https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#serializeoptions---buffer
+// const buffer = db.serialize();
+// db.close();
+// db = new Database(buffer);
+
+const stmt = {
+settings: {
+  create: `
+    CREATE TABLE IF NOT EXISTS settings (
+      name  TEXT NOT NULL UNIQUE PRIMARY KEY,
+      value TEXT NOT NULL
+    )`,
+  select: `SELECT * from settings`,
+  },
+};
 
 const DMS_OPTIONS   = [
   'DMS_RELEASE',
@@ -986,6 +1013,8 @@ async function getServerInfos(refresh) {
   };
   // console.debug('ddebug ----------  before try, typeof refresh=',typeof refresh);
 
+  // dbExec('select', 'settings');
+  
   try {
 
     if (!refresh) {
@@ -1041,6 +1070,57 @@ async function getServerInfos(refresh) {
 }
 
 
+async function dbConnect() {
+  const db = new sqlite3.Database(DB, (err) => {
+    if (err) {
+      console.error('Error connecting to database:', err.message);
+    } else {
+      console.log('Connected to the SQLite database.');
+      return db;
+    }
+  });
+}
+
+async function dbClose(db) {
+  await db.close((err) => {
+    if (err) {
+      console.error('Error closing database:', err.message);
+    } else {
+      console.log('Database connection closed.');
+    }
+  });
+}
+
+async function dbRun(sql, parameters=[]) {
+  const db = dbConnect();
+  await db.run(sql, parameters, (err) => {
+    if (err) {
+      console.error('Error executing sql:', err.message);
+    } else {
+      console.log('sql executed.');
+    }
+  });
+  dbClose(db);
+}
+
+// dbExec('select', 'settings') {
+function dbExec(what, from, where=[]) {
+  try {
+    debugLog(`db.prepare(${stmt[from][what]}).run(${where})`);
+    const result = db.prepare(stmt[from][what]).run(where);
+    debugLog('result',result);
+
+  } catch (err) {
+    if (!db.inTransaction) {
+      console.error('dbExec error:',JSON.stringify(err));
+      throw err;
+    }
+    // table not found: err = {"code":"SQLITE_ERROR"}
+  }
+
+}
+
+
 // export default (
 module.exports = {
   debugLog,
@@ -1062,132 +1142,4 @@ module.exports = {
 };
 // );
 
-
-// interesting stuff to pull from containerInfo:
-/*
-State: {
-  Status: 'running',
-  Running: true,
-  Paused: false,
-  Restarting: false,
-  OOMKilled: false,
-  Dead: false,
-  Pid: 1871534,
-  ExitCode: 0,
-  Error: '',
-  StartedAt: '2025-10-05T23:17:51.535552398Z',
-  FinishedAt: '0001-01-01T00:00:00Z',
-  Health: { Status: 'healthy', FailingStreak: 0, Log: [Array] }
-},
-PortBindings: {
-  '143/tcp': [Array],
-  '25/tcp': [Array],
-  '465/tcp': [Array],
-  '587/tcp': [Array],
-  '993/tcp': [Array]
-},
-Env: [
-  'ENABLE_IMAP=1',
-  'POSTFIX_INET_PROTOCOLS=ipv4',
-  'ENABLE_UPDATE_CHECK=1',
-  'DOVECOT_INET_PROTOCOLS=ipv4',
-  'SSL_ALT_CERT_PATH=',
-  'RSPAMD_HFILTER=1',
-  'FETCHMAIL_POLL=300',
-  'SASLAUTHD_LDAP_FILTER=',
-  'DOVECOT_AUTH_BIND=',
-  'SPAMASSASSIN_SPAM_TO_INBOX=1',
-  'ENABLE_POSTGREY=0',
-  'POSTGREY_TEXT=Delayed by Postgrey',
-  'RSPAMD_CHECK_AUTHENTICATED=0',
-  'SASLAUTHD_LDAP_PASSWORD_ATTR=',
-  'MARK_SPAM_AS_READ=1',
-  'SUPERVISOR_LOGLEVEL=info',
-  'SASLAUTHD_LDAP_AUTH_METHOD=',
-  'ENABLE_SPAMASSASSIN_KAM=1',
-  'ENABLE_POP3=0',
-  'LOGWATCH_INTERVAL=',
-  'ENABLE_DNSBL=0',
-  'AMAVIS_LOGLEVEL=0',
-  'LDAP_SERVER_HOST=',
-  'LDAP_BIND_DN=',
-  'SRS_SENDER_CLASSES=envelope_sender',
-  'POSTMASTER_ADDRESS=',
-  'POSTGREY_AUTO_WHITELIST_CLIENTS=5',
-  'DOVECOT_USER_FILTER=',
-  'RSPAMD_LEARN=1',
-  'LOGWATCH_SENDER=',
-  'NETWORK_INTERFACE=',
-  'ENABLE_SPAMASSASSIN=0',
-  'SA_TAG=2.0',
-  'TLS_LEVEL=modern',
-  'RSPAMD_HFILTER_HOSTNAME_UNKNOWN_SCORE=6',
-  'LOGROTATE_INTERVAL=weekly',
-  'SRS_SECRET=',
-  'SPOOF_PROTECTION=0',
-  'SASLAUTHD_LDAP_SERVER=',
-  'TZ=UTC',
-  'OVERRIDE_HOSTNAME=',
-  'ENABLE_OPENDKIM=0',
-  'DEFAULT_RELAY_HOST=',
-  'SASLAUTHD_LDAP_START_TLS=',
-  'RSPAMD_GREYLISTING=1',
-  'ENABLE_CLAMAV=0',
-  'LDAP_BIND_PW=',
-  'SASLAUTHD_LDAP_TLS_CACERT_DIR=',
-  'SASLAUTHD_LDAP_TLS_CACERT_FILE=',
-  'LDAP_QUERY_FILTER_DOMAIN=',
-  'LDAP_SEARCH_BASE=',
-  'SSL_KEY_PATH=/certs/key.pem',
-  'SASLAUTHD_LDAP_PASSWORD=',
-  'LDAP_QUERY_FILTER_GROUP=',
-  'POSTGREY_DELAY=300',
-  'SSL_TYPE=letsencrypt',
-  'PERMIT_DOCKER=none',
-  'PFLOGSUMM_TRIGGER=',
-  'LOGROTATE_COUNT=4',
-  'ENABLE_MANAGESIEVE=1',
-  'LDAP_QUERY_FILTER_USER=',
-  'SASLAUTHD_LDAP_TLS_CHECK_PEER=',
-  'ENABLE_OAUTH2=',
-  'DOVECOT_MAILBOX_FORMAT=maildir',
-  'GETMAIL_POLL=5',
-  'PFLOGSUMM_SENDER=',
-  'POSTFIX_DAGENT=',
-  'UPDATE_CHECK_INTERVAL=1d',
-  'SASLAUTHD_LDAP_BIND_DN=',
-  'REPORT_RECIPIENT=',
-  'DOVECOT_PASS_FILTER=',
-  'POSTSCREEN_ACTION=enforce',
-  'POSTFIX_REJECT_UNKNOWN_CLIENT_HOSTNAME=0',
-  'RSPAMD_NEURAL=0',
-  'ENABLE_OPENDMARC=0',
-  'RELAY_PORT=25',
-  'POSTGREY_MAX_AGE=35',
-  'SASLAUTHD_LDAP_SEARCH_BASE=',
-  'PFLOGSUMM_RECIPIENT=',
-  'MOVE_SPAM_TO_JUNK=1',
-  'ENABLE_SASLAUTHD=0',
-  'SASLAUTHD_LDAP_MECH=',
-  'RELAY_PASSWORD=',
-  'LOGWATCH_RECIPIENT=audioscavenger@gmail.com',
-  'SASLAUTHD_MECH_OPTIONS=',
-  'DMS_VMAIL_UID=',
-  'SASLAUTHD_MECHANISMS=',
-  'POSTFIX_MAILBOX_SIZE_LIMIT=5242880000',
-  'ENABLE_SRS=0',
-  'SA_KILL=10.0',
-  'LDAP_QUERY_FILTER_ALIAS=',
-  'POSTFIX_MESSAGE_SIZE_LIMIT=314572800',
-  'ENABLE_QUOTAS=1',
-  'RELAY_HOST=',
-  'FAIL2BAN_BLOCKTYPE=drop',
-  'OAUTH2_INTROSPECTION_URL=',
-  'ENABLE_AMAVIS=0',
-  'ENABLE_GETMAIL=0',
-  'ENABLE_FETCHMAIL=0',
-  'ENABLE_RSPAMD=1',
-  ... 22 more items
-],
-*/
 

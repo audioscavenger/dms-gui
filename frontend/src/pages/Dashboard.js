@@ -94,7 +94,6 @@ const Dashboard = () => {
             iconColor={getStatusColor()}
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
-            version={status.version}
           />
         </Col>
         <Col md={3} className="mb-3">
