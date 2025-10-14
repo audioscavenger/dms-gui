@@ -44,9 +44,11 @@ The list is in reverse order, as you naturally read from top to bottom.
 
 * [ ] - frontend/App: refactor Sidebar to be dynamic, as it is the actual menu
 
-* [ ] 1.0.12 - frontend/Sidebar: .leftsidebar inline-flex is the solution for collapse but then impossible to place the button properly
-* [ ] 1.0.12 - frontend/Aliases: add LeftSidebar collapse button
-* [ ] 1.0.12 - frontend/Aliases: renamed Sidebar to LeftSidebar
+* [x] 1.0.13 - Dockerfile: switched all base images to node:24-alpine as slim is incompatible with better-sqlite3
+* [x] 1.0.13 - backend: implement sqlite3; wasted 20mn of my life, moving on.
+* [x] 1.0.12 - frontend/Sidebar: .leftsidebar inline-flex is the solution for collapse but then impossible to place the button properly
+* [x] 1.0.12 - frontend/Aliases: add LeftSidebar collapse button
+* [x] 1.0.12 - frontend/Aliases: renamed Sidebar to LeftSidebar
 * [x] 1.0.11 - frontend/CardFormSettings: pops an error saying A component is changing an uncontrolled input to be controlled: fixed by testing data properly when isLoading
 * [x] 1.0.11 - backend/getSmth: bugfix yet again when db is empty or missing data: no refresh would ever take place
 * [x] 1.0.11 - frontend/Accounts: add refresh icon to Accordion
@@ -169,6 +171,13 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - do we add multiple logins and roles?
 * [-] - backend: separate server status from server info
 * [ ] - reindex: doveadm index requires mailbox folder name, or can do it for all with `doveadm index -A -q \*`; where do we add this option?
+
+
+## Misc
+
+* Cannot start `better-sqlite3` with `node:slim` backend base image. Therefore, base all images on 24-alpine.
+  * Error was: `Error loading shared library ld-linux-x86-64.so.2: No such file or directory (needed by /app/backend/node_modules/better-sqlite3/build/Release/better_sqlite3.node)`
+  * and that was fixed by adding `RUN apk add libc6-compat` to Dockerfile but now this new error: `Error relocating /app/backend/node_modules/better-sqlite3/build/Release/better_sqlite3.node: fcntl64: symbol not found`
 
 <!--
 search for base image with nodejs+py3:
