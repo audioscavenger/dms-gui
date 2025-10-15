@@ -14,14 +14,14 @@ import {
 } from '../services/api';
 
 import { 
+  Button,
   AlertMessage,
-  Card,
   DataTable,
   LoadingSpinner,
 } from '../components';
 
 
-const CardServerInfos = () => {
+const ServerInfos = () => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
 
@@ -30,12 +30,12 @@ const CardServerInfos = () => {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchServerInfos(false);
+    fetchAllServerInfos(false);
   }, []);
 
-  const fetchServerInfos = async (refresh) => {
+  const fetchAllServerInfos = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchServerInfos call getServerInfos(${refresh})`);
+    if (debug) console.debug(`ddebug: ------------- fetchAllServerInfos call getServerInfos(${refresh})`);
     
     try {
       setLoading(true);
@@ -73,17 +73,24 @@ const CardServerInfos = () => {
   if (isLoading && !infos && !infos && !infos.internals) {
     return <LoadingSpinner />;
   }
+            // onClick={fetchAllServerInfos(true)}
 
   return (
     <>
       <AlertMessage type="danger" message={errorMessage} />
       
-      <Card title="settings.serverInfosTitle" incon="gear-wide-connected" collapse="true" onClickRefresh={() => fetchServerInfos(true)}>
-      
-        <Card.Text>
-          {' '}
-          {t('settings.serverInternalsDescription')}
-        </Card.Text>
+        <div className="float-end">
+          <Button
+            variant="info"
+            size="sm"
+            icon="recycle"
+            title={t('common.refresh')}
+            className="me-2"
+            onClick={() => fetchAllServerInfos(true)}
+          />
+        </div>
+
+        {t('settings.serverInternalsDescription')}
         {!infos.env && t('api.errors.fetchServerInfos') ||
         <DataTable
           columns={columnsInternals}
@@ -94,10 +101,7 @@ const CardServerInfos = () => {
         />
         }
         
-        <Card.Text>
-          {' '}
-          {t('settings.serverEnvDescription')}
-        </Card.Text>
+        {t('settings.serverEnvDescription')}
         {!infos.env && t('api.errors.fetchServerEnv') ||
         <DataTable
           columns={columnsEnv}
@@ -108,12 +112,11 @@ const CardServerInfos = () => {
         />
         }
         
-      </Card>
     </>
   );
 }
 
-export default CardServerInfos;
+export default ServerInfos;
         // <DataTable
           // columns={columnsInternals}
           // data={infos.internals}

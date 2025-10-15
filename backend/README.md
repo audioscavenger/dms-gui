@@ -41,7 +41,7 @@ dms-gui/
 │   ├── env.js                  # Environment variables
 │   ├── index.js                # /api server
 │   ├── db.conf                 # database functions
-│   └── backendModule*.js       # Heart of the system
+│   └── *.js                    # One module per menu item
 ├── frontend/                   # Frontend React app
 │   ├── public                  # favicon and index template
 │   └── src                     # Frontend sources build in step 1 & 2
@@ -49,7 +49,7 @@ dms-gui/
 │       └── forms               # Classic React factored components
 │       └── locales             # Language packs for i18n
 │       └── pages               # the left menu items
-│       └── api                 # The internal API calls to the backend
+│       └── api                 # The frontend API calls to the backend API
 ├── common/                     # Docker configuration files
 │   ├── backend.conf            # backend functions
 │   └── frontend.conf           # frontend functions

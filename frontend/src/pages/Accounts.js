@@ -69,8 +69,22 @@ const Accounts = () => {
   const [showDNSModal, setShowDNSModal] = useState(false);
   const [dnsFormData, setDNSFormData] = useState({});
   const [dnsFormErrors, setDNSFormErrors] = useState({});
+/* 
+TODO: useEffect properly on object change
+const parentObject = useMemo(() => ({
+  prop: 'value'
+}), []); // Empty array ensures the object reference is stable
 
+const handleSubmit = useCallback(() => {
+  // The function reference is stable
+}, []);
 
+useEffect(() => {
+  // This will now only re-run if parentObject actually changes
+}, [parentObject]);
+ */
+
+  // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAllAccounts(false);
   }, []);
@@ -479,9 +493,9 @@ const Accounts = () => {
             />
   );
   
-  const tabs = [
+  const accountTabs = [
   { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: Form1 },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTable1 }
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTable1 },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not
@@ -492,11 +506,8 @@ const Accounts = () => {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
-        <Accordion
-          tabs={tabs}
-          refresh="true"
-        >
-        </Accordion>
+      <Accordion tabs={accountTabs}>
+      </Accordion>
 
       {/* Password Change Modal using react-bootstrap */}
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>

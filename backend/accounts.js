@@ -1,8 +1,8 @@
 require('./env.js');
 const {
+  docker,
   formatMemorySize,
   jsonFixTrailingCommas,
-  fixStringType,
   formatDMSError,
   debugLog,
   execSetup,
@@ -10,25 +10,11 @@ const {
   readJson,
   writeJson,
 } = require('./backend.js');
-const {
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
-} = require('./frontend.js');
 require('./db.js');
 
-const Docker = require('dockerode');
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
 const fsp = fs.promises;
 const crypto = require('node:crypto');
-
-
-
-const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
-// const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-const regexPrintOnly = /[^\S]/;
 
 
 // Function to retrieve email accounts
@@ -87,6 +73,11 @@ async function getAccounts(refresh) {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -180,6 +171,11 @@ async function addAccount(email, password) {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -195,6 +191,11 @@ async function updateAccountPassword(email, password) {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -210,6 +211,11 @@ async function deleteAccount(email) {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -225,6 +231,11 @@ async function reindexAccount(email) {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 

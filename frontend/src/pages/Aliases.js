@@ -41,6 +41,20 @@ const Aliases = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
+/* 
+TODO: useEffect properly on object change
+const parentObject = useMemo(() => ({
+  prop: 'value'
+}), []); // Empty array ensures the object reference is stable
+
+const handleSubmit = useCallback(() => {
+  // The function reference is stable
+}, []);
+
+useEffect(() => {
+  // This will now only re-run if parentObject actually changes
+}, [parentObject]);
+ */
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAliases(false);

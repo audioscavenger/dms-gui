@@ -24,16 +24,18 @@ import {
  * @param {string} props.className Additional CSS classes
  * @param {boolean} props.noPadding Remove padding from card body
  * @param {number} props.defaultActiveKey
+ * @param TODO: {React.ReactNode} props.children Children elements - do we want to handle that? one child per tab?
  */
 const Accordion = ({
   tabs,
   defaultActiveKey = 1,
   className = '',
   noPadding = false,
+  children,
   ...rest
 }) => {
   const { t } = useTranslation();
-  const bodyClassName   = noPadding == "true" ? 'p-0' : '';
+  const bodyClassName   = Boolean(noPadding)      == true ? 'p-0' : '';
 
   // not very clear what they want:
   // -key +eventKey: it works but we have an error
@@ -50,16 +52,17 @@ const Accordion = ({
             {(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {t(tab.title)} {t(tab.titleExtra)}
           </RBAccordion.Header>
           <RBAccordion.Body className={bodyClassName}>
-            {('onClickRefresh' in tab && typeof tab.onClickRefresh == "function") && (
+            { // the refresh button is activated per tab when onClickRefresh is passed
+              ('onClickRefresh' in tab && typeof tab.onClickRefresh == "function") && (
               <div className="float-end">
-              <Button
-                variant="info"
-                size="sm"
-                icon="recycle"
-                title={t('common.refresh')}
-                className="me-2"
-                onClick={tab.onClickRefresh}
-              />
+                <Button
+                  variant="info"
+                  size="sm"
+                  icon="recycle"
+                  title={t('common.refresh')}
+                  className="me-2"
+                  onClick={tab.onClickRefresh}
+                />
               </div>
             )}
             {tab.content}

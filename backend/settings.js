@@ -1,8 +1,8 @@
 require('./env.js');
 const {
+  docker,
   formatMemorySize,
   jsonFixTrailingCommas,
-  fixStringType,
   formatDMSError,
   debugLog,
   execSetup,
@@ -18,8 +18,6 @@ const {
 } = require('./frontend.js');
 require('./db.js');
 
-const Docker = require('dockerode');
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 // const fs = require("fs");
 // const fsp = fs.promises;
 // const crypto = require('node:crypto');
@@ -61,6 +59,11 @@ async function getSettings() {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -79,11 +82,17 @@ async function saveSettings(containerName, setupPath=SETUP_SCRIPT, dnsProvider='
     debugLog(`saveSettings: Saving settings:`, DBdict.settings);
     await writeJson(DB_Settings, DBdict);
     return { success: true };
+    
   } catch (error) {
     let backendError = 'Error saving settings';
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -167,10 +176,11 @@ async function getServerStatus() {
     let backendError = `Server pull status error: ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    return {
-      status: 'unknown',
-      error: error.message,
-    };
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -248,12 +258,10 @@ async function readDovecotConfFile(stdout) {
 }
 
 
-// Function to pull server infos
-async function pullServerInfos() {
+// Function to pull server environment
+async function pullServerEnv() {
   var DBdict = {};
-  var infos = {
-    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
-  };
+  var env = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'};
 
   try {
     debugLog(`${arguments.callee.name}: Pulling server infos`);
@@ -272,57 +280,50 @@ async function pullServerInfos() {
       // we keep only some options not all
       dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
       debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
-      // infos['env'] = dictEnvDMSredux;
-      // console.debug('ddebug --------------- 1 infos.env',infos.env);
-      infos.env = { ...infos.env, ...dictEnvDMSredux };
-      // console.debug('ddebug --------------- 2 infos.env',infos.env);
 
+      env = { ...env, ...dictEnvDMSredux };
+
+      // TODO: rewrite this disgusting loop
       // pull bindings and look for FTS
       var ftsMount = '';
       containerInfo.Mounts.forEach( async (mount) => {
         if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
         if (mount.Destination.match(/fts.*\.conf$/i)) {
+          // we get the DMS internal mount as we cannot say if we have access to that file on the host system
           ftsMount = mount.Destination;
-          // console.debug('ddebug --------------- 4');
         }
-        // console.debug('ddebug --------------- 5 mounbt analyzed');
       });
-      // console.debug('ddebug --------------- 6');
 
-      // we found fts override plugin, let's load it
-      try {
-        const stdout = await execCommand(`cat ${ftsMount}`);
-        if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
-        const ftsConfig = await readDovecotConfFile(stdout);
-        if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
-        
-        if (ftsConfig.plugin && ftsConfig.plugin.fts) {
-          // console.debug('ddebug --------------- ftsConfig pulled:',ftsConfig);
-          infos.env.FTS_PLUGIN = ftsConfig.plugin.fts;
-          infos.env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-          // console.debug('ddebug --------------- ftsConfig pulled infos.env:',infos.env);
+      // if we found fts override plugin, let's load it
+      if (ftsMount) {
+        try {
+          const stdout = await execCommand(`cat ${ftsMount}`);
+          if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
+          const ftsConfig = await readDovecotConfFile(stdout);
+          if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
+          
+          if (ftsConfig.plugin && ftsConfig.plugin.fts) {
+
+            env.FTS_PLUGIN = ftsConfig.plugin.fts;
+            env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+
+          }
+
+        } catch (error) {
+          console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
         }
-        // console.debug('ddebug --------------- 7');
-      } catch (error) {
-        // console.debug('ddebug --------------- 8');
-        console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
       }
 
     }
-    // console.debug('ddebug --------------- 9');
     
-    debugLog(`${arguments.callee.name}: Server pull infos result:`, infos);
-    // console.debug('ddebug --------------- infos pulled:',infos);
-    return infos;
+    debugLog(`${arguments.callee.name}: Server pull env result:`, env);
+    return obj2ArrayOfObj(env);
     
   } catch (error) {
-    let backendError = `Server pull infos error: ${error}`;
+    let backendError = `Server pull env error: ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    return {
-      infos: 'unknown',
-      error: error.message,
-    };
+    throw new Error(ErrorMsg);
   }
 }
 
@@ -333,7 +334,7 @@ async function getServerInfos(refresh) {
   debugLog(`${arguments.callee.name}: refresh=${refresh} (${typeof refresh})`);
   
   var DBdict = {};
-  var pulledInfos = {};
+  var pulledEnv = [];
   var infos = {
     internals: [
       { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
@@ -343,7 +344,7 @@ async function getServerInfos(refresh) {
       { name: 'NODE_ENV', value: NODE_ENV },
       { name: 'PORT_NODEJS', value: PORT_NODEJS },
     ],
-    env: {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'},
+    env: [],
   };
   // console.debug('ddebug ----------  before try, typeof refresh=',typeof refresh);
 
@@ -358,7 +359,7 @@ async function getServerInfos(refresh) {
       // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
     
       // we could read DB_Infos and it is valid
-      if (DBdict.constructor == Object && 'infos' in DBdict && DBdict.infos.env) {
+      if (DBdict && DBdict.infos && DBdict.infos.env && DBdict.infos.env.length) {
         debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
         return DBdict['infos'];
       }
@@ -369,36 +370,39 @@ async function getServerInfos(refresh) {
     console.debug('ddebug ---------- DBdict.infos',DBdict.infos);
     // force refresh if no db
     if (!(DBdict.infos && DBdict.infos.env)) {
-      console.debug('ddebug ---------- else Calling pullServerInfos()...');
-      pulledInfos = await pullServerInfos();
-      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledInfos).length} pulledInfos from pullServerInfos()`);
+      console.debug('ddebug ---------- else Calling pullServerEnv()...');
+      pulledEnv = await pullServerEnv();
+      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv()`);
     }
     
-    console.debug('ddebug ----------  after if, pulledInfos=',pulledInfos);
-    console.debug('ddebug ----------  pulledInfos length=',Object.keys(pulledInfos).length);
-    // since we had to call pullServerInfos, we save DB_Infos
-    if (typeof pulledInfos == "object" && Object.keys(pulledInfos).length) {
-      infos = { ...infos, ...pulledInfos };
+    console.debug('ddebug ----------  after if, pulledEnv=',pulledEnv);
+    console.debug('ddebug ----------  pulledEnv length=',Object.keys(pulledEnv).length);
+    // since we had to call pullServerEnv, we save DB_Infos
+    if (pulledEnv && pulledEnv.length) {
+      infos = { ...infos, ...{env: pulledEnv} };
       DBdict["infos"] = infos;
       await writeJson(DB_Infos, DBdict);
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with read infos:`, pulledInfos);
+      console.error(`${arguments.callee.name}: error with pulledEnv:`, pulledEnv);
     }
 
 
-    debugLog(`${arguments.callee.name}: Server read infos result:`, pulledInfos);
+    debugLog(`${arguments.callee.name}: Server read infos result:`, infos);
     return DBdict.infos;
     
   } catch (error) {
     let backendError = `Server read infos error: ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    return {
-      infos: 'unknown',
-      error: error.message,
-    };
+    throw new Error(ErrorMsg);
+    
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // infos: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 

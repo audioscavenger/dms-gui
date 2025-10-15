@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import RBAccordion from 'react-bootstrap/Accordion';
 
 const {
   debug,
@@ -17,6 +18,7 @@ import {
 } from '../services/api';
 
 import { 
+  Accordion,
   Button,
   Card,
   DataTable,
@@ -24,8 +26,9 @@ import {
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-import CardFormSettings   from './CardFormSettings';
-import CardFormLogins     from './CardFormLogins';
+import FormSettings   from './FormSettings';
+import FormLogins     from './FormLogins';
+import ServerInfos    from './ServerInfos';
 import CardServerInfos    from './CardServerInfos';
 
 import Row from 'react-bootstrap/Row'; // Import Row
@@ -65,59 +68,70 @@ const Settings = () => {
   };
   */
 
-  // Column definitions for settings table
-  const columnsVersions = [
-    { key: 'name', label: 'settings.name' },
-    { key: 'value', label: 'settings.version' },
+  const settingTabs = [
+  { id: 1, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
+  { id: 2, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },
+  { id: 3, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
   ];
+  const noPadding = false;
+  const bodyClassName   = Boolean(noPadding)      == true ? 'p-0' : '';
 
-  // Column definitions for environment table
-  const columnsEnv = [
-    { key: 'name', label: 'settings.name' },
-    { key: 'value', label: 'settings.value' },
-  ];
+
+    // <RBAccordion defaultActiveKey="1">
+        // <RBAccordion.Item key="1" eventKey="1">
+          // <RBAccordion.Header>
+            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.titleSettings")}
+          // </RBAccordion.Header>
+          // <RBAccordion.Body className={bodyClassName}>
+            // <FormSettings />
+          // </RBAccordion.Body>
+        // </RBAccordion.Item>
+        
+        // <RBAccordion.Item key="2" eventKey="2">
+          // <RBAccordion.Header>
+            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.titleLogin")}
+          // </RBAccordion.Header>
+          // <RBAccordion.Body className={bodyClassName}>
+            // <FormLogins />
+          // </RBAccordion.Body>
+        // </RBAccordion.Item>
+        
+        // <RBAccordion.Item key="3" eventKey="3">
+          // <RBAccordion.Header>
+            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.serverInfosTitle")}
+          // </RBAccordion.Header>
+          // <RBAccordion.Body className={bodyClassName}>
+            // <ServerInfos />
+          // </RBAccordion.Body>
+        // </RBAccordion.Item>
+    // </RBAccordion>
+
+
 
   // to handle data coming from the child form: <FormSettings onInfosSubmit={handleInfosReceived} />
   return (
     <div>
       <h2 className="mb-4">{t('settings.title')}</h2>
 
-      <Row>
-        {' '}
-        
-        <Col md={6} className="mb-4">
-          {' '}
-          <CardFormSettings />
-        </Col>{' '}
+      <Accordion tabs={settingTabs}>
+      </Accordion>
 
-
-        <Col md={6}>
-          {' '}
-          <CardFormLogins />
-        </Col>{' '}
-
-      </Row>{' '}
-      
-      <CardServerInfos />
-      
       <Card title="settings.aboutTitle">
         <Card.Text>
           {' '}
           {t('settings.aboutDescription')}
-        </Card.Text>
-        
+        </Card.Text>{' '}
+          
         <Card.Text>
           {' '}
-          <a  href="https://github.com/audioscavenger/dms-gui"
-              target="_blank"
-              rel="noopener noreferrer"
-          >
-            <Button
-              variant="outline-primary"
-              icon="github"
-              text="settings.githubLink"
-            />
-          </a>
+          <Button
+            variant="outline-primary"
+            icon="github"
+            text="settings.githubLink"
+            href="https://github.com/audioscavenger/dms-gui"
+            target="_blank"
+            rel="noopener noreferrer"
+          />
         </Card.Text>{' '}
       </Card>
     </div>

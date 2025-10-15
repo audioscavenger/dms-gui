@@ -21,6 +21,9 @@ const Button = ({
   variant = 'primary',
   onClick,
   text,
+  href,
+  target,
+  rel,
   icon,
   size,
   disabled = false,
@@ -35,6 +38,9 @@ const Button = ({
       type={type}
       variant={variant}
       onClick={onClick}
+      href={href}
+      target={target}
+      rel={rel}
       size={size}
       disabled={disabled}
       className={className}

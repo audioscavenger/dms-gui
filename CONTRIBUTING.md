@@ -4,13 +4,13 @@ The `setup` offered by DMS is quite good tbh, and sufficient for 90% of your dai
 
 The primary goals are:
 
-1. kick start the project: **done**, thanks to dunajdev
-2. refactor, fix all the bugs, document and define scope: **done**
-3. ability to load/save/refresh data from json files or dms commands: **done**
-4. add rebuild/refresh xapian index buttons in Accounts page
-5. add DNS entries page
-6. add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
-7. Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
+1. [x] kick start the project: **done**, thanks to dunajdev
+2. [x] refactor, fix all the bugs, document and define scope: **done/WIP**
+3. [x] ability to load/save/refresh data from json files or dms commands: **done**
+4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
+5. [ ] add DNS entries page
+6. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
+7. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
 
 After (7) my life will be complete and I won't need to work on this anymore :D
 
@@ -44,6 +44,10 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
 * [ ] - frontend/chore: move all error messages into translation
 
+* [ ] - backend: add dkim modules and exec calls
+* [ ] - backend/Infos: add dkim selector detection and append infos.env
+* [ ] - backend: add domains list to build off accounts
+
 * [ ] - backend: added sql for aliases; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
 * [ ] - backend: added sql for accounts; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
 * [ ] - backend: added sql for infos
@@ -52,7 +56,10 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 * [ ] - backend/db: init the db on start
-* [ ] 1.0.14 - frontend/Settings/logins: test getLogins, saveLogins
+* [ ] - frontend/Button: add a link to parameters
+* [x] 1.0.14 - frontend/Settings/logins: test getLogins, saveLogins
+* [x] 1.0.14 - frontend/Settings: now an Accordion as we will have to deal with many parts
+* [x] 1.0.14 - frontend/pages: bugfix with booleans passed to components
 * [x] 1.0.13 - moved all env global variables into env.js
 * [x] 1.0.13 - split all common functions into /app/common/backend.js and frontend.js
 * [x] 1.0.13 - backend/logins: implemented dbGet, dbAll, dbRun, save, get, verifyPassword, hashPassword

@@ -1,8 +1,8 @@
 require('./env.js');
 const {
+  docker,
   formatMemorySize,
   jsonFixTrailingCommas,
-  fixStringType,
   formatDMSError,
   debugLog,
   execSetup,
@@ -10,16 +10,8 @@ const {
   readJson,
   writeJson,
 } = require('./backend.js');
-const {
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
-} = require('./frontend.js');
 require('./db.js');
 
-const Docker = require('dockerode');
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const fs = require("fs");
 const fsp = fs.promises;
 const crypto = require('node:crypto');
@@ -59,6 +51,11 @@ async function getLogins() {
     let ErrorMsg = await formatDMSError(backendError, error);
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -111,6 +108,11 @@ async function saveLogins(username, password, email) {
     let ErrorMsg = `${error.code}: ${error.message}`;
     console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 

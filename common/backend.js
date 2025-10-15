@@ -1,6 +1,16 @@
 const fs = require("fs");
 const fsp = fs.promises;
 
+const Docker = require('dockerode');
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+
+
+const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
+// regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
+const regexPrintOnly = /[^\S]/;
+
+
+
 // Helper function to format memory size
 function formatMemorySize(bytes) {
   if (bytes === 0) return '0B';
@@ -17,12 +27,6 @@ function jsonFixTrailingCommas(jsonString, returnJson=false) {
   eval('jsonObj = ' + jsonString);
   if (returnJson) return jsonObj;
   else return JSON.stringify(jsonObj);
-}
-
-
-function fixStringType(string) {
-  output = parseInt(string) ? parseInt(string) : string;
-  return output;
 }
 
 
@@ -212,13 +216,15 @@ async function writeJson(DB_JSON, DBdict) {
 
 
 module.exports = {
+  docker,
   formatMemorySize,
   jsonFixTrailingCommas,
-  fixStringType,
   formatDMSError,
   debugLog,
   execSetup,
   execCommand,
   readJson,
   writeJson,
+  regexColors,
+  regexPrintOnly,
 };

@@ -3,24 +3,24 @@ require('./env.js');
 const {
   getLogins,
   saveLogins,
-} = require('./backendLogins');
+} = require('./logins');
 const {
   getServerStatus,
   getServerInfos,
   getSettings,
   saveSettings,
-} = require('./backendSettings');
+} = require('./settings');
 const {
   getAccounts,
   addAccount,
   updateAccountPassword,
   deleteAccount,
-} = require('./backendAccounts');
+} = require('./accounts');
 const {
   getAliases,
   addAlias,
   deleteAlias,
-} = require('./backendAliases');
+} = require('./aliases');
 
 const express = require('express');
 const qs = require('qs');
@@ -124,8 +124,8 @@ app.get('/api/infos', async (req, res) => {
     res.json(infos);
   } catch (error) {
     if (debug) console.debug(`index /api/infos: ${error.message}`);
-    // res.infos(500).json({ error: 'Unable to connect to docker-mailserver' });
-    res.infos(500).json({ error: error.message });
+    // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.status(500).json({ error: error.message });
   }
 });
 
