@@ -1,5 +1,12 @@
-require('../../frontend.js');
+import {
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
+} from '../../frontend.js';
 import axios from 'axios';
+
 
 // Fallback to '/api' if environment variable is not available
 const API_URL =
@@ -21,7 +28,7 @@ export async function getServerStatus() {
     const response = await api.get(`/status`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error fetching server status:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -31,11 +38,11 @@ export async function getServerStatus() {
 export async function getServerInfos(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
   try {
-    // if (debug) console.debug(`ddebug frontend call to /infos?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    debugLog(`ddebug frontend call to /infos?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/infos?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error fetching server infos:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -44,11 +51,11 @@ export async function getServerInfos(refresh) {
 export async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    // if (debug) console.debug(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    debugLog(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/accounts?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error fetching accounts:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -59,7 +66,7 @@ export async function getSettings() {
     const response = await api.get(`/settings`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error getting settings:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -70,7 +77,7 @@ export async function saveSettings(containerName, setupPath, dnsProvider) {
     const response = await api.post(`/settings`, { containerName, setupPath, dnsProvider });
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error saving settings:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -82,7 +89,7 @@ export async function getLogins() {
     const response = await api.get(`/logins`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error getting logins:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -93,7 +100,7 @@ export async function saveLogins(username, password, email='') {
     const response = await api.post(`/logins`, { username, password, email });
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error saving logins:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -105,7 +112,7 @@ export async function addAccount(email, password) {
     const response = await api.post(`/accounts`, { email, password });
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error adding account:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -116,7 +123,7 @@ export async function deleteAccount(email) {
     const response = await api.delete(`/accounts/${email}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error deleting account:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -127,7 +134,7 @@ export async function reindexAccount(email) {
     const response = await api.put(`/reindex/${email}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error reindexing account:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -138,7 +145,7 @@ export async function updateAccountPassword(email, password) {
     const response = await api.put(`/accounts/${email}/password`, { password });
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error updating account password:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -147,11 +154,11 @@ export async function updateAccountPassword(email, password) {
 export async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    // if (debug) console.debug(`ddebug frontend call to /aliases?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
+    debugLog(`ddebug frontend call to /aliases?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/aliases?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error fetching aliases:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -160,10 +167,10 @@ export async function getAliases(refresh) {
 export async function addAlias(source, destination) {
   try {
     const response = await api.post(`/aliases`, { source, destination });
-    if (debug) console.debug(`ddebug aliases response.data=`,response.data);
+    debugLog(`ddebug aliases response.data=`,response.data);
     return response.data;
   } catch (error) {
-    if (debug) if (debug) console.error('api: Error adding alias:', error);
+    errorLog(error.message);
     throw error;
   }
 };
@@ -174,7 +181,7 @@ export async function deleteAlias(source, destination) {
     const response = await api.delete(`/aliases/${source}/${destination}`);
     return response.data;
   } catch (error) {
-    if (debug) console.error('api: Error deleting alias:', error);
+    errorLog(error.message);
     throw error;
   }
 };

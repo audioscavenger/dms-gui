@@ -1,22 +1,25 @@
 require('./env.js');
 const {
   docker,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
   formatMemorySize,
   jsonFixTrailingCommas,
-  formatDMSError,
-  debugLog,
+  reduxPropertiesOfObj,
   execSetup,
   execCommand,
   readJson,
   writeJson,
 } = require('./backend.js');
 const {
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
-} = require('./frontend.js');
-require('./db.js');
+  sql,
+  dbRun,
+  dbAll,
+  dbGet,
+} = require('./db.js');
 
 // const fs = require("fs");
 // const fsp = fs.promises;
@@ -34,31 +37,30 @@ const regexPrintOnly = /[^\S]/;
 async function getSettings() {
   var DBdict = {};
   var settings = {};
-  debugLog(`${arguments.callee.name}: start`);
+  debugLog(`start`);
   
   try {
     
-    debugLog(`${arguments.callee.name}: calling DBdict readJson(${DB_Settings})`);
+    debugLog(`calling DBdict readJson(${DB_Settings})`);
     DBdict = await readJson(DB_Settings);
-    debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+    debugLog(`DBdict:`, DBdict);
     
     // we could read DB_Settings and it is valid
     if (DBdict.constructor == Object && 'settings' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['settings']).length} settings in DB_Settings`);
+      debugLog(`Found ${Object.keys(DBdict['settings']).length} settings in DB_Settings`);
       return DBdict['settings'];
       
     // we could not read DB_Settings or it is invalid
     } else {
-      console.log(`${arguments.callee.name}: ${DB_Settings} is empty`);
+      infoLog(`${arguments.callee.name}: ${DB_Settings} is empty`);
     }
     
     return settings;
     
   } catch (error) {
-    let backendError = 'Error retrieving settings';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -84,10 +86,9 @@ async function saveSettings(containerName, setupPath=SETUP_SCRIPT, dnsProvider='
     return { success: true };
     
   } catch (error) {
-    let backendError = 'Error saving settings';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -116,12 +117,12 @@ async function getServerStatus() {
   };
 
   try {
-    debugLog(`${arguments.callee.name}: Pulling server status`);
+    debugLog(`Pulling server status`);
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
-    // debugLog(`${arguments.callee.name}: ddebug containerInfo:`, containerInfo);
+    // debugLog(`ddebug containerInfo:`, containerInfo);
 
     // Check if container exist
     status.status.status = (containerInfo.Id) ? "stopped" : "missing";
@@ -130,7 +131,7 @@ async function getServerStatus() {
       
       // Check if container is running
       const isRunning = containerInfo.State.Running === true;
-      debugLog(`${arguments.callee.name}: Container running: ${isRunning} status.status=`,status.status);
+      debugLog(`Container running: ${isRunning} status.status=`,status.status);
 
       // get also errors and stuff
       status.status.Error = containerInfo.State.Error;
@@ -143,7 +144,7 @@ async function getServerStatus() {
         status.status.status = 'running';
         
         // Get container stats
-        debugLog(`${arguments.callee.name}: Getting container stats`);
+        debugLog(`Getting container stats`);
         const stats = await container.stats({ stream: false });
         
         // Calculate CPU usage percentage
@@ -160,7 +161,7 @@ async function getServerStatus() {
         const memoryUsageBytes = stats.memory_stats.usage;
         status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
 
-        debugLog(`${arguments.callee.name}: Resources:`, status.resources);
+        debugLog(`Resources:`, status.resources);
 
         // For disk usage, we would need to run a command inside the container
         // This could be a more complex operation involving checking specific directories
@@ -169,13 +170,13 @@ async function getServerStatus() {
       }
     }
 
-    debugLog(`${arguments.callee.name}: Server pull status result:`, status);
+    debugLog(`Server pull status result:`, status);
     return status;
     
   } catch (error) {
-    let backendError = `Server pull status error: ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -245,14 +246,14 @@ async function readDovecotConfFile(stdout) {
   }
 
   const cleanData = `{${cleanlines.join('\n')}}`;
-  if (debug) console.debug(`${arguments.callee.name}: cleanData:`, cleanData);
+  debugLog(`cleanData:`, cleanData);
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
-    if (debug) console.debug(`${arguments.callee.name}: json:`, json);
+    debugLog(`json:`, json);
     return json;
   } catch (error) {
-    console.error(`${arguments.callee.name}: cleanData not valid JSON:`, error);
+    errorLog(`cleanData not valid JSON:`, error);
     return {};
   }
 }
@@ -264,22 +265,22 @@ async function pullServerEnv() {
   var env = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'};
 
   try {
-    debugLog(`${arguments.callee.name}: Pulling server infos`);
+    debugLog(`Pulling server infos`);
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
 
     if (containerInfo.Id) {
-      debugLog(`${arguments.callee.name}: containerInfo found, Id=`, containerInfo.Id);
+      debugLog(`containerInfo found, Id=`, containerInfo.Id);
       
       // get and conver DMS environment to dict
       dictEnvDMS = arrayOfStringToDict(containerInfo.Config.Env, '=');
-      // debugLog(`${arguments.callee.name}: dictEnvDMS:`,dictEnvDMS);
+      // debugLog(`dictEnvDMS:`,dictEnvDMS);
       
       // we keep only some options not all
       dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      debugLog(`${arguments.callee.name}: dictEnvDMSredux:`,dictEnvDMSredux);
+      debugLog(`dictEnvDMSredux:`,dictEnvDMSredux);
 
       env = { ...env, ...dictEnvDMSredux };
 
@@ -287,7 +288,7 @@ async function pullServerEnv() {
       // pull bindings and look for FTS
       var ftsMount = '';
       containerInfo.Mounts.forEach( async (mount) => {
-        if (debug) console.debug(`${arguments.callee.name}: found mount ${mount.Destination}`);
+        debugLog(`found mount ${mount.Destination}`);
         if (mount.Destination.match(/fts.*\.conf$/i)) {
           // we get the DMS internal mount as we cannot say if we have access to that file on the host system
           ftsMount = mount.Destination;
@@ -298,9 +299,9 @@ async function pullServerEnv() {
       if (ftsMount) {
         try {
           const stdout = await execCommand(`cat ${ftsMount}`);
-          if (debug) console.debug(`${arguments.callee.name}: dovecot file content:`,stdout);
+          debugLog(`dovecot file content:`,stdout);
           const ftsConfig = await readDovecotConfFile(stdout);
-          if (debug) console.debug(`${arguments.callee.name}: dovecot json:`,ftsConfig);
+          debugLog(`dovecot json:`,ftsConfig);
           
           if (ftsConfig.plugin && ftsConfig.plugin.fts) {
 
@@ -310,20 +311,19 @@ async function pullServerEnv() {
           }
 
         } catch (error) {
-          console.error(`${arguments.callee.name}: execCommand failed with error:`,error);
+          errorLog(`execCommand failed with error:`,error);
         }
       }
 
     }
     
-    debugLog(`${arguments.callee.name}: Server pull env result:`, env);
+    debugLog(`Server pull env result:`, env);
     return obj2ArrayOfObj(env);
     
   } catch (error) {
-    let backendError = `Server pull env error: ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
   }
 }
 
@@ -331,7 +331,7 @@ async function pullServerEnv() {
 // Function to get server infos
 async function getServerInfos(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
-  debugLog(`${arguments.callee.name}: refresh=${refresh} (${typeof refresh})`);
+  debugLog(`refresh=${refresh} (${typeof refresh})`);
   
   var DBdict = {};
   var pulledEnv = [];
@@ -354,13 +354,13 @@ async function getServerInfos(refresh) {
 
     if (!refresh) {
       // console.debug('ddebug ----------  refresh=',refresh);
-       debugLog(`${arguments.callee.name}: read DBdict from ${DB_Infos} (refresh=${refresh})`);
+       debugLog(`read DBdict from ${DB_Infos} (refresh=${refresh})`);
       DBdict = await readJson(DB_Infos);
-      // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+      // debugLog(`DBdict:`, DBdict);
     
       // we could read DB_Infos and it is valid
       if (DBdict && DBdict.infos && DBdict.infos.env && DBdict.infos.env.length) {
-        debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
+        debugLog(`Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
         return DBdict['infos'];
       }
       
@@ -372,7 +372,7 @@ async function getServerInfos(refresh) {
     if (!(DBdict.infos && DBdict.infos.env)) {
       console.debug('ddebug ---------- else Calling pullServerEnv()...');
       pulledEnv = await pullServerEnv();
-      debugLog(`${arguments.callee.name}: got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv()`);
+      debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv()`);
     }
     
     console.debug('ddebug ----------  after if, pulledEnv=',pulledEnv);
@@ -385,18 +385,17 @@ async function getServerInfos(refresh) {
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with pulledEnv:`, pulledEnv);
+      errorLog(`error with pulledEnv:`, pulledEnv);
     }
 
 
-    debugLog(`${arguments.callee.name}: Server read infos result:`, infos);
+    debugLog(`Server read infos result:`, infos);
     return DBdict.infos;
     
   } catch (error) {
-    let backendError = `Server read infos error: ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
     
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {

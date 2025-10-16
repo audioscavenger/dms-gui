@@ -1,5 +1,13 @@
 require('./env.js');
+const {
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
+} = require('./backend.js');
 
+const { dbInit } = require('./db');
 const {
   getLogins,
   saveLogins,
@@ -90,7 +98,7 @@ app.get('/api/status', async (req, res) => {
     const status = await getServerStatus();
     res.json(status);
   } catch (error) {
-    if (debug) console.debug(`index /api/status: ${error.message}`);
+    errorLog(`index /api/status: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
     res.status(500).json({ error: error.message });
   }
@@ -119,11 +127,11 @@ app.get('/api/status', async (req, res) => {
 app.get('/api/infos', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : true;
-    if (debug) console.debug(`/api/infos?refresh=${req.query.refresh} -> ${refresh}`);
+    debugLog(`/api/infos?refresh=${req.query.refresh} -> ${refresh}`);
     const infos = await getServerInfos(refresh);
     res.json(infos);
   } catch (error) {
-    if (debug) console.debug(`index /api/infos: ${error.message}`);
+    errorLog(`index /api/infos: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
     res.status(500).json({ error: error.message });
   }
@@ -156,7 +164,7 @@ app.get('/api/accounts', async (req, res) => {
     const accounts = await getAccounts(refresh);
     res.json(accounts);
   } catch (error) {
-    if (debug) console.debug(`index /api/accounts: ${error.message}`);
+    errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve accounts' });
     res.status(500).json({ error: error.message });
   }
@@ -199,7 +207,7 @@ app.post('/api/accounts', async (req, res) => {
     const result = await addAccount(email, password);
     res.status(201).json({ message: 'Account created successfully', email });
   } catch (error) {
-    if (debug) console.debug(`index /api/accounts: ${error.message}`);
+    errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
     res.status(500).json({ error: error.message });
   }
@@ -236,7 +244,7 @@ app.delete('/api/accounts/:email', async (req, res) => {
     await deleteAccount(email);
     res.json({ message: 'Account deleted successfully', email });
   } catch (error) {
-    if (debug) console.debug(`index /api/accounts: ${error.message}`);
+    errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
     res.status(500).json({ error: error.message });
   }
@@ -273,7 +281,7 @@ app.put('/api/reindex/:email', async (req, res) => {
     await reindexAccount(email);
     res.json({ message: 'Reindex started for account', email });
   } catch (error) {
-    if (debug) console.debug(`index /api/reindex: ${error.message}`);
+    errorLog(`index /api/reindex: ${error.message}`);
     // res.status(500).json({ error: 'Unable to reindex account' });
     res.status(500).json({ error: error.message });
   }
@@ -326,7 +334,7 @@ app.put('/api/accounts/:email/password', async (req, res) => {
     await updateAccountPassword(email, password);
     res.json({ message: 'Password updated successfully', email });
   } catch (error) {
-    if (debug) console.debug(`index /api/accounts: ${error.message}`);
+    errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update password' });
     res.status(500).json({ error: error.message });
   }
@@ -357,10 +365,10 @@ app.get('/api/aliases', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
     const aliases = await getAliases(refresh);
-    if (debug) console.debug(`index /api/aliases: aliases=`,aliases);
+    debugLog(`index /api/aliases: aliases=`,aliases);
     res.json(aliases);
   } catch (error) {
-    if (debug) console.debug(`ddebug index /api/aliases: ${error.message}`);
+    errorLog(`ddebug index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve aliases' });
     res.status(500).json({ error: error.message });
   }
@@ -407,7 +415,7 @@ app.post('/api/aliases', async (req, res) => {
       .status(201)
       .json({ message: 'Alias created successfully', source, destination });
   } catch (error) {
-    if (debug) console.debug(`index /api/aliases: ${error.message}`);
+    errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create alias' });
     res.status(500).json({ error: error.message });
   }
@@ -454,7 +462,7 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
     await deleteAlias(source, destination);
     res.json({ message: 'Alias deleted successfully', source, destination });
   } catch (error) {
-    if (debug) console.debug(`index /api/aliases: ${error.message}`);
+    errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete alias' });
     res.status(500).json({ error: error.message });
   }
@@ -478,7 +486,7 @@ app.get('/api/settings', async (req, res) => {
     const settings = await getSettings();
     res.json(settings);
   } catch (error) {
-    if (debug) console.debug(`index GET /api/settings: ${error.message}`);
+    errorLog(`index GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
@@ -521,7 +529,7 @@ app.post('/api/settings', async (req, res) => {
     const result = await saveSettings(containerName, setupPath, dnsProvider);
     res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
-    if (debug) console.debug(`index POST /api/settings: ${error.message}`);
+    errorLog(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
     res.status(500).json({ error: error.message });
   }
@@ -546,7 +554,7 @@ app.get('/api/logins', async (req, res) => {
     const logins = await getLogins();
     res.json(logins);
   } catch (error) {
-    if (debug) console.debug(`index GET /api/logins: ${error.message}`);
+    errorLog(`index GET /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
     res.status(500).json({ error: error.message });
   }
@@ -588,11 +596,12 @@ app.post('/api/logins', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
+    if (!email)     email = '';
 
     const result = await saveLogins(username, password, email);
     res.status(201).json({ message: 'Admin credentials saved successfully' });
   } catch (error) {
-    if (debug) console.debug(`index POST /api/logins: ${error.message}`);
+    errorLog(`index POST /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Admin credentials' });
     res.status(500).json({ error: error.message });
   }
@@ -600,9 +609,7 @@ app.post('/api/logins', async (req, res) => {
 
 
 app.listen(PORT_NODEJS, async () => {
-  // const { name, version } = await dockerMailserver.readJson('/app/package.json');
-  console.log(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
-
-  // Log debug status
-  if (debug) console.debug('🐞 debug mode is ENABLED');
+  infoLog(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
+  debugLog('🐞 debug mode is ENABLED');
+  await dbInit();
 });

@@ -1,16 +1,25 @@
 require('./env.js');
 const {
   docker,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
   formatMemorySize,
   jsonFixTrailingCommas,
   formatDMSError,
-  debugLog,
   execSetup,
   execCommand,
   readJson,
   writeJson,
 } = require('./backend.js');
-require('./db.js');
+const {
+  sql,
+  dbRun,
+  dbAll,
+  dbGet,
+} = require('./db.js');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -25,7 +34,7 @@ const regexPrintOnly = /[^\S]/;
 // Function to retrieve aliases
 async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
-  debugLog(`${arguments.callee.name}: start (refresh=${refresh})`);
+  debugLog(`start (refresh=${refresh})`);
   
   var DBdict = {};
   var aliases = [];
@@ -39,7 +48,7 @@ async function getAliases(refresh) {
     
       // we could read DB_Aliases and it is valid
       if (DBdict.constructor == Object && 'aliases' in DBdict) {
-        debugLog(`${arguments.callee.name}: Found ${DBdict['aliases'].length} aliases in DBdict`);
+        debugLog(`Found ${DBdict['aliases'].length} aliases in DBdict`);
         return DBdict['aliases'];
       }
         
@@ -49,19 +58,19 @@ async function getAliases(refresh) {
     // force refresh if no db
     if (!DBdict.aliases) {
         aliases = await getAliasesFromDMS();
-        debugLog(`${arguments.callee.name}: got ${aliases.length} aliases from getAliasesFromDMS()`);
+        debugLog(`got ${aliases.length} aliases from getAliasesFromDMS()`);
     }
     
     // since we had to call getAliasesFromDMS, we save DB_Aliases
     if (Array.isArray(aliases) && aliases.length) {
       // DBdict["aliases"] = aliases;
       DBdict = { ...DBdict, "aliases": aliases };
-      // if (debug) console.debug('ddebug ----------------------------- DBdict',DBdict);
+      // debugLog('ddebug ----------------------------- DBdict',DBdict);
       await writeJson(DB_Aliases, DBdict);
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with aliases:`, aliases);
+      errorLog(`error with aliases:`, aliases);
     }
 
 
@@ -70,7 +79,7 @@ async function getAliases(refresh) {
   } catch (error) {
     let backendError = 'Error retrieving aliases';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -85,13 +94,13 @@ async function getAliases(refresh) {
 async function getAliasesFromDMS() {
   const command = 'alias list';
   try {
-    debugLog(`${arguments.callee.name}: execSetup(${command})`);
+    debugLog(`execSetup(${command})`);
     const stdout = await execSetup(command);
     const aliases = [];
 
     // Parse each line in the format "* source destination"
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
-    debugLog(`${arguments.callee.name}: Raw alias list response:`, lines);
+    debugLog(`Raw alias list response:`, lines);
 
     // Modified regex to be more tolerant of control characters that might appear in the output
     const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
@@ -106,24 +115,24 @@ async function getAliasesFromDMS() {
         if (match) {
           const source = match[1];
           const destination = match[2];
-          debugLog(`${arguments.callee.name}: Parsed alias: ${source} -> ${destination}`);
+          debugLog(`Parsed alias: ${source} -> ${destination}`);
 
           aliases.push({
             source,
             destination,
           });
         } else {
-          debugLog(`${arguments.callee.name}: Failed to parse alias line: ${line}`);
+          debugLog(`Failed to parse alias line: ${line}`);
         }
       }
     }
 
-    debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
+    debugLog(`Found ${aliases.length} aliases`);
     return aliases;
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -131,13 +140,13 @@ async function getAliasesFromDMS() {
 // Function to retrieve aliases
 async function getAliasesOLD() {
   try {
-    debugLog(`${arguments.callee.name}: Getting aliases list`);
+    debugLog(`Getting aliases list`);
     const stdout = await execSetup('alias list');
     const aliases = [];
 
     // Parse each line in the format "* source destination"
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
-    debugLog(`${arguments.callee.name}: Raw alias list response:`, lines);
+    debugLog(`Raw alias list response:`, lines);
 
     // Modified regex to be more tolerant of control characters that might appear in the output
     const aliasRegex = /\* ([\w\-\.@]+) ([\w\-\.@]+)$/;
@@ -151,24 +160,24 @@ async function getAliasesOLD() {
         if (match) {
           const source = match[1];
           const destination = match[2];
-          debugLog(`${arguments.callee.name}: Parsed alias: ${source} -> ${destination}`);
+          debugLog(`Parsed alias: ${source} -> ${destination}`);
 
           aliases.push({
             source,
             destination,
           });
         } else {
-          debugLog(`${arguments.callee.name}: Failed to parse alias line: ${line}`);
+          debugLog(`Failed to parse alias line: ${line}`);
         }
       }
     }
 
-    debugLog(`${arguments.callee.name}: Found ${aliases.length} aliases`);
+    debugLog(`Found ${aliases.length} aliases`);
     return aliases;
   } catch (error) {
     let backendError = 'Error retrieving aliases';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -176,14 +185,14 @@ async function getAliasesOLD() {
 // Function to add an alias
 async function addAlias(source, destination) {
   try {
-    debugLog(`${arguments.callee.name}: Adding new alias: ${source} -> ${destination}`);
+    debugLog(`Adding new alias: ${source} -> ${destination}`);
     await execSetup(`alias add ${source} ${destination}`);
-    debugLog(`${arguments.callee.name}: Alias created: ${source} -> ${destination}`);
+    debugLog(`Alias created: ${source} -> ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
     let backendError = 'Unable to add alias';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -196,14 +205,14 @@ async function addAlias(source, destination) {
 // Function to delete an alias
 async function deleteAlias(source, destination) {
   try {
-    debugLog(`${arguments.callee.name}: Deleting alias: ${source} => ${destination}`);
+    debugLog(`Deleting alias: ${source} => ${destination}`);
     await execSetup(`alias del ${source} ${destination}`);
-    debugLog(`${arguments.callee.name}: Alias deleted: ${source} => ${destination}`);
+    debugLog(`Alias deleted: ${source} => ${destination}`);
     return { success: true, source, destination };
   } catch (error) {
     let backendError = 'Unable to delete alias';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {

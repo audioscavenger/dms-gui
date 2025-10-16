@@ -1,16 +1,25 @@
 require('./env.js');
 const {
   docker,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
   formatMemorySize,
   jsonFixTrailingCommas,
   formatDMSError,
-  debugLog,
   execSetup,
   execCommand,
   readJson,
   writeJson,
 } = require('./backend.js');
-require('./db.js');
+const {
+  sql,
+  dbRun,
+  dbAll,
+  dbGet,
+} = require('./db.js');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -20,7 +29,7 @@ const crypto = require('node:crypto');
 // Function to retrieve email accounts
 async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
-  debugLog(`${arguments.callee.name}: (refresh=${refresh})`);
+  debugLog(`(refresh=${refresh})`);
 
   var DBdict = {};
   var accounts = [];
@@ -28,14 +37,14 @@ async function getAccounts(refresh) {
   try {
     
       if (!refresh) {
-        debugLog(`${arguments.callee.name}: read DBdict from ${DB_Accounts} (refresh=${refresh})`);
+        debugLog(`read DBdict from ${DB_Accounts} (refresh=${refresh})`);
         
         DBdict = await readJson(DB_Accounts);
-        // debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+        // debugLog(`DBdict:`, DBdict);
 
         // we could read DB_Accounts and it is valid
         if (DBdict.constructor == Object && 'accounts' in DBdict) {
-          debugLog(`${arguments.callee.name}: Found ${DBdict['accounts'].length} accounts in DBdict`);
+          debugLog(`Found ${DBdict['accounts'].length} accounts in DBdict`);
           return DBdict['accounts'];
         }
         
@@ -45,24 +54,24 @@ async function getAccounts(refresh) {
     // force refresh if no db
     if (!DBdict.accounts) {
         accounts = await getAccountsFromDMS();
-        debugLog(`${arguments.callee.name}: got ${accounts.length} accounts from getAccountsFromDMS()`);
+        debugLog(`got ${accounts.length} accounts from getAccountsFromDMS()`);
       }
     
     // since we had to call getAccountsFromDMS, we save DB_Accounts
     if (Array.isArray(accounts) && accounts.length) {
       // DBdict["accounts"] = accounts;
       DBdict = { ...DBdict, "accounts": accounts };
-      // if (debug) console.debug('ddebug ----------------------------- DBdict',DBdict);
+      // debugLog('ddebug ----------------------------- DBdict',DBdict);
       
       // try {
         await writeJson(DB_Accounts, DBdict);
       // } catch (error) {
-        // console.error(`${arguments.callee.name}:writeJson(DBdict) error:`, error);
+        // errorLog(`${arguments.callee.name}:writeJson(DBdict) error:`, error);
       // }
       
     // unknown error
     } else {
-      console.error(`${arguments.callee.name}: error with accounts:`, accounts);
+      errorLog(`error with accounts:`, accounts);
     }
 
 
@@ -71,7 +80,7 @@ async function getAccounts(refresh) {
   } catch (error) {
     let backendError = 'Error retrieving accounts';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -86,7 +95,7 @@ async function getAccounts(refresh) {
 async function getAccountsFromDMS() {
   const command = 'email list';
   try {
-    debugLog(`${arguments.callee.name}: execSetup(${command})`);
+    debugLog(`execSetup(${command})`);
     const stdout = await execSetup(command);
     const accounts = [];
 
@@ -99,14 +108,14 @@ async function getAccountsFromDMS() {
 
     // Process each line individually
     const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
-    // debugLog(`${arguments.callee.name}: email list RAW response:`, lines);
+    // debugLog(`email list RAW response:`, lines);
 
     for (let i = 0; i < lines.length; i++) {
-      debugLog(`${arguments.callee.name}: email list line RAW  :`, lines[i]);
+      debugLog(`email list line RAW  :`, lines[i]);
       
       // Clean the line from binary control characters
       const line = lines[i].replace(emailLineValidChars, '').trim();
-      debugLog(`${arguments.callee.name}: email list line CLEAN:`, line);
+      debugLog(`email list line CLEAN:`, line);
 
       // Check if line contains * which indicates an account entry
       if (line.includes('*')) {
@@ -143,17 +152,17 @@ async function getAccountsFromDMS() {
             email,
           });
         } else {
-          debugLog(`${arguments.callee.name}: Failed to parse account line: ${line}`);
+          debugLog(`Failed to parse account line: ${line}`);
         }
       }
     }
 
-    debugLog(`${arguments.callee.name}: Found ${accounts.length} accounts`);
+    debugLog(`Found ${accounts.length} accounts`);
     return accounts;
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -162,14 +171,14 @@ async function getAccountsFromDMS() {
 // Function to add a new email account
 async function addAccount(email, password) {
   try {
-    debugLog(`${arguments.callee.name}: Adding new email account: ${email}`);
+    debugLog(`Adding new email account: ${email}`);
     await execSetup(`email add ${email} ${password}`);
-    debugLog(`${arguments.callee.name}: Account created: ${email}`);
+    debugLog(`Account created: ${email}`);
     return { success: true, email };
   } catch (error) {
     let backendError = 'Error adding account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -182,14 +191,14 @@ async function addAccount(email, password) {
 // Function to update an email account password
 async function updateAccountPassword(email, password) {
   try {
-    debugLog(`${arguments.callee.name}: Updating password for account: ${email}`);
+    debugLog(`Updating password for account: ${email}`);
     await execSetup(`email update ${email} ${password}`);
-    debugLog(`${arguments.callee.name}: Password updated for account: ${email}`);
+    debugLog(`Password updated for account: ${email}`);
     return { success: true, email };
   } catch (error) {
     let backendError = 'Error updating account password';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -202,14 +211,14 @@ async function updateAccountPassword(email, password) {
 // Function to delete an email account
 async function deleteAccount(email) {
   try {
-    debugLog(`${arguments.callee.name}: Deleting email account: ${email}`);
+    debugLog(`Deleting email account: ${email}`);
     await execSetup(`email del ${email}`);
-    debugLog(`${arguments.callee.name}: Account deleted: ${email}`);
+    debugLog(`Account deleted: ${email}`);
     return { success: true, email };
   } catch (error) {
     let backendError = 'Error deleting account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -222,14 +231,14 @@ async function deleteAccount(email) {
 // Function to reindex an email account
 async function reindexAccount(email) {
   try {
-    debugLog(`${arguments.callee.name}: Reindexing email account: ${email}`);
+    debugLog(`Reindexing email account: ${email}`);
     await execSetup(`doveadm index -u ${email} -q \\*`);
-    debugLog(`${arguments.callee.name}: Account reindex started for ${email}`);
+    debugLog(`Account reindex started for ${email}`);
     return { success: true, email };
   } catch (error) {
     let backendError = 'Error reindexing account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {

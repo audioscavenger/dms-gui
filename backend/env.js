@@ -3,7 +3,7 @@ dotenv.config({ path: '/app/config/.dms-gui.env' });
 debug = (process.env.DEBUG === 'true') ? true : false;
 
 // const { name, version, description } = require('./package.json');  
-DMSGUI_VERSION = process.env.DMSGUI_VERSION;
+DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
 HOSTNAME = process.env.HOSTNAME;
 NODE_ENV = process.env.NODE_ENV || 'production';

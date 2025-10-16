@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 import {
   getAccounts,
@@ -91,7 +91,7 @@ useEffect(() => {
 
   const fetchAllAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAllAccounts call getAccounts(${refresh})`);
+    debugLog(`fetchAllAccounts call getAccounts(${refresh})`);
     
     try {
       setLoading(true);
@@ -105,12 +105,12 @@ useEffect(() => {
       setServerInfos(infosData);
       setErrorMessage(null);
       
-      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
-      if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
-      if (debug) console.debug('ddebug: ------------- infosData', infosData);
+      debugLog('accountsData', accountsData);
+      debugLog('settingsData', settingsData);
+      debugLog('infosData', infosData);
       
     } catch (err) {
-      console.error(t('api.errors.fetchAllAccounts'), err);
+      errorLog(t('api.errors.fetchAllAccounts'), err);
       setErrorMessage('api.errors.fetchAllAccounts');
     } finally {
       setLoading(false);
@@ -178,8 +178,7 @@ useEffect(() => {
       });
       fetchAllAccounts(true); // Refresh the accounts list
     } catch (err) {
-      console.error(t('api.errors.addAccount'), err);
-      setErrorMessage('api.errors.addAccount');
+      errorLog(t('api.errors.addAccount'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAccount');
     }
   };
@@ -191,8 +190,7 @@ useEffect(() => {
         setSuccessMessage('accounts.accountDeleted');
         fetchAllAccounts(true); // Refresh the accounts list
       } catch (err) {
-        console.error(t('api.errors.deleteAccount'), err);
-        setErrorMessage('api.errors.deleteAccount');
+        errorLog(t('api.errors.deleteAccount'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAccount');
       }
     }
@@ -203,8 +201,7 @@ useEffect(() => {
       await reindexAccount(email);
       setSuccessMessage('accounts.reindexStarted');
     } catch (err) {
-      console.error(t('api.errors.reindexAccount'), err);
-      setErrorMessage('api.errors.reindexAccount');
+      errorLog(t('api.errors.reindexAccount'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.reindexAccount');
     }
   };
@@ -281,7 +278,7 @@ useEffect(() => {
       setSuccessMessage('accounts.passwordUpdated');
       handleClosePasswordModal(); // Close the modal
     } catch (err) {
-      console.error(t('api.errors.updatePassword'), err);
+      errorLog(t('api.errors.updatePassword'), err);
       setErrorMessage('api.errors.updatePassword');
     }
   };
@@ -358,7 +355,7 @@ useEffect(() => {
       setSuccessMessage('accounts.dnsUpdated');
       handleCloseDNSModal(); // Close the modal
     } catch (err) {
-      console.error(t('api.errors.updateDNS'), err);
+      errorLog(t('api.errors.updateDNS'), err);
       setErrorMessage('api.errors.updateDNS');
     }
   };

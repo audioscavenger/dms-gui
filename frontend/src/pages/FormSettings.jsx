@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 import {
   getSettings,
@@ -43,12 +43,15 @@ function FormSettings() {
 
 
   const fetchAllSettings = async () => {
-    if (debug) console.debug(`ddebug: ------------- fetchAllSettings call fetchSettings fetchLogins`);
+    debugLog(`fetchAllSettings call fetchSettings fetchLogins`);
     setLoading(true);
 
     const settingsData  = await fetchSettings();
+    setSettings({
+      ...settings,
+      ...settingsData,
+    });
 
-    setSettings(settingsData);
     // onInfosSubmit(infosData);  // that's what you send back to the parent page
 
     setLoading(false);
@@ -56,25 +59,20 @@ function FormSettings() {
   };
 
   const fetchSettings = async () => {
-    if (debug) console.debug(`ddebug: ------------- fetchSettings call getSettings`);
+    debugLog(`fetchSettings call getSettings`);
 
     try {
-      // setLoading(true);
       const [settingsData] = await Promise.all([
         getSettings(),
       ]);
-      // if (debug) console.debug('ddebug: ------------- settingsData', settingsData);
-
-      // setSettings(settingsData);
+      debugLog('settingsData', settingsData);
 
       setErrorMessage(null);
       return settingsData;
 
     } catch (err) {
-      console.error(t('api.errors.fetchSettings'), err);
+      errorLog(t('api.errors.fetchSettings'), err);
       setErrorMessage('api.errors.fetchSettings');
-    // } finally {
-      // setLoading(false);
     }
   };
 
@@ -102,7 +100,7 @@ function FormSettings() {
 
   const validateFormSettings = () => {
     const errors = {};
-    // if (debug) console.debug('ddebug validateFormSettings settings=',settings);
+    debugLog('ddebug validateFormSettings settings=',settings);
 
     if (settings.containerName.length == 0) {
       errors.containerName = 'settings.containerNameRequired';
@@ -116,13 +114,13 @@ function FormSettings() {
 
   const handleSubmitSettings = async (e) => {
     e.preventDefault();
-    if (debug) console.debug('Form settings Submitted:', settings);
+    debugLog('Form settings Submitted:', settings);
     
     setSubmissionSettings('submitting');
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // if (debug) console.debug('ddebug validateFormSettings()=',validateFormSettings());
+    debugLog('ddebug validateFormSettings()=',validateFormSettings());
     if (!validateFormSettings()) {
       return;
     }
@@ -138,7 +136,7 @@ function FormSettings() {
       fetchSettings(); // Refresh the settings
     } catch (err) {
       setSubmissionSettings('error');
-      console.error(t('api.errors.saveSettings'), err);
+      errorLog(t('api.errors.saveSettings'), err);
       setErrorMessage('api.errors.saveSettings');
     }
   };

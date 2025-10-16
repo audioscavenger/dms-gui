@@ -1,16 +1,25 @@
 require('./env.js');
 const {
   docker,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
   formatMemorySize,
   jsonFixTrailingCommas,
   formatDMSError,
-  debugLog,
   execSetup,
   execCommand,
   readJson,
   writeJson,
 } = require('./backend.js');
-require('./db.js');
+const {
+  sql,
+  dbRun,
+  dbAll,
+  dbGet,
+} = require('./db.js');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -22,26 +31,59 @@ const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 const regexPrintOnly = /[^\S]/;
 
 
-// Function to retrieve logins
+// TODO: this returns a single object, should return an array
 async function getLogins() {
+
+  debugLog(`start`);
+  try {
+    
+    const logins = await dbAll(sql.logins.select.logins);
+    debugLog(`logins: ${typeof logins}`, logins);
+    
+    // we could read DB_Logins and it is valid
+    if (logins && logins.length) {
+      debugLog(`Found ${logins.length} entries in logins`);
+      return logins[0];
+      // { username: username, email: email }
+      
+    } else {
+      debugLog(`logins in db seems empty:`, logins);
+      return {};
+    }
+    
+  } catch (error) {
+    let backendError = `getLogins: ${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// deprecated
+async function getLoginsJson() {
   var DBdict = {};
   var logins = {};
-  debugLog(`${arguments.callee.name}: start`);
+  debugLog(`start`);
   
   try {
     
-    debugLog(`${arguments.callee.name}: calling DBdict readJson(${DB_Logins})`);
+    debugLog(`calling DBdict readJson(${DB_Logins})`);
     DBdict = await readJson(DB_Logins);
-    debugLog(`${arguments.callee.name}: DBdict:`, DBdict);
+    debugLog(`DBdict:`, DBdict);
     
     // we could read DB_Logins and it is valid
     if (DBdict.constructor == Object && 'logins' in DBdict) {
-      debugLog(`${arguments.callee.name}: Found ${Object.keys(DBdict['logins']).length} entries in DB_Logins`);
+      debugLog(`Found ${Object.keys(DBdict['logins']).length} entries in DB_Logins`);
       return DBdict['logins'];
       
     // we could not read DB_Logins or it is invalid
     } else {
-      console.log(`${arguments.callee.name}: ${DB_Logins} is empty`);
+      infoLog(`${arguments.callee.name}: ${DB_Logins} is empty`);
     }
     
     return logins;
@@ -49,9 +91,9 @@ async function getLogins() {
   } catch (error) {
     let backendError = 'Error retrieving logins';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
+    // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
       // error: error.message,
@@ -65,20 +107,20 @@ async function saveLoginsJson(username, password, email='') {
   DBdict = {
     logins:{
       username: username,
-      email: email,
       password: password,
+      email: email,
     }
   };
   
   try {
-    debugLog(`${arguments.callee.name}: Saving logins:`,DBdict.logins);
+    debugLog(`Saving logins:`,DBdict.logins);
     await writeJson(DB_Logins, DBdict);
     return { success: true };
 
   } catch (error) {
     let backendError = 'Error saving logins';
     let ErrorMsg = await formatDMSError(backendError, error);
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -95,20 +137,18 @@ async function hashPassword(password) {
 }
 
 
-async function saveLogins(username, password, email) {
-  const { salt, hash } = await hashPassword(password);
-
+async function saveLogins(username, password, email='') {
   try {
-    debugLog(`${arguments.callee.name}: ${username}`);
+    const { salt, hash } = await hashPassword(password);
+    debugLog(`${username}`);
     dbRun(sql.logins.insert.login, {username:username, salt:salt, hash:hash, email:email});
     return { success: true };
 
   } catch (error) {
-    let backendError = `Error saving username ${username}`;
-    let ErrorMsg = `${error.code}: ${error.message}`;
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
+    let backendError = `funcName(2): ${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
       // error: error.message,
@@ -118,26 +158,25 @@ async function saveLogins(username, password, email) {
 
 
 async function verifyPassword(username, password) {
+  
   try {
-    debugLog(`${arguments.callee.name}: for ${username}`);
-    const result = dbGet(sql.logins.select.saltHash, [username]);
+    debugLog(`for ${username}`);
+    const result = dbGet(sql.logins.select.saltHash, username);
     
   } catch (error) {
-    let backendError = `Error verifyPassword for username ${username}`;
-    let ErrorMsg = `${error.code}: ${error.message}`;
-    console.error(`${arguments.callee.name}: ${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = error.message;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
   }
 
   return new Promise((resolve, reject) => {
-    if (result) {
+    if (Object.keys(result).length) {
       if (result.salt && result.hash) {
         crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
           if (err) return reject(err);
           resolve(result.hash === derivedKey.toString('hex'));
         });
-      }
-      return reject("salt of hash missing, please reset password");
+      } else return reject(`please reset password for ${username}`);
     } else return reject(`username ${username} not found`);
   });
 };
@@ -145,14 +184,27 @@ async function verifyPassword(username, password) {
 
 
 async function loginUser(username, password) {
-  const isValid = await verifyPassword(username, password);
-  debugLog(`${arguments.callee.name}: isValid=${isValid}`);
-  if (isValid) {
-    console.log(`User ${username} logged in successfully.`);
-    return true;
-  } else {
-    console.log('Invalid username or password.');
-    return false;
+  
+  try {
+    const isValid = await verifyPassword(username, password);
+    debugLog(`${username} password isValid`);
+    
+    if (isValid) {
+      infoLog(`User ${username} logged in successfully.`);
+      return true;
+    } else {
+      infoLog(`User ${username} invalid password.`);
+      return false;
+    }
+  } catch (error) {
+    let backendError = error.message;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 

@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 import {
-getServerStatus, 
-getAccounts, 
-getAliases 
+  getServerStatus, 
+  getAccounts, 
+  getAliases 
 } from '../services/api';
 
 import { AlertMessage, DashboardCard, LoadingSpinner, Sidebar } from '../components';
@@ -64,8 +64,9 @@ const Dashboard = () => {
       setAccountsCount(accountsResponse.length);
       setAliasesCount(aliasesResponse.length);
       setError(null);
+      
     } catch (err) {
-      console.error(t('api.errors.fetchServerStatus'), err);
+      errorLog(t('api.errors.fetchServerStatus'), err);
       setError('api.errors.fetchServerStatus');
     } finally {
       setLoading(false);
@@ -80,7 +81,7 @@ const Dashboard = () => {
   };
 
   const getStatusText = () => {
-    if (debug) console.debug('ddebug status.status=',status.status)
+    debugLog('ddebug status.status=',status.status)
     if (status.status.status === 'running') return 'dashboard.status.running';
     if (status.status.status === 'stopped') return 'dashboard.status.stopped';
     return 'dashboard.status.unknown';
@@ -106,6 +107,7 @@ const Dashboard = () => {
             iconColor={getStatusColor()}
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
+            value={status.status.status}
           />
         </Col>
         <Col md={3} className="mb-3">

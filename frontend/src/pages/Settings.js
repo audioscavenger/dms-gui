@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 import {
   getServerInfos,
@@ -48,19 +48,19 @@ const Settings = () => {
     try {
       setLoading(true);
       
-      if (debug) console.debug('handleInfosReceived infos=', infos);
-      if (debug) console.debug('handleInfosReceived infos.internals=', infos.internals);
-      if (debug) console.debug('handleInfosReceived infos.env=', infos.env);
+      debugLog('handleInfosReceived infos=', infos);
+      debugLog('handleInfosReceived infos.internals=', infos.internals);
+      debugLog('handleInfosReceived infos.env=', infos.env);
       
       // first we reformat the environment object into an array of objects
       infos['envTable'] = obj2ArrayOfObj(infos.env);
       setReceivedServerInfos(infos);
       setErrorMessage(null);
       
-      if (debug) console.debug('handleInfosReceived infos.envTable=', infos.envTable);
+      debugLog('handleInfosReceived infos.envTable=', infos.envTable);
       
     } catch (err) {
-      console.error(t('api.errors.fetchServerInfos'), err);
+      errorLog(t('api.errors.fetchServerInfos'), err);
       setErrorMessage('api.errors.fetchServerInfos');
     } finally {
       setLoading(false);

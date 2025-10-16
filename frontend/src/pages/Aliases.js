@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 import {
   getAliases,
@@ -62,7 +62,7 @@ useEffect(() => {
 
   const fetchAliases = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAliases call getAliases(${refresh}) and getAccounts(false)`);
+    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(false)`);
     
     try {
       setLoading(true);
@@ -74,11 +74,11 @@ useEffect(() => {
       setAliases(aliasesData);
       setErrorMessage(null);
 
-      if (debug) console.debug('ddebug: ------------- aliasesData', aliasesData);
-      if (debug) console.debug('ddebug: ------------- accountsData', accountsData);
+      debugLog('aliasesData', aliasesData);
+      debugLog('accountsData', accountsData);
 
     } catch (err) {
-      console.error(t('api.errors.fetchAliases'), err);
+      errorLog(t('api.errors.fetchAliases'), err);
       setErrorMessage('api.errors.fetchAliases');
     } finally {
       setLoading(false);
@@ -138,10 +138,10 @@ useEffect(() => {
         source: '',
         destination: '',
       });
-      if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+      debugLog('call fetchAliases(true)');
       fetchAliases(true); // Refresh the aliases list
     } catch (err) {
-      console.error(t('api.errors.addAlias'), err);
+      errorLog(t('api.errors.addAlias'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAlias');
     }
   };
@@ -151,10 +151,10 @@ useEffect(() => {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
-        if (debug) console.debug('ddebug: ------------- call fetchAliases(true)');
+        debugLog('call fetchAliases(true)');
         fetchAliases(true); // Refresh the aliases list
       } catch (err) {
-        console.error(t('api.errors.deleteAlias'), err);
+        errorLog(t('api.errors.deleteAlias'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAlias');
       }
     }

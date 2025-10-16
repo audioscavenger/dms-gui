@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const {
-  debug,
-  arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObj,
-  reduxPropertiesOfObj,
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
 } = require('../../frontend.js');
 
 import {
@@ -33,28 +33,38 @@ const ServerInfos = () => {
     fetchAllServerInfos(false);
   }, []);
 
-  const fetchAllServerInfos = async (refresh) => {
+
+  const fetchAllServerInfos = async () => {
+    debugLog(`fetchAllServerInfos call fetchServerInfos`);
+    setLoading(true);
+
+    const infosData  = await fetchServerInfos();
+    setServerInfos({
+      ...infos,
+      ...infosData,
+    });
+    // onInfosSubmit(infosData);  // that's what you send back to the parent page
+
+    setLoading(false);
+
+  };
+
+  const fetchServerInfos = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    if (debug) console.debug(`ddebug: ------------- fetchAllServerInfos call getServerInfos(${refresh})`);
+    debugLog(`fetchAllServerInfos call getServerInfos(${refresh})`);
     
     try {
-      setLoading(true);
       const [infosData] = await Promise.all([
         getServerInfos(refresh),
       ]);
+      debugLog('infosData', infosData);
       
-      // first we reformat the environment object into an array of objects
-      // infosData['envTable'] = obj2ArrayOfObj(infosData.env);
-      setServerInfos(infosData);
       setErrorMessage(null);
-
-      if (debug) console.debug('ddebug: ------------- infosData', infosData);
+      return infosData;
 
     } catch (err) {
-      console.error(t('api.errors.fetchServerInfos'), err);
+      errorLog(t('api.errors.fetchServerInfos'), err);
       setErrorMessage('api.errors.fetchServerInfos');
-    } finally {
-      setLoading(false);
     }
   };
 

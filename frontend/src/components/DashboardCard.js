@@ -18,6 +18,7 @@ const DashboardCard = ({
   title,
   icon,
   value,
+  isLoading= false,
   iconColor = 'primary',
   badgeColor,
   badgeText,
@@ -25,6 +26,10 @@ const DashboardCard = ({
   ...rest
 }) => {
   const { t } = useTranslation();
+
+  if (isLoading && !value) {
+    return <LoadingSpinner />;
+  };
 
   return (
     <RBCard className={`dashboard-card ${className}`} {...rest}>

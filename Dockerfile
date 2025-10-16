@@ -14,6 +14,7 @@ WORKDIR /app/frontend
 
 # Copy frontend package.json and install dependencies
 COPY frontend/package*.json ./
+COPY common/common.js ./
 COPY common/frontend.js ./
 
 RUN npx npm-check-updates -u
@@ -35,7 +36,8 @@ WORKDIR /app/backend
 
 # Copy backend package.json and install dependencies
 COPY backend/package*.json ./
-COPY common/*.js ./
+COPY common/common.js ./
+COPY common/backend.js ./
 
 RUN npx npm-check-updates -u
 RUN npm install
@@ -54,7 +56,7 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.0.14
+ARG DMSGUI_VERSION=1.0.15
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # alpine Install Nginx and Docker client - what is docker-cli for?

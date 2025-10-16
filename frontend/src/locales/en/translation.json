@@ -100,7 +100,7 @@
     "cannotSaveSettings": "Unable to save settings. Please try again.",
     "cannotSaveLogins": "Unable to save logins. Please try again.",
     "titleSettings": "Docker-Mailserver Configuration",
-    "titleLogin": "Login Credentials",
+    "titleLogin": "Login Credentials (WIP: only saves users in db atm)",
     "configuration": "Docker-Mailserver Configuration",
     "containerName": "Docker-Mailserver Container Name",
     "containerNameHelp": "Name of the Docker container running Docker-Mailserver.",

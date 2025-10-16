@@ -4,7 +4,7 @@ The `setup` offered by DMS is quite good tbh, and sufficient for 90% of your dai
 
 The primary goals are:
 
-1. [x] kick start the project: **done**, thanks to dunajdev
+1. [x] kick start the project: **done**, thanks to dunajdev and Claude
 2. [x] refactor, fix all the bugs, document and define scope: **done/WIP**
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
@@ -27,7 +27,6 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001
 * [ ] - translation: what are all those cannot* messages? no module uses them
 
-* [ ] - backend: encrypt password in db.logins.json
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 
 * [ ] - frontend: convert all the db.*.json into browser json storage? the only settings we need to save are related to the UI
@@ -55,9 +54,23 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: add auth login page
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
-* [ ] - backend/db: init the db on start
-* [ ] - frontend/Button: add a link to parameters
-* [x] 1.0.14 - frontend/Settings/logins: test getLogins, saveLogins
+
+* [ ] 1.0.16 - frontend/Dashboard: cards load individually
+* [x] 1.0.15 - frontend/api: translation being impossible for some reason, we now only fw the backend messages
+* [x] 1.0.15 - frontend/api: impossible to add translation because TypeError: react_i18next__WEBPACK_IMPORTED_MODULE_2__["default"] is not a function
+* [x] 1.0.15 - frontend.js: impossible to add translation to logger because Invalid hook call
+* [x] 1.0.15 - common.js now only contains portable functions
+* [x] 1.0.15 - backend: YET AGAIN... js refuses to offer a caller id stack == custom logger with stack hack
+* [x] 1.0.15 - had to REdevelop logger() with colors, YET AGAIN
+* [x] 1.0.15 - backend/db: init the db on start
+* [x] 1.0.15 - backend/db: automated patch upgrade of db
+* [x] 1.0.15 - backend/db: proper error handling for dbOpen, dbRun, dbGet, dbAll, dbInit, dbUpdate
+* [x] 1.0.15 - backend/env: handle versions with a "v" and keep only the numbers
+* [x] 1.0.15 - frontend/Settings/logins: test getLogins, saveLogins
+* [x] 1.0.15 - frontend/Settings/logins: do not bring password back in as they are salted
+* [x] 1.0.14 - backend/logins: encrypt password in db.logins.json
+* [x] 1.0.14 - frontend/Button: add a link to parameters
+* [x] 1.0.14 - frontend/Settings/logins: test getLogins
 * [x] 1.0.14 - frontend/Settings: now an Accordion as we will have to deal with many parts
 * [x] 1.0.14 - frontend/pages: bugfix with booleans passed to components
 * [x] 1.0.13 - moved all env global variables into env.js
