@@ -55,7 +55,9 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
-* [ ] 1.0.16 - frontend/Dashboard: cards load individually
+* [x] 1.0.16 - frontend/Card: Placeholder Card to be created once we need it
+* [x] 1.0.16 - frontend/Card: Extra spinner when isLoading in titleExtra
+* [x] 1.0.16 - frontend/Dashboard: DashboardCards load individually
 * [x] 1.0.15 - frontend/api: translation being impossible for some reason, we now only fw the backend messages
 * [x] 1.0.15 - frontend/api: impossible to add translation because TypeError: react_i18next__WEBPACK_IMPORTED_MODULE_2__["default"] is not a function
 * [x] 1.0.15 - frontend.js: impossible to add translation to logger because Invalid hook call

@@ -3,8 +3,11 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card';
 import Collapse from 'react-bootstrap/Collapse';
+// https://react-bootstrap.netlify.app/docs/components/placeholder/
+// import Placeholder from 'react-bootstrap/Placeholder';   // Our cards are more like containers, let's create another Card component when Placeholder are needed
 import {
   Button,
+  LoadingSpinner,
 } from './';
 
 /**
@@ -26,6 +29,7 @@ const Card = ({
   headerContent,
   titleExtra,
   icon,
+  isLoading= false,
   children,
   onClickRefresh,
   collapse = true,
@@ -46,12 +50,13 @@ const Card = ({
   const [open, setOpen] = useState(startOpen);
 
   return (
+    <>
     <RBCard className={className} {...rest}>
       {(title || headerContent) && (
         <RBCard.Header>
           {title && (
             <RBCard.Title as="h5" className={titleClassName}>
-            <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {t(title)} {titleExtra} </div>
+            <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {t(title)} {isLoading ? <span><LoadingSpinner isInline="true" size="sm"/></span> : titleExtra} </div>
             {(refresher || collapser) && (
               <div>
               {refresher && (
@@ -86,6 +91,7 @@ const Card = ({
         <RBCard.Body className={bodyClassName} id="collapsible">{children}</RBCard.Body>
       </Collapse>
     </RBCard>
+    </>
   );
 };
 

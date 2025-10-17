@@ -5,8 +5,10 @@ const debug = false;
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, Form } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import LoadingSpinner from './LoadingSpinner';
-import AlertMessage from './AlertMessage';
+import {
+  LoadingSpinner,
+  AlertMessage,
+} from './';
 
 /**
  * Reusable data table component using react-bootstrap

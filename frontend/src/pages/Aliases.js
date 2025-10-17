@@ -246,6 +246,7 @@ useEffect(() => {
             title="aliases.existingAliases" 
             titleExtra={howMany} 
             icon="person-lines-fill" 
+            isLoading={isLoading}
             onClickRefresh={() => fetchAliases(true)}
           >
             <DataTable

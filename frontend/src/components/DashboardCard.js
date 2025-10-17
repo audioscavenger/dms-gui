@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
 import RBBadge from 'react-bootstrap/Badge'; // Import react-bootstrap Badge
+import { LoadingSpinner } from '../components';
 
 /**
  * Dashboard card component using react-bootstrap
@@ -27,21 +28,20 @@ const DashboardCard = ({
 }) => {
   const { t } = useTranslation();
 
-  if (isLoading && !value) {
-    return <LoadingSpinner />;
-  };
-
+  // text loading spinner
   return (
-    <RBCard className={`dashboard-card ${className}`} {...rest}>
+    <RBCard className={`dashboard-card ${className} ${isLoading ? "opacity-25" : ""}`} {...rest}>
       <RBCard.Body>
         <div className={`dashboard-icon text-${iconColor}`}>
           <i className={`bi bi-${icon}`}></i>
         </div>
         <RBCard.Title as="h5">{t(title)}</RBCard.Title>
-        {badgeColor ? (
-          <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}</RBBadge>
-        ) : (
-          <p className="card-text">{value}</p>
+        {badgeColor
+          ? <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}</RBBadge>
+          : (isLoading
+            ? <LoadingSpinner size="sm"/>
+            : <p className="card-text">{value}</p>
+          
         )}
       </RBCard.Body>
     </RBCard>
@@ -49,3 +49,20 @@ const DashboardCard = ({
 };
 
 export default DashboardCard;
+    // icon loading spinner
+    // <RBCard className={`dashboard-card ${className}`} {...rest}>
+      // <RBCard.Body>
+        // <div className={`dashboard-icon text-${iconColor}`}>
+        // {(isLoading) ?
+          // <LoadingSpinner /> :
+          // <i className={`bi bi-${icon}`}></i>
+        // }
+        // </div>
+        // <RBCard.Title as="h5">{t(title)}</RBCard.Title>
+        // {badgeColor ? (
+          // <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}</RBBadge>
+        // ) : (
+          // <p className="card-text">{value}</p>
+        // )}
+      // </RBCard.Body>
+    // </RBCard>

@@ -37,10 +37,15 @@ const Dashboard = () => {
   const [accountsCount, setAccountsCount] = useState(0);
   const [aliasesCount, setAliasesCount] = useState(0);
   const [isLoading, setLoading] = useState(true);
+  const [isStatusLoading, setStatusLoading] = useState(true);
+  const [isAccountsLoading, setAccountsLoading] = useState(true);
+  const [isAliasesLoading, setAliasesLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboard();
+    fetchAccounts();
+    fetchAliases();
 
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboard, 30000);
@@ -51,25 +56,56 @@ const Dashboard = () => {
   const fetchDashboard = async () => {
     
     try {
-      setLoading(true);
+      // setLoading(true);
+      setStatusLoading(true);
 
-      // Fetch data in parallel
-      // const [statusData, accountsResponse, aliasesResponse] = await Promise.all([getServerStatus(), getAccounts(false), getAliases(false)]);
-      // Fetch data sequentially because otherwise DBdict gets overwritten
       const statusData = await getServerStatus(true);
-      const accountsResponse = await getAccounts();
-      const aliasesResponse = await getAliases();
 
       setServerStatus(statusData);
-      setAccountsCount(accountsResponse.length);
-      setAliasesCount(aliasesResponse.length);
       setError(null);
       
     } catch (err) {
       errorLog(t('api.errors.fetchServerStatus'), err);
       setError('api.errors.fetchServerStatus');
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setStatusLoading(false);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    
+    try {
+      setAccountsLoading(true);
+
+      const accountsResponse = await getAccounts(false);
+
+      setAccountsCount(accountsResponse.length);
+      setError(null);
+      
+    } catch (err) {
+      errorLog(t('api.errors.fetchAccounts'), err);
+      setError('api.errors.fetchAccounts');
+    } finally {
+      setAccountsLoading(false);
+    }
+  };
+
+  const fetchAliases = async () => {
+    
+    try {
+      setAliasesLoading(true);
+
+      const aliasesResponse = await getAliases(false);
+
+      setAliasesCount(aliasesResponse.length);
+      setError(null);
+      
+    } catch (err) {
+      errorLog(t('api.errors.fetchfetchAliases'), err);
+      setError('api.errors.fetchfetchAliases');
+    } finally {
+      setAliasesLoading(false);
     }
   };
 
@@ -77,19 +113,20 @@ const Dashboard = () => {
   const getStatusColor = () => {
     if (status.status.status === 'running') return 'success';
     if (status.status.status === 'stopped') return 'danger';
+    if (status.status.status === 'loading') return 'secondary';
     return 'warning';
   };
 
   const getStatusText = () => {
-    debugLog('ddebug status.status=',status.status)
     if (status.status.status === 'running') return 'dashboard.status.running';
     if (status.status.status === 'stopped') return 'dashboard.status.stopped';
+    if (status.status.status === 'loading') return 'dashboard.status.unknown';
     return 'dashboard.status.unknown';
   };
 
-  if (isLoading && !status && !Object.keys(status).length) {
-    return <LoadingSpinner />;
-  }
+  // if (isLoading && !status && !Object.keys(status).length) {
+    // return <LoadingSpinner />;
+  // }
 
   return (
     <div>
@@ -107,14 +144,15 @@ const Dashboard = () => {
             iconColor={getStatusColor()}
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
-            value={status.status.status}
+            isLoading={isStatusLoading}
           />
         </Col>
         <Col md={3} className="mb-3">
           <DashboardCard
             title="dashboard.cpuUsage"
             icon="cpu"
-            iconColor="primary"
+            iconColor={isStatusLoading ? "secondary" : "primary"}
+            isLoading={isStatusLoading}
             value={status.resources.cpu}
           />
         </Col>
@@ -122,7 +160,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.memoryUsage"
             icon="memory"
-            iconColor="info"
+            iconColor={isStatusLoading ? "secondary" : "info"}
+            isLoading={isStatusLoading}
             value={status.resources.memory}
           />
         </Col>
@@ -130,7 +169,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.diskUsage"
             icon="hdd"
-            iconColor="warning"
+            iconColor={isStatusLoading ? "secondary" : "warning"}
+            isLoading={isStatusLoading}
             value={status.resources.disk}
           />
         </Col>
@@ -143,7 +183,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.emailAccounts"
             icon="person-circle"
-            iconColor="success"
+            iconColor={isAccountsLoading ? "secondary" : "success"}
+            isLoading={isAccountsLoading}
             value={accountsCount}
           />
         </Col>
@@ -151,7 +192,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.aliases"
             icon="arrow-left-right"
-            iconColor="secondary"
+            iconColor={isAliasesLoading ? "secondary" : "success"}
+            isLoading={isAliasesLoading}
             value={aliasesCount}
           />
         </Col>

@@ -38,7 +38,6 @@ export async function getServerStatus() {
 export async function getServerInfos(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
   try {
-    debugLog(`ddebug frontend call to /infos?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/infos?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
@@ -51,7 +50,6 @@ export async function getServerInfos(refresh) {
 export async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    debugLog(`ddebug frontend call to /accounts?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/accounts?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
@@ -154,7 +152,6 @@ export async function updateAccountPassword(email, password) {
 export async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   try {
-    debugLog(`ddebug frontend call to /aliases?refresh=${refresh} and refresh is typeof ${typeof refresh}`);
     const response = await api.get(`/aliases?refresh=${refresh.toString()}`);
     return response.data;
   } catch (error) {
