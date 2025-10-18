@@ -106,7 +106,6 @@ const FormLogins = () => {
 
   const validateFormLogins = () => {
     const errors = {};
-    debugLog('ddebug validateFormLogins logins=',logins);
 
     if (!logins.username || !logins.username.trim()) {
       errors.username = 'settings.usernameRequired';
@@ -141,7 +140,6 @@ const FormLogins = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    debugLog('ddebug validateFormLogins()=',validateFormLogins());
     if (!validateFormLogins()) {
       return;
     }

@@ -9,6 +9,8 @@ const {
   formatMemorySize,
   jsonFixTrailingCommas,
   reduxPropertiesOfObj,
+  arrayOfStringToDict,
+  obj2ArrayOfObj,
   execSetup,
   execCommand,
   readJson,
@@ -33,9 +35,28 @@ const regexPrintOnly = /[^\S]/;
 
 
 
-async function getSettings() {
+async function getSetting(name) {
+  try {
+    
+    const setting = await dbGet(sql.settings.select.setting, [name]);
+    return ('value' in setting) ? setting.value : undefined;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
 
-  debugLog(`start`);
+
+async function getSettings(name='') {
+  if (name) return getSetting(name);
+  
   try {
     
     const settings = await dbAll(sql.settings.select.settings);
@@ -173,7 +194,6 @@ async function getServerStatus() {
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
-    // debugLog(`ddebug containerInfo:`, containerInfo);
 
     // Check if container exist
     status.status.status = (containerInfo.Id) ? "stopped" : "missing";
@@ -182,7 +202,7 @@ async function getServerStatus() {
       
       // Check if container is running
       const isRunning = containerInfo.State.Running === true;
-      debugLog(`Container running: ${isRunning} status.status=`,status.status);
+      debugLog(`Container running: ${isRunning} status.status=`, JSON.stringify(status.status));
 
       // get also errors and stuff
       status.status.Error = containerInfo.State.Error;
@@ -212,7 +232,7 @@ async function getServerStatus() {
         const memoryUsageBytes = stats.memory_stats.usage;
         status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
 
-        debugLog(`Resources:`, status.resources);
+        debugLog(`Resources:`, JSON.stringify(status.resources));
 
         // For disk usage, we would need to run a command inside the container
         // This could be a more complex operation involving checking specific directories
@@ -221,7 +241,7 @@ async function getServerStatus() {
       }
     }
 
-    debugLog(`Server pull status result:`, status);
+    debugLog(`Server pull status result:`, JSON.stringify(status));
     return status;
     
   } catch (error) {
@@ -301,7 +321,7 @@ async function readDovecotConfFile(stdout) {
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
-    debugLog(`json:`, json);
+    debugLog(`json:`, JSON.stringify(json));
     return json;
   } catch (error) {
     errorLog(`cleanData not valid JSON:`, error);
@@ -313,10 +333,10 @@ async function readDovecotConfFile(stdout) {
 // Function to pull server environment
 async function pullServerEnv() {
   var DBdict = {};
-  var env = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'};
+  var envs = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'};
 
   try {
-    debugLog(`Pulling server infos`);
+    debugLog(`Pulling server env`);
     
     // Get container info
     const container = docker.getContainer(DMS_CONTAINER);
@@ -333,7 +353,7 @@ async function pullServerEnv() {
       dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
       debugLog(`dictEnvDMSredux:`,dictEnvDMSredux);
 
-      env = { ...env, ...dictEnvDMSredux };
+      envs = { ...envs, ...dictEnvDMSredux };
 
       // TODO: rewrite this disgusting loop
       // pull bindings and look for FTS
@@ -356,8 +376,8 @@ async function pullServerEnv() {
           
           if (ftsConfig.plugin && ftsConfig.plugin.fts) {
 
-            env.FTS_PLUGIN = ftsConfig.plugin.fts;
-            env.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+            envs.FTS_PLUGIN = ftsConfig.plugin.fts;
+            envs.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
 
           }
 
@@ -368,8 +388,8 @@ async function pullServerEnv() {
 
     }
     
-    debugLog(`Server pull env result:`, env);
-    return obj2ArrayOfObj(env);
+    debugLog(`Server pull envs result:`, envs);
+    return obj2ArrayOfObj(envs);
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -379,87 +399,97 @@ async function pullServerEnv() {
 }
 
 
-// Function to get server infos
-async function getServerInfos(refresh) {
+async function getServerEnvs(refresh) {
   refresh = (refresh === undefined) ? true : refresh;
   debugLog(`refresh=${refresh} (${typeof refresh})`);
   
-  var DBdict = {};
-  var pulledEnv = [];
-  var infos = {
-    internals: [
-      { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
-      { name: 'HOSTNAME', value: HOSTNAME },
-      { name: 'TZ', value: TZ },
-      { name: 'NODE_VERSION', value: process.version },
-      { name: 'NODE_ENV', value: NODE_ENV },
-      { name: 'PORT_NODEJS', value: PORT_NODEJS },
-    ],
-    env: [],
-  };
-  // console.debug('ddebug ----------  before try, typeof refresh=',typeof refresh);
-
-  // dbRun('select', 'settings');
+  const containerName = await getSetting('containerName');
+  if (!containerName) {
+    warnLog('settings.containerNameRequired');
+    return [];
+  }
   
-  try {
-
-    if (!refresh) {
-      // console.debug('ddebug ----------  refresh=',refresh);
-       debugLog(`read DBdict from ${DB_Infos} (refresh=${refresh})`);
-      DBdict = await readJson(DB_Infos);
-      // debugLog(`DBdict:`, DBdict);
-    
-      // we could read DB_Infos and it is valid
-      if (DBdict && DBdict.infos && DBdict.infos.env && DBdict.infos.env.length) {
-        debugLog(`Found ${Object.keys(DBdict['infos']).length} infos in DBdict`);
-        return DBdict['infos'];
+  if (!refresh) {
+    try {
+      
+      const envs = await dbAll(sql.settings.select.envs, [containerName]);
+      debugLog(`envs: envs (${typeof envs})`);
+      
+      // we could read DB_Logins and it is valid
+      if (envs && envs.length) {
+        debugLog(`Found ${envs.length} entries in envs`, JSON.stringify(envs));
+        return envs;
+        // [ { name: 'FTS_PLUGIN', value: 'xapian' }, .. ]
+        
+      } else {
+        debugLog(`envs in db seems empty:`, JSON.stringify(envs));
+        return [];
       }
       
-      // we could not read DB_Infos or it is invalid, pull it from container (costly)
+    } catch (error) {
+      let backendError = `${error.message}`;
+      errorLog(backendError);
+      throw new Error(backendError);
+      // TODO: we should return smth to the index API instead of throwing an error
+      // return {
+        // status: 'unknown',
+        // error: error.message,
+      // };
     }
-
-    console.debug('ddebug ---------- DBdict.infos',DBdict.infos);
-    // force refresh if no db
-    if (!(DBdict.infos && DBdict.infos.env)) {
-      console.debug('ddebug ---------- else Calling pullServerEnv()...');
-      pulledEnv = await pullServerEnv();
-      debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv()`);
-    }
+  }
+  
+  pulledEnv = await pullServerEnv(containerName);
+  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv(${containerName})`, JSON.stringify(pulledEnv));
+  
+  if (pulledEnv && pulledEnv.length) {
+    saveServerEnvs(containerName, pulledEnv);
+    return pulledEnv;
     
-    console.debug('ddebug ----------  after if, pulledEnv=',pulledEnv);
-    console.debug('ddebug ----------  pulledEnv length=',Object.keys(pulledEnv).length);
-    // since we had to call pullServerEnv, we save DB_Infos
-    if (pulledEnv && pulledEnv.length) {
-      infos = { ...infos, ...{env: pulledEnv} };
-      DBdict["infos"] = infos;
-      await writeJson(DB_Infos, DBdict);
-      
-    // unknown error
-    } else {
-      errorLog(`error with pulledEnv:`, pulledEnv);
-    }
+  // unknown error
+  } else {
+    errorLog(`pullServerEnv could not pull environment from ${containerName}`);
+  }
+}
 
 
-    debugLog(`Server read infos result:`, infos);
-    return DBdict.infos;
-    
+async function saveServerEnvs(containerName, jsonArrayOfObjects) {
+  try {
+    dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    return { success: true };
+
   } catch (error) {
     let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
-    
-    // TODO: we should return smth to theindex API instead of throwing an error
+    // TODO: we should return smth to the index API instead of throwing an error
     // return {
-      // infos: 'unknown',
+      // status: 'unknown',
       // error: error.message,
     // };
   }
 }
 
 
+// Function to get dms-gui server infos
+async function getServerInfos() {
+  return [
+    { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
+    { name: 'HOSTNAME', value: HOSTNAME },
+    { name: 'TZ', value: TZ },
+    { name: 'NODE_VERSION', value: process.version },
+    { name: 'NODE_ENV', value: NODE_ENV },
+    { name: 'PORT_NODEJS', value: PORT_NODEJS },
+  ];
+}
+
+
+
 module.exports = {
   getServerStatus,
   getServerInfos,
+  getServerEnvs,
+  saveServerEnvs,
+  getSetting,
   getSettings,
   saveSettings,
 };

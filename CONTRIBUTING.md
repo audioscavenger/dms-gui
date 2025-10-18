@@ -29,7 +29,6 @@ The list is in reverse order, as you naturally read from top to bottom.
 
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 
-* [ ] - frontend: convert all the db.*.json into browser json storage? the only settings we need to save are related to the UI
 * [ ] - frontend/pages: add proxy to rspamd page?
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/pages: refactor validate*Form and load them from individual files
@@ -52,10 +51,12 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
-* [ ] 1.0.20 - backend: added sql for aliases; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
-* [ ] 1.0.19 - backend: added sql for accounts; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
-* [ ] 1.0.18 - backend: added sql for infos
-* [ ] 1.0.18 - backend/api: getInfos/saveInfos accepts json array of objects
+* [x] 1.0.18 - ALL WORKS, we should release
+* [x] 1.0.18 - backend/db: dbRun now takes anonParam as well as arrays for INSERT queries
+* [x] 1.0.18 - backend: added getSetting and updated getSettings api with query
+* [x] 1.0.18 - frontend: fixed Accounts.js and ServerInfos.jsx to use new getServerInfos and getServerEnvs
+* [x] 1.0.18 - backend/api: getServerInfos is simplified and created getServerEnvs
+* [x] 1.0.17 - backend: added sql for infos: it's in settings table with scope = DMS name
 * [x] 1.0.17 - backend: added sql for infos
 * [x] 1.0.17 - backend/api: getSettings/saveSettings uses json array of objects
 * [x] 1.0.17 - backend/db: patches are array of lines instead of BEGIN TRANSACTION so we can check each line
@@ -214,6 +215,9 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [-] - backend: separate server status from server info
 * [-] - add octoDNS https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
 * [-] - gave a try to octoDNS and after 2 hours of labor, I give up. Always the same error and bad samples all over the internet, not a single example they give works at all.
+* [-] - frontend: convert all the db.*.json into browser json storage? no, sqlite3
+* [-] - backend: added sql for aliases; nah, why?
+* [-] - backend: added sql for accounts; nah, why?
 
 
 ## Misc

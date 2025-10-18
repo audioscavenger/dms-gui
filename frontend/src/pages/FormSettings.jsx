@@ -105,7 +105,6 @@ function FormSettings() {
 
   const validateFormSettings = () => {
     const errors = {};
-    debugLog('ddebug validateFormSettings settings=',settings);
 
     // if (settings.containerName.length == 0) {
     if (!settings.find(item => item['name'] == 'containerName') || !settings.find(item => item['name'] == 'containerName').value.length) {
@@ -130,7 +129,6 @@ function FormSettings() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    debugLog('ddebug validateFormSettings()=',validateFormSettings());
     if (!validateFormSettings()) {
       return;
     }

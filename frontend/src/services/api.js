@@ -46,6 +46,17 @@ export async function getServerInfos(refresh) {
   }
 };
 
+export async function getServerEnvs(refresh) {
+  refresh = (refresh === undefined) ? true : refresh;
+  try {
+    const response = await api.get(`/envs?refresh=${refresh.toString()}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
 // export const getAccounts = async (refresh) => {
 export async function getAccounts(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
@@ -59,9 +70,9 @@ export async function getAccounts(refresh) {
 };
 
 // export const getSettings = async () => {
-export async function getSettings() {
+export async function getSettings(name='') {
   try {
-    const response = await api.get(`/settings`);
+    const response = await api.get(`/settings?name=${name}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -165,7 +176,6 @@ export async function getAliases(refresh) {
 export async function addAlias(source, destination) {
   try {
     const response = await api.post(`/aliases`, { source, destination });
-    debugLog(`ddebug aliases response.data=`,response.data);
     return response.data;
   } catch (error) {
     errorLog(error.message);

@@ -9,13 +9,6 @@ const {
   errorLog,
   successLog,
 } = require('../../frontend.js');
-import {
-  getServerInfos,
-  getSettings,
-  saveSettings,
-  getLogins,
-  saveLogins,
-} from '../services/api';
 
 import { 
   Accordion,

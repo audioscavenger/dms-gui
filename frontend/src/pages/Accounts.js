@@ -7,11 +7,12 @@ const {
   warnLog,
   errorLog,
   successLog,
+  getValueFromArrayOfObj,
 } = require('../../frontend.js');
 import {
   getAccounts,
   getSettings,
-  getServerInfos,
+  getServerEnvs,
   addAccount,
   deleteAccount,
   reindexAccount,
@@ -41,7 +42,7 @@ const Accounts = () => {
 
   const [accounts, setAccounts] = useState([]);
   const [settings, setSettings] = useState({});
-  const [infos, setServerInfos] = useState({});
+  const [FTS_PLUGIN, setFTS_PLUGIN] = useState("none");
 
   // Common states -------------------------------------------------
   const [successMessage, setSuccessMessage] = useState(null);
@@ -91,23 +92,23 @@ useEffect(() => {
 
   const fetchAllAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchAllAccounts call getAccounts(${refresh})`);
+    debugLog(`fetchAllAccounts refresh=(${refresh})`);
     
     try {
       setLoading(true);
-      const [accountsData, settingsData, infosData] = await Promise.all([
+      const [accountsData, settingsData, envsData] = await Promise.all([
         getAccounts(refresh),
-        getSettings(false),
-        getServerInfos(false),
+        getSettings(),
+        getServerEnvs(refresh),
       ]);
       setAccounts(accountsData);
       setSettings(settingsData);
-      setServerInfos(infosData);
+      setFTS_PLUGIN(getValueFromArrayOfObj(envsData, 'FTS_PLUGIN'));
       setErrorMessage(null);
       
       debugLog('accountsData', accountsData);
       debugLog('settingsData', settingsData);
-      debugLog('infosData', infosData);
+      debugLog('envsData', envsData);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAllAccounts'), err);
@@ -361,7 +362,7 @@ useEffect(() => {
   };
 
 
-  if (isLoading && !accounts && !accounts.length && !infos && !infos.env) {
+  if (isLoading && !accounts && !accounts.length) {
     return <LoadingSpinner />;
   }
   
@@ -409,7 +410,7 @@ useEffect(() => {
             onClick={() => handleDelete(account.email)}
             className="me-2"
           />
-          {(infos.env.FTS_PLUGIN != "none") && (
+          {(FTS_PLUGIN && FTS_PLUGIN != "none") && (
           <Button
             variant="info"
             size="sm"

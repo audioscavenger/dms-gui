@@ -15,6 +15,7 @@ const {
 const {
   getServerStatus,
   getServerInfos,
+  getServerEnvs,
   getSettings,
   saveSettings,
 } = require('./settings');
@@ -132,6 +133,39 @@ app.get('/api/infos', async (req, res) => {
     res.json(infos);
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/envs:
+ *   get:
+ *     summary: Get server envs
+ *     description: Retrieve the envs of the docker-mailserver
+ *     parameters:
+ *       - in: query
+ *         name: refresh
+ *         required: false
+ *         default: false
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
+ *     responses:
+ *       200:
+ *         description: Server envs
+ *       500:
+ *         description: Unable to connect to docker-mailserver
+ */
+app.get('/api/envs', async (req, res) => {
+  try {
+    const refresh = ('refresh' in req.query) ? req.query.refresh : true;
+    debugLog(`/api/envs?refresh=${req.query.refresh} -> ${refresh}`);
+    const envs = await getServerEnvs(refresh);
+    res.json(envs);
+  } catch (error) {
+    errorLog(`index /api/envs: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
     res.status(500).json({ error: error.message });
   }
@@ -365,7 +399,6 @@ app.get('/api/aliases', async (req, res) => {
   try {
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
     const aliases = await getAliases(refresh);
-    debugLog(`index /api/aliases: aliases=`,aliases);
     res.json(aliases);
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
@@ -475,6 +508,14 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
  *   get:
  *     summary: Get settings
  *     description: Retrieve all settings
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         default: ''
+ *         schema:
+ *           type: string
+ *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
  *         description: all settings even if empty
@@ -483,7 +524,8 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
  */
 app.get('/api/settings', async (req, res) => {
   try {
-    const settings = await getSettings();
+    const name = ('name' in req.query) ? req.query.name : '';
+    const settings = await getSettings(name);
     res.json(settings);
   } catch (error) {
     errorLog(`index GET /api/settings: ${error.message}`);

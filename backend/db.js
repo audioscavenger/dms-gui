@@ -22,13 +22,13 @@ settings: {
   select: {
     settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui'`,
     setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui' AND name = ?`,
-    infos:    `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
-    info:     `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
+    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
+    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
   },
   
   insert: {
     setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, 'dms-gui', 1)`,
-    info:     `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
+    env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, ?, 0)`,
   },
   
   init:   `BEGIN TRANSACTION;
@@ -89,6 +89,7 @@ logins: {
     },
   ],
 },
+
 };
 
 sqlMatch = {
@@ -125,7 +126,7 @@ sqlMatch = {
             // hash      TEXT NOT NULL,
             // email     TEXT DEFAULT ''
             // );
-            // REPLACE INTO infos VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
+            // REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
             // COMMIT;`
   // DB.prepare('SELECT username, email from logins').all()
   // DB.exec(sql)
@@ -134,30 +135,6 @@ sqlMatch = {
   // DB.close()
   // function debugLog(message) {console.debug(message)}
   // dbRun(sql)
-
-
-function dbCommit() {
-  try {
-    if (DB && DB.inTransaction) DB.close();
-    
-    if (!DB || !DB.open) {
-      DB = require('better-sqlite3')(DATABASE);
-      // const Database = require('better-sqlite3');
-      // const DB = new Database('foobar.db', { verbose: console.log });
-      DB.pragma('journal_mode = WAL');
-      // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
-      process.on('exit', () => DB.close());
-      process.on('SIGHUP', () => process.exit(128 + 1));
-      process.on('SIGINT', () => process.exit(128 + 2));
-      process.on('SIGTERM', () => process.exit(128 + 15));
-      
-      return DB;
-    }
-  } catch (err) {
-    errorLog(`dbOpen error: ${err.code}: ${err.message}`);
-    throw err;
-  }
-}
 
 
 function dbOpen() {
@@ -183,8 +160,8 @@ function dbOpen() {
   }
 }
 
-
-function dbRun(sql, params={}) {
+// https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
+function dbRun(sql, params=undefined, anonParam=undefined) {
 
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
@@ -200,18 +177,33 @@ function dbRun(sql, params={}) {
 
     // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
     } else if (Array.isArray(params)) {
-      debugLog(`DB.transaction(${sql}).run(${JSON.stringify(params)})`);
-      const insertMany = DB.transaction((params) => {
-        for (const param of params) DB.prepare(sql).run(param);
-      });
-      insertMany(params);
-      debugLog(`DB.transaction success`);
+      if (anonParam) {
+        debugLog(`DB.transaction(${sql}).run(${anonParam}, ${JSON.stringify(params)})`);
+        const insertMany = DB.transaction((params) => {
+          for (const param of params) DB.prepare(sql).run(anonParam, param);
+        });
+        insertMany(params);
+        debugLog(`DB.transaction success`);
+      } else {
+        debugLog(`DB.transaction(${sql}).run(${JSON.stringify(params)})`);
+        const insertMany = DB.transaction((params) => {
+          for (const param of params) DB.prepare(sql).run(param);
+        });
+        insertMany(params);
+        debugLog(`DB.transaction success`);
+      }
       
     // single statement https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
-      debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
-      DB.prepare(sql).run(params);
-      debugLog(`DB.prepare success`);
+      if (anonParam) {
+        debugLog(`DB.prepare(${sql}).run(${anonParam}, ${JSON.stringify(params)})`);
+        DB.prepare(sql).run(anonParam, params);
+        debugLog(`DB.prepare success`);
+      } else {
+        debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
+        DB.prepare(sql).run(params);
+        debugLog(`DB.prepare success`);
+      }
     }
     // result = { changes: 0, lastInsertRowid: 0 }
 
@@ -316,7 +308,7 @@ function dbUpdate() {
   let db_version;
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      db_version = dbGet(sql.settings.select.info, ['dms-gui', `DB_VERSION_${table}`]);
+      db_version = dbGet(sql.settings.select.env, ['dms-gui', `DB_VERSION_${table}`]);
       db_version = (db_version) ? db_version.value : undefined;
       debugLog(`DB_VERSION_${table}=`, db_version);
       

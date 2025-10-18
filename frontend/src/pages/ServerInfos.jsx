@@ -11,6 +11,7 @@ const {
 
 import {
   getServerInfos,
+  getServerEnvs,
 } from '../services/api';
 
 import { 
@@ -26,37 +27,37 @@ const ServerInfos = () => {
   const [isLoading, setLoading] = useState(true);
 
   const [errorMessage, setErrorMessage] = useState(null);
-  const [infos, setServerInfos] = useState({});
+  const [infos, setServerInfos] = useState([]);
+  const [envs, setServerEnvs] = useState([]);
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAllServerInfos(false);
+    fetchAllDatas(false);
   }, []);
 
 
-  const fetchAllServerInfos = async () => {
-    debugLog(`fetchAllServerInfos call fetchServerInfos`);
+  const fetchAllDatas = async (refresh) => {
+    refresh = (refresh === undefined) ? false : refresh;
+    debugLog(`fetchAllDatas refresh=(${refresh})`);
     setLoading(true);
 
-    const infosData  = await fetchServerInfos();
-    setServerInfos({
-      ...infos,
-      ...infosData,
-    });
+    await fetchServerInfos();
+    await fetchServerEnvs(refresh);
+    
     // onInfosSubmit(infosData);  // that's what you send back to the parent page
 
     setLoading(false);
 
   };
 
-  const fetchServerInfos = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchAllServerInfos call getServerInfos(${refresh})`);
+  const fetchServerInfos = async () => {
+    debugLog(`fetchServerInfos call getServerInfos()`);
     
     try {
       const [infosData] = await Promise.all([
-        getServerInfos(refresh),
+        getServerInfos(),
       ]);
+      setServerInfos(infosData);
       debugLog('infosData', infosData);
       
       setErrorMessage(null);
@@ -68,22 +69,37 @@ const ServerInfos = () => {
     }
   };
 
-  // Column definitions for internals table
-  const columnsInternals = [
-    { key: 'name', label: 'settings.name' },
-    { key: 'value', label: 'settings.version' },
-  ];
+  const fetchServerEnvs = async (refresh) => {
+    refresh = (refresh === undefined) ? false : refresh;
+    debugLog(`fetchServerEnvs call getServerInfos(${refresh})`);
+    
+    try {
+      const [envsData] = await Promise.all([
+        getServerEnvs(refresh),
+      ]);
+      setServerEnvs(envsData);
+      debugLog('envsData', envsData);
+      
+      setErrorMessage(null);
+      return envsData;
 
-  // Column definitions for environment table
-  const columnsEnv = [
+    } catch (err) {
+      errorLog(t('api.errors.fetchServerEnvs'), err);
+      setErrorMessage('api.errors.fetchServerEnvs');
+    }
+  };
+
+  // Column definitions
+  const columns = [
     { key: 'name', label: 'settings.name' },
     { key: 'value', label: 'settings.value' },
   ];
 
+
   if (isLoading && !infos && !infos && !infos.internals) {
     return <LoadingSpinner />;
   }
-            // onClick={fetchAllServerInfos(true)}
+            // onClick={fetchAllDatas(true)}
 
   return (
     <>
@@ -96,26 +112,26 @@ const ServerInfos = () => {
             icon="recycle"
             title={t('common.refresh')}
             className="me-2"
-            onClick={() => fetchAllServerInfos(true)}
+            onClick={() => fetchAllDatas(true)}
           />
         </div>
 
         {t('settings.serverInternalsDescription')}
-        {!infos.env && t('api.errors.fetchServerInfos') ||
+        {!infos && t('api.errors.fetchServerInfos') ||
         <DataTable
-          columns={columnsInternals}
-          data={infos.internals}
-          keyExtractor={(internal) => internal.name}
+          columns={columns}
+          data={infos}
+          keyExtractor={(info) => info.name}
           isLoading={isLoading}
           emptyMessage="N/A"
         />
         }
         
         {t('settings.serverEnvDescription')}
-        {!infos.env && t('api.errors.fetchServerEnv') ||
+        {!envs && t('api.errors.fetchServerEnvs') ||
         <DataTable
-          columns={columnsEnv}
-          data={infos.env}
+          columns={columns}
+          data={envs}
           keyExtractor={(env) => env.name}
           isLoading={isLoading}
           emptyMessage="N/A"
@@ -127,22 +143,3 @@ const ServerInfos = () => {
 }
 
 export default ServerInfos;
-        // <DataTable
-          // columns={columnsInternals}
-          // data={infos.internals}
-          // keyExtractor={(internal) => internal.name}
-          // isLoading={isLoading}
-          // emptyMessage="N/A"
-        // />
-        
-        // <Card.Text>
-          // {' '}
-          // {t('settings.serverEnvDescription')}
-        // </Card.Text>
-        // <DataTable
-          // columns={columnsEnv}
-          // data={infos.env}
-          // keyExtractor={(env) => env.name}
-          // isLoading={isLoading}
-          // emptyMessage="N/A"
-        // />
