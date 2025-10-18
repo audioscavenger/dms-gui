@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';   // must include any elements that will interact with auth
 
 const {
   debugLog,
@@ -13,8 +14,13 @@ import {
   getAccounts, 
   getAliases 
 } from '../services/api';
+import {
+  AlertMessage,
+  DashboardCard,
+  LoadingSpinner,
+  Button,
+} from '../components';
 
-import { AlertMessage, DashboardCard, LoadingSpinner, Sidebar } from '../components';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
@@ -41,6 +47,21 @@ const Dashboard = () => {
   const [isAccountsLoading, setAccountsLoading] = useState(true);
   const [isAliasesLoading, setAliasesLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // const { logout } = useAuth();
+  // const { user } = useAuth();
+  // const handleLogout = () => {
+    // logout();
+  // };
+  // /*
+            // {(user) &&
+              // <Button
+              // variant="secondary"
+              // onClick={handleLogout}
+              // text="login.logout"
+              // />
+            // }
+  // */
 
   useEffect(() => {
     fetchDashboard();
@@ -132,6 +153,7 @@ const Dashboard = () => {
     <div>
       <h2 className="mb-4">{t('dashboard.title')}</h2>
       <AlertMessage type="danger" message={error} />
+
       <Row>
         {' '}
         {/* Use Row component */}

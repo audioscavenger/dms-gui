@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Nav } from 'react-bootstrap';
+
 import {
   Button,
 } from './';
@@ -35,7 +36,7 @@ const LeftSidebar = () => {
   return (
     <>
         <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
-          <Nav.Link as={NavLink} to="/" style={getNavLinkStyle}>
+          <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
             <i className="bi bi-speedometer2 me-2"></i>
             <span> {t('sidebar.dashboard')}</span>
           </Nav.Link>

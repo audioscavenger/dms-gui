@@ -10,6 +10,7 @@ const {
   mergeArrayOfObj,
   getValueFromArrayOfObj,
 } = require('../../frontend.js');
+
 import {
   getSettings,
   saveSettings,

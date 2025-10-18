@@ -11,6 +11,7 @@ const { dbInit } = require('./db');
 const {
   getLogins,
   saveLogins,
+  loginUser,
 } = require('./logins');
 const {
   getServerStatus,
@@ -604,6 +605,7 @@ app.get('/api/logins', async (req, res) => {
   }
 });
 
+
 // Endpoint for saving logins
 /**
  * @swagger
@@ -647,6 +649,49 @@ app.post('/api/logins', async (req, res) => {
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Admin credentials' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Endpoint to log in a user; API calls would use maybe a different method
+/**
+ * @swagger
+ * /api/loginUser:
+ *   post:
+ *     summary: save Admin credentials
+ *     description: save Admin credentials
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Login name of the new admin account
+ *               password:
+ *                 type: string
+ *                 description: Password for the new admin account
+ *     responses:
+ *       201:
+ *         description: Admin credentials saved successfully
+ *       400:
+ *         description: Something is missing
+ *       500:
+ *         description: Unable to save Admin credentials
+ */
+app.post('/api/loginUser', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username)  return res.status(400).json({ error: 'username is missing' });
+    if (!password)  return res.status(400).json({ error: 'password is missing' });
+
+    const result = await loginUser(username, password);
+    res.status(201).json(result);
+  } catch (error) {
+    errorLog(`index POST /api/login: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });

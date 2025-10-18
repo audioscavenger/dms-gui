@@ -175,7 +175,7 @@ async function getServerStatus() {
   var DBdict = {};
   var status = {
     status: {
-      status: 'stopped',
+      status: 'missing',
       Error: '',
       StartedAt: '',
       FinishedAt: '',

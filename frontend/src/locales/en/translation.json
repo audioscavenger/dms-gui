@@ -130,6 +130,12 @@
     "collapse": "Collapse",
     "refresh": "Refresh"
   },
+  "login": {
+    "title": "Login Page",
+    "login": "Login",
+    "logout": "Logout",
+    "denied": "Login denied"
+  },
   "api": {
     "errors": {
       "fetchServerStatus": "Error fetching server status",
@@ -140,6 +146,7 @@
       "fetchServerEnvs": "Error fetching DMS container environment",
       "saveSettings": "Error saving settings",
       "saveLogins": "Error saving admin credentials",
+      "loginUser": "Error invalid password",
       "addAccount": "Error adding account",
       "deleteAccount": "Error deleting account",
       "updatePassword": "Error updating password",

@@ -7,9 +7,21 @@ import LanguageSwitcher from './LanguageSwitcher';
 import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
+import { useAuth } from '../hooks/useAuth';
+
+import {
+  Button,
+} from './';
 
 const Navbar = () => {
   const { t } = useTranslation();
+  
+  const { logout } = useAuth();
+  const { user } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <RBNavbar bg="dark" variant="dark" expand="lg">
@@ -21,6 +33,15 @@ const Navbar = () => {
         <RBNavbar.Toggle aria-controls="navbarNav" />
         <RBNavbar.Collapse id="navbarNav">
           <Nav className="ms-auto align-items-center">
+
+            {(user) &&
+              <Button
+              variant="secondary"
+              onClick={handleLogout}
+              text="login.logout"
+              />
+            }
+            
             <Nav.Link
               href="https://docker-mailserver.github.io/docker-mailserver/latest/"
               target="_blank"
@@ -28,10 +49,12 @@ const Navbar = () => {
             >
               {t('navbar.documentation')}
             </Nav.Link>
+            
             {/* LanguageSwitcher might need adjustment depending on its implementation */}
             <div className="nav-item mx-2">
               <LanguageSwitcher />
             </div>
+            
           </Nav>
         </RBNavbar.Collapse>
       </Container>

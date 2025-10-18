@@ -162,23 +162,24 @@ async function verifyPassword(username, password) {
   try {
     debugLog(`for ${username}`);
     const result = dbGet(sql.logins.select.saltHash, username);
-    
+
+    return new Promise((resolve, reject) => {
+      if (Object.keys(result).length) {
+        if (result.salt && result.hash) {
+          crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
+            if (err) return reject(err);
+            resolve(result.hash === derivedKey.toString('hex'));
+          });
+        } else return reject(`please reset password for ${username}`);
+      } else return reject(`username ${username} not found`);
+    });
+
   } catch (error) {
     let backendError = error.message;
     errorLog(`${backendError}`);
     throw new Error(backendError);
   }
 
-  return new Promise((resolve, reject) => {
-    if (Object.keys(result).length) {
-      if (result.salt && result.hash) {
-        crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
-          if (err) return reject(err);
-          resolve(result.hash === derivedKey.toString('hex'));
-        });
-      } else return reject(`please reset password for ${username}`);
-    } else return reject(`username ${username} not found`);
-  });
 };
 
 
@@ -187,13 +188,13 @@ async function loginUser(username, password) {
   
   try {
     const isValid = await verifyPassword(username, password);
-    debugLog(`${username} password isValid`);
+    debugLog(`${username} password =`, isValid);
     
     if (isValid) {
-      infoLog(`User ${username} logged in successfully.`);
+      successLog(`User ${username} logged in successfully.`);
       return true;
     } else {
-      infoLog(`User ${username} invalid password.`);
+      warnLog(`User ${username} invalid password.`);
       return false;
     }
   } catch (error) {
@@ -212,6 +213,7 @@ async function loginUser(username, password) {
 module.exports = {
   getLogins,
   saveLogins,
+  loginUser,
 };
 
 

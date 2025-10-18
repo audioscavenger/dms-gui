@@ -47,10 +47,12 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - backend: add domains list to build off accounts
 
 * [ ] - frontend/Settings/logins: revamp the card entirely as we won't pull passwords anymore, maybe add the handleChangePassword from accounts?
-* [ ] - frontend/App: add auth login page
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
+* [x] 1.0.19 - loginPage and loginUser implemented!
+* [x] 1.0.19 - logout button in NavBar
+* [x] 1.0.19 - frontend/App: add auth loginPage
 * [x] 1.0.18 - ALL WORKS, we should release
 * [x] 1.0.18 - backend/db: dbRun now takes anonParam as well as arrays for INSERT queries
 * [x] 1.0.18 - backend: added getSetting and updated getSettings api with query

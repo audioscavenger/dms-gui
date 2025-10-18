@@ -10,33 +10,40 @@ import Container from 'react-bootstrap/Container'; // Import Container
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
+import Login from './pages/Login';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthProvider } from './hooks/useAuth';   // must include any elements that will interact with auth
+
+
 function App() {
   return (
+    <AuthProvider>
     <div>
       <Navbar />
       <Container fluid>
         <Row>
-          {/* Sidebar column */}
-          <Col md={2} className="p-0 sidebar-col">
-            {' '}
-            {/* Added sidebar-col for potential custom styling */}
+          
+          <Col md={2} className="p-0 sidebar-col">{' '}
             <LeftSidebar />
           </Col>
-          {/* Main content column */}
-          <Col md={10} className="main-content">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/accounts" element={<Accounts />} />
-              <Route path="/aliases" element={<Aliases />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
+          
+          <Col md={10} className="main-content">{' '}
+              <Routes>
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+                <Route path="/aliases" element={<ProtectedRoute><Aliases /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              </Routes>
           </Col>{' '}
-          {/* Close Main content column */}
+          
         </Row>{' '}
-        {/* Close Row */}
+        
       </Container>{' '}
-      {/* Close Container */}
+      
     </div>
+    </AuthProvider>
   );
 }
 

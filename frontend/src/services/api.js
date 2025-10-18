@@ -116,6 +116,17 @@ export async function saveLogins(username, password, email='') {
 };
 
 
+export async function loginUser(username, password) {
+  try {
+    const response = await api.post(`/loginUser`, { username, password });
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+
 // export const addAccount = async (email, password) => {
 export async function addAccount(email, password) {
   try {
