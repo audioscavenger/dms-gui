@@ -11,6 +11,8 @@ const {
   obj2ArrayOfObj,
   reduxArrayOfObj,
   reduxPropertiesOfObj,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
 } = require('./common.js');
 
 
@@ -45,7 +47,7 @@ const ICON = {
 const LEVEL = {
   success:  color.g+color.LOW+'[SUCCESS]'+color.end,
   error:    color.r+color.LOW+'[ERROR]  '+color.end,
-  warn:     color.y+color.LOW+'[WARNING]'+color.end,
+  warn:     color.y+color.LOW+'[WARN]   '+color.end,
   info:     color.k+color.HIG+'[INFO]   '+color.end,
   debug:    color.k+color.HIG+'[DEBUG]  '+color.end,
 }
@@ -59,11 +61,11 @@ const LEVEL = {
 // });
 async function logger(level, message='', data = '') {
   // console[level](`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level]+color.end, color.LOW+funcName(4)+color.end, message, data);
-  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+color.end, message, data);
+  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, data+color.end);
 }
 async function successLog(message, data = '') { logger('success', message, data) }
 async function errorLog(message, data = '') { logger('error', message, data) }
-async function warnLog(message, data = '') { logger('warning', message, data) }
+async function warnLog(message, data = '') { logger('warn', message, data) }
 async function infoLog(message, data = '')  { logger('info', message, data) }
 async function debugLog(message, data = '') { if (debug) logger('debug', message, data) }
 
@@ -255,6 +257,8 @@ module.exports = {
   obj2ArrayOfObj,
   reduxArrayOfObj,
   reduxPropertiesOfObj,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
   color,
   ICON,
   debugLog,

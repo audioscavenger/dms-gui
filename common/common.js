@@ -100,6 +100,42 @@ function reduxPropertiesOfObj(obj, arrayToKeep) {
   
 }
 
+/*
+// ES5 using Array.filter and Array.find
+function mergeArrayOfObj(a, b, prop) {
+  // this will merge:
+    // a = [{name: 1,value: "odd"}]
+    // b = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+  // into:
+    // output = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+
+  var reduced = a.filter(function(aitem) {
+    return !b.find(function(bitem) {
+      return aitem[prop] === bitem[prop];
+    });
+  });
+  return reduced.concat(b);}
+*/
+
+// ES6 arrow functions
+function mergeArrayOfObj(a=[], b=[], prop='name') {
+  // this will merge:
+    // a = [{name: 1,value: "odd"}]
+    // b = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+  // into:
+    // output = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+
+  const reduced = (a.length) ? a.filter(aitem => !b.find(bitem => aitem[prop] === bitem[prop])) : [];
+  return reduced.concat(b);
+}
+
+
+function getValueFromArrayOfObj(arr, propName, keyName='name', keyValue='value') {
+  if (!Array.isArray(arr)) return undefined;
+  // this will return the value from an array of objects like [ {keyName: propName, keyValue: value}, .. ]
+  return (arr.find(item => item[keyName] == propName)) ? arr.find(item => item[keyName] == propName)[keyValue] : undefined;
+}
+
 
 module.exports = {
   funcName,
@@ -108,4 +144,6 @@ module.exports = {
   obj2ArrayOfObj,
   reduxArrayOfObj,
   reduxPropertiesOfObj,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
 };

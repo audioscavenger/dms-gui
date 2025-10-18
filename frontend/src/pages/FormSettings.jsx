@@ -7,6 +7,8 @@ const {
   warnLog,
   errorLog,
   successLog,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
 } = require('../../frontend.js');
 import {
   getSettings,
@@ -32,7 +34,7 @@ function FormSettings() {
   const [errorMessage, setErrorMessage] = useState(null);
   
   const [formErrors, setFormErrors] = useState({});
-  const [settings, setSettings] = useState({});
+  const [settings, setSettings] = useState([]);
 
 
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -43,14 +45,17 @@ function FormSettings() {
 
 
   const fetchAllSettings = async () => {
-    debugLog(`fetchAllSettings call fetchSettings fetchLogins`);
     setLoading(true);
 
     const settingsData  = await fetchSettings();
-    setSettings({
-      ...settings,
-      ...settingsData,
-    });
+    console.debug('fetchAllSettings: settingsData',settingsData)
+    // setSettings({
+      // ...settings,
+      // ...settingsData,
+    // });
+    debugLog(`fetchAllSettings mergeArrayOfObj settingsData`,settingsData);
+    debugLog(`fetchAllSettings mergeArrayOfObj settings`,settings);
+    setSettings(mergeArrayOfObj(settingsData, settings, 'name'));
 
     // onInfosSubmit(infosData);  // that's what you send back to the parent page
 
@@ -78,16 +83,16 @@ function FormSettings() {
 
 
 
-
-  // const handleChangeSettings = (e) => {
-    // setSettings({ ...settings, [e.target.name]: e.target.value });
-  // };
   const handleChangeSettings = (e) => {
     const { name, value } = e.target;
-    setSettings({
-      ...settings,
-      [name]: value,
-    });
+    // setSettings({
+      // ...settings,
+      // [name]: value,
+    // });
+    // merge array of settings objects by their name
+    debugLog(`handleChangeSettings mergeArrayOfObj settings`,settings);
+    debugLog(`handleChangeSettings mergeArrayOfObj [{name: name, value:value}]`, [{name: name, value:value}]);
+    setSettings(mergeArrayOfObj(settings, [{name: name, value:value}], 'name'));
 
     // Clear the error for this field while typing
     if (formErrors[name]) {
@@ -102,8 +107,13 @@ function FormSettings() {
     const errors = {};
     debugLog('ddebug validateFormSettings settings=',settings);
 
-    if (settings.containerName.length == 0) {
+    // if (settings.containerName.length == 0) {
+    if (!settings.find(item => item['name'] == 'containerName') || !settings.find(item => item['name'] == 'containerName').value.length) {
       errors.containerName = 'settings.containerNameRequired';
+    }
+    // if (settings.setupPath.length == 0) {
+    if (!settings.find(item => item['name'] == 'setupPath') || !settings.find(item => item['name'] == 'setupPath').value.length) {
+      errors.setupPath = 'settings.setupPathRequired';
     }
 
     // TODO: setupPath: maybe add an api call to execInContainer/execCommand to test if exist?
@@ -126,10 +136,13 @@ function FormSettings() {
     }
 
     try {
+      // await saveSettings(
+        // settings.containerName,
+        // settings.setupPath,
+        // settings.dnsProvider,
+      // );
       await saveSettings(
-        settings.containerName,
-        settings.setupPath,
-        settings.dnsProvider,
+        settings,
       );
       setSubmissionSettings('success');
       setSuccessMessage('settings.settingsSaved');
@@ -142,7 +155,8 @@ function FormSettings() {
   };
 
 
-  if (isLoading && !settings && !Object.keys(settings).length) {
+  // if (isLoading && !settings && !Object.keys(settings).length) {
+  if (isLoading && !settings.length) {
     return <LoadingSpinner />;
   }
   
@@ -170,7 +184,7 @@ function FormSettings() {
             id="containerName"
             name="containerName"
             label="settings.containerName"
-            value={settings.containerName}
+            value={getValueFromArrayOfObj(settings, 'containerName')}
             onChange={handleChangeSettings}
             placeholder="dms"
             error={formErrors.containerName}
@@ -183,7 +197,7 @@ function FormSettings() {
             id="setupPath"
             name="setupPath"
             label="settings.setupPath"
-            value={settings.setupPath}
+            value={getValueFromArrayOfObj(settings, 'setupPath')}
             onChange={handleChangeSettings}
             placeholder="/usr/local/bin/setup"
             error={formErrors.setupPath}
@@ -196,7 +210,7 @@ function FormSettings() {
             id="dnsProvider"
             name="dnsProvider"
             label="settings.dnsProvider"
-            value={settings.dnsProvider}
+            value={getValueFromArrayOfObj(settings, 'dnsProvider')}
             onChange={handleChangeSettings}
             placeholder="CloudFlare"
             error={formErrors.dnsProvider}

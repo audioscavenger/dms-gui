@@ -17,55 +17,50 @@ var DB;
 // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#transactionfunction---function
 // BEWARE: 
 sql = {
-infos: {
-
-  select: {
-    all:    `SELECT * from infos`,
-    value:  `SELECT value from infos where name = ?`,
-  },
-  
-  insert: {
-    values: `REPLACE INTO infos (name, value) VALUES (@name, @value)`,
-  },
-  
-  init:  `BEGIN TRANSACTION;
-          CREATE TABLE infos (
-          name  TEXT NOT NULL UNIQUE PRIMARY KEY,
-          value TEXT NOT NULL
-          );
-          INSERT INTO infos (name, value) VALUES ('DB_VERSION_infos', '${DMSGUI_VERSION}');
-          COMMIT;`,
-},
-
 settings: {
 
   select: {
-    all:    `SELECT * from settings`,
-    value:  `SELECT value from settings where name = ?`,
+    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui'`,
+    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui' AND name = ?`,
+    infos:    `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
+    info:     `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
   },
   
   insert: {
-    values: `REPLACE INTO settings (name, value) VALUES (@name, @value)`,
+    setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, 'dms-gui', 1)`,
+    info:     `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
   },
   
   init:   `BEGIN TRANSACTION;
-          CREATE TABLE settings (
-          name  TEXT NOT NULL UNIQUE PRIMARY KEY,
-          value TEXT NOT NULL
+          CREATE  TABLE settings (
+          name    TEXT NOT NULL UNIQUE PRIMARY KEY,
+          value   TEXT NOT NULL,
+          scope   TEXT NOT NULL,
+          isMutable BIT DEFAULT ${isImmutable}
           );
-          INSERT INTO infos (name, value) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}');
+          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
           COMMIT;`,
+          
+  patch: [
+    { DB_VERSION: '1.0.17',
+      code: [
+            `ALTER TABLE settings ADD scope TEXT DEFAULT NULL`,
+            `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
+            `REPLACE INTO settings (name, value, scope, isMutable)  VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
+            ],
+    },
+  ],
 },
 
 logins: {
       
   select: {
-    all:      `SELECT username from logins`,
-    username: `SELECT username from logins where username = ?`,
+    usernames:`SELECT username from logins`,
+    username: `SELECT username from logins WHERE username = ?`,
     logins:   `SELECT username, email from logins`,
-    login:    `SELECT username, email from logins where username = ?`,
-    salt:     `SELECT salt from logins where username = ?`,
-    hash:     `SELECT hash from logins where username = ?`,
+    login:    `SELECT username, email from logins WHERE username = ?`,
+    salt:     `SELECT salt from logins WHERE username = ?`,
+    hash:     `SELECT hash from logins WHERE username = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE username = ?`,
   },
   
@@ -78,23 +73,37 @@ logins: {
           username  TEXT NOT NULL UNIQUE PRIMARY KEY,
           salt      TEXT NOT NULL,
           hash      TEXT NOT NULL,
-          email     TEXT DEFAULT ''
+          email     TEXT
           );
-          INSERT INTO infos (name, value) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
+          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
           
   patch: [
     { DB_VERSION: '1.0.14',
-      code:`BEGIN TRANSACTION;
-            ALTER TABLE logins DROP COLUMN password;
-            ALTER TABLE logins ADD salt TEXT DEFAULT '';
-            ALTER TABLE logins ADD hash TEXT DEFAULT '';
-            REPLACE INTO infos (name, value)  VALUES ('DB_VERSION_logins', '1.0.14');
-            COMMIT;`
+      code: [
+            `ALTER TABLE logins DROP COLUMN password;`,
+            `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
+            `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+            `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
+            ],
     },
   ],
 },
 };
+
+sqlMatch = {
+  add: {
+    code: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
+    err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
+  },
+  drop: {
+    code: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
+    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+  },
+  get: {
+    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+  },
+}
 
 // insert = DB.prepare(`REPLACE INTO settings (name, value) VALUES (@name, @value)`)
 // insert.run({name:'node',value:'v24'})  // { changes: 1, lastInsertRowid: 1 }
@@ -127,6 +136,30 @@ logins: {
   // dbRun(sql)
 
 
+function dbCommit() {
+  try {
+    if (DB && DB.inTransaction) DB.close();
+    
+    if (!DB || !DB.open) {
+      DB = require('better-sqlite3')(DATABASE);
+      // const Database = require('better-sqlite3');
+      // const DB = new Database('foobar.db', { verbose: console.log });
+      DB.pragma('journal_mode = WAL');
+      // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
+      process.on('exit', () => DB.close());
+      process.on('SIGHUP', () => process.exit(128 + 1));
+      process.on('SIGINT', () => process.exit(128 + 2));
+      process.on('SIGTERM', () => process.exit(128 + 15));
+      
+      return DB;
+    }
+  } catch (err) {
+    errorLog(`dbOpen error: ${err.code}: ${err.message}`);
+    throw err;
+  }
+}
+
+
 function dbOpen() {
   try {
     if (DB && DB.inTransaction) DB.close();
@@ -153,20 +186,32 @@ function dbOpen() {
 
 function dbRun(sql, params={}) {
 
-  if (typeof sql != "string") throw new Error("Error: sql argument must be a string");
+  if (typeof sql != "string") {
+    throw new Error("Error: sql argument must be a string: sql=",sql);
+  }
+  
   try {
     
-    // multiple statements
+    // transaction  https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#execstring---this
     if (sql.match(/BEGIN TRANSACTION/i)) {
       debugLog(`DB.exec(${sql})`);
       DB.exec(sql);
       debugLog(`DB.exec success`);
 
-    // single statement
+    // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
+    } else if (Array.isArray(params)) {
+      debugLog(`DB.transaction(${sql}).run(${JSON.stringify(params)})`);
+      const insertMany = DB.transaction((params) => {
+        for (const param of params) DB.prepare(sql).run(param);
+      });
+      insertMany(params);
+      debugLog(`DB.transaction success`);
+      
+    // single statement https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
       debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
       DB.prepare(sql).run(params);
-      debugLog(`DB.run success`);
+      debugLog(`DB.prepare success`);
     }
     // result = { changes: 0, lastInsertRowid: 0 }
 
@@ -174,22 +219,34 @@ function dbRun(sql, params={}) {
     debugLog(`${err.code}: ${err.message}`);
     dbOpen()
     throw err;
+    // dupe table:
+      // err.code=SQLITE_ERROR
+      // err.message=table xyz already exists
     // dupe insert:
       // err.code=SQLITE_CONSTRAINT_PRIMARYKEY
       // err.message=UNIQUE constraint failed: settings.name
-    // missing table or exec failed:
+    // missing table:
       // err.code=SQLITE_ERROR
       // err.message=no such table: master
+    // drop column that does not exist:
+      // err.code=SQLITE_ERROR
+      // err.message=no such column: "password"
+    // add column that exists:
+      // err.code=SQLITE_ERROR
+      // err.message=duplicate column name: salt
   }
 }
 
 function dbGet(sql, params=[]) {
   
-  if (typeof sql != "string") throw new Error("Error: sql argument must be a string");
+  if (typeof sql != "string") {
+    throw new Error("Error: sql argument must be a string: sql=",sql);
+  }
+  
   try {
     debugLog(`DB.prepare(${sql}).get(${JSON.stringify(params)})`);
     const result = DB.prepare(sql).get(params);
-    debugLog(`success`, result);
+    debugLog(`success:`, JSON.stringify(result));
     return (result) ? result : {};
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } orundefined
 
@@ -202,11 +259,14 @@ function dbGet(sql, params=[]) {
 
 function dbAll(sql, params=[]) {
   
-  if (typeof sql != "string") throw new Error("Error: sql argument must be a string");
+  if (typeof sql != "string") {
+    throw new Error("Error: sql argument must be a string: sql=",sql);
+  }
+  
   try {
     debugLog(`DB.prepare(${sql}).all(${JSON.stringify(params)})`);
     const result = DB.prepare(sql).all(params);
-    debugLog(`success:`, result);
+    debugLog(`success:`, JSON.stringify(result));
     return (result) ? result : [];
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
@@ -219,13 +279,9 @@ function dbAll(sql, params=[]) {
 
 function dbInit() {
 
+  debugLog(`start`);
+  dbOpen();
   let result;
-  try {
-    dbOpen();
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
-    throw err;
-  }
 
   for (const [table, actions] of Object.entries(sql)) {
     
@@ -249,43 +305,87 @@ function dbInit() {
     errorLog(`${err.code}: ${err.message}`);
     throw err;
   }
-
+  debugLog(`end`);
 }
 
 
 function dbUpdate() {
+  debugLog(`start`);
+
+  dbOpen();
   let db_version;
-  
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      db_version = dbGet(sql.infos.select.value, `DB_VERSION_${table}`);
+      db_version = dbGet(sql.settings.select.info, ['dms-gui', `DB_VERSION_${table}`]);
       db_version = (db_version) ? db_version.value : undefined;
-      debugLog(`${table}: db_version=`, db_version);
+      debugLog(`DB_VERSION_${table}=`, db_version);
+      
     } catch (err) {
-      errorLog(`${table}: db_version= ${err.code}: ${err.message}`);
-      throw err;
+      match = {
+        get: {
+          err:  err.message.match(sqlMatch.get.err),
+        },
+      }
+      
+      // column does not exist or smth like that... patch needed
+      if (match.get.err) {
+        debugLog(`DB_VERSION_${table}= PATCH NEEDED`);
+        
+      } else {
+        errorLog(`DB_VERSION_${table}= ${err.code}: ${err.message}`);
+        throw err;
+      }
     }
+    
     // now check if we need patches for that table
     // 0: version strings are equal
     // 1: version a is greater than b
     // -1:version b is greater than a
     
-    // now check is there are any patches
+    // first, check if there are any patches available
     if (actions.patch && actions.patch.length) {
       // now check is patches ar needed
       if (!db_version || db_version.localeCompare(DMSGUI_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
       
-      // now check each patch if we need it
-        for (const [key, patch] of Object.entries(actions.patch)) {
+      // now check each patch array if we need it
+        for (const patch of actions.patch) {
           // if patch version > current db_version then run it
           if (!db_version || db_version.localeCompare(patch.DB_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
-            try {
-              dbRun(patch.code);
-              successLog(`${table}: patch from ${db_version} to ${patch.DB_VERSION}: success`);
-              db_version = patch.DB_VERSION;
-            } catch (err) {
-              errorLog(`${table}: patch from ${db_version} to ${patch.DB_VERSION}: ${err.code}: ${err.message}`);
-              throw err;
+            
+            // patch.code is a array of SQL lines to ADD or DROP columns etc
+            for (const [num, patchLine] of Object.entries(patch.code)) {
+              try {
+                dbRun(patchLine);
+                successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
+                db_version = patch.DB_VERSION;
+                
+              } catch (err) {
+                match = {
+                  add: {
+                    code: patchLine.match(sqlMatch.add.code),
+                    err:  err.message.match(sqlMatch.add.err),
+                  },
+                  drop: {
+                    code: patchLine.match(sqlMatch.drop.code),
+                    err:  err.message.match(sqlMatch.drop.err),
+                  }
+                }
+                
+                // ADD COLUMN already exists:
+                if (match.add.code && match.add.err && match.add.code[1].toUpperCase() == match.add.err[1].toUpperCase()) {
+                  warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
+                  db_version = patch.DB_VERSION;
+                
+                // DROP COLUMN does not exist:
+                } else if (match.drop.code && match.drop.err && match.drop.code[1].toUpperCase() == match.drop.err[1].toUpperCase()) {
+                  warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
+                  db_version = patch.DB_VERSION;
+                  
+                } else {
+                  errorLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: ${err.code}: ${err.message}`);
+                  throw err;
+                }
+              }
             }
           }
         }
@@ -293,8 +393,10 @@ function dbUpdate() {
     }
 
   }
+  dbOpen();
+  debugLog(`end`);
 }
-
+// ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
 
 module.exports = {
   DB,

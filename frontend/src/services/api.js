@@ -70,9 +70,10 @@ export async function getSettings() {
 };
 
 // export const saveSettings = async (containerName, setupPath, dnsProvider) => {
-export async function saveSettings(containerName, setupPath, dnsProvider) {
+// export async function saveSettings(containerName, setupPath, dnsProvider) {
+export async function saveSettings(jsonArrayOfObjects) {
   try {
-    const response = await api.post(`/settings`, { containerName, setupPath, dnsProvider });
+    const response = await api.post(`/settings`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return response.data;
   } catch (error) {
     errorLog(error.message);

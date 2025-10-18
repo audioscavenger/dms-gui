@@ -7,6 +7,8 @@ const {
   obj2ArrayOfObj,
   reduxArrayOfObj,
   reduxPropertiesOfObj,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
 } = require('./common.js');
 
 const ICON = {
@@ -41,6 +43,8 @@ module.exports = {
   obj2ArrayOfObj,
   reduxArrayOfObj,
   reduxPropertiesOfObj,
+  mergeArrayOfObj,
+  getValueFromArrayOfObj,
   debug,
   ICON,
   debugLog,

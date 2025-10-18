@@ -33,8 +33,59 @@ const regexPrintOnly = /[^\S]/;
 
 
 
-// Function to retrieve settings
 async function getSettings() {
+
+  debugLog(`start`);
+  try {
+    
+    const settings = await dbAll(sql.settings.select.settings);
+    debugLog(`settings: settings (${typeof settings})`);
+    
+    // we could read DB_Logins and it is valid
+    if (settings && settings.length) {
+      debugLog(`Found ${settings.length} entries in settings`);
+      return settings;
+      // [ { name: 'containerName', value: 'dms' }, .. ]
+      
+    } else {
+      debugLog(`settings in db seems empty:`, JSON.stringify(settings));
+      return [];
+    }
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// async function saveSettings(username, password, email='') {
+async function saveSettings(jsonArrayOfObjects) {
+  try {
+    dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    return { success: true };
+
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// deprecated
+async function getSettingsJson() {
   var DBdict = {};
   var settings = {};
   debugLog(`start`);
@@ -58,7 +109,7 @@ async function getSettings() {
     return settings;
     
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
@@ -70,8 +121,8 @@ async function getSettings() {
 }
 
 
-// Function to save settings
-async function saveSettings(containerName, setupPath=SETUP_SCRIPT, dnsProvider='') {
+// deprecated
+async function saveSettingsJson(containerName, setupPath=SETUP_SCRIPT, dnsProvider='') {
   DBdict = {
     settings: {
       containerName: containerName,
@@ -86,7 +137,7 @@ async function saveSettings(containerName, setupPath=SETUP_SCRIPT, dnsProvider='
     return { success: true };
     
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
@@ -174,7 +225,7 @@ async function getServerStatus() {
     return status;
     
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
@@ -321,7 +372,7 @@ async function pullServerEnv() {
     return obj2ArrayOfObj(env);
     
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
   }
@@ -393,7 +444,7 @@ async function getServerInfos(refresh) {
     return DBdict.infos;
     
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     

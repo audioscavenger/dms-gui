@@ -47,14 +47,20 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - backend/Infos: add dkim selector detection and append infos.env
 * [ ] - backend: add domains list to build off accounts
 
-* [ ] - backend: added sql for aliases; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
-* [ ] - backend: added sql for accounts; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
-* [ ] - backend: added sql for infos
 * [ ] - frontend/Settings/logins: revamp the card entirely as we won't pull passwords anymore, maybe add the handleChangePassword from accounts?
 * [ ] - frontend/App: add auth login page
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
+* [ ] 1.0.20 - backend: added sql for aliases; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
+* [ ] 1.0.19 - backend: added sql for accounts; logic for add is to exec in DMS, then pull with REPLACE; for delete, not sure, pull then delete * then REPLACE?
+* [ ] 1.0.18 - backend: added sql for infos
+* [ ] 1.0.18 - backend/api: getInfos/saveInfos accepts json array of objects
+* [x] 1.0.17 - backend: added sql for infos
+* [x] 1.0.17 - backend/api: getSettings/saveSettings uses json array of objects
+* [x] 1.0.17 - backend/db: patches are array of lines instead of BEGIN TRANSACTION so we can check each line
+* [x] 1.0.17 - backend: added 2 columns to settings and merged with infos
+* [x] 1.0.17 - backend: moved internals DB_VERSION_table to settings
 * [x] 1.0.16 - frontend/Card: Placeholder Card to be created once we need it
 * [x] 1.0.16 - frontend/Card: Extra spinner when isLoading in titleExtra
 * [x] 1.0.16 - frontend/Dashboard: DashboardCards load individually

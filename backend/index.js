@@ -368,7 +368,7 @@ app.get('/api/aliases', async (req, res) => {
     debugLog(`index /api/aliases: aliases=`,aliases);
     res.json(aliases);
   } catch (error) {
-    errorLog(`ddebug index /api/aliases: ${error.message}`);
+    errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve aliases' });
     res.status(500).json({ error: error.message });
   }
@@ -522,11 +522,13 @@ app.get('/api/settings', async (req, res) => {
  */
 app.post('/api/settings', async (req, res) => {
   try {
-    const { containerName, setupPath=SETUP_SCRIPT, dnsProvider='' } = req.body;
-    if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
-    if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
+    // const { containerName, setupPath=SETUP_SCRIPT, dnsProvider='' } = req.body;
+    // if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
+    // if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
+    // const result = await saveSettings(containerName, setupPath, dnsProvider);
 
-    const result = await saveSettings(containerName, setupPath, dnsProvider);
+    // console.debug('ddebug settings API: req.body=',req.body);   // [{name:name, value:value}, ..]
+    const result = await saveSettings(req.body);
     res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/settings: ${error.message}`);

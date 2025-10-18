@@ -145,7 +145,7 @@ async function saveLogins(username, password, email='') {
     return { success: true };
 
   } catch (error) {
-    let backendError = `funcName(2): ${error.message}`;
+    let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to the index API instead of throwing an error

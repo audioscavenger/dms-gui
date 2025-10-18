@@ -69,8 +69,8 @@ const Settings = () => {
   */
 
   const settingTabs = [
-  { id: 1, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
-  { id: 2, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },
+  { id: 1, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },
+  { id: 2, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
   { id: 3, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
   ];
   const noPadding = false;

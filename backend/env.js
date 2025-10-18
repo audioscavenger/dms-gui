@@ -31,6 +31,8 @@ DMS_OPTIONS   = [
   'POSTFIX_MAILBOX_SIZE_LIMIT',
 ];
 
+isMutable = 1;
+isImmutable = 0;
 
 module.exports={
   debug,
@@ -48,5 +50,7 @@ module.exports={
   DB_Infos,
   DB_Logins,
   DATABASE,
+  isMutable,
+  isImmutable,
   DMS_OPTIONS,
 }
