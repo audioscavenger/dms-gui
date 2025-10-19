@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Nav } from 'react-bootstrap';
@@ -17,6 +17,7 @@ const LeftSidebar = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   // const [isDropdownActive, setDropdownActive] = useState("false");  // we don't use it yet
   
+  
   // Style function to apply styles directly based on isActive, a reserved word for bootstrap active links
   // const getNavLinkStyle = ({ isActive }) => ({
     // color: isActive ? '#fff' : '#ced4da',
@@ -31,43 +32,44 @@ const LeftSidebar = () => {
     backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
   });
 
+
   // https://arkumari2000.medium.com/responsive-partially-opened-sidebar-in-ractjs-using-bootstrap-7b1ef5c7ea60
 
   return (
     <>
-        <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
-          <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
-            <i className="bi bi-speedometer2 me-2"></i>
-            <span> {t('sidebar.dashboard')}</span>
-          </Nav.Link>
-          
-          <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
-            <i className="bi bi-person-circle me-2"></i>
-            <span> {t('sidebar.emailAccounts')}</span>
-          </Nav.Link>
-          
-          <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
-            <i className="bi bi-arrow-left-right me-2"></i>
-            <span> {t('sidebar.aliases')}</span>
-          </Nav.Link>
-          
-          <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
-            <i className="bi bi-gear-fill me-2"></i>
-            <span> {t('sidebar.settings')}</span>
-          </Nav.Link>
-        </Nav>
+    <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
+      <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
+        <i className="bi bi-speedometer2 me-2"></i>
+        <span> {t('sidebar.dashboard')}</span>
+      </Nav.Link>
+      
+      <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
+        <i className="bi bi-person-circle me-2"></i>
+        <span> {t('sidebar.emailAccounts')}</span>
+      </Nav.Link>
+      
+      <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
+        <i className="bi bi-arrow-left-right me-2"></i>
+        <span> {t('sidebar.aliases')}</span>
+      </Nav.Link>
+      
+      <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
+        <i className="bi bi-gear-fill me-2"></i>
+        <span> {t('sidebar.settings')}</span>
+      </Nav.Link>
+    </Nav>
 
-        <div className="leftsidebar-collapse-footer">
-          <Button
-            id="leftsidebar-collapse-btn"
-            variant="outline-secondary"
-            size="lg"
-            icon="list"
-            title={t('common.collapse')}
-            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-            className="leftsidebar-collapse-btn"
-          />
-        </div>
+    <div className="leftsidebar-collapse-footer">
+      <Button
+        id="leftsidebar-collapse-btn"
+        variant="outline-secondary"
+        size="lg"
+        icon="list"
+        title={t('common.collapse')}
+        onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+        className="leftsidebar-collapse-btn"
+      />
+    </div>
     </>
 
   );

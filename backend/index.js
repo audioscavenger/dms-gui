@@ -642,7 +642,6 @@ app.post('/api/logins', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
-    if (!email)     email = '';
 
     const result = await saveLogins(username, password, email);
     res.status(201).json({ message: 'Admin credentials saved successfully' });

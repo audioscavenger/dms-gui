@@ -100,7 +100,7 @@
     "cannotSaveSettings": "Unable to save settings. Please try again.",
     "cannotSaveLogins": "Unable to save logins. Please try again.",
     "titleSettings": "Docker-Mailserver Configuration",
-    "titleLogin": "Login Credentials (WIP: only saves users in db atm)",
+    "titleLogin": "Login Credentials",
     "configuration": "Docker-Mailserver Configuration",
     "containerName": "Docker-Mailserver Container Name",
     "containerNameHelp": "Name of the Docker container running Docker-Mailserver.",
@@ -134,6 +134,7 @@
     "title": "Login Page",
     "login": "Login",
     "logout": "Logout",
+    "isFirstRun": "WELCOME TO dms-gui:<br />This is the first time you access this page,<br />1️⃣ Please login with <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ Then change the password in <a href=\"/settings\">/settings</a><br />3️⃣ Finally, also set the DMS container name in settings.",
     "denied": "Login denied"
   },
   "api": {

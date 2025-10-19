@@ -75,6 +75,7 @@ logins: {
           hash      TEXT NOT NULL,
           email     TEXT
           );
+          INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18');
           INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
           
@@ -85,6 +86,15 @@ logins: {
             `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
             `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
             `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
+            ],
+    },
+    { DB_VERSION: '1.1.1',
+      code: [
+            `ALTER TABLE logins DROP COLUMN password;`,
+            `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
+            `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+            `INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
+            `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
             ],
     },
   ],
@@ -273,7 +283,6 @@ function dbInit() {
 
   debugLog(`start`);
   dbOpen();
-  let result;
 
   for (const [table, actions] of Object.entries(sql)) {
     
@@ -282,11 +291,12 @@ function dbInit() {
       try {
         dbRun(actions.init);
         successLog(`${table}: success`);
+        
       } catch (err) {
         if (!err.message.match(/already exists/i)) {
           errorLog(`${table}: ${err.code}: ${err.message}`);
           throw err;
-        } else warnLog(`${table}: ${err.message}`);
+        } else infoLog(`${table}: ${err.message}`);
       }
     }
   }

@@ -22,7 +22,6 @@ import {
 import FormSettings   from './FormSettings';
 import FormLogins     from './FormLogins';
 import ServerInfos    from './ServerInfos';
-import CardServerInfos    from './CardServerInfos';
 
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col

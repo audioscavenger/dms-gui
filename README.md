@@ -289,7 +289,8 @@ Result:
     "memoryUsage": 200925184,
     "diskUsage": "N/A"
   }
-}```
+}
+```
 
 
 ## Behind the Scenes
@@ -298,7 +299,7 @@ Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) f
 
 ### Automatic Formatting
 
-Formatting is automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensures that all committed code adheres to the defined style guide.
+Formatting was automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensured that all committed code adheres to the defined style guide.
 
 ### Manual Formatting
 

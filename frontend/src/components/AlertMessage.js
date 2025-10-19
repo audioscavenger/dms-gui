@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
 
 /**
@@ -17,7 +17,7 @@ const AlertMessage = ({
   onClose,
   ...rest
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
 
   if (!message) return null;
 
@@ -28,9 +28,13 @@ const AlertMessage = ({
       dismissible={!!onClose} // Make dismissible if onClose is provided
       {...rest}
     >
-      {translate ? t(message) : message}
+      {translate 
+      ? <Trans i18nKey={message} components={{ strong: <strong />, i: <i />, br: <br />, a: <a />, }} />
+      : message
+      }
     </RBAlert>
   );
 };
 
 export default AlertMessage;
+      // {translate ? t(message) : message}

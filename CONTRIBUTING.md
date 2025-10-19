@@ -49,6 +49,13 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
 * [x] v1.1.0 - release
+* [x] 1.0.21 - frontend/Login: shows welcome message with default admin user when db is empty
+* [x] 1.0.21 - translation: now accepts some html tags
+* [x] 1.0.21 - translation: now accepts some html tags
+* [x] 1.0.21 - frontend/useAuth: login/logout accept "to" destination
+* [x] 1.0.21 - backend/db: init logins with default admin user or no one can login lol
+* [x] 1.0.21 - frontend/Login: fixed login box messages
+* [x] 1.1.0 - release cancelled
 * [x] 1.0.20 - backend/settings: numbers from pullServerEnv are saved as float in the db: CAST(@value AS TEXT) does not work, obj2ArrayOfObj now can stringify values
 * [x] 1.0.20 - backend/settings: pullServerEnv and saveServerEnvs take containerName as parameter
 * [x] 1.0.20 - backend: fix in logger when appending end color

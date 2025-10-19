@@ -42,11 +42,11 @@ function arrayOfStringToDict(array, separator) {
 }
 
 
-function obj2ArrayOfObj(obj) {
-  return Object.keys(obj).map(key => ({name: key, value: obj[key]}));
+function obj2ArrayOfObj(obj, stringify=false, props=['name','value']) {
+  return (stringify) ? Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: String(obj[key])})) : Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: obj[key]}));
   
-  // transform this: { a:1, b:2 }
-  // to this:        [{name:a,value:1},{name:b,value:2}]
+  // transform this: { a:1, b:2, .. }
+  // to this:        [ {name:"a",value:1}, {name:"b",value:2}, .. ]
 }
 
 

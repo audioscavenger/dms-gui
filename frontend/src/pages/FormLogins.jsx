@@ -32,7 +32,7 @@ const FormLogins = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   
   const [formErrors, setFormErrors] = useState({});
-  const [logins, setLogins] = useState({
+  const [login, setLogin] = useState({
     username: '',
     email: '',
   });
@@ -49,8 +49,8 @@ const FormLogins = () => {
     setLoading(true);
 
     const loginsData    = await fetchLogins();
-    setLogins({
-      ...logins,
+    setLogin({
+      ...login,
       ...loginsData,
     });
 
@@ -69,10 +69,11 @@ const FormLogins = () => {
       ]);
       debugLog('loginsData', loginsData);
 
-      if (loginsData.password) loginsData['confirmPassword'] = loginsData.password;
+      let loginData = (loginsData.length) ? loginsData[0] : {};
+      // if (loginsData.password) loginsData['confirmPassword'] = loginsData.password;    // we can't pull passwords anymore
 
       setErrorMessage(null);
-      return loginsData;
+      return loginData;
 
     } catch (err) {
       errorLog(t('api.errors.fetchLogins'), err);
@@ -86,12 +87,12 @@ const FormLogins = () => {
   // Validate password change form -------------------------------------------------------
   // Handle input changes for password change form
   // const handleChangeLogins = (e) => {
-    // setLogins({ ...logins, [e.target.name]: e.target.value });
+    // setLogin({ ...login, [e.target.name]: e.target.value });
   // };
   const handleChangeLogins = (e) => {
     const { name, value } = e.target;
-    setLogins({
-      ...logins,
+    setLogin({
+      ...login,
       [name]: value,
     });
 
@@ -107,23 +108,23 @@ const FormLogins = () => {
   const validateFormLogins = () => {
     const errors = {};
 
-    if (!logins.username || !logins.username.trim()) {
+    if (!login.username || !login.username.trim()) {
       errors.username = 'settings.usernameRequired';
-    } else if (!usernameRegex.test(logins.username)) {
+    } else if (!usernameRegex.test(login.username)) {
       errors.username = 'settings.usernameInvalid';
     }
 
-    if (logins.email && !emailRegex.test(logins.email)) {
+    if (login.email && !emailRegex.test(login.email)) {
       errors.email = 'accounts.invalidEmail';
     }
 
-    if (!logins.password) {
+    if (!login.password) {
       errors.password = 'accounts.passwordRequired';
-    } else if (logins.password.length < 8) {
+    } else if (login.password.length < 8) {
       errors.password = 'accounts.passwordLength';
     }
 
-    if (logins.password !== logins.confirmPassword) {
+    if (login.password !== login.confirmPassword) {
       errors.confirmPassword = 'accounts.passwordsNotMatch';
     }
 
@@ -134,7 +135,7 @@ const FormLogins = () => {
   // Submit password change
   const handleSubmitLogins = async (e) => {
     e.preventDefault();
-    debugLog('Form logins Submitted:', logins);
+    debugLog('Form login Submitted:', login);
     
     setSubmissionStatus('submitting');
     setErrorMessage(null);
@@ -146,14 +147,14 @@ const FormLogins = () => {
 
     try {
       await saveLogins(
-        logins.username,
-        logins.password,
-        logins.email,
+        login.username,
+        login.password,
+        login.email,
       );
       // await onLoginsSubmit(settings);
       setSubmissionStatus('success');
       setSuccessMessage('settings.loginsUpdated');
-      await fetchAllLogins(); // Refresh the logins
+      await fetchAllLogins(); // Refresh the login
       
     } catch (err) {
       setSubmissionStatus('error');
@@ -162,7 +163,7 @@ const FormLogins = () => {
     }
   };
 
-  if (isLoading && !logins && !Object.keys(logins).length) {
+  if (isLoading && !login && !Object.keys(login).length) {
     return <LoadingSpinner />;
   }
 
@@ -189,7 +190,7 @@ const FormLogins = () => {
             id="username"
             name="username"
             label="settings.username"
-            value={logins.username}
+            value={login.username}
             onChange={handleChangeLogins}
             error={formErrors.username}
             placeholder="admin"
@@ -202,7 +203,7 @@ const FormLogins = () => {
             id="email"
             name="email"
             label="settings.email"
-            value={logins.email}
+            value={login.email}
             onChange={handleChangeLogins}
             error={formErrors.email}
             placeholder="admin@domain.com"

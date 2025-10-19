@@ -61,7 +61,7 @@ const LEVEL = {
 // });
 async function logger(level, message='', data = '') {
   // console[level](`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level]+color.end, color.LOW+funcName(4)+color.end, message, data);
-  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, data+color.end);
+  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, data, color.end);
 }
 async function successLog(message, data = '') { logger('success', message, data) }
 async function errorLog(message, data = '') { logger('error', message, data) }

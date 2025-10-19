@@ -31,7 +31,7 @@ const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 const regexPrintOnly = /[^\S]/;
 
 
-// TODO: this returns a single object, should return an array
+// this returns an array of objects
 async function getLogins() {
 
   debugLog(`start`);
@@ -43,12 +43,12 @@ async function getLogins() {
     // we could read DB_Logins and it is valid
     if (logins && logins.length) {
       debugLog(`Found ${logins.length} entries in logins`);
-      return logins[0];
-      // { username: username, email: email }
+      return logins;
+      // [ { username: username, email: email }, ..]
       
     } else {
       debugLog(`logins in db seems empty:`, logins);
-      return {};
+      return [];
     }
     
   } catch (error) {
@@ -139,8 +139,8 @@ async function hashPassword(password) {
 
 async function saveLogins(username, password, email='') {
   try {
+    debugLog(username);
     const { salt, hash } = await hashPassword(password);
-    debugLog(`${username}`);
     dbRun(sql.logins.insert.login, {username:username, salt:salt, hash:hash, email:email});
     return { success: true };
 

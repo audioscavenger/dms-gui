@@ -40,16 +40,16 @@ dms-gui/
 ├── backend/                    # Backend API
 │   ├── env.js                  # Environment variables
 │   ├── index.js                # /api server
-│   ├── db.conf                 # database functions
+│   ├── db.js                   # better-sqlite3 database functions
 │   └── *.js                    # One module per menu item
 ├── frontend/                   # Frontend React app
 │   ├── public                  # favicon and index template
 │   └── src                     # Frontend sources build in step 1 & 2
-│       └── components          # Classic React factored components
-│       └── forms               # Classic React factored components
-│       └── locales             # Language packs for i18n
-│       └── pages               # the left menu items
-│       └── api                 # The frontend API calls to the backend API
+│       ├── components          # Classic React factored components
+│       ├── hooks               # Authentication hooks for Login page
+│       ├── locales             # Language packs for i18n
+│       ├── pages               # the left menu items
+│       └── services            # The frontend API calls to the backend API
 ├── common/                     # Docker configuration files
 │   ├── backend.conf            # backend functions
 │   └── frontend.conf           # frontend functions
@@ -73,6 +73,7 @@ dms-gui/
 - `POST /api/settings` - Save settings
 - `GET /api/logins` - Get admin credentials
 - `POST /api/logins` - Save admin credentials
+- `POST /api/loginUser` - login user true/false
 
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
@@ -98,6 +99,19 @@ curl -sSL https://dms.domain.com/api/status
 Result:
 
 ```json
-{"status":"running","name":"dms-gui-backend","version":"1.0.6.3","resources":{"cpu":"3.22%","memory":"138.93MB","disk":"N/A"}}
+{
+  "status": {
+    "status": "running",
+    "Error": "",
+    "StartedAt": "2025-10-18T02:51:51.111429788Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": "healthy"
+  },
+  "resources": {
+    "cpuUsage": 0.0051578073089701,
+    "memoryUsage": 200925184,
+    "diskUsage": "N/A"
+  }
+}
 ```
 

@@ -1,5 +1,5 @@
 # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
-# https://github.com/peter-evans/dockerhub-description
+# https://github.com/peter-evans/dockerhub-description?tab=readme-ov-file#docker-hub-description
 
 name: Update Docker Hub Description
 
@@ -15,10 +15,10 @@ jobs:
   update-dockerhub-description:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@v3
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
