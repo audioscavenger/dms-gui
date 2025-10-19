@@ -3,21 +3,22 @@
 
 A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
 
-Warning: no authentication security has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything!
-
-Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this risk.
+Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this "risk".
 
 ## Features
 
+- 🔐 Login page, crypto-secure hashed passwords
 - 📊 Dashboard with server status information
 - 👤 Email account management (add, delete)
 - ↔️ Email alias management
 - 🔧 Docker-Mailserver connection configuration
+- 🛢️ better-sqlite3 database!
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
 ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
-<!-- ![Dashboard](/assets/dms-gui-Dashboard.webp)
+<!-- ![Dashboard](/assets/dms-gui-Login.webp)
+![Dashboard](/assets/dms-gui-Dashboard.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
 ![Settings](/assets/dms-gui-Settings.webp) -->
@@ -43,6 +44,8 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 
 ## Configuration
 
+`./config/` will host dms-gui.sqlite3 and its environment config file.
+
 Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for your own environment:
 
 ```
@@ -58,7 +61,7 @@ PORT_NODEJS=3001
 
 # Dev Environment
 REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
-DB_PATH=/app/config
+CONFIG_PATH=/app/config
 # NODE_ENV=development
 NODE_ENV=production
 ```
@@ -75,7 +78,7 @@ The ones you should never alter unless you want to develop:
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `NODE_ENV`: Node.js environment: (*production or development)
 - `REACT_APP_API_URL`: defaults to `http://localhost:3001`
-- `DB_PATH`= defaults to `/app/config`
+- `CONFIG_PATH`= defaults to `/app/config`
 
 
 ## Language Support
@@ -187,9 +190,9 @@ server {
 
   location / {
 
-    # enable the next two lines for http auth
-    auth_basic "Restricted";
-    auth_basic_user_file /config/nginx/.htpasswd;
+    # enable the next two lines for http auth (use you own)
+    # auth_basic "Restricted";
+    # auth_basic_user_file /config/nginx/.htpasswd;
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
@@ -204,7 +207,7 @@ server {
 }
 ```
 
-As stated above, no security is in place yet. You must as a form of authentication at the proxy level.
+You can and _should_ add a form of authentication at the proxy level, unless you totally trust React AuthContext and its implementation.
 
 
 ### Option 2: Manual using the pre-built image from Docker Hub
@@ -212,8 +215,8 @@ As stated above, no security is in place yet. You must as a form of authenticati
 ```bash
 docker run -d \
   --name dms-gui \
-  -p 80:80 \
-  -p 3001:3001 \
+  -p 127.0.0.1:80:80 \
+  -p 127.0.0.1:3001:3001 \
   -e DMS_CONTAINER=dms \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/timezone:/etc/timezone:ro \
@@ -243,6 +246,7 @@ For detailed Docker setup instructions, please refer to:
 - `POST /api/settings` - Save settings
 - `GET /api/logins` - Get admin credentials
 - `POST /api/logins` - Save admin credentials
+- `POST /api/loginUser` - login user true/false
 
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
@@ -256,8 +260,8 @@ For detailed Docker setup instructions, please refer to:
 ### Swagger API docs
 
 OAS description of all API endpoints is available at:
-* using compose + proxy: https://dms.domain.com/docs
-* using raw ports: https://dms.domain.com:3001/
+* using compose + proxy: http://localhost/docs or https://dms.domain.com/docs (with proxy)
+* using raw ports: http://localhost:3001/
 
 ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true)
 <!-- ![API](/assets/dms-gui-docs.webp) -->
@@ -273,30 +277,19 @@ Result:
 
 ```json
 {
-  "status": "running",
-  "name": "dms-gui-backend",
-  "version": "1.0.6.5",
-  "internals": [
-    {
-      "name": "NODE_VERSION",
-      "value": "v24.9.0"
-    },
-    {
-      "name": "NODE_ENV",
-      "value": "development"
-    },
-    {
-      "name": "PORT_NODEJS",
-      "value": "3001"
-    }
-  ],
+  "status": {
+    "status": "running",
+    "Error": "",
+    "StartedAt": "2025-10-18T02:51:51.111429788Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": "healthy"
+  },
   "resources": {
-    "cpu": "1.68%",
-    "memory": "587.98MB",
-    "disk": "N/A"
+    "cpuUsage": 0.0051578073089701,
+    "memoryUsage": 200925184,
+    "diskUsage": "N/A"
   }
-}
-```
+}```
 
 
 ## Behind the Scenes
@@ -342,7 +335,7 @@ npm install
 npm audit fix
 ```
 
-After running both parts, the application will be available at http://localhost:3000
+After running both parts, the application will be available at http://localhost:3001
 
 ## License
 

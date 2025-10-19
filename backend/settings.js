@@ -182,9 +182,9 @@ async function getServerStatus() {
       Health: '',
     },
     resources: {
-      cpu: '0%',
-      memory: '0MB',
-      disk: '0%',
+      cpuUsage: '0%',
+      memoryUsage: '0MB',
+      diskUsage: '0%',
     },
   };
 
@@ -202,7 +202,7 @@ async function getServerStatus() {
       
       // Check if container is running
       const isRunning = containerInfo.State.Running === true;
-      debugLog(`Container running: ${isRunning} status.status=`, JSON.stringify(status.status));
+      debugLog(`Container running: ${isRunning} status.status=`, status.status);
 
       // get also errors and stuff
       status.status.Error = containerInfo.State.Error;
@@ -217,6 +217,7 @@ async function getServerStatus() {
         // Get container stats
         debugLog(`Getting container stats`);
         const stats = await container.stats({ stream: false });
+        // debugLog('stats:',stats);
         
         // Calculate CPU usage percentage
         const cpuDelta =
@@ -225,14 +226,17 @@ async function getServerStatus() {
         const systemCpuDelta =
           stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
         const cpuPercent =
-          (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
-        status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
+          (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus;
+          // (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
+        // status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
+        status.resources.cpuUsage = cpuPercent;
 
         // Calculate memory usage
         const memoryUsageBytes = stats.memory_stats.usage;
-        status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
+        // status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
+        status.resources.memoryUsage = memoryUsageBytes;
 
-        debugLog(`Resources:`, JSON.stringify(status.resources));
+        // debugLog(`Resources:`, status.resources);
 
         // For disk usage, we would need to run a command inside the container
         // This could be a more complex operation involving checking specific directories
@@ -241,7 +245,7 @@ async function getServerStatus() {
       }
     }
 
-    debugLog(`Server pull status result:`, JSON.stringify(status));
+    debugLog(`Server pull status result:`, status);
     return status;
     
   } catch (error) {
@@ -389,7 +393,7 @@ async function pullServerEnv() {
     }
     
     debugLog(`Server pull envs result:`, envs);
-    return obj2ArrayOfObj(envs);
+    return obj2ArrayOfObj(envs, true);
     
   } catch (error) {
     let backendError = `${error.message}`;

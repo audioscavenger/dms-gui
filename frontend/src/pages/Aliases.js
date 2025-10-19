@@ -204,8 +204,7 @@ useEffect(() => {
         <Col md={5} className="mb-4">
           {' '}
           {/* Use Col component */}
-          <Card title="aliases.newAlias" icon="person-plus-fill">
-            {' '}
+          <Card title="aliases.newAlias" icon="person-plus-fill">{' '}
             {/* Removed mb-4 from Card, added to Col */}
             <form onSubmit={handleSubmit} className="form-wrapper">
               <FormField
@@ -234,7 +233,7 @@ useEffect(() => {
                 required
               />
 
-              <Button type="submit" variant="primary" text="aliases.addAlias" collapse="true"/>
+              <Button type="submit" variant="primary" text="aliases.addAlias" />
             </form>
           </Card>
         </Col>{' '}

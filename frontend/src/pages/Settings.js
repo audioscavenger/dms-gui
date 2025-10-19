@@ -66,40 +66,6 @@ const Settings = () => {
   { id: 2, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
   { id: 3, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
   ];
-  const noPadding = false;
-  const bodyClassName   = Boolean(noPadding)      == true ? 'p-0' : '';
-
-
-    // <RBAccordion defaultActiveKey="1">
-        // <RBAccordion.Item key="1" eventKey="1">
-          // <RBAccordion.Header>
-            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.titleSettings")}
-          // </RBAccordion.Header>
-          // <RBAccordion.Body className={bodyClassName}>
-            // <FormSettings />
-          // </RBAccordion.Body>
-        // </RBAccordion.Item>
-        
-        // <RBAccordion.Item key="2" eventKey="2">
-          // <RBAccordion.Header>
-            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.titleLogin")}
-          // </RBAccordion.Header>
-          // <RBAccordion.Body className={bodyClassName}>
-            // <FormLogins />
-          // </RBAccordion.Body>
-        // </RBAccordion.Item>
-        
-        // <RBAccordion.Item key="3" eventKey="3">
-          // <RBAccordion.Header>
-            // <i className="me-2 bi bi-gear-fill"></i> {t("settings.serverInfosTitle")}
-          // </RBAccordion.Header>
-          // <RBAccordion.Body className={bodyClassName}>
-            // <ServerInfos />
-          // </RBAccordion.Body>
-        // </RBAccordion.Item>
-    // </RBAccordion>
-
-
 
   // to handle data coming from the child form: <FormSettings onInfosSubmit={handleInfosReceived} />
   return (

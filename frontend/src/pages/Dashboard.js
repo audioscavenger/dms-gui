@@ -34,11 +34,11 @@ const Dashboard = () => {
       FinishedAt: '',
       Health: '',
     },
-    name: 'dms-gui',
-    version: '1.0.0',
-    resources: { cpu: '0%', memory: '0MB', disk: '0%' },
-    internals: [],
-    env: {},
+    resources: {
+      cpuUsage: 'N/A',
+      memoryUsage: 'N/A',
+      diskUsage: 'N/A',
+    },
   });
   const [accountsCount, setAccountsCount] = useState(0);
   const [aliasesCount, setAliasesCount] = useState(0);
@@ -175,7 +175,7 @@ const Dashboard = () => {
             icon="cpu"
             iconColor={isStatusLoading ? "secondary" : "primary"}
             isLoading={isStatusLoading}
-            value={status.resources.cpu}
+            value={(Number(status.resources.cpuUsage) * 100).toFixed(2)+'%'}
           />
         </Col>
         <Col md={3} className="mb-3">
@@ -184,7 +184,7 @@ const Dashboard = () => {
             icon="memory"
             iconColor={isStatusLoading ? "secondary" : "info"}
             isLoading={isStatusLoading}
-            value={status.resources.memory}
+            value={Number(status.resources.memoryUsage / 1024 / 1024).toFixed()+'MB'}
           />
         </Col>
         <Col md={3} className="mb-3">
@@ -193,7 +193,7 @@ const Dashboard = () => {
             icon="hdd"
             iconColor={isStatusLoading ? "secondary" : "warning"}
             isLoading={isStatusLoading}
-            value={status.resources.disk}
+            value={status.resources.diskUsage}
           />
         </Col>
       </Row>{' '}

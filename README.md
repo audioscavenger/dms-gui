@@ -3,9 +3,7 @@
 
 A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
 
-Warning: NO authentication has been added yet! Anyone with access to your docker network and knowledge of the api calls can do anything! Use a proxy like [swag](https://docs.linuxserver.io/general/swag/).
-
-Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this risk.
+Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run commands on the DMS container. Don't trust me and look at the code. `Caddy` will be implemented in the future to plug this "risk".
 
 ## Features
 
@@ -19,6 +17,7 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 - 👌 Cutting edge Node.JS v24
 
 <!-- ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true) -->
+![Login](/assets/dms-gui-Login.webp)
 ![Dashboard](/assets/dms-gui-Dashboard.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
@@ -191,9 +190,9 @@ server {
 
   location / {
 
-    # enable the next two lines for http auth
-    auth_basic "Restricted";
-    auth_basic_user_file /config/nginx/.htpasswd;
+    # enable the next two lines for http auth (use you own)
+    # auth_basic "Restricted";
+    # auth_basic_user_file /config/nginx/.htpasswd;
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
@@ -208,7 +207,7 @@ server {
 }
 ```
 
-As stated above, no security is in place yet. You must as a form of authentication at the proxy level.
+You can and _should_ add a form of authentication at the proxy level, unless you totally trust React AuthContext and its implementation.
 
 
 ### Option 2: Manual using the pre-built image from Docker Hub
@@ -247,6 +246,7 @@ For detailed Docker setup instructions, please refer to:
 - `POST /api/settings` - Save settings
 - `GET /api/logins` - Get admin credentials
 - `POST /api/logins` - Save admin credentials
+- `POST /api/loginUser` - login user true/false
 
 - `GET /api/accounts` - List email accounts [?refresh=true]
 - `POST /api/accounts` - Add a new account
@@ -277,30 +277,19 @@ Result:
 
 ```json
 {
-  "status": "running",
-  "name": "dms-gui-backend",
-  "version": "1.0.6.5",
-  "internals": [
-    {
-      "name": "NODE_VERSION",
-      "value": "v24.9.0"
-    },
-    {
-      "name": "NODE_ENV",
-      "value": "development"
-    },
-    {
-      "name": "PORT_NODEJS",
-      "value": "3001"
-    }
-  ],
+  "status": {
+    "status": "running",
+    "Error": "",
+    "StartedAt": "2025-10-18T02:51:51.111429788Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": "healthy"
+  },
   "resources": {
-    "cpu": "1.68%",
-    "memory": "587.98MB",
-    "disk": "N/A"
+    "cpuUsage": 0.0051578073089701,
+    "memoryUsage": 200925184,
+    "diskUsage": "N/A"
   }
-}
-```
+}```
 
 
 ## Behind the Scenes
@@ -346,7 +335,7 @@ npm install
 npm audit fix
 ```
 
-After running both parts, the application will be available at http://localhost:3000
+After running both parts, the application will be available at http://localhost:3001
 
 ## License
 

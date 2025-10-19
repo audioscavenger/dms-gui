@@ -20,7 +20,7 @@ const LoadingSpinner = ({
   ...rest
 }) => {
   const { t } = useTranslation();
-  const className = (Boolean(isInline)) ? "d-inline" : "d-flex justify-content-center";
+  const className = isInline == true ? "d-inline" : "d-flex justify-content-center";
 
   return (
     <div className={className} {...rest}>

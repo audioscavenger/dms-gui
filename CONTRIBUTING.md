@@ -8,9 +8,10 @@ The primary goals are:
 2. [x] refactor, fix all the bugs, document and define scope: **done/WIP**
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
-5. [ ] add DNS entries page
-6. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
-7. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
+5. [x] add a login page
+6. [ ] add DNS entries page
+7. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
+8. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
 
 After (7) my life will be complete and I won't need to work on this anymore :D
 
@@ -23,17 +24,14 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 The list is in reverse order, as you naturally read from top to bottom.
 
 * [ ] - frontend+backend: refactoring in progress as advised by @polarathene
-* [ ] - add a login page
 * [ ] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001
 * [ ] - translation: what are all those cannot* messages? no module uses them
 
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
+* [ ] - frontend/pages: add proxy to rspamd page
+* [ ] - frontend/pages: add link to snappymail when said variable is detected
 
-* [ ] - frontend/pages: add proxy to rspamd page?
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
-* [ ] - frontend/pages: refactor validate*Form and load them from individual files
-* [ ] - frontend/pages: refactor handle*Change*() as they all do the same for different formData and load them from individual files
-* [ ] - frontend/pages: refactor fetch*() into fetchData as they all do the same and load them from individual files
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend: api.js and plenty other files could also use translate for their error messages
@@ -50,6 +48,11 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [ ] - frontend/App: add auth bearer token for APIs
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
+* [x] v1.1.0 - release
+* [x] 1.0.20 - backend/settings: numbers from pullServerEnv are saved as float in the db: CAST(@value AS TEXT) does not work, obj2ArrayOfObj now can stringify values
+* [x] 1.0.20 - backend/settings: pullServerEnv and saveServerEnvs take containerName as parameter
+* [x] 1.0.20 - backend: fix in logger when appending end color
+* [x] 1.0.20 - Dashboard does not show container usage anymore: resources{} names have changed somehow; defered cpu/mem conversion to Dashboard
 * [x] 1.0.19 - loginPage and loginUser implemented!
 * [x] 1.0.19 - logout button in NavBar
 * [x] 1.0.19 - frontend/App: add auth loginPage
@@ -104,7 +107,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] v1.0.8 - back to a versioning scheme that actually makes sense.
 * [x] 1.0.8.1 - frontend/DataTable: removed react-change-highlight and implemented modern react 19 change detection with custom hook and useRef
 * [x] 1.0.8.1 - frontend/DataTable: added ChangeHighlight/react-change-highlight and it kind of works, but slow and deprecated
-* [x] 1.0.8.1 - frontend/Card: icon, title, titleExtra and collapse+refresh icons are now properly aligned
+* [x] 1.0.8.1 - frontend/Card: icon, title, titleExtra and collapsible+refresh icons are now properly aligned
 * [x] 1.0.8.1 - frontend/pages: all Forms are now CardForm*
 * [x] 1.0.8.1 - backend: bugfix in the refresh/pull container mechanic
 * [x] 1.0.8.1 - frontend/Card: add refresh button, recieves a function
@@ -220,6 +223,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [-] - frontend: convert all the db.*.json into browser json storage? no, sqlite3
 * [-] - backend: added sql for aliases; nah, why?
 * [-] - backend: added sql for accounts; nah, why?
+* [x] - frontend/pages: refactor validate*Form and load them from individual files
 
 
 ## Misc
