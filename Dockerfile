@@ -56,7 +56,7 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=v1.1.0
+ARG DMSGUI_VERSION=v1.1.1
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
@@ -67,8 +67,8 @@ RUN apk add --no-cache nginx
 WORKDIR /app
 RUN mkdir -p /app/backend /app/frontend
 
-# Copy project packages so we can get its version and pretty from within
-COPY package*.json ./
+# Copy project packages so we can get its version and pretty from within - nope we don't do that anymore
+#COPY package*.json ./
 
 # Copy backend from backend-builder
 COPY --from=backend-builder /app/backend /app/backend

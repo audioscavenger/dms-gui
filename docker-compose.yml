@@ -12,7 +12,7 @@ services:
       - 80      // frontend
       - 3001    // docs
     # ports:
-      # - 80:80
+      # - 127.0.0.1:80:80
       
     env_file: ./config/.dms-gui.env
     environment:
@@ -56,8 +56,8 @@ networks:
 # alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
-# docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .
-# docker push ghcr.io/audioscavenger/dms-gui --all-tags
+# docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
+# docker push audioscavenger/dms-gui --all-tags
 
 
 ## upgrade commands:
