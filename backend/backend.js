@@ -89,11 +89,11 @@ function jsonFixTrailingCommas(jsonString, returnJson=false) {
 }
 
 
-async function execCommand(command, container=null) {
+async function execCommand(command) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
-  return execInContainer(command, container);
+  return execInContainer(command);
 }
 
 
@@ -102,11 +102,11 @@ async function execCommand(command, container=null) {
  * @param {string} setupCommand Command to pass to setup.sh
  * @return {Promise<string>} stdout from the command
  */
-async function execSetup(setupCommand, container=null) {
+async function execSetup(setupCommand) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing setup command: ${setupCommand}`);
-  return execCommand(`${DMS_SETUP_SCRIPT} ${setupCommand}`, container);
+  return execCommand(`${SETUP_SCRIPT} ${setupCommand}`);
 }
 
 
@@ -115,12 +115,12 @@ async function execSetup(setupCommand, container=null) {
  * @param {string} command Command to execute
  * @return {Promise<string>} stdout from the command
  */
-async function execInContainer(command, container=null) {
+async function execInContainer(command) {
   try {
     debugLog(`Executing command in container ${DMS_CONTAINER}: ${command}`);
 
     // Get container instance
-    container = (container) ? container : docker.getContainer(DMS_CONTAINER);
+    const container = docker.getContainer(DMS_CONTAINER);
 
     // Create exec instance
     const exec = await container.exec({
@@ -247,6 +247,7 @@ async function formatDMSError(errorMsg, error) {
   errorMsg = `${errorMsg}: ${splitErrorClean}`;
   return errorMsg;
 }
+
 
 
 module.exports = {

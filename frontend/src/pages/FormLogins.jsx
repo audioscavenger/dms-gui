@@ -48,7 +48,7 @@ const FormLogins = () => {
     debugLog(`fetchAllLogins call fetchLogins`);
     setLoading(true);
 
-    const loginsData    = await fetchLogins();
+    const loginsData = await fetchLogins();
     setLogin({
       ...login,
       ...loginsData,

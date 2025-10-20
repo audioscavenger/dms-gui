@@ -7,6 +7,8 @@ const {
   successLog,
 } = require('./backend.js');
 
+const crypto = require('node:crypto');
+
 var DB;
 
 // in-memory database: https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#serializeoptions---buffer
@@ -40,14 +42,14 @@ settings: {
           );
           INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
           COMMIT;`,
-          
+  
   patch: [
     { DB_VERSION: '1.0.17',
-      code: [
-            `ALTER TABLE settings ADD scope TEXT DEFAULT NULL`,
-            `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
-            `REPLACE INTO settings (name, value, scope, isMutable)  VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
-            ],
+      patches: [
+        `ALTER TABLE settings ADD scope TEXT DEFAULT NULL`,
+        `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
+        `REPLACE INTO settings (name, value, scope, isMutable)  VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
+      ],
     },
   ],
 },
@@ -73,42 +75,93 @@ logins: {
           username  TEXT NOT NULL UNIQUE PRIMARY KEY,
           salt      TEXT NOT NULL,
           hash      TEXT NOT NULL,
-          email     TEXT
+          email     TEXT DEFAULT ''
           );
           INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18');
           INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
-          
+  
   patch: [
     { DB_VERSION: '1.0.14',
-      code: [
-            `ALTER TABLE logins DROP COLUMN password;`,
-            `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
-            `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
-            `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
-            ],
+      patches: [
+        `ALTER TABLE logins DROP COLUMN password;`,
+        `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
+        `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
+      ],
     },
     { DB_VERSION: '1.1.1',
-      code: [
-            `ALTER TABLE logins DROP COLUMN password;`,
-            `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
-            `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
-            `INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
-            `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
-            ],
+      patches: [
+        `ALTER TABLE logins DROP COLUMN password;`,
+        `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
+        `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+        `INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
+      ],
     },
   ],
+},
+
+accounts: {
+      
+  select: {
+    accounts: `SELECT email, domain, storage FROM accounts`,
+    account:  `SELECT email FROM accounts WHERE email = ?`,
+    byDomain: `SELECT email FROM accounts WHERE domain = ?`,
+  },
+  
+  insert: {
+    account:  `REPLACE INTO accounts (email, domain, storage) VALUES (@email, @domain, @storage)`,
+  },
+  
+  delete: {
+    account:  `DELETE FROM accounts WHERE email = ?`,
+    accounts: `DELETE FROM accounts`,
+  },
+  
+  init:  `BEGIN TRANSACTION;
+          CREATE TABLE accounts (
+          email     TEXT NOT NULL UNIQUE PRIMARY KEY,
+          salt      TEXT DEFAULT '',
+          hash      TEXT DEFAULT '',
+          domain    TEXT DEFAULT '',
+          storage   TEXT DEFAULT '{}'
+          );
+          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          COMMIT;`,
+},
+
+domains: {
+      
+  select: {
+    domains:  `SELECT domain FROM domains`,
+    dkims:    `SELECT DISTINCT dkim FROM domains`,
+    dkim:     `SELECT dkim FROM domains WHERE domain = ?`,
+  },
+  
+  insert: {
+    domain:   `REPLACE INTO domains (domain, dkim, path) VALUES (@domain, @dkim, @path)`,
+  },
+  
+  init:  `BEGIN TRANSACTION;
+          CREATE TABLE domains (
+          domain    TEXT NOT NULL UNIQUE PRIMARY KEY,
+          dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
+          path      TEXT DEFAULT ''
+          );
+          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          COMMIT;`,
 },
 
 };
 
 sqlMatch = {
   add: {
-    code: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
+    patch: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
     err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
   },
   drop: {
-    code: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
+    patch: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
     err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
   },
   get: {
@@ -123,8 +176,8 @@ sqlMatch = {
 // insert.run(['node2','v26'])            // { changes: 1, lastInsertRowid: 2 }
 
   // debug = true;
-  // CONFIG_PATH   = process.env.CONFIG_PATH || '/app/config';
-  // DATABASE      = CONFIG_PATH + '/dms-gui.sqlite3';
+  // DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
+  // DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
   // DB = require('better-sqlite3')(DATABASE);
   // DB.pragma('journal_mode = WAL');
   // process.on('exit', () => DB.close());
@@ -354,8 +407,8 @@ function dbUpdate() {
           // if patch version > current db_version then run it
           if (!db_version || db_version.localeCompare(patch.DB_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
             
-            // patch.code is a array of SQL lines to ADD or DROP columns etc
-            for (const [num, patchLine] of Object.entries(patch.code)) {
+            // patch.patches is a array of SQL lines to ADD or DROP columns etc
+            for (const [num, patchLine] of Object.entries(patch.patches)) {
               try {
                 dbRun(patchLine);
                 successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
@@ -364,22 +417,22 @@ function dbUpdate() {
               } catch (err) {
                 match = {
                   add: {
-                    code: patchLine.match(sqlMatch.add.code),
+                    patch: patchLine.match(sqlMatch.add.patch),
                     err:  err.message.match(sqlMatch.add.err),
                   },
                   drop: {
-                    code: patchLine.match(sqlMatch.drop.code),
+                    patch: patchLine.match(sqlMatch.drop.patch),
                     err:  err.message.match(sqlMatch.drop.err),
                   }
                 }
                 
                 // ADD COLUMN already exists:
-                if (match.add.code && match.add.err && match.add.code[1].toUpperCase() == match.add.err[1].toUpperCase()) {
+                if (match.add.patch && match.add.err && match.add.patch[1].toUpperCase() == match.add.err[1].toUpperCase()) {
                   warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                   db_version = patch.DB_VERSION;
                 
                 // DROP COLUMN does not exist:
-                } else if (match.drop.code && match.drop.err && match.drop.code[1].toUpperCase() == match.drop.err[1].toUpperCase()) {
+                } else if (match.drop.patch && match.drop.err && match.drop.patch[1].toUpperCase() == match.drop.err[1].toUpperCase()) {
                   warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                   db_version = patch.DB_VERSION;
                   
@@ -400,6 +453,45 @@ function dbUpdate() {
 }
 // ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
 
+
+async function hashPassword(password) {
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => { // 64 is the key length
+      if (err) return reject(err);
+      resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
+    });
+  });
+}
+
+
+// verifyPassword works the same wherever a table has a salted hash
+async function verifyPassword(username, password, table='logins') {
+  
+  try {
+    debugLog(`for ${username}`);
+    const result = dbGet(sql[table].select.saltHash, username);
+
+    return new Promise((resolve, reject) => {
+      if (Object.keys(result).length) {
+        if (result.salt && result.hash) {
+          crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
+            if (err) return reject(err);
+            resolve(result.hash === derivedKey.toString('hex'));
+          });
+        } else return reject(`please reset password for ${username}`);
+      } else return reject(`username ${username} not found`);
+    });
+
+  } catch (error) {
+    let backendError = error.message;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+  }
+
+};
+
+
 module.exports = {
   DB,
   sql,
@@ -409,4 +501,6 @@ module.exports = {
   dbRun,
   dbGet,
   dbAll,
+  hashPassword,
+  verifyPassword,
 };

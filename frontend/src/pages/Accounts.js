@@ -113,6 +113,7 @@ useEffect(() => {
     } catch (err) {
       errorLog(t('api.errors.fetchAllAccounts'), err);
       setErrorMessage('api.errors.fetchAllAccounts');
+      
     } finally {
       setLoading(false);
     }
@@ -362,13 +363,16 @@ useEffect(() => {
   };
 
 
-  if (isLoading && !accounts && !accounts.length) {
+  if (isLoading || !accounts || !accounts.length) {
     return <LoadingSpinner />;
   }
   
   // Column definitions for existing accounts table
   const columns = [
-    { key: 'email', label: 'accounts.email' },
+    { 
+      key: 'email',
+      label: 'accounts.email',
+    },
     {
       key: 'storage',
       label: 'accounts.storage',
@@ -436,7 +440,7 @@ useEffect(() => {
   ];
 
 
-  const Form1 = (
+  const FormNewAccount = (
           <form onSubmit={handleSubmit} className="form-wrapper">
             <FormField
               type="email"
@@ -480,7 +484,7 @@ useEffect(() => {
           </form>
   );
   
-  const DataTable1 = (
+  const DataTableAccounts = (
             <DataTable
             columns={columns}
             data={accounts}
@@ -492,8 +496,8 @@ useEffect(() => {
   );
   
   const accountTabs = [
-  { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: Form1 },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTable1 },
+  { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: FormNewAccount },
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTableAccounts },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not

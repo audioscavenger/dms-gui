@@ -21,33 +21,59 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## TODO:
 
-The list is in reverse order, as you naturally read from top to bottom.
+The **done** list versions is in reverse order, as you want to see the most recents firt.
 
-* [ ] - frontend+backend: refactoring in progress as advised by @polarathene
-* [ ] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001
-* [ ] - translation: what are all those cannot* messages? no module uses them
+The TODO list rank is in order, as you naturally read from top to bottom and therefore, the most difficult ones are at the top.
 
-* [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
+
+### chores:
+
+* [ ] - chore/frontend: api.js and plenty other files could also use translate for their error messages
+* [ ] - chore/translation: what are all those cannot* messages? no module uses them
+* [ ] - chore/frontend: move all error messages into translation
+* [ ] - chore/frontend: add auth bearer token for APIs and /docs
+* [ ] - chore: add more comments and beautify navigation pane with ASCII art
+* [ ] - chore: refactoring in progress as advised by @polarathene
+* [ ] - chore: add auto-refresh + option
+* [ ] - chore: add refresh all on start after Login + option
+
+### frontend:
+
 * [ ] - frontend/pages: add proxy to rspamd page
 * [ ] - frontend/pages: add link to snappymail when said variable is detected
 
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [ ] - frontend: api.js and plenty other files could also use translate for their error messages
 * [ ] - frontend/Dashboard: where do we display Health/StartedAt etc?
 * [ ] - frontend/Accounts: transform account storage values into bytes so we can sort them
 * [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
-* [ ] - frontend/chore: move all error messages into translation
 
-* [ ] - backend: add dkim modules and exec calls
-* [ ] - backend/Infos: add dkim selector detection and append infos.env
-* [ ] - backend: add domains list to build off accounts
+* [ ] - frontend/backups.js: add file
+* [ ] - frontend/imports.js: add file
 
-* [ ] - frontend/Settings/logins: revamp the card entirely as we won't pull passwords anymore, maybe add the handleChangePassword from accounts?
-* [ ] - frontend/App: add auth bearer token for APIs
+### backend:
+* [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
+* [ ] - backend: get rid of the common.js?
+* [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
+* [ ] - backend: mutate the String with data transform/validation functions as Class
+* [ ] - backend/domains: add dkim modules and exec calls
+* [ ] - backend/domains: add Domains page and domains.js
+
+* [ ] - frontend/Backups: add page
+* [ ] - frontend/Imports: add page
+
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
+### history:
+
+* [x] 1.1.1 - renamed CONFIG_PATH as DMSGUI_CONFIG_PATH and added DMS_CONFIG_PATH
+* [x] 1.1.1 - frontend/Accounts: handle accounts as array of named objects
+* [x] 1.1.1 - backend/accounts: refactored getAccounts into array of named objects that include the domain
+* [x] 1.1.1 - backend/accounts: append accounts table and save storage as stringified json
+* [x] 1.1.1 - backend/db: added tables accounts and domains + moved hashPassword and verifyPassword in there
+* [x] 1.1.1 - backend/pullServerEnv: pulls dkim values if ENABLE_RSPAMD=1 and REPLACE {domain,dkim} in domains table
+* [x] 1.1.1 - move backend.js and frontend.js to respective folders
 * [x] v1.1.0 - release
 * [x] 1.0.21 - frontend/Login: shows welcome message with default admin user when db is empty
 * [x] 1.0.21 - translation: now accepts some html tags
@@ -203,7 +229,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [x] 1.0.3 - Add non-woke code of conduct
 * [x] 1.0.3 - Fix account regex when QUOTA is enabled or not
 * [x] 1.0.3 - Better debug logging
-* [x] 1.0.3 - Variabilize SETUP_SCRIPT
+* [x] 1.0.3 - Variabilize DMS_SETUP_SCRIPT
 * [x] 1.0.3 - Initial commit from someone else's AI slop
 
 ## DECISIONS
@@ -231,6 +257,7 @@ The list is in reverse order, as you naturally read from top to bottom.
 * [-] - backend: added sql for aliases; nah, why?
 * [-] - backend: added sql for accounts; nah, why?
 * [x] - frontend/pages: refactor validate*Form and load them from individual files
+* [-] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001 - so what
 
 
 ## Misc

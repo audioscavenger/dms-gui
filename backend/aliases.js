@@ -26,11 +26,6 @@ const fsp = fs.promises;
 const crypto = require('node:crypto');
 
 
-const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
-// const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-const regexPrintOnly = /[^\S]/;
-
-
 async function getAliases(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   debugLog(`start (refresh=${refresh})`);

@@ -19,15 +19,88 @@ const {
   dbRun,
   dbAll,
   dbGet,
+  hashPassword,
+  verifyPassword,
 } = require('./db.js');
 
 const fs = require("fs");
 const fsp = fs.promises;
-const crypto = require('node:crypto');
 
 
-// Function to retrieve email accounts
+async function getAccount(name) {
+  try {
+    
+    const account = await dbGet(sql.accounts.select.account, name);
+    return account?.value;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
 async function getAccounts(refresh) {
+  refresh = (refresh === undefined) ? false : refresh;
+  debugLog(`(refresh=${refresh})`);
+  
+  var accounts = [];
+  try {
+    
+      if (!refresh) {
+      accounts = await dbAll(sql.accounts.select.accounts);
+      debugLog(`settings: settings (${typeof accounts})`);
+      
+      // we could read DB_Logins and it is valid
+      if (accounts && accounts.length) {
+        debugLog(`Found ${accounts.length} entries in accounts`);
+        
+        // now parse storage JSON as it's stored stringified in the db
+        accounts = accounts.map(account => { return { ...account, storage: JSON.parse(account.storage) }; });
+        
+        return accounts;
+        // [{ email: 'a@b.com', domain:'b.com', storage: {} }, .. ]
+        
+      } else {
+        debugLog(`settings in db seems empty:`, accounts);
+        return [];
+      }
+    }
+    
+    // refresh
+    accounts = await getAccountsFromDMS();
+    // [{ email: 'a@b.com', storage: {} }, .. ]
+    debugLog(`got ${accounts.length} accounts from getAccountsFromDMS()`);
+
+    // now add the domain item
+    accounts = accounts.map(account => { return { ...account, domain: account.email.split('@')[1] }; });
+    
+    // now save accounts in db
+    dbRun(sql.accounts.insert.account, accounts);
+    
+    return accounts;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// deprecated
+async function getAccountsJson(refresh) {
   refresh = (refresh === undefined) ? false : refresh;
   debugLog(`(refresh=${refresh})`);
 
@@ -36,20 +109,20 @@ async function getAccounts(refresh) {
   
   try {
     
-      if (!refresh) {
-        debugLog(`read DBdict from ${DB_Accounts} (refresh=${refresh})`);
-        
-        DBdict = await readJson(DB_Accounts);
-        // debugLog(`DBdict:`, DBdict);
+    if (!refresh) {
+      debugLog(`read DBdict from ${DB_Accounts} (refresh=${refresh})`);
+      
+      DBdict = await readJson(DB_Accounts);
+      // debugLog(`DBdict:`, DBdict);
 
-        // we could read DB_Accounts and it is valid
-        if (DBdict.constructor == Object && 'accounts' in DBdict) {
-          debugLog(`Found ${DBdict['accounts'].length} accounts in DBdict`);
-          return DBdict['accounts'];
-        }
-        
-      // we could not read DB_Accounts or it is invalid
+      // we could read DB_Accounts and it is valid
+      if (DBdict.constructor == Object && 'accounts' in DBdict) {
+        debugLog(`Found ${DBdict['accounts'].length} accounts in DBdict`);
+        return DBdict['accounts'];
       }
+      
+    // we could not read DB_Accounts or it is invalid
+    }
 
     // force refresh if no db
     if (!DBdict.accounts) {
@@ -137,7 +210,7 @@ async function getAccountsFromDMS() {
           );
 
           accounts.push({
-            email,
+            email:email,
             storage: {
               used: usedSpace,
               total: totalSpace,
@@ -149,7 +222,8 @@ async function getAccountsFromDMS() {
           const email = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
 
           accounts.push({
-            email,
+            email:email,
+            storage: {},
           });
         } else {
           debugLog(`Failed to parse account line: ${line}`);
@@ -174,7 +248,11 @@ async function addAccount(email, password) {
     debugLog(`Adding new email account: ${email}`);
     await execSetup(`email add ${email} ${password}`);
     debugLog(`Account created: ${email}`);
+    
+    const { salt, hash } = await hashPassword(password);
+    dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash, domain:email.split('@')[1] });
     return { success: true, email };
+    
   } catch (error) {
     let backendError = 'Error adding account';
     let ErrorMsg = await formatDMSError(backendError, error);
@@ -194,7 +272,11 @@ async function updateAccountPassword(email, password) {
     debugLog(`Updating password for account: ${email}`);
     await execSetup(`email update ${email} ${password}`);
     debugLog(`Password updated for account: ${email}`);
+    
+    const { salt, hash } = await hashPassword(password);
+    dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash });
     return { success: true, email };
+    
   } catch (error) {
     let backendError = 'Error updating account password';
     let ErrorMsg = await formatDMSError(backendError, error);
@@ -214,7 +296,10 @@ async function deleteAccount(email) {
     debugLog(`Deleting email account: ${email}`);
     await execSetup(`email del ${email}`);
     debugLog(`Account deleted: ${email}`);
+    
+    dbRun(sql.accounts.delete.account, email);
     return { success: true, email };
+    
   } catch (error) {
     let backendError = 'Error deleting account';
     let ErrorMsg = await formatDMSError(backendError, error);
@@ -234,7 +319,9 @@ async function reindexAccount(email) {
     debugLog(`Reindexing email account: ${email}`);
     await execSetup(`doveadm index -u ${email} -q \\*`);
     debugLog(`Account reindex started for ${email}`);
+    
     return { success: true, email };
+    
   } catch (error) {
     let backendError = 'Error reindexing account';
     let ErrorMsg = await formatDMSError(backendError, error);

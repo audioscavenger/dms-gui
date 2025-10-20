@@ -11,10 +11,13 @@ const {
   reduxPropertiesOfObj,
   arrayOfStringToDict,
   obj2ArrayOfObj,
+  getValueFromArrayOfObj,
   execSetup,
   execCommand,
   readJson,
   writeJson,
+  regexColors,
+  regexPrintOnly,
 } = require('./backend.js');
 const {
   sql,
@@ -25,21 +28,13 @@ const {
 
 // const fs = require("fs");
 // const fsp = fs.promises;
-// const crypto = require('node:crypto');
-
-
-
-const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
-// const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-const regexPrintOnly = /[^\S]/;
-
 
 
 async function getSetting(name) {
   try {
     
     const setting = await dbGet(sql.settings.select.setting, [name]);
-    return ('value' in setting) ? setting.value : undefined;
+    return setting?.value;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -69,7 +64,7 @@ async function getSettings(name='') {
       // [ { name: 'containerName', value: 'dms' }, .. ]
       
     } else {
-      debugLog(`settings in db seems empty:`, JSON.stringify(settings));
+      debugLog(`settings in db seems empty:`, settings);
       return [];
     }
     
@@ -90,6 +85,7 @@ async function getSettings(name='') {
 async function saveSettings(jsonArrayOfObjects) {
   try {
     dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
     return { success: true };
 
   } catch (error) {
@@ -143,7 +139,7 @@ async function getSettingsJson() {
 
 
 // deprecated
-async function saveSettingsJson(containerName, setupPath=SETUP_SCRIPT, dnsProvider='') {
+async function saveSettingsJson(containerName, setupPath=DMS_SETUP_SCRIPT, dnsProvider='') {
   DBdict = {
     settings: {
       containerName: containerName,
@@ -263,7 +259,7 @@ async function getServerStatus() {
 
 // function readDovecotConfFile will convert dovecot conf file syntax to JSON
 async function readDovecotConfFile(stdout) {
-  // what we get
+  // what we get: -------------------
   /*
   mail_plugins = $mail_plugins fts fts_xapian
   plugin {
@@ -288,7 +284,7 @@ async function readDovecotConfFile(stdout) {
   }
   */
 
-  // what we want
+  // what we want: -------------------
   // plugin: {
     // fts: "xapian",
     // fts_xapian: "partial=3 full=20 verbose=0",
@@ -334,22 +330,207 @@ async function readDovecotConfFile(stdout) {
 }
 
 
-// Function to pull server environment
-async function pullServerEnv() {
-  var DBdict = {};
-  var envs = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no'};
+// function readDkimFile will convert dkim conf file syntax to JSON
+async function readDkimFile(stdout) {
+  // what we get: -------------------
+  /*
+  enabled = true;
 
+  # If false, messages from authenticated users are not selected for signing
+  sign_authenticated = true;
+  # If false, inbound messages are not selected for signing
+  sign_inbound = true;
+
+  # If false, messages from local networks are not selected for signing
+  sign_local = true;
+  # Whether to fallback to global config
+  try_fallback = false;
+
+  # Domain to use for ARC signing: can be "header" (MIME From), "envelope" (SMTP From), "recipient" (SMTP To), "auth" (SMTP username) or directly specified domain name
+  use_domain = "header";
+  # don't change unless Redis also provides the DKIM keys
+  use_redis = false;
+  # Whether to normalise domains to eSLD: sub.domain.com becomes domain.com as discussed here https://github.com/docker-mailserver/docker-mailserver/issues/3778
+  use_esld = true;
+  # If true, username does not need to contain matching domain
+  allow_username_mismatch = true;
+
+  # you want to use this in the beginning
+  check_pubkey = true;
+
+  # global DKIM-selector: this is critical and must match a TXT entry called selector._domainkey in ALL of your domains
+  # DKIM Rotation example with minimal downtime (due to restart of dms):
+  # 1. generate new keys with new selector: dmss config dkim domain ${domain} selector new_selector keytype ${keytype} keysize ${keysize}
+  # 2. create new TXT entries 'new_selector._domainkey' with the content of the generated *-public.dns.txt keys
+  # 3. modify the selector name below and restart dms:
+  selector = "dkim";
+
+  # The path location is searched for a DKIM key with these variables:
+  # - $domain is sourced from the MIME mail message From header
+  # - $selector is configured for mail (as a default fallback)
+  # Update the keytype=rsa and keysize=2048 to the values you use for your keys
+  path = "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-$selector-$domain.private.txt";
+  
+  # domain specific configurations can be provided below:
+  domain {
+      domain.com {
+          path = "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-dkim-domain.com.private.txt";
+          selector = "dkim";
+      }
+      ..
+  }
+  */
+
+  // what we want: -------------------
+  // dkim: {
+    // enabled: "true",
+    // selector: "dkim",
+    // path: "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-$selector-$domain.private.txt",
+    // domain: {
+      // domain.com: {
+        // path: "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-dkim-domain.com.private.txt",
+        // selector: "dkim"
+      // },
+      // ..
+    // }
+  // }
+
+  // TODO: not capture trailing spaces in a set of words /[\s+]?=[\s+]?([\S\s]+)[\s+]?$/
+  const regexConfComments = /^(\s+)?#(.*?)$/;
+  // " mail_plugins = $mail_plugins fts fts_xapian ".replace(/(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/, "'$2': '$5',") -> "'mail_plugins': '$mail_plugins fts fts_xapian ',"
+  const regexConfDeclare = /(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/;
+  // " ssss indexer-worker { ".replace(/(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/, "'$2': $5") -> " 'ssss': {"
+  const regexConfObjOpen = /(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/;
+  const regexConfObjClose = /(\s+)?([\]\}])(\s+)?$/;
+  const regexEmpty = /^\s*[\r\n]/gm;
+  const regexRemoveQuotesColon = /[\";]/g;
+
+
+  const lines = stdout.split('\n').filter((line) => line.trim().length > 0);
+  const cleanlines = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].replace(regexEmpty, '')
+                         .replace(regexRemoveQuotesColon, '')
+                         .replace(regexConfComments, '')
+                         .replace(regexConfDeclare, '"$2": "$5",')
+                         .replace(regexConfObjOpen, '"$2": $5')
+                         .replace(regexConfObjClose, '$2,')
+                         .trim();
+    if (line) cleanlines.push(line);
+  }
+
+
+// BUG:
+// domain {
+  // domain.com {
+      // path = "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-dkim-domain.com.private.txt";
+      // selector = "dkim";
+  // }
+  // ..
+
+// becomes
+// "domain": {
+// "domain.com": {
+// "path": ""/tmp/docker-mailserver/rspamd/dkim/rsa-2048-dkim-domain.com.private.txt";",
+// "selector": ""dkim";",
+// },
+// ..
+
+
+
+  const cleanData = `{${cleanlines.join('\n')}}`;
+  debugLog(`cleanData:`, cleanData);
+
+  try {
+    const json = jsonFixTrailingCommas(cleanData, true);
+    debugLog(`json:`, JSON.stringify(json));
+    return json;
+    
+  } catch (error) {
+    errorLog(`cleanData not valid JSON:`, error);
+    return {};
+  }
+}
+
+
+async function pullFTS(envs, container, containerInfo) {
+  var ftsMount = '';
+
+  try {
+    containerInfo.Mounts.forEach( async (mount) => {
+      debugLog(`found mount ${mount.Destination}`);
+      if (mount.Destination.match(/fts.*\.conf$/i)) {
+        // we get the DMS internal mount as we cannot say if we have access to that file on the host system
+        ftsMount = mount.Destination;
+      }
+    });
+
+    // if we found fts override plugin, let's load it
+    if (ftsMount) {
+      const ftsMount_out = await execCommand(`cat ${ftsMount}`, container);
+      debugLog(`dovecot file content:`,ftsMount_out);
+      const ftsConfig = await readDovecotConfFile(ftsMount_out);
+      debugLog(`dovecot json:`, ftsConfig);
+      
+      if (ftsConfig?.plugin?.fts) {
+
+        envs.FTS_PLUGIN = ftsConfig.plugin.fts;
+        envs.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+
+      }
+    }
+    
+  } catch (error) {
+    errorLog(`execCommand failed with error:`,error);
+  }
+  return envs;
+}
+
+
+async function pullDkimRspamd(envs, container) {
+  // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
+  if (envs.ENABLE_RSPAMD) {
+    try {
+      const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, container);
+      debugLog(`dkim file content:`, dkim_out);
+      // TODO: decide if we want to propagate execInContainer errors, since dkim_out can very well be stderr="cat: whatever: No such file or directory"
+      
+      const dkimConfig = await readDkimFile(dkim_out);
+      debugLog(`dkim json:`, dkimConfig);
+      
+      envs.DKIM_ENABLED   = dkimConfig?.enabled;
+      envs.DKIM_SELECTOR  = dkimConfig?.selector;
+      envs.DKIM_PATH      = dkimConfig?.path;
+
+      if (dkimConfig?.domain) {
+        for (const [domain, item] of Object.entries(dkimConfig.domain)) {
+          (item?.selector) && dbRun(sql.domains.insert.domain, [{domain:domain, dkim:item.selector}]);
+        }
+      }
+
+    } catch (error) {
+      errorLog(`execCommand failed with error:`,error);
+    }
+  }
+  return envs;
+}
+
+
+// Function to pull server environment
+async function pullServerEnv(container=null) {
+
+  var envs = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no', ENABLE_RSPAMD: 0, DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
   try {
     debugLog(`Pulling server env`);
     
-    // Get container info
-    const container = docker.getContainer(DMS_CONTAINER);
+    // Get container instance
+    container = (container) ? container : docker.getContainer(DMS_CONTAINER);
     const containerInfo = await container.inspect();
 
     if (containerInfo.Id) {
       debugLog(`containerInfo found, Id=`, containerInfo.Id);
       
-      // get and conver DMS environment to dict
+      // get and conver DMS environment to dict ------------------------------------------ envs
       dictEnvDMS = arrayOfStringToDict(containerInfo.Config.Env, '=');
       // debugLog(`dictEnvDMS:`,dictEnvDMS);
       
@@ -359,36 +540,11 @@ async function pullServerEnv() {
 
       envs = { ...envs, ...dictEnvDMSredux };
 
-      // TODO: rewrite this disgusting loop
-      // pull bindings and look for FTS
-      var ftsMount = '';
-      containerInfo.Mounts.forEach( async (mount) => {
-        debugLog(`found mount ${mount.Destination}`);
-        if (mount.Destination.match(/fts.*\.conf$/i)) {
-          // we get the DMS internal mount as we cannot say if we have access to that file on the host system
-          ftsMount = mount.Destination;
-        }
-      });
+      // pull bindings and look for FTS -------------------------------------------------- FTS
+      envs = await pullFTS(envs, container, containerInfo);
 
-      // if we found fts override plugin, let's load it
-      if (ftsMount) {
-        try {
-          const stdout = await execCommand(`cat ${ftsMount}`);
-          debugLog(`dovecot file content:`,stdout);
-          const ftsConfig = await readDovecotConfFile(stdout);
-          debugLog(`dovecot json:`,ftsConfig);
-          
-          if (ftsConfig.plugin && ftsConfig.plugin.fts) {
-
-            envs.FTS_PLUGIN = ftsConfig.plugin.fts;
-            envs.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-
-          }
-
-        } catch (error) {
-          errorLog(`execCommand failed with error:`,error);
-        }
-      }
+      // pull dkim conf ------------------------------------------------------------------ dkim rspamd
+      envs = await pullDkimRspamd(envs, container);
 
     }
     
@@ -442,7 +598,7 @@ async function getServerEnvs(refresh) {
     }
   }
   
-  pulledEnv = await pullServerEnv(containerName);
+  pulledEnv = await pullServerEnv();
   debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv(${containerName})`, JSON.stringify(pulledEnv));
   
   if (pulledEnv && pulledEnv.length) {

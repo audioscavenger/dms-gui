@@ -134,7 +134,7 @@
     "title": "Login Page",
     "login": "Login",
     "logout": "Logout",
-    "isFirstRun": "WELCOME TO dms-gui:<br />This is the first time you access this page,<br />1️⃣ Please login with <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ Then change the password in <a href=\"/settings\">/settings</a><br />3️⃣ Finally, also set the DMS container name in settings.",
+    "isFirstRun": "WELCOME TO dms-gui:<br />This is the first time you access this page,<br />1️⃣ Please login with <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ Then change the password in <a href=\"settings\">/settings</a><br />3️⃣ Finally, also set the DMS container name in settings.",
     "denied": "Login denied"
   },
   "api": {

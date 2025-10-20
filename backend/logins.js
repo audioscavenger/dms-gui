@@ -19,16 +19,12 @@ const {
   dbRun,
   dbAll,
   dbGet,
+  hashPassword,
+  verifyPassword,
 } = require('./db.js');
 
 const fs = require("fs");
 const fsp = fs.promises;
-const crypto = require('node:crypto');
-
-
-const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
-// const regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-const regexPrintOnly = /[^\S]/;
 
 
 // this returns an array of objects
@@ -126,22 +122,11 @@ async function saveLoginsJson(username, password, email='') {
 }
 
 
-async function hashPassword(password) {
-  return new Promise((resolve, reject) => {
-    const salt = crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => { // 64 is the key length
-      if (err) return reject(err);
-      resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
-    });
-  });
-}
-
-
 async function saveLogins(username, password, email='') {
   try {
     debugLog(username);
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.insert.login, {username:username, salt:salt, hash:hash, email:email});
+    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email });
     return { success: true };
 
   } catch (error) {
@@ -157,37 +142,10 @@ async function saveLogins(username, password, email='') {
 }
 
 
-async function verifyPassword(username, password) {
-  
-  try {
-    debugLog(`for ${username}`);
-    const result = dbGet(sql.logins.select.saltHash, username);
-
-    return new Promise((resolve, reject) => {
-      if (Object.keys(result).length) {
-        if (result.salt && result.hash) {
-          crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
-            if (err) return reject(err);
-            resolve(result.hash === derivedKey.toString('hex'));
-          });
-        } else return reject(`please reset password for ${username}`);
-      } else return reject(`username ${username} not found`);
-    });
-
-  } catch (error) {
-    let backendError = error.message;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
-  }
-
-};
-
-
-
 async function loginUser(username, password) {
   
   try {
-    const isValid = await verifyPassword(username, password);
+    const isValid = await verifyPassword(username, password, 'logins');
     debugLog(`${username} password =`, isValid);
     
     if (isValid) {

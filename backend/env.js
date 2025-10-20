@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 debug = (process.env.DEBUG === 'true') ? true : false;
 
-// const { name, version, description } = require('./package.json');  
+// const { name, version, description } = require('./package.json');
 DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
 HOSTNAME = process.env.HOSTNAME;
@@ -10,16 +10,19 @@ NODE_ENV = process.env.NODE_ENV || 'production';
 PORT_NODEJS = process.env.PORT_NODEJS || 3001;
 TZ = process.env.TZ || 'UTC';
 
+DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
+DB_Accounts   = DMSGUI_CONFIG_PATH + '/db.accounts.json';
+DB_Aliases    = DMSGUI_CONFIG_PATH + '/db.aliases.json';
+DB_Settings   = DMSGUI_CONFIG_PATH + '/db.settings.json';
+DB_Infos      = DMSGUI_CONFIG_PATH + '/db.infos.json';
+DB_Logins     = DMSGUI_CONFIG_PATH + '/db.logins.json';
+DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+
 // Docker container name for docker-mailserver
-DMS_CONTAINER = process.env.DMS_CONTAINER || 'dms';
-SETUP_SCRIPT  = process.env.SETUP_SCRIPT || '/usr/local/bin/setup';
-CONFIG_PATH   = process.env.CONFIG_PATH || '/app/config';
-DB_Accounts   = CONFIG_PATH + '/db.accounts.json';
-DB_Aliases    = CONFIG_PATH + '/db.aliases.json';
-DB_Settings   = CONFIG_PATH + '/db.settings.json';
-DB_Infos      = CONFIG_PATH + '/db.infos.json';
-DB_Logins     = CONFIG_PATH + '/db.logins.json';
-DATABASE      = CONFIG_PATH + '/dms-gui.sqlite3';
+DMS_CONTAINER = process.env.DMS_CONTAINER || 'dmss';
+DMS_SETUP_SCRIPT  = process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup';
+DMS_CONFIG_PATH = process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver';
+DKIM_SELECTOR_DEFAULT = 'mail';
 
 DMS_OPTIONS   = [
   'DMS_RELEASE',
@@ -43,7 +46,7 @@ module.exports={
   PORT_NODEJS,
   TZ,
   DMS_CONTAINER,
-  CONFIG_PATH,
+  DMSGUI_CONFIG_PATH,
   DB_Accounts,
   DB_Aliases,
   DB_Settings,
