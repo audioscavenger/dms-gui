@@ -13,6 +13,8 @@ const {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
 } = require('./common.js');
 
 
@@ -70,17 +72,6 @@ async function infoLog(message, data = '')  { logger('info', message, data) }
 async function debugLog(message, data = '') { if (debug) logger('debug', message, data) }
 
 
-// Helper function to format memory size
-function formatMemorySize(bytes) {
-  if (bytes === 0) return '0B';
-
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + sizes[i];
-}
-
-
 function jsonFixTrailingCommas(jsonString, returnJson=false) {
   var jsonObj;
   eval('jsonObj = ' + jsonString);
@@ -89,11 +80,11 @@ function jsonFixTrailingCommas(jsonString, returnJson=false) {
 }
 
 
-async function execCommand(command) {
+async function execCommand(command, container=null) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
-  return execInContainer(command);
+  return execInContainer(command, container);
 }
 
 
@@ -102,11 +93,11 @@ async function execCommand(command) {
  * @param {string} setupCommand Command to pass to setup.sh
  * @return {Promise<string>} stdout from the command
  */
-async function execSetup(setupCommand) {
+async function execSetup(setupCommand, container=null) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing setup command: ${setupCommand}`);
-  return execCommand(`${SETUP_SCRIPT} ${setupCommand}`);
+  return execCommand(`${DMS_SETUP_SCRIPT} ${setupCommand}`, container);
 }
 
 
@@ -115,12 +106,12 @@ async function execSetup(setupCommand) {
  * @param {string} command Command to execute
  * @return {Promise<string>} stdout from the command
  */
-async function execInContainer(command) {
+async function execInContainer(command, container=null) {
   try {
     debugLog(`Executing command in container ${DMS_CONTAINER}: ${command}`);
 
     // Get container instance
-    const container = docker.getContainer(DMS_CONTAINER);
+    container = (container) ? container : docker.getContainer(DMS_CONTAINER);
 
     // Create exec instance
     const exec = await container.exec({
@@ -249,7 +240,6 @@ async function formatDMSError(errorMsg, error) {
 }
 
 
-
 module.exports = {
   funcName,
   fixStringType,
@@ -259,6 +249,8 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
   color,
   ICON,
   debugLog,
@@ -267,7 +259,6 @@ module.exports = {
   errorLog,
   successLog,
   docker,
-  formatMemorySize,
   jsonFixTrailingCommas,
   formatDMSError,
   execSetup,

@@ -137,6 +137,29 @@ function getValueFromArrayOfObj(arr, propName, keyName='name', keyValue='value')
 }
 
 
+function byteSize2HumanSize(bytes) {
+  if (bytes === 0) return '0B';
+
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed()) + sizes[i];
+}
+
+
+function humanSize2ByteSize(humanBytes) {
+  const sizes = [/(\S+)B/i, /(\S+)KB?/i, /(\S+)MB?/i, /(\S+)GB?/i, /(\S+)TB?/i, /(\S+)PB?/i, ];
+  for (const [power, regex] of Object.entries(sizes).reverse()) {
+    // cannot use split as sometimes the B is missing
+    // let split = humanBytes.split(regex);
+    // if (split.length > 1) return parseFloat(split[0]) * Math.pow(1024, power);
+    let match = humanBytes.match(regex);
+    if (match) return (match[1] * Math.pow(1024, power)).toFixed();
+  }
+  return 0;
+}
+
+
 module.exports = {
   funcName,
   fixStringType,
@@ -146,4 +169,6 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
 };

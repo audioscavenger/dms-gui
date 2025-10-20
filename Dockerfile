@@ -16,15 +16,14 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 COPY common/common.js ./
 
-RUN npx npm-check-updates -u
-RUN npm install
-
+# RUN npx npm-check-updates -u
+# RUN npm install
+# RUN npm audit fix
 RUN npm ci
 
 # Copy frontend code and build
 COPY frontend/ ./
 RUN npm run build
-# RUN npm audit fix
 
 # -----------------------------------------------------
 # Stage 2: Build backend
@@ -37,12 +36,11 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 COPY common/common.js ./
 
-RUN npx npm-check-updates -u
-RUN npm install
-
+# RUN npx npm-check-updates -u
+# RUN npm install
+# RUN npm audit fix
 # RUN npm ci --only=production    # https://stackoverflow.com/questions/74599681/npm-warn-config-only-use-omit-dev
 RUN npm ci --omit=dev
-# RUN npm audit fix
 
 # Copy backend code
 COPY backend/ ./

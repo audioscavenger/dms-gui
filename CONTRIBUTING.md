@@ -67,6 +67,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.2 - backend/db: table domains now includes dkim parameters
+* [x] 1.1.2 - backend/settings: now extract dkim parameters from fileName
+* [x] 1.1.1 - Dockerfile: back to `npm ci` only
 * [x] 1.1.1 - renamed CONFIG_PATH as DMSGUI_CONFIG_PATH and added DMS_CONFIG_PATH
 * [x] 1.1.1 - frontend/Accounts: handle accounts as array of named objects
 * [x] 1.1.1 - backend/accounts: refactored getAccounts into array of named objects that include the domain

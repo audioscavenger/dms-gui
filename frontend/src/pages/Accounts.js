@@ -8,6 +8,7 @@ const {
   errorLog,
   successLog,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
 } = require('../../frontend.js');
 import {
   getAccounts,
@@ -351,7 +352,7 @@ useEffect(() => {
 
     try {
       await updateDNS(
-        selectedAccount.email,
+        selectedAccount.domain,
         passwordFormData.newPassword
       );
       setSuccessMessage('accounts.dnsUpdated');
@@ -363,15 +364,34 @@ useEffect(() => {
   };
 
 
-  if (isLoading || !accounts || !accounts.length) {
+  if (isLoading && !accounts && !accounts.length) {
     return <LoadingSpinner />;
   }
   
   // Column definitions for existing accounts table
   const columns = [
     { 
+      key: 'domain',
+      label: 'accounts.domain',
+      render: (account) => (
+        <>
+          {account.domain}
+          {(getValueFromArrayOfObj(settings, 'dnsProvider') != "") && (
+          <Button
+            variant="info"
+            size="sm"
+            icon="globe"
+            title={t('accounts.manageDNS')}
+            onClick={() => handleChangeDNS(account)}
+            className="me-2 float-end"
+          />
+          )}
+        </>
+      ),
+    },
+    { 
       key: 'email',
-      label: 'accounts.email',
+      label: 'accounts.account',
     },
     {
       key: 'storage',
@@ -421,16 +441,6 @@ useEffect(() => {
             icon="recycle"
             title={t('accounts.reindex')}
             onClick={() => handleReindex(account.email)}
-            className="me-2"
-          />
-          )}
-          {(settings.dnsProvider != "") && (
-          <Button
-            variant="info"
-            size="sm"
-            icon="globe"
-            title={t('accounts.manageDNS')}
-            onClick={() => handleChangeDNS(account.email)}
             className="me-2"
           />
           )}
@@ -565,7 +575,7 @@ useEffect(() => {
       <Modal show={showDNSModal} onHide={handleCloseDNSModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {t('accounts.manageDNS')} - {selectedAccount?.email}{' '}
+            {t('accounts.manageDNS')} - {selectedAccount?.domain}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

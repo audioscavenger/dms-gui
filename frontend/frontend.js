@@ -9,6 +9,8 @@ const {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
 } = require('./common.js');
 
 const ICON = {
@@ -45,6 +47,8 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
   debug,
   ICON,
   debugLog,

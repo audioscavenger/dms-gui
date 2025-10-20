@@ -6,12 +6,13 @@ const {
   warnLog,
   errorLog,
   successLog,
-  formatMemorySize,
   jsonFixTrailingCommas,
   reduxPropertiesOfObj,
   arrayOfStringToDict,
   obj2ArrayOfObj,
   getValueFromArrayOfObj,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
   execSetup,
   execCommand,
   readJson,
@@ -229,7 +230,7 @@ async function getServerStatus() {
 
         // Calculate memory usage
         const memoryUsageBytes = stats.memory_stats.usage;
-        // status.resources.memoryUsage = formatMemorySize(memoryUsageBytes);
+        // status.resources.memoryUsage = byteSize2HumanSize(memoryUsageBytes);
         status.resources.memoryUsage = memoryUsageBytes;
 
         // debugLog(`Resources:`, status.resources);
@@ -499,12 +500,12 @@ async function pullDkimRspamd(envs, container) {
       debugLog(`dkim json:`, dkimConfig);
       
       envs.DKIM_ENABLED   = dkimConfig?.enabled;
-      envs.DKIM_SELECTOR  = dkimConfig?.selector;
+      envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
       envs.DKIM_PATH      = dkimConfig?.path;
 
       if (dkimConfig?.domain) {
         for (const [domain, item] of Object.entries(dkimConfig.domain)) {
-          (item?.selector) && dbRun(sql.domains.insert.domain, [{domain:domain, dkim:item.selector}]);
+          (item?.selector) && dbRun(sql.domains.insert.domain, [{domain:domain, dkim:item?.selector, path:(item?.path || envs.DKIM_PATH)}]);
         }
       }
 

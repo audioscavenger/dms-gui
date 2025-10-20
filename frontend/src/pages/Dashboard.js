@@ -8,6 +8,7 @@ const {
   warnLog,
   errorLog,
   successLog,
+  byteSize2HumanSize,
 } = require('../../frontend.js');
 import {
   getServerStatus, 
@@ -184,7 +185,7 @@ const Dashboard = () => {
             icon="memory"
             iconColor={isStatusLoading ? "secondary" : "info"}
             isLoading={isStatusLoading}
-            value={Number(status.resources.memoryUsage / 1024 / 1024).toFixed()+'MB'}
+            value={byteSize2HumanSize(status.resources.memoryUsage)}
           />
         </Col>
         <Col md={3} className="mb-3">

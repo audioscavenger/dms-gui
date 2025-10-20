@@ -28,6 +28,7 @@
     "error": "Unable to load dashboard data. Please check server connection."
   },
   "accounts": {
+    "account": "Account",
     "accountCreated": "Account created successfully!",
     "accountDeleted": "Account deleted successfully!",
     "actions": "Actions",
@@ -40,6 +41,7 @@
     "confirmDelete": "Are you sure you want to delete account {{email}}?",
     "confirmPassword": "Confirm Password",
     "dnsUpdated": "DNS records updated",
+    "domain": "Domain",
     "email": "Email Address",
     "emailRequired": "Email is required",
     "existingAccounts": "Existing Accounts",

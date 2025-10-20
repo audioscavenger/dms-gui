@@ -50,27 +50,25 @@ Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for
 
 ```
 # Docker Mailserver Configuration
-SETUP_SCRIPT=/usr/local/bin/setup
+DMS_SETUP_SCRIPT=/usr/local/bin/setup
 DMS_CONTAINER=dms
 
 # backend port
 PORT_NODEJS=3001
 
-# Debugging
-# DEBUG=true
-
 # Dev Environment
-REACT_APP_API_URL=http://localhost:${PORT_NODEJS}
-CONFIG_PATH=/app/config
+REACT_APP_API_URL=http://localhost:3001
 # NODE_ENV=development
 NODE_ENV=production
+
+# Debugging
+# DEBUG=true
 ```
 
 ### Environment Variables
 
 - `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-
-- `SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
+- `DMS_SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
 - `DEBUG`: Node.js environment: (*production or development)
 
 The ones you should never alter unless you want to develop:
@@ -78,7 +76,6 @@ The ones you should never alter unless you want to develop:
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `NODE_ENV`: Node.js environment: (*production or development)
 - `REACT_APP_API_URL`: defaults to `http://localhost:3001`
-- `CONFIG_PATH`= defaults to `/app/config`
 
 
 ## Language Support
@@ -122,7 +119,7 @@ services:
       - TZ=${TZ:-UTC}
       
       # Docker Mailserver Configuration
-      - SETUP_SCRIPT=/usr/local/bin/setup
+      - DMS_SETUP_SCRIPT=/usr/local/bin/setup
       - DMS_CONTAINER=dms
 
       # backend port

@@ -6,7 +6,8 @@ const {
   warnLog,
   errorLog,
   successLog,
-  formatMemorySize,
+  byteSize2HumanSize,
+  humanSize2ByteSize,
   jsonFixTrailingCommas,
   formatDMSError,
   execSetup,
@@ -74,15 +75,16 @@ async function getAccounts(refresh) {
     }
     
     // refresh
-    accounts = await getAccountsFromDMS();
+    accounts = await pullAccountsFromDMS();
     // [{ email: 'a@b.com', storage: {} }, .. ]
-    debugLog(`got ${accounts.length} accounts from getAccountsFromDMS()`);
+    debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS()`);
 
     // now add the domain item
     accounts = accounts.map(account => { return { ...account, domain: account.email.split('@')[1] }; });
-    
+
     // now save accounts in db
-    dbRun(sql.accounts.insert.account, accounts);
+    let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
+    dbRun(sql.accounts.insert.account, accountsDb);
     
     return accounts;
     
@@ -126,11 +128,11 @@ async function getAccountsJson(refresh) {
 
     // force refresh if no db
     if (!DBdict.accounts) {
-        accounts = await getAccountsFromDMS();
-        debugLog(`got ${accounts.length} accounts from getAccountsFromDMS()`);
+        accounts = await pullAccountsFromDMS();
+        debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS()`);
       }
     
-    // since we had to call getAccountsFromDMS, we save DB_Accounts
+    // since we had to call pullAccountsFromDMS, we save DB_Accounts
     if (Array.isArray(accounts) && accounts.length) {
       // DBdict["accounts"] = accounts;
       DBdict = { ...DBdict, "accounts": accounts };
@@ -165,7 +167,7 @@ async function getAccountsJson(refresh) {
 
 
 // Function to retrieve email accounts from DMS
-async function getAccountsFromDMS() {
+async function pullAccountsFromDMS() {
   const command = 'email list';
   try {
     debugLog(`execSetup(${command})`);
@@ -214,7 +216,7 @@ async function getAccountsFromDMS() {
             storage: {
               used: usedSpace,
               total: totalSpace,
-              percent: usagePercent + '%',
+              percent: usagePercent,
             },
           });
         } else if  (matchQuotaOFF) {
@@ -231,8 +233,9 @@ async function getAccountsFromDMS() {
       }
     }
 
-    debugLog(`Found ${accounts.length} accounts`);
+    debugLog(`Found ${accounts.length} accounts`, accounts);
     return accounts;
+    
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);

@@ -6,7 +6,7 @@ const {
   warnLog,
   errorLog,
   successLog,
-  formatMemorySize,
+  byteSize2HumanSize,
   jsonFixTrailingCommas,
   formatDMSError,
   execSetup,

@@ -54,7 +54,7 @@ const Accordion = ({
           <RBAccordion.Body className={bodyClassName}>
             { // the refresh button is activated per tab when onClickRefresh is passed
               ('onClickRefresh' in tab && typeof tab.onClickRefresh == "function") && (
-              <div className="float-end">
+              <div className="float-end position-sticky z-1">
                 <Button
                   variant="info"
                   size="sm"

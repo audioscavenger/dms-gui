@@ -27,8 +27,21 @@ npm start
 Configure the `.env` file with the appropriate environment variables:
 
 ```
+# Docker Mailserver Configuration
+# Docker Mailserver Configuration
+DMS_SETUP_SCRIPT=/usr/local/bin/setup
+DMS_CONTAINER=dms
+
+# backend port
 PORT_NODEJS=3001
-SETUP_SCRIPT=/usr/local/bin/setup
+
+# Dev Environment
+REACT_APP_API_URL=http://localhost:3001
+# NODE_ENV=development
+NODE_ENV=production
+
+# Debugging
+# DEBUG=true
 ```
 
 ## Project Structure

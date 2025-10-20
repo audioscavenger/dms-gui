@@ -40,7 +40,7 @@ settings: {
           scope   TEXT NOT NULL,
           isMutable BIT DEFAULT ${isImmutable}
           );
-          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
           COMMIT;`,
   
   patch: [
@@ -78,7 +78,7 @@ logins: {
           email     TEXT DEFAULT ''
           );
           INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18');
-          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
   patch: [
@@ -127,7 +127,7 @@ accounts: {
           domain    TEXT DEFAULT '',
           storage   TEXT DEFAULT '{}'
           );
-          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
 },
 
@@ -149,7 +149,7 @@ domains: {
           dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
           path      TEXT DEFAULT ''
           );
-          INSERT INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
 },
 
