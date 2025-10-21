@@ -29,12 +29,12 @@ const {
 
 // const fs = require("fs");
 // const fsp = fs.promises;
-
+const path = require('node:path');
 
 async function getSetting(name) {
   try {
     
-    const setting = await dbGet(sql.settings.select.setting, [name]);
+    const setting = await dbGet(sql.settings.select.setting, name);
     return setting?.value;
     
   } catch (error) {
@@ -454,10 +454,13 @@ async function readDkimFile(stdout) {
 }
 
 
-async function pullFTS(envs, container, containerInfo) {
-  var ftsMount = '';
+// async function pullFTS(envs, container, containerInfo) {
+async function pullFTS(container, containerInfo) {
+  let ftsMount = '';
+  let envs = {};
 
   try {
+    
     containerInfo.Mounts.forEach( async (mount) => {
       debugLog(`found mount ${mount.Destination}`);
       if (mount.Destination.match(/fts.*\.conf$/i)) {
@@ -473,10 +476,11 @@ async function pullFTS(envs, container, containerInfo) {
       const ftsConfig = await readDovecotConfFile(ftsMount_out);
       debugLog(`dovecot json:`, ftsConfig);
       
+      debugLog('---------------------------------ftsConfig?.plugin?.fts',ftsConfig?.plugin?.fts)
       if (ftsConfig?.plugin?.fts) {
 
-        envs.FTS_PLUGIN = ftsConfig.plugin.fts;
-        envs.FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+        envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
+        envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
 
       }
     }
@@ -488,39 +492,45 @@ async function pullFTS(envs, container, containerInfo) {
 }
 
 
-async function pullDkimRspamd(envs, container) {
+// async function pullDkimRspamd(envs, container) {
+async function pullDkimRspamd(container) {
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
-  if (envs.ENABLE_RSPAMD) {
-    try {
-      const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, container);
-      debugLog(`dkim file content:`, dkim_out);
-      // TODO: decide if we want to propagate execInContainer errors, since dkim_out can very well be stderr="cat: whatever: No such file or directory"
-      
-      const dkimConfig = await readDkimFile(dkim_out);
-      debugLog(`dkim json:`, dkimConfig);
-      
-      envs.DKIM_ENABLED   = dkimConfig?.enabled;
-      envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
-      envs.DKIM_PATH      = dkimConfig?.path;
+  let envs = {};
+  try {
+    const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, container);
+    debugLog(`dkim file content:`, dkim_out);
+    // TODO: decide if we want to propagate execInContainer errors, since dkim_out can very well be stderr="cat: whatever: No such file or directory"
+    
+    const dkimConfig = await readDkimFile(dkim_out);
+    debugLog(`dkim json:`, dkimConfig);
+    
+    envs.DKIM_ENABLED   = dkimConfig?.enabled;
+    envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
+    envs.DKIM_PATH      = dkimConfig?.path;
 
-      if (dkimConfig?.domain) {
-        for (const [domain, item] of Object.entries(dkimConfig.domain)) {
-          (item?.selector) && dbRun(sql.domains.insert.domain, [{domain:domain, dkim:item?.selector, path:(item?.path || envs.DKIM_PATH)}]);
+    if (dkimConfig?.domain) {
+      for (const [domain, item] of Object.entries(dkimConfig.domain)) {
+        let split, [keytype, keysize] = ['', ''];
+        if (item?.path) {
+          split = path.basename(item.path).split('-');  // [ 'rsa', '2048', 'dkim', '$domain.private.txt' ]
+          keytype = split[0];
+          keysize = split[1];
         }
+        (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)});
       }
-
-    } catch (error) {
-      errorLog(`execCommand failed with error:`,error);
     }
+
+  } catch (error) {
+    errorLog(`execCommand failed with error:`,error);
   }
   return envs;
 }
 
 
 // Function to pull server environment
-async function pullServerEnv(container=null) {
+async function pullServerEnvs(container=null) {
 
-  var envs = {FTS_PLUGIN: "none", FTS_AUTOINDEX: 'no', ENABLE_RSPAMD: 0, DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
+  var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
   try {
     debugLog(`Pulling server env`);
     
@@ -541,11 +551,23 @@ async function pullServerEnv(container=null) {
 
       envs = { ...envs, ...dictEnvDMSredux };
 
-      // pull bindings and look for FTS -------------------------------------------------- FTS
-      envs = await pullFTS(envs, container, containerInfo);
+      // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
+      const mail_plugins = await execCommand(`doveconf mail_plugins`, container);   // mail_plugins =  quota fts fts_xapian zlib
+      // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
+      // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
+      for (const PLUGIN of mail_plugins.split(/[=\s]+/)) {
+        if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+      }
+      
+      // TODO: look for quotas -------------------------------------------------- quota
+      
+      // look for FTS values -------------------------------------------------- fts
+      // if (envs?.DOVECOT_FTS) envs = await pullFTS(envs, container, containerInfo);
+      if (envs?.DOVECOT_FTS) envs = await { ...envs, ...pullFTS(container, containerInfo) };
 
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      envs = await pullDkimRspamd(envs, container);
+      // if (envs?.ENABLE_RSPAMD) envs = await pullDkimRspamd(envs, container);
+      if (envs?.ENABLE_RSPAMD) envs = await { ...envs, ...pullDkimRspamd(container) };
 
     }
     
@@ -556,6 +578,29 @@ async function pullServerEnv(container=null) {
     let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
+  }
+}
+
+
+async function getServerEnv(name, containerName) {
+  try {
+    containerName = (containerName) ? containerName : await getSetting('containerName');
+    if (!containerName) {
+      warnLog('settings.containerNameRequired');
+      return '';
+    }
+    const env = await dbGet(sql.settings.select.env, name, containerName);
+    return env?.value;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
   }
 }
 
@@ -573,14 +618,14 @@ async function getServerEnvs(refresh) {
   if (!refresh) {
     try {
       
-      const envs = await dbAll(sql.settings.select.envs, [containerName]);
+      const envs = await dbAll(sql.settings.select.envs, containerName);
       debugLog(`envs: envs (${typeof envs})`);
       
       // we could read DB_Logins and it is valid
       if (envs && envs.length) {
         debugLog(`Found ${envs.length} entries in envs`, JSON.stringify(envs));
         return envs;
-        // [ { name: 'FTS_PLUGIN', value: 'xapian' }, .. ]
+        // [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ]
         
       } else {
         debugLog(`envs in db seems empty:`, JSON.stringify(envs));
@@ -599,22 +644,23 @@ async function getServerEnvs(refresh) {
     }
   }
   
-  pulledEnv = await pullServerEnv();
-  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnv(${containerName})`, JSON.stringify(pulledEnv));
+  pulledEnv = await pullServerEnvs();
+  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, JSON.stringify(pulledEnv));
   
   if (pulledEnv && pulledEnv.length) {
-    saveServerEnvs(containerName, pulledEnv);
+    saveServerEnvs(pulledEnv, containerName);
     return pulledEnv;
     
   // unknown error
   } else {
-    errorLog(`pullServerEnv could not pull environment from ${containerName}`);
+    errorLog(`pullServerEnvs could not pull environment from ${containerName}`);
   }
 }
 
 
-async function saveServerEnvs(containerName, jsonArrayOfObjects) {
+async function saveServerEnvs(jsonArrayOfObjects, containerName) {
   try {
+    dbRun(sql.settings.delete.envs, containerName);
     dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return { success: true };
 
@@ -644,10 +690,62 @@ async function getServerInfos() {
 }
 
 
+async function getDomain(name) {
+  try {
+    
+    const domain = await dbGet(sql.settings.select.domain, name);
+    return domain;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+async function getDomains(name) {
+  if (name) return getDomain(name);
+  
+  try {
+    
+    const domains = await dbAll(sql.domains.select.domains);
+    debugLog(`domains: domains (${typeof domains})`);
+    
+    // we could read DB_Logins and it is valid
+    if (domains && domains.length) {
+      debugLog(`Found ${domains.length} entries in domains`);
+      return domains;
+      // [ { name: 'containerName', value: 'dms' }, .. ]
+      
+    } else {
+      debugLog(`domains in db seems empty:`, domains);
+      return [];
+    }
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
 
 module.exports = {
   getServerStatus,
   getServerInfos,
+  getServerEnv,
   getServerEnvs,
   saveServerEnvs,
   getSetting,

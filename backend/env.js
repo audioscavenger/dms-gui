@@ -24,6 +24,11 @@ DMS_SETUP_SCRIPT  = process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup';
 DMS_CONFIG_PATH = process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver';
 DKIM_SELECTOR_DEFAULT = 'mail';
 
+DKIM_KEYTYPES = ['rsa','ed25519'];
+DKIM_KEYSIZES = ['1024','2048'];
+DKIM_KEYTYPE_DEFAULT = 'rsa';
+DKIM_KEYSIZE_DEFAULT = 2048;
+
 DMS_OPTIONS   = [
   'DMS_RELEASE',
   'ENABLE_RSPAMD',
@@ -37,23 +42,21 @@ DMS_OPTIONS   = [
 isMutable = 1;
 isImmutable = 0;
 
-module.exports={
-  debug,
-  DMSGUI_VERSION,
-  DMSGUI_DESCRIPTION,
-  HOSTNAME,
-  NODE_ENV,
-  PORT_NODEJS,
-  TZ,
-  DMS_CONTAINER,
-  DMSGUI_CONFIG_PATH,
-  DB_Accounts,
-  DB_Aliases,
-  DB_Settings,
-  DB_Infos,
-  DB_Logins,
-  DATABASE,
-  isMutable,
-  isImmutable,
-  DMS_OPTIONS,
-}
+// all undeclared variable are exported as is
+// module.exports={
+  // debug,
+  // DMSGUI_VERSION,
+  // DMSGUI_DESCRIPTION,
+  // HOSTNAME,
+  // NODE_ENV,
+  // PORT_NODEJS,
+  // TZ,
+  // DMS_CONTAINER,
+  // DMSGUI_CONFIG_PATH,
+  // DB_Accounts,
+  // DB_Aliases,
+  // DB_Settings,
+  // DB_Infos,
+  // DB_Logins,
+  // DATABASE,
+// }

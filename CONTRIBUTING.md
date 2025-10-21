@@ -58,7 +58,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
 * [ ] - backend: mutate the String with data transform/validation functions as Class
 * [ ] - backend/domains: add dkim modules and exec calls
-* [ ] - backend/domains: add Domains page and domains.js
+* [ ] - backend/settings: pullServerEnvs should also look for quota
 
 * [ ] - frontend/Backups: add page
 * [ ] - frontend/Imports: add page
@@ -67,15 +67,23 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
-* [x] 1.1.2 - backend/db: table domains now includes dkim parameters
-* [x] 1.1.2 - backend/settings: now extract dkim parameters from fileName
+* [ ] - frontend/Domains: add FormDNS
+* [x] 1.1.2 - backend/db: dbRun dbAll and dbGet now take ...anonParams
+* [x] 1.1.2 - backend/frontend: implemented getServerEnv
+* [x] 1.1.2 - backend/settings: pullServerEnvs purge the table before reloading
+* [x] 1.1.2 - backend: detect FTS via dovecot command `doveconf mail_plugins`
+* [x] 1.1.2 - frontend: added getDomains
+* [x] 1.1.2 - backend: added getDomain and getDomains to API and backend
+* [x] 1.1.2 - backend/db: table domains now includes dkim parameters: keytype keysize
+* [x] 1.1.2 - backend/env: added defaults keytype keysize and defaunt path in table domains
+* [x] 1.1.2 - backend/settings: now extract dkim parameters from existing fileName
 * [x] 1.1.1 - Dockerfile: back to `npm ci` only
-* [x] 1.1.1 - renamed CONFIG_PATH as DMSGUI_CONFIG_PATH and added DMS_CONFIG_PATH
+* [x] 1.1.1 - backend/env: renamed CONFIG_PATH as DMSGUI_CONFIG_PATH and added DMS_CONFIG_PATH and added DKIM_SELECTOR_DEFAULT
 * [x] 1.1.1 - frontend/Accounts: handle accounts as array of named objects
 * [x] 1.1.1 - backend/accounts: refactored getAccounts into array of named objects that include the domain
 * [x] 1.1.1 - backend/accounts: append accounts table and save storage as stringified json
 * [x] 1.1.1 - backend/db: added tables accounts and domains + moved hashPassword and verifyPassword in there
-* [x] 1.1.1 - backend/pullServerEnv: pulls dkim values if ENABLE_RSPAMD=1 and REPLACE {domain,dkim} in domains table
+* [x] 1.1.1 - backend/pullServerEnvs: pulls dkim values if ENABLE_RSPAMD=1 and REPLACE {domain,dkim} in domains table
 * [x] 1.1.1 - move backend.js and frontend.js to respective folders
 * [x] v1.1.0 - release
 * [x] 1.0.21 - frontend/Login: shows welcome message with default admin user when db is empty
@@ -85,8 +93,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.21 - backend/db: init logins with default admin user or no one can login lol
 * [x] 1.0.21 - frontend/Login: fixed login box messages
 * [x] 1.1.0 - release cancelled
-* [x] 1.0.20 - backend/settings: numbers from pullServerEnv are saved as float in the db: CAST(@value AS TEXT) does not work, obj2ArrayOfObj now can stringify values
-* [x] 1.0.20 - backend/settings: pullServerEnv and saveServerEnvs take containerName as parameter
+* [x] 1.0.20 - backend/settings: numbers from pullServerEnvs are saved as float in the db: CAST(@value AS TEXT) does not work, obj2ArrayOfObj now can stringify values
+* [x] 1.0.20 - backend/settings: pullServerEnvs and saveServerEnvs take containerName as parameter
 * [x] 1.0.20 - backend: fix in logger when appending end color
 * [x] 1.0.20 - Dashboard does not show container usage anymore: resources{} names have changed somehow; defered cpu/mem conversion to Dashboard
 * [x] 1.0.19 - loginPage and loginUser implemented!
@@ -160,7 +168,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.7.8 - frontend/Accounts: added DNS button
 * [x] 1.0.7.8 - frontend/Accounts: new account and accounts list in Accordion
 * [x] 1.0.7.8 - frontend/components: added Accordion
-* [x] 1.0.7.7 - frontend/Accounts: reindex buttons only show if status.env.FTS_PLUGIN != "none"
+* [x] 1.0.7.7 - frontend/Accounts: reindex buttons only show if status.env.DOVECOT_FTS_PLUGIN != "none"
 * [x] 1.0.7.7 - frontend/Accounts: add reindex buttons with 1s duration animation
 * [x] 1.0.7.7 - frontend: added reindexAccount and /reindex call
 * [x] 1.0.7.7 - backend: added reindexAccount and /api/reindex

@@ -33,6 +33,11 @@ settings: {
     env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, ?, 0)`,
   },
   
+  delete: {
+    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
+    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
+  },
+  
   init:   `BEGIN TRANSACTION;
           CREATE  TABLE settings (
           name    TEXT NOT NULL UNIQUE PRIMARY KEY,
@@ -73,8 +78,8 @@ logins: {
   init:  `BEGIN TRANSACTION;
           CREATE TABLE logins (
           username  TEXT NOT NULL UNIQUE PRIMARY KEY,
-          salt      TEXT NOT NULL,
-          hash      TEXT NOT NULL,
+          salt      TEXT DEFAULT '',
+          hash      TEXT DEFAULT '',
           email     TEXT DEFAULT ''
           );
           INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18');
@@ -85,8 +90,8 @@ logins: {
     { DB_VERSION: '1.0.14',
       patches: [
         `ALTER TABLE logins DROP COLUMN password;`,
-        `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
-        `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+        `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
+        `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
       ],
     },
@@ -134,26 +139,43 @@ accounts: {
 domains: {
       
   select: {
-    domains:  `SELECT domain FROM domains`,
+    domains:  `SELECT * FROM domains`,
+    domain:   `SELECT * FROM domains WHERE domain = ?`,
     dkims:    `SELECT DISTINCT dkim FROM domains`,
     dkim:     `SELECT dkim FROM domains WHERE domain = ?`,
   },
   
   insert: {
-    domain:   `REPLACE INTO domains (domain, dkim, path) VALUES (@domain, @dkim, @path)`,
+    domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path) VALUES (@domain, @dkim, @keytype, @keysize, @path)`,
   },
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE domains (
           domain    TEXT NOT NULL UNIQUE PRIMARY KEY,
           dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
-          path      TEXT DEFAULT ''
+          keytype   TEXT DEFAULT 'rsa',
+          keysize   TEXT DEFAULT '2048',
+          path      TEXT DEFAULT '${DMS_CONFIG_PATH}/rspamd/dkim/${DKIM_KEYTYPE_DEFAULT}-${DKIM_KEYSIZE_DEFAULT}-${DKIM_SELECTOR_DEFAULT}-$domain.private.txt'
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
+  
+  patch: [
+    { DB_VERSION: '1.1.2',
+      patches: [
+        `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
+        `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${isImmutable})`,
+      ],
+    },
+  ],
 },
 
 };
+
+// rsa-2048-dkim-$domain.private.txt
+// keytypes = ['rsa','ed25519']
+// keysizes = ['1024','2048']
 
 sqlMatch = {
   add: {
@@ -224,7 +246,9 @@ function dbOpen() {
 }
 
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
-function dbRun(sql, params=undefined, anonParam=undefined) {
+// dbRun takes params as Array = multiple inserts or String/Object = single insert
+// dbRun takes multiple anonymous parameters anonParams for WHERE clause value(s) when needed: can be multiple strings or an array, anonParams becomes an array anyways
+function dbRun(sql, params=[], ...anonParams) {
 
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
@@ -239,11 +263,11 @@ function dbRun(sql, params=undefined, anonParam=undefined) {
       debugLog(`DB.exec success`);
 
     // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
-    } else if (Array.isArray(params)) {
-      if (anonParam) {
-        debugLog(`DB.transaction(${sql}).run(${anonParam}, ${JSON.stringify(params)})`);
+    } else if (Array.isArray(params) && params.length > 1) {
+      if (anonParams.length) {
+        debugLog(`DB.transaction(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
         const insertMany = DB.transaction((params) => {
-          for (const param of params) DB.prepare(sql).run(anonParam, param);
+          for (const param of params) DB.prepare(sql).run(anonParams, param);
         });
         insertMany(params);
         debugLog(`DB.transaction success`);
@@ -258,9 +282,9 @@ function dbRun(sql, params=undefined, anonParam=undefined) {
       
     // single statement https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
-      if (anonParam) {
-        debugLog(`DB.prepare(${sql}).run(${anonParam}, ${JSON.stringify(params)})`);
-        DB.prepare(sql).run(anonParam, params);
+      if (anonParams.length) {
+        debugLog(`DB.prepare(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
+        DB.prepare(sql).run(anonParams, params);
         debugLog(`DB.prepare success`);
       } else {
         debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
@@ -292,15 +316,15 @@ function dbRun(sql, params=undefined, anonParam=undefined) {
   }
 }
 
-function dbGet(sql, params=[]) {
+function dbGet(sql, ...anonParams) {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
   try {
-    debugLog(`DB.prepare(${sql}).get(${JSON.stringify(params)})`);
-    const result = DB.prepare(sql).get(params);
+    debugLog(`DB.prepare(${sql}).get(${JSON.stringify(anonParams)})`);
+    const result = DB.prepare(sql).get(anonParams);
     debugLog(`success:`, JSON.stringify(result));
     return (result) ? result : {};
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } orundefined
@@ -312,15 +336,15 @@ function dbGet(sql, params=[]) {
   }
 }
 
-function dbAll(sql, params=[]) {
+function dbAll(sql, ...anonParams) {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
   try {
-    debugLog(`DB.prepare(${sql}).all(${JSON.stringify(params)})`);
-    const result = DB.prepare(sql).all(params);
+    debugLog(`DB.prepare(${sql}).all(${JSON.stringify(anonParams)})`);
+    const result = DB.prepare(sql).all(anonParams);
     debugLog(`success:`, JSON.stringify(result));
     return (result) ? result : [];
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
@@ -353,6 +377,7 @@ function dbInit() {
       }
     }
   }
+  DB.close()
 
   try {
     dbUpdate();
@@ -371,7 +396,7 @@ function dbUpdate() {
   let db_version;
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      db_version = dbGet(sql.settings.select.env, ['dms-gui', `DB_VERSION_${table}`]);
+      db_version = dbGet(sql.settings.select.env, 'dms-gui', `DB_VERSION_${table}`);
       db_version = (db_version) ? db_version.value : undefined;
       debugLog(`DB_VERSION_${table}=`, db_version);
       
@@ -412,7 +437,6 @@ function dbUpdate() {
               try {
                 dbRun(patchLine);
                 successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
-                db_version = patch.DB_VERSION;
                 
               } catch (err) {
                 match = {
@@ -428,13 +452,11 @@ function dbUpdate() {
                 
                 // ADD COLUMN already exists:
                 if (match.add.patch && match.add.err && match.add.patch[1].toUpperCase() == match.add.err[1].toUpperCase()) {
-                  warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
-                  db_version = patch.DB_VERSION;
+                  infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                 
                 // DROP COLUMN does not exist:
                 } else if (match.drop.patch && match.drop.err && match.drop.patch[1].toUpperCase() == match.drop.err[1].toUpperCase()) {
-                  warnLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
-                  db_version = patch.DB_VERSION;
+                  infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                   
                 } else {
                   errorLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: ${err.code}: ${err.message}`);
@@ -442,12 +464,14 @@ function dbUpdate() {
                 }
               }
             }
+            db_version = patch.DB_VERSION;
           }
         }
       }
     }
 
   }
+  DB.close()
   dbOpen();
   debugLog(`end`);
 }

@@ -36,9 +36,19 @@ export async function getServerStatus() {
 // Server infos API
 // export const getServerStatus = async () => {
 export async function getServerInfos(refresh) {
-  refresh = (refresh === undefined) ? true : refresh;
+  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
   try {
-    const response = await api.get(`/infos?refresh=${refresh.toString()}`);
+    const response = await api.get(`/infos${query}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function getServerEnv(name) {
+  try {
+    const response = await api.get(`/env?name=${name}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -47,9 +57,9 @@ export async function getServerInfos(refresh) {
 };
 
 export async function getServerEnvs(refresh) {
-  refresh = (refresh === undefined) ? true : refresh;
+  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
   try {
-    const response = await api.get(`/envs?refresh=${refresh.toString()}`);
+    const response = await api.get(`/envs${query}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -59,9 +69,9 @@ export async function getServerEnvs(refresh) {
 
 // export const getAccounts = async (refresh) => {
 export async function getAccounts(refresh) {
-  refresh = (refresh === undefined) ? false : refresh;
+  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
   try {
-    const response = await api.get(`/accounts?refresh=${refresh.toString()}`);
+    const response = await api.get(`/accounts${query}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -173,9 +183,9 @@ export async function updateAccountPassword(email, password) {
 
 // export const getAliases = async (refresh) => {
 export async function getAliases(refresh) {
-  refresh = (refresh === undefined) ? false : refresh;
+  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
   try {
-    const response = await api.get(`/aliases?refresh=${refresh.toString()}`);
+    const response = await api.get(`/aliases${query}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -204,5 +214,16 @@ export async function deleteAlias(source, destination) {
     throw error;
   }
 };
+
+export async function getDomains(name) {
+  try {
+    const response = await api.post(`/getDomains?name=${name}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
 
 export default api;

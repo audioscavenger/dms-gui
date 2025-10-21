@@ -13,7 +13,7 @@ const {
 import {
   getAccounts,
   getSettings,
-  getServerEnvs,
+  getServerEnv,
   addAccount,
   deleteAccount,
   reindexAccount,
@@ -42,8 +42,8 @@ const Accounts = () => {
   const [errorMessage, setErrorMessage] = useState(null);
 
   const [accounts, setAccounts] = useState([]);
-  const [settings, setSettings] = useState({});
-  const [FTS_PLUGIN, setFTS_PLUGIN] = useState("none");
+  const [dnsProvider, setDnsProvider] = useState({});
+  const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   // Common states -------------------------------------------------
   const [successMessage, setSuccessMessage] = useState(null);
@@ -97,19 +97,19 @@ useEffect(() => {
     
     try {
       setLoading(true);
-      const [accountsData, settingsData, envsData] = await Promise.all([
+      const [accountsData, dnsProviderData, DOVECOT_FTSdata] = await Promise.all([
         getAccounts(refresh),
-        getSettings(),
-        getServerEnvs(refresh),
+        getSettings('dnsProvider'),
+        getServerEnv('DOVECOT_FTS'),
       ]);
       setAccounts(accountsData);
-      setSettings(settingsData);
-      setFTS_PLUGIN(getValueFromArrayOfObj(envsData, 'FTS_PLUGIN'));
+      setDnsProvider(dnsProviderData);
+      setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);
       
       debugLog('accountsData', accountsData);
-      debugLog('settingsData', settingsData);
-      debugLog('envsData', envsData);
+      debugLog('dnsProvider', dnsProvider);
+      debugLog('DOVECOT_FTS', DOVECOT_FTS);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAllAccounts'), err);
@@ -376,7 +376,7 @@ useEffect(() => {
       render: (account) => (
         <>
           {account.domain}
-          {(getValueFromArrayOfObj(settings, 'dnsProvider') != "") && (
+          {(dnsProvider) && (
           <Button
             variant="info"
             size="sm"
@@ -434,7 +434,7 @@ useEffect(() => {
             onClick={() => handleDelete(account.email)}
             className="me-2"
           />
-          {(FTS_PLUGIN && FTS_PLUGIN != "none") && (
+          {(DOVECOT_FTS) && (
           <Button
             variant="info"
             size="sm"

@@ -16,9 +16,11 @@ const {
 const {
   getServerStatus,
   getServerInfos,
+  getServerEnv,
   getServerEnvs,
   getSettings,
   saveSettings,
+  getDomains,
 } = require('./settings');
 const {
   getAccounts,
@@ -135,6 +137,38 @@ app.get('/api/infos', async (req, res) => {
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for retrieving settings
+/**
+ * @swagger
+ * /api/env:
+ *   get:
+ *     summary: Get DMS env value
+ *     description: Retrieve a single env value
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: pull env value from the db
+ *     responses:
+ *       200:
+ *         description: env value when found
+ *       500:
+ *         description: Unable to retrieve env value
+ */
+app.get('/api/env', async (req, res) => {
+  try {
+    const name = ('name' in req.query) ? req.query.name : '';
+    const value = await getServerEnv(name);
+    res.json(value);
+  } catch (error) {
+    errorLog(`index GET /api/env: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve value' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -516,7 +550,7 @@ app.delete('/api/aliases/:source/:destination', async (req, res) => {
  *         default: ''
  *         schema:
  *           type: string
- *         description: pull data from DMS instead of local database
+ *         description: pull settings from the db
  *     responses:
  *       200:
  *         description: all settings even if empty
@@ -691,6 +725,39 @@ app.post('/api/loginUser', async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     errorLog(`index POST /api/login: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for retrieving domains
+/**
+ * @swagger
+ * /api/domains:
+ *   get:
+ *     summary: Get domains
+ *     description: Retrieve all domains
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         default: ''
+ *         schema:
+ *           type: string
+ *         description: pull domains from the db
+ *     responses:
+ *       200:
+ *         description: all domains even if empty
+ *       500:
+ *         description: Unable to retrieve domains
+ */
+app.get('/api/domains', async (req, res) => {
+  try {
+    const name = ('name' in req.query) ? req.query.name : '';
+    const domains = await getDomains(name);
+    res.json(settings);
+  } catch (error) {
+    errorLog(`index GET /api/settings: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
 });

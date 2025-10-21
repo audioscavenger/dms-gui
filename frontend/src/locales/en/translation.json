@@ -147,6 +147,7 @@
       "fetchLogins": "Error fetching admin credentials",
       "fetchServerInfos": "Error fetching DMS container info",
       "fetchServerEnvs": "Error fetching DMS container environment",
+      "fetchDomains": "Error fetching domains",
       "saveSettings": "Error saving settings",
       "saveLogins": "Error saving admin credentials",
       "loginUser": "Error invalid password",
