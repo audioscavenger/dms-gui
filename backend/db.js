@@ -51,7 +51,7 @@ settings: {
   patch: [
     { DB_VERSION: '1.0.17',
       patches: [
-        `ALTER TABLE settings ADD scope TEXT DEFAULT NULL`,
+        `ALTER TABLE settings ADD scope TEXT DEFAULT '${DMS_CONTAINER}'`,
         `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
         `REPLACE INTO settings (name, value, scope, isMutable)  VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
       ],
@@ -110,13 +110,18 @@ logins: {
 accounts: {
       
   select: {
-    accounts: `SELECT email, domain, storage FROM accounts`,
-    account:  `SELECT email FROM accounts WHERE email = ?`,
-    byDomain: `SELECT email FROM accounts WHERE domain = ?`,
+    accounts: `SELECT email, domain, storage FROM accounts WHERE 1=1 AND scope = ?`,
+    account:  `SELECT email FROM accounts WHERE 1=1 AND scope = ? AND email = ?`,
+    byDomain: `SELECT email FROM accounts WHERE 1=1 AND scope = ? AND domain = ?`,
   },
   
   insert: {
-    account:  `REPLACE INTO accounts (email, domain, storage) VALUES (@email, @domain, @storage)`,
+    account:  `REPLACE INTO accounts (email, domain, salt, hash, scope) VALUES (@email, @domain, @salt, @hash, ?)`,
+  },
+  
+  update: {
+    account:  `REPLACE INTO accounts (email, domain, scope) VALUES (@email, @domain, ?)`,
+    password: `REPLACE INTO accounts (email, salt, hash, scope) VALUES (@email, @salt, @hash, ?)`,
   },
   
   delete: {
@@ -127,26 +132,36 @@ accounts: {
   init:  `BEGIN TRANSACTION;
           CREATE TABLE accounts (
           email     TEXT NOT NULL UNIQUE PRIMARY KEY,
+          domain    TEXT DEFAULT '',
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
-          domain    TEXT DEFAULT '',
-          storage   TEXT DEFAULT '{}'
+          storage   TEXT DEFAULT '{}',
+          scope     TEXT NOT NULL
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
+  
+  patch: [
+    { DB_VERSION: '1.1.3',
+      patches: [
+        `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${DMS_CONTAINER}'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${isImmutable})`,
+      ],
+    },
+  ],
 },
 
 domains: {
       
   select: {
-    domains:  `SELECT * FROM domains`,
-    domain:   `SELECT * FROM domains WHERE domain = ?`,
-    dkims:    `SELECT DISTINCT dkim FROM domains`,
-    dkim:     `SELECT dkim FROM domains WHERE domain = ?`,
+    domains:  `SELECT * FROM domains WHERE 1=1 AND scope = ?`,
+    domain:   `SELECT * FROM domains WHERE 1=1 AND scope = ? AND domain = ?`,
+    dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND scope = ?`,
+    dkim:     `SELECT dkim FROM domains WHERE 1=1 AND scope = ? AND domain = ?`,
   },
   
   insert: {
-    domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path) VALUES (@domain, @dkim, @keytype, @keysize, @path)`,
+    domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path, scope) VALUES (@domain, @dkim, @keytype, @keysize, @path, ?)`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -155,9 +170,10 @@ domains: {
           dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
           keytype   TEXT DEFAULT 'rsa',
           keysize   TEXT DEFAULT '2048',
-          path      TEXT DEFAULT '${DMS_CONFIG_PATH}/rspamd/dkim/${DKIM_KEYTYPE_DEFAULT}-${DKIM_KEYSIZE_DEFAULT}-${DKIM_SELECTOR_DEFAULT}-$domain.private.txt'
+          path      TEXT DEFAULT '${DMS_CONFIG_PATH}/rspamd/dkim/${DKIM_KEYTYPE_DEFAULT}-${DKIM_KEYSIZE_DEFAULT}-${DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
+          scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO domains (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
   patch: [
@@ -166,6 +182,12 @@ domains: {
         `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
         `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.1.3',
+      patches: [
+        `ALTER TABLE domains ADD scope   TEXT DEFAULT '${DMS_CONTAINER}'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${isImmutable})`,
       ],
     },
   ],

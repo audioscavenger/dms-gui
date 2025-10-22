@@ -48,7 +48,7 @@ function FormSettings() {
   const fetchAllSettings = async () => {
     setLoading(true);
 
-    const settingsData  = await fetchSettings();
+    const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
     console.debug('fetchAllSettings: settingsData',settingsData)
     // setSettings({
       // ...settings,

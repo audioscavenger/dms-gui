@@ -13,6 +13,7 @@ const {
   execCommand,
   readJson,
   writeJson,
+  getContainer,
 } = require('./backend.js');
 const {
   sql,
@@ -26,9 +27,10 @@ const fsp = fs.promises;
 const crypto = require('node:crypto');
 
 
-async function getAliases(refresh) {
+async function getAliases(refresh, containerName) { // TODO: move aliases from json to db
   refresh = (refresh === undefined) ? false : refresh;
-  debugLog(`start (refresh=${refresh})`);
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`(refresh=${refresh} for ${containerName})`);
   
   var DBdict = {};
   var aliases = [];
@@ -144,11 +146,14 @@ async function getAliasesJson(refresh) {
 
 
 // Function to retrieve aliases from DMS
-async function getAliasesFromDMS() {
+async function getAliasesFromDMS(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   const command = 'alias list';
   try {
     debugLog(`execSetup(${command})`);
-    const stdout = await execSetup(command);
+    const stdout = await execSetup(command, containerName);
     const aliases = [];
 
     // Parse each line in the format "* source destination"
@@ -190,7 +195,7 @@ async function getAliasesFromDMS() {
   }
 }
 
-// Function to retrieve aliases
+// deprecated
 async function getAliasesOLD() {
   try {
     debugLog(`Getting aliases list`);
@@ -236,12 +241,16 @@ async function getAliasesOLD() {
 }
 
 // Function to add an alias
-async function addAlias(source, destination) {
+async function addAlias(source, destination, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   try {
     debugLog(`Adding new alias: ${source} -> ${destination}`);
-    await execSetup(`alias add ${source} ${destination}`);
+    await execSetup(`alias add ${source} ${destination}`, containerName);
     debugLog(`Alias created: ${source} -> ${destination}`);
     return { success: true, source, destination };
+    
   } catch (error) {
     let backendError = 'Unable to add alias';
     let ErrorMsg = await formatDMSError(backendError, error);
@@ -256,12 +265,16 @@ async function addAlias(source, destination) {
 }
 
 // Function to delete an alias
-async function deleteAlias(source, destination) {
+async function deleteAlias(source, destination, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   try {
     debugLog(`Deleting alias: ${source} => ${destination}`);
-    await execSetup(`alias del ${source} ${destination}`);
+    await execSetup(`alias del ${source} ${destination}`, containerName);
     debugLog(`Alias deleted: ${source} => ${destination}`);
     return { success: true, source, destination };
+    
   } catch (error) {
     let backendError = 'Unable to delete alias';
     let ErrorMsg = await formatDMSError(backendError, error);

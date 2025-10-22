@@ -19,6 +19,7 @@ const {
   writeJson,
   regexColors,
   regexPrintOnly,
+  getContainer,
 } = require('./backend.js');
 const {
   sql,
@@ -50,7 +51,7 @@ async function getSetting(name) {
 }
 
 
-async function getSettings(name='') {
+async function getSettings(name) {
   if (name) return getSetting(name);
   
   try {
@@ -61,6 +62,7 @@ async function getSettings(name='') {
     // we could read DB_Logins and it is valid
     if (settings && settings.length) {
       debugLog(`Found ${settings.length} entries in settings`);
+      
       return settings;
       // [ { name: 'containerName', value: 'dms' }, .. ]
       
@@ -168,7 +170,10 @@ async function saveSettingsJson(containerName, setupPath=DMS_SETUP_SCRIPT, dnsPr
 
 
 // Function to get server status
-async function getServerStatus() {
+async function getServerStatus(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
   var DBdict = {};
   var status = {
     status: {
@@ -186,11 +191,10 @@ async function getServerStatus() {
   };
 
   try {
-    debugLog(`Pulling server status`);
     
     // Get container info
-    const container = docker.getContainer(DMS_CONTAINER);
-    const containerInfo = await container.inspect();
+    let container = getContainer(containerName);
+    let containerInfo = await container.inspect();
 
     // Check if container exist
     status.status.status = (containerInfo.Id) ? "stopped" : "missing";
@@ -454,8 +458,8 @@ async function readDkimFile(stdout) {
 }
 
 
-// async function pullFTS(envs, container, containerInfo) {
-async function pullFTS(container, containerInfo) {
+// async function pullFTS(envs, containerName, containerInfo) {
+async function pullFTS(containerName, containerInfo) {
   let ftsMount = '';
   let envs = {};
 
@@ -471,7 +475,7 @@ async function pullFTS(container, containerInfo) {
 
     // if we found fts override plugin, let's load it
     if (ftsMount) {
-      const ftsMount_out = await execCommand(`cat ${ftsMount}`, container);
+      const ftsMount_out = await execCommand(`cat ${ftsMount}`, containerName);
       debugLog(`dovecot file content:`,ftsMount_out);
       const ftsConfig = await readDovecotConfFile(ftsMount_out);
       debugLog(`dovecot json:`, ftsConfig);
@@ -492,12 +496,15 @@ async function pullFTS(container, containerInfo) {
 }
 
 
-// async function pullDkimRspamd(envs, container) {
-async function pullDkimRspamd(container) {
+// async function pullDkimRspamd(envs, containerName) {
+async function pullDkimRspamd(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
   try {
-    const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, container);
+    const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
     debugLog(`dkim file content:`, dkim_out);
     // TODO: decide if we want to propagate execInContainer errors, since dkim_out can very well be stderr="cat: whatever: No such file or directory"
     
@@ -516,7 +523,7 @@ async function pullDkimRspamd(container) {
           keytype = split[0];
           keysize = split[1];
         }
-        (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)});
+        (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
       }
     }
 
@@ -528,21 +535,22 @@ async function pullDkimRspamd(container) {
 
 
 // Function to pull server environment
-async function pullServerEnvs(container=null) {
+async function pullServerEnvs(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
 
   var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
   try {
-    debugLog(`Pulling server env`);
     
     // Get container instance
-    container = (container) ? container : docker.getContainer(DMS_CONTAINER);
-    const containerInfo = await container.inspect();
+    let container = getContainer(containerName);
+    let containerInfo = await container.inspect();
 
     if (containerInfo.Id) {
       debugLog(`containerInfo found, Id=`, containerInfo.Id);
       
       // get and conver DMS environment to dict ------------------------------------------ envs
-      dictEnvDMS = arrayOfStringToDict(containerInfo.Config.Env, '=');
+      dictEnvDMS = arrayOfStringToDict(containerInfo.Config?.Env, '=');
       // debugLog(`dictEnvDMS:`,dictEnvDMS);
       
       // we keep only some options not all
@@ -552,7 +560,7 @@ async function pullServerEnvs(container=null) {
       envs = { ...envs, ...dictEnvDMSredux };
 
       // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
-      const mail_plugins = await execCommand(`doveconf mail_plugins`, container);   // mail_plugins =  quota fts fts_xapian zlib
+      const mail_plugins = await execCommand(`doveconf mail_plugins`, containerName);   // mail_plugins =  quota fts fts_xapian zlib
       // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
       // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
       for (const PLUGIN of mail_plugins.split(/[=\s]+/)) {
@@ -562,12 +570,12 @@ async function pullServerEnvs(container=null) {
       // TODO: look for quotas -------------------------------------------------- quota
       
       // look for FTS values -------------------------------------------------- fts
-      // if (envs?.DOVECOT_FTS) envs = await pullFTS(envs, container, containerInfo);
-      if (envs?.DOVECOT_FTS) envs = await { ...envs, ...pullFTS(container, containerInfo) };
+      // if (envs?.DOVECOT_FTS) envs = await pullFTS(envs, containerName, containerInfo);
+      if (envs?.DOVECOT_FTS) envs = await { ...envs, ...pullFTS(containerName, containerInfo) };
 
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      // if (envs?.ENABLE_RSPAMD) envs = await pullDkimRspamd(envs, container);
-      if (envs?.ENABLE_RSPAMD) envs = await { ...envs, ...pullDkimRspamd(container) };
+      // if (envs?.ENABLE_RSPAMD) envs = await pullDkimRspamd(envs, containerName);
+      if (envs?.ENABLE_RSPAMD) envs = await { ...envs, ...pullDkimRspamd(containerName) };
 
     }
     
@@ -583,12 +591,11 @@ async function pullServerEnvs(container=null) {
 
 
 async function getServerEnv(name, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`name=${name} for ${containerName}`);
+  
   try {
-    containerName = (containerName) ? containerName : await getSetting('containerName');
-    if (!containerName) {
-      warnLog('settings.containerNameRequired');
-      return '';
-    }
+
     const env = await dbGet(sql.settings.select.env, name, containerName);
     return env?.value;
     
@@ -605,15 +612,10 @@ async function getServerEnv(name, containerName) {
 }
 
 
-async function getServerEnvs(refresh) {
+async function getServerEnvs(refresh, containerName) {
   refresh = (refresh === undefined) ? true : refresh;
-  debugLog(`refresh=${refresh} (${typeof refresh})`);
-  
-  const containerName = await getSetting('containerName');
-  if (!containerName) {
-    warnLog('settings.containerNameRequired');
-    return [];
-  }
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`refresh=${refresh} for ${containerName}`);
   
   if (!refresh) {
     try {
@@ -623,7 +625,7 @@ async function getServerEnvs(refresh) {
       
       // we could read DB_Logins and it is valid
       if (envs && envs.length) {
-        debugLog(`Found ${envs.length} entries in envs`, JSON.stringify(envs));
+        debugLog(`Found ${envs.length} entries in envs`, envs);
         return envs;
         // [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ]
         
@@ -644,8 +646,8 @@ async function getServerEnvs(refresh) {
     }
   }
   
-  pulledEnv = await pullServerEnvs();
-  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, JSON.stringify(pulledEnv));
+  pulledEnv = await pullServerEnvs(containerName);
+  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
     saveServerEnvs(pulledEnv, containerName);

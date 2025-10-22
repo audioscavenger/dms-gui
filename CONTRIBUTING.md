@@ -68,6 +68,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 ### history:
 
 * [ ] - frontend/Domains: add FormDNS
+* [x] 1.1.3 - backend: docker.getContainer is also in global.containers{}
+* [x] 1.1.3 - backend: containerName calls global.DMS_CONTAINER
+* [x] 1.1.3 - backend/db: added scope=dmsContainer in domains and accounts
 * [x] 1.1.2 - backend/db: dbRun dbAll and dbGet now take ...anonParams
 * [x] 1.1.2 - backend/frontend: implemented getServerEnv
 * [x] 1.1.2 - backend/settings: pullServerEnvs purge the table before reloading

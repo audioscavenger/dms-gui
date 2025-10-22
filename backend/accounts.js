@@ -14,6 +14,7 @@ const {
   execCommand,
   readJson,
   writeJson,
+  getContainer,
 } = require('./backend.js');
 const {
   sql,
@@ -28,10 +29,13 @@ const fs = require("fs");
 const fsp = fs.promises;
 
 
-async function getAccount(name) {
+async function getAccount(name, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
   try {
     
-    const account = await dbGet(sql.accounts.select.account, name);
+    const account = await dbGet(sql.accounts.select.account, containerName, name);
     return account?.value;
     
   } catch (error) {
@@ -47,16 +51,16 @@ async function getAccount(name) {
 }
 
 
-async function getAccounts(refresh) {
+async function getAccounts(refresh, containerName) {
   refresh = (refresh === undefined) ? false : refresh;
-  debugLog(`(refresh=${refresh})`);
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`(refresh=${refresh} for ${containerName})`);
   
   var accounts = [];
   try {
     
       if (!refresh) {
-      accounts = await dbAll(sql.accounts.select.accounts);
-      debugLog(`settings: settings (${typeof accounts})`);
+      accounts = await dbAll(sql.accounts.select.accounts, containerName);
       
       // we could read DB_Logins and it is valid
       if (accounts && accounts.length) {
@@ -75,16 +79,16 @@ async function getAccounts(refresh) {
     }
     
     // refresh
-    accounts = await pullAccountsFromDMS();
+    accounts = await pullAccountsFromDMS(containerName);
     // [{ email: 'a@b.com', storage: {} }, .. ]
-    debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS()`);
+    debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS(${containerName})`);
 
     // now add the domain item
     accounts = accounts.map(account => { return { ...account, domain: account.email.split('@')[1] }; });
 
     // now save accounts in db
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
-    dbRun(sql.accounts.insert.account, accountsDb);
+    dbRun(sql.accounts.update.account, accountsDb, containerName);
     
     return accounts;
     
@@ -128,8 +132,8 @@ async function getAccountsJson(refresh) {
 
     // force refresh if no db
     if (!DBdict.accounts) {
-        accounts = await pullAccountsFromDMS();
-        debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS()`);
+        accounts = await pullAccountsFromDMS(containerName);
+        debugLog(`got ${accounts.length} accounts from pullAccountsFromDMS(${containerName})`);
       }
     
     // since we had to call pullAccountsFromDMS, we save DB_Accounts
@@ -167,11 +171,11 @@ async function getAccountsJson(refresh) {
 
 
 // Function to retrieve email accounts from DMS
-async function pullAccountsFromDMS() {
+async function pullAccountsFromDMS(containerName) {
   const command = 'email list';
   try {
     debugLog(`execSetup(${command})`);
-    const stdout = await execSetup(command);
+    const stdout = await execSetup(command, containerName);
     const accounts = [];
 
     // Parse multiline output with regex to extract email and size information
@@ -246,14 +250,17 @@ async function pullAccountsFromDMS() {
 
 
 // Function to add a new email account
-async function addAccount(email, password) {
+async function addAccount(email, password, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`(refresh=${refresh} for ${containerName})`);
+
   try {
     debugLog(`Adding new email account: ${email}`);
     await execSetup(`email add ${email} ${password}`);
     debugLog(`Account created: ${email}`);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash, domain:email.split('@')[1] });
+    dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash, domain:email.split('@')[1] }, containerName);
     return { success: true, email };
     
   } catch (error) {
@@ -270,14 +277,17 @@ async function addAccount(email, password) {
 }
 
 // Function to update an email account password
-async function updateAccountPassword(email, password) {
+async function updateAccountPassword(email, password, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   try {
     debugLog(`Updating password for account: ${email}`);
     await execSetup(`email update ${email} ${password}`);
     debugLog(`Password updated for account: ${email}`);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash });
+    dbRun(sql.accounts.update.password, { email:email, salt:salt, hash:hash }, containerName);
     return { success: true, email };
     
   } catch (error) {
@@ -294,7 +304,10 @@ async function updateAccountPassword(email, password) {
 }
 
 // Function to delete an email account
-async function deleteAccount(email) {
+async function deleteAccount(email, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   try {
     debugLog(`Deleting email account: ${email}`);
     await execSetup(`email del ${email}`);
@@ -317,7 +330,10 @@ async function deleteAccount(email) {
 }
 
 // Function to reindex an email account
-async function reindexAccount(email) {
+async function reindexAccount(email, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName})`);
+
   try {
     debugLog(`Reindexing email account: ${email}`);
     await execSetup(`doveadm index -u ${email} -q \\*`);

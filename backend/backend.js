@@ -80,24 +80,24 @@ function jsonFixTrailingCommas(jsonString, returnJson=false) {
 }
 
 
-async function execCommand(command, container=null) {
-  // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
-  
-  debugLog(`Executing system command: ${command}`);
-  return execInContainer(command, container);
-}
-
-
 /**
  * Executes a setup.sh command in the docker-mailserver container
  * @param {string} setupCommand Command to pass to setup.sh
  * @return {Promise<string>} stdout from the command
  */
-async function execSetup(setupCommand, container=null) {
+async function execSetup(setupCommand, containerName) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing setup command: ${setupCommand}`);
-  return execCommand(`${DMS_SETUP_SCRIPT} ${setupCommand}`, container);
+  return execCommand(`${DMS_SETUP_SCRIPT} ${setupCommand}`, containerName);
+}
+
+
+async function execCommand(command, containerName) {
+  // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
+  
+  debugLog(`Executing system command: ${command}`);
+  return execInContainer(command, containerName);
 }
 
 
@@ -106,12 +106,12 @@ async function execSetup(setupCommand, container=null) {
  * @param {string} command Command to execute
  * @return {Promise<string>} stdout from the command
  */
-async function execInContainer(command, container=null) {
+async function execInContainer(command, containerName) {
   try {
-    debugLog(`Executing command in container ${DMS_CONTAINER}: ${command}`);
+    debugLog(`Executing command in container ${containerName}: ${command}`);
 
     // Get container instance
-    container = (container) ? container : docker.getContainer(DMS_CONTAINER);
+    let container = getContainer(containerName);
 
     // Create exec instance
     const exec = await container.exec({
@@ -239,6 +239,12 @@ async function formatDMSError(errorMsg, error) {
   return errorMsg;
 }
 
+// foolproof future where we can deal with multiple containers
+function getContainer(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  if (!containers[containerName]) global.containers[containerName] = docker.getContainer(containerName);
+  return containers[containerName];
+}
 
 module.exports = {
   funcName,
@@ -267,4 +273,5 @@ module.exports = {
   writeJson,
   regexColors,
   regexPrintOnly,
+  getContainer,
 };

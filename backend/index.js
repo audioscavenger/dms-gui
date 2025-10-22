@@ -767,4 +767,6 @@ app.listen(PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
   await dbInit();
+  // currently we only set that up as default from here, and from saveSettings
+  global.DMS_CONTAINER = await getSettings('containerName');
 });
