@@ -171,7 +171,7 @@ function FormSettings() {
             variant="info"
             size="sm"
             icon="recycle"
-            title={t('common.refresh')}
+            title="common.refresh"
             className="me-2"
             onClick={() => fetchAllSettings()}
           />

@@ -10,7 +10,7 @@ const {
 } = require('../../frontend.js');
 import {
   getLogins,
-  saveLogins,
+  saveLogin,
 } from '../services/api';
 
 import { 
@@ -146,7 +146,7 @@ const FormLogins = () => {
     }
 
     try {
-      await saveLogins(
+      await saveLogin(
         login.username,
         login.password,
         login.email,
@@ -158,8 +158,8 @@ const FormLogins = () => {
       
     } catch (err) {
       setSubmissionStatus('error');
-      errorLog(t('api.errors.saveLogins'), err);
-      setErrorMessage('api.errors.saveLogins');
+      errorLog(t('api.errors.saveLogin'), err);
+      setErrorMessage('api.errors.saveLogin');
     }
   };
 
@@ -178,7 +178,7 @@ const FormLogins = () => {
             variant="info"
             size="sm"
             icon="recycle"
-            title={t('common.refresh')}
+            title="common.refresh"
             className="me-2"
             onClick={() => fetchAllLogins()}
           />

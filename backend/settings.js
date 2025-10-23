@@ -61,15 +61,14 @@ async function getSettings(name) {
     
     // we could read DB_Logins and it is valid
     if (settings && settings.length) {
-      debugLog(`Found ${settings.length} entries in settings`);
-      
-      return settings;
-      // [ { name: 'containerName', value: 'dms' }, .. ]
-      
+      infoLog(`Found ${settings.length} entries in settings`);
+    
     } else {
-      debugLog(`settings in db seems empty:`, settings);
-      return [];
+      warnLog(`db seems empty:`, settings);
     }
+    
+    return settings;
+    // [ { name: 'containerName', value: 'dms' }, .. ]
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -87,8 +86,10 @@ async function getSettings(name) {
 // async function saveSettings(username, password, email='') {
 async function saveSettings(jsonArrayOfObjects) {
   try {
+    
     dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
     global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
+    successLog(`Saved ${settings.length} settings in db`);
     return { success: true };
 
   } catch (error) {
@@ -96,71 +97,6 @@ async function saveSettings(jsonArrayOfObjects) {
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to the index API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
-// deprecated
-async function getSettingsJson() {
-  var DBdict = {};
-  var settings = {};
-  debugLog(`start`);
-  
-  try {
-    
-    debugLog(`calling DBdict readJson(${DB_Settings})`);
-    DBdict = await readJson(DB_Settings);
-    debugLog(`DBdict:`, DBdict);
-    
-    // we could read DB_Settings and it is valid
-    if (DBdict.constructor == Object && 'settings' in DBdict) {
-      debugLog(`Found ${Object.keys(DBdict['settings']).length} settings in DB_Settings`);
-      return DBdict['settings'];
-      
-    // we could not read DB_Settings or it is invalid
-    } else {
-      infoLog(`${arguments.callee.name}: ${DB_Settings} is empty`);
-    }
-    
-    return settings;
-    
-  } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
-// deprecated
-async function saveSettingsJson(containerName, setupPath=DMS_SETUP_SCRIPT, dnsProvider='') {
-  DBdict = {
-    settings: {
-      containerName: containerName,
-      setupPath: setupPath,
-      dnsProvider: dnsProvider,
-    }
-  };
-  
-  try {
-    debugLog(`saveSettings: Saving settings:`, DBdict.settings);
-    await writeJson(DB_Settings, DBdict);
-    return { success: true };
-    
-  } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
-    // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
       // error: error.message,
@@ -326,7 +262,7 @@ async function readDovecotConfFile(stdout) {
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
-    debugLog(`json:`, JSON.stringify(json));
+    debugLog(`json:`, json);
     return json;
   } catch (error) {
     errorLog(`cleanData not valid JSON:`, error);
@@ -448,7 +384,7 @@ async function readDkimFile(stdout) {
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
-    debugLog(`json:`, JSON.stringify(json));
+    debugLog(`json:`, json);
     return json;
     
   } catch (error) {
@@ -480,7 +416,6 @@ async function pullFTS(containerName, containerInfo) {
       const ftsConfig = await readDovecotConfFile(ftsMount_out);
       debugLog(`dovecot json:`, ftsConfig);
       
-      debugLog('---------------------------------ftsConfig?.plugin?.fts',ftsConfig?.plugin?.fts)
       if (ftsConfig?.plugin?.fts) {
 
         envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
@@ -625,12 +560,12 @@ async function getServerEnvs(refresh, containerName) {
       
       // we could read DB_Logins and it is valid
       if (envs && envs.length) {
-        debugLog(`Found ${envs.length} entries in envs`, envs);
+        infoLog(`Found ${envs.length} entries in envs`, envs);
         return envs;
         // [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ]
         
       } else {
-        debugLog(`envs in db seems empty:`, JSON.stringify(envs));
+        warnLog(`envs in db seems empty:`, JSON.stringify(envs));
         return [];
       }
       
@@ -647,7 +582,7 @@ async function getServerEnvs(refresh, containerName) {
   }
   
   pulledEnv = await pullServerEnvs(containerName);
-  debugLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
+  infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
     saveServerEnvs(pulledEnv, containerName);
@@ -721,12 +656,12 @@ async function getDomains(name) {
     
     // we could read DB_Logins and it is valid
     if (domains && domains.length) {
-      debugLog(`Found ${domains.length} entries in domains`);
+      infoLog(`Found ${domains.length} entries in domains`);
       return domains;
       // [ { name: 'containerName', value: 'dms' }, .. ]
       
     } else {
-      debugLog(`domains in db seems empty:`, domains);
+      warnLog(`domains in db seems empty:`, domains);
       return [];
     }
     

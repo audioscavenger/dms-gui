@@ -25,22 +25,21 @@ const LanguageSwitcher = () => {
         style={{ height: '32px' }} // Keep the height if needed
       >
         <i className="bi bi-translate me-1"></i>
-        {currentLang === 'pl' ? 'PL' : 'EN'}
+        {currentLang.toUpperCase()}
       </Dropdown.Toggle>
 
       <Dropdown.Menu align="end">
+      
+        {Object.keys(i18n.options.resources).map((lng) => (
         <Dropdown.Item
-          active={currentLang === 'en'}
-          onClick={() => changeLanguage('en')}
+          key={lng}
+          active={currentLang === lng}
+          onClick={() => changeLanguage(lng)}
         >
-          {t('language.en')}
+          {t(`language.${lng}`)}
         </Dropdown.Item>
-        <Dropdown.Item
-          active={currentLang === 'pl'}
-          onClick={() => changeLanguage('pl')}
-        >
-          {t('language.pl')}
-        </Dropdown.Item>
+        ))}
+        
       </Dropdown.Menu>
     </Dropdown>
   );

@@ -10,6 +10,7 @@ const {
   getValueFromArrayOfObj,
   byteSize2HumanSize,
 } = require('../../frontend.js');
+
 import {
   getAccounts,
   getSettings,
@@ -19,6 +20,7 @@ import {
   reindexAccount,
   updateAccountPassword,
 } from '../services/api';
+
 import {
   AlertMessage,
   Accordion,
@@ -27,6 +29,7 @@ import {
   DataTable,
   FormField,
   LoadingSpinner,
+  Translate,
 } from '../components';
 
 import { useRef } from 'react';
@@ -138,11 +141,10 @@ useEffect(() => {
 
   const validateNewAccountForm = () => {
     const errors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!newAccountformData.email.trim()) {
       errors.email = 'accounts.emailRequired';
-    } else if (!emailRegex.test(newAccountformData.email)) {
+    } else if (!regexEmailStrict.test(newAccountformData.email)) {
       errors.email = 'accounts.invalidEmail';
     }
 
@@ -514,7 +516,8 @@ useEffect(() => {
   // icons: https://icons.getbootstrap.com/
   return (
     <div>
-      <h2 className="mb-4">{t('accounts.title')}</h2>
+      <h2 className="mb-4">{Translate('accounts.title')}</h2>
+      
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
@@ -525,7 +528,7 @@ useEffect(() => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {t('accounts.changePassword')} - {selectedAccount?.email}{' '}
+            {Translate('accounts.changePassword')} - {selectedAccount?.email}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>
@@ -575,7 +578,7 @@ useEffect(() => {
       <Modal show={showDNSModal} onHide={handleCloseDNSModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {t('accounts.manageDNS')} - {selectedAccount?.domain}{' '}
+            {Translate('accounts.manageDNS')} - {selectedAccount?.domain}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

@@ -9,9 +9,17 @@ const {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
 } = require('./common.js');
+
+regexFindEmailRegex = /\/[\S]+@[\S]+\//;
+regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
+regexFindEmailLax = /([\S]+)@([\S]+)/;
+regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
+regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
+regexEmailLax = /^([\S]+)@([\S]+)$/;
 
 const ICON = {
   success:  '✔️',
@@ -47,6 +55,7 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
   debug,

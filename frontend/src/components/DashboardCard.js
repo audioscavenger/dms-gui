@@ -1,8 +1,11 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
 import RBBadge from 'react-bootstrap/Badge'; // Import react-bootstrap Badge
-import { LoadingSpinner } from '../components';
+import {
+  LoadingSpinner,
+  Translate,
+} from './';
 
 /**
  * Dashboard card component using react-bootstrap
@@ -24,9 +27,10 @@ const DashboardCard = ({
   badgeColor,
   badgeText,
   className = '',
+  translate = true,
   ...rest
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
 
   // text loading spinner
   return (
@@ -35,9 +39,11 @@ const DashboardCard = ({
         <div className={`dashboard-icon text-${iconColor}`}>
           <i className={`bi bi-${icon}`}></i>
         </div>
-        <RBCard.Title as="h5">{t(title)}</RBCard.Title>
+        <RBCard.Title as="h5">
+        {Translate(title, translate)}
+        </RBCard.Title>
         {badgeColor
-          ? <RBBadge bg={badgeColor}>{badgeText ? t(badgeText) : value}</RBBadge>
+          ? <RBBadge bg={badgeColor}>{badgeText ? Translate(badgeText, translate) : value}</RBBadge>
           : (isLoading
             ? <LoadingSpinner size="sm"/>
             : <p className="card-text">{value}</p>

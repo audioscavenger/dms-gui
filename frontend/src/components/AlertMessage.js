@@ -1,6 +1,10 @@
 import React from 'react';
-import { useTranslation, Trans } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
+
+import {
+  Translate,
+} from './';
 
 /**
  * Reusable alert component using react-bootstrap
@@ -13,8 +17,8 @@ import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
 const AlertMessage = ({
   type = 'info',
   message,
-  translate = true,
   onClose,
+  translate = true,
   ...rest
 }) => {
   // const { t } = useTranslation();
@@ -28,10 +32,7 @@ const AlertMessage = ({
       dismissible={!!onClose} // Make dismissible if onClose is provided
       {...rest}
     >
-      {translate 
-      ? <Trans i18nKey={message} components={{ strong: <strong />, i: <i />, br: <br />, a: <a />, }} />
-      : message
-      }
+      {Translate(message, translate)}
     </RBAlert>
   );
 };

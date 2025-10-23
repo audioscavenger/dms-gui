@@ -13,14 +13,23 @@ const {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
 } = require('./common.js');
 
 
-const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
+// not const so they are exported and we don't have to mention them
+regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-const regexPrintOnly = /[^\S]/;
+regexPrintOnly = /[^\S]/;
+regexFindEmailRegex = /\/[\S]+@[\S]+\//;
+regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
+regexFindEmailLax = /([\S]+)@([\S]+)/;
+regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
+regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
+regexEmailLax = /^([\S]+)@([\S]+)$/;
+regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
 const color = {
@@ -101,17 +110,99 @@ async function execCommand(command, containerName) {
 }
 
 
+async function execInContainer(command, containerName) {
+  // Get container instance
+  const container = getContainer(containerName);
+
+    // Ensure the container is running before attempting to exec
+    const containerInfo = await container.inspect();
+    if (!containerInfo.State.Running) {
+        throw new Error(`Container ${containerId} is not running.`);
+    }
+
+    const execOptions = {
+        Cmd: ['sh', '-c', command],
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty: false, // Must be false to properly capture streams
+    };
+
+    try {
+        const exec = await container.exec(execOptions);
+
+        const stream = await exec.start();
+
+        // Collect the streams output
+        const stdoutBuffer = [];
+        const stderrBuffer = [];
+        let exitCode;
+
+        const processExit = new Promise((resolve, reject) => {
+            docker.modem.demuxStream(stream, {
+                write: chunk => stdoutBuffer.push(chunk),
+            }, {
+                write: chunk => stderrBuffer.push(chunk),
+            });
+
+            stream.on('end', async () => {
+                const execInfo = await exec.inspect();
+                exitCode = execInfo.ExitCode;
+                resolve();
+            });
+
+            stream.on('error', reject);
+        });
+
+        await processExit;
+
+        return {
+            exitCode,
+            stdout: Buffer.concat(stdoutBuffer).toString('utf8'),
+            stderr: Buffer.concat(stderrBuffer).toString('utf8'),
+        };
+    } catch (error) {
+        console.error('Error during exec:', error);
+        throw error;
+    }
+}
+
+
+/* (async () => {
+    try {
+        // Command that should fail (e.g., trying to access a non-existent file)
+        console.log("Executing failing command...");
+        const failingResult = await execInContainer(['cat', 'non_existent_file.txt'], containerName);
+        console.log('--- Failing Command Result ---');
+        console.log('Exit Code:', failingResult.exitCode);
+        console.log('STDOUT:', failingResult.stdout);
+        console.log('STDERR:', failingResult.stderr);
+
+        // Command that should succeed
+        console.log("\nExecuting successful command...");
+        const successResult = await execInContainer(['echo', 'Hello from inside'], containerName);
+        console.log('--- Successful Command Result ---');
+        console.log('Exit Code:', successResult.exitCode);
+        console.log('STDOUT:', successResult.stdout);
+        console.log('STDERR:', successResult.stderr);
+
+    } catch (err) {
+        console.error("An error occurred:", err.message);
+    }
+})();
+*/
+
+
 /**
  * Executes a command in the docker-mailserver container
  * @param {string} command Command to execute
  * @return {Promise<string>} stdout from the command
  */
-async function execInContainer(command, containerName) {
+async function execInContainerOLD(command, containerName) {
   try {
     debugLog(`Executing command in container ${containerName}: ${command}`);
 
     // Get container instance
-    let container = getContainer(containerName);
+    const container = getContainer(containerName);
 
     // Create exec instance
     const exec = await container.exec({
@@ -255,6 +346,7 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
   color,
@@ -271,7 +363,5 @@ module.exports = {
   execCommand,
   readJson,
   writeJson,
-  regexColors,
-  regexPrintOnly,
   getContainer,
 };

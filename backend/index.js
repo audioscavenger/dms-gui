@@ -10,7 +10,7 @@ const {
 const { dbInit } = require('./db');
 const {
   getLogins,
-  saveLogins,
+  saveLogin,
   loginUser,
 } = require('./logins');
 const {
@@ -496,19 +496,19 @@ app.post('/api/aliases', async (req, res) => {
  *   delete:
  *     summary: Delete an alias
  *     description: Delete an email alias from the docker-mailserver
- *     parameters:
- *       - in: path
- *         name: source
- *         required: true
- *         schema:
- *           type: string
- *         description: Source email address of the alias to delete
- *       - in: path
- *         name: destination
- *         required: true
- *         schema:
- *           type: string
- *         description: Destination email address of the alias to delete
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               source:
+ *                 type: string
+ *                 description: Source email address for the alias
+ *               destination:
+ *                 type: string
+ *                 description: Destination email address for the alias
  *     responses:
  *       200:
  *         description: Alias deleted successfully
@@ -517,16 +517,17 @@ app.post('/api/aliases', async (req, res) => {
  *       500:
  *         description: Unable to delete alias
  */
-app.delete('/api/aliases/:source/:destination', async (req, res) => {
+app.delete('/api/aliases', async (req, res) => {
   try {
-    const { source, destination } = req.params;
-    if (!source) {
-      return res.status(400).json({ error: 'Source is required' });
+    debugLog('ddebug',req.body)
+    // const { source, destination } = req.params;
+    const { source, destination } = req.body;
+    if (!source || !destination) {
+      return res
+        .status(400)
+        .json({ error: 'Source and destination are required' });
     }
-
-    if (!destination) {
-      return res.status(400).json({ error: 'Destination is required' });
-    }
+    
     await deleteAlias(source, destination);
     res.json({ message: 'Alias deleted successfully', source, destination });
   } catch (error) {
@@ -677,7 +678,7 @@ app.post('/api/logins', async (req, res) => {
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await saveLogins(username, password, email);
+    const result = await saveLogin(username, password, email);
     res.status(201).json({ message: 'Admin credentials saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);

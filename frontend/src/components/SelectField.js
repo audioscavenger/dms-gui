@@ -27,6 +27,7 @@ const SelectField = ({
   error,
   helpText,
   required = false,
+  translate = true,
   ...rest // Pass any other props down to Form.Select
 }) => {
   const { t } = useTranslation();

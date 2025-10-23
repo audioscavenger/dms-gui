@@ -18,6 +18,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 ## BUGS:
 
 * [ ] - the left menu is only as high as the window on first load, when you scroll down it's blank
+* [ ] - DataTable usePrevious to highlight data change on reload does not work anymore
 
 ## TODO:
 
@@ -62,12 +63,18 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] - frontend/Backups: add page
 * [ ] - frontend/Imports: add page
+* [ ] - frontend/Domains: add FormDNS or page
 
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
 
 ### history:
 
-* [ ] - frontend/Domains: add FormDNS
+* [x] 1.1.4 - backend/aliases: handle virtual regex; add and delete all works + postfix reload
+* [x] 1.1.4 - frontend/LanguageSwitcher: mapped available languages + enabled nonExplicitSupportedLngs + supportedLngs
+* [x] 1.1.4 - frontend/Translate: replaces t(useTranslation) entirely
+* [x] 1.1.4 - frontend/DataTable: now look for text-color column
+* [x] 1.1.4 - frontend/Aliases: handle virtual regex
+* [x] 1.1.4 - backend: added sql for aliases
 * [x] 1.1.3 - backend: docker.getContainer is also in global.containers{}
 * [x] 1.1.3 - backend: containerName calls global.DMS_CONTAINER
 * [x] 1.1.3 - backend/db: added scope=dmsContainer in domains and accounts
@@ -127,7 +134,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.15 - backend/db: automated patch upgrade of db
 * [x] 1.0.15 - backend/db: proper error handling for dbOpen, dbRun, dbGet, dbAll, dbInit, dbUpdate
 * [x] 1.0.15 - backend/env: handle versions with a "v" and keep only the numbers
-* [x] 1.0.15 - frontend/Settings/logins: test getLogins, saveLogins
+* [x] 1.0.15 - frontend/Settings/logins: test getLogins, saveLogin
 * [x] 1.0.15 - frontend/Settings/logins: do not bring password back in as they are salted
 * [x] 1.0.14 - backend/logins: encrypt password in db.logins.json
 * [x] 1.0.14 - frontend/Button: add a link to parameters
@@ -202,8 +209,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.6.4 - frontend/Settings: refactor FormFields and load independent JSX forms
 * [x] 1.0.6.4 - docker: added chaingen.sh to generate TLSA entries for smtp and imap
 * [x] 1.0.6.4 - backend/index: add api POST /api/logins
-* [x] 1.0.6.4 - backend: add functions getLogins saveLogins
-* [x] 1.0.6.4 - frontend/api: add api call getLogins saveLogins
+* [x] 1.0.6.4 - backend: add functions getLogins saveLogin
+* [x] 1.0.6.4 - frontend/api: add api call getLogins saveLogin
 * [x] 1.0.6.4 - frontend/Settings: split data into multiple forms and columns
 * [x] 1.0.6.3 - removed python3 as octoDNS will be separate container
 * [x] 1.0.6.3 - added python3 for octoDNS but I cannot get it working after 3 hours of labor
@@ -268,7 +275,6 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [-] - add octoDNS https://github.com/octodns/octodns but it's python; adds 99MB extra --> possible but nope we won't do that
 * [-] - gave a try to octoDNS and after 2 hours of labor, I give up. Always the same error and bad samples all over the internet, not a single example they give works at all.
 * [-] - frontend: convert all the db.*.json into browser json storage? no, sqlite3
-* [-] - backend: added sql for aliases; nah, why?
 * [-] - backend: added sql for accounts; nah, why?
 * [x] - frontend/pages: refactor validate*Form and load them from individual files
 * [-] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001 - so what

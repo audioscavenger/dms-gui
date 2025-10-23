@@ -11,3 +11,4 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Navbar } from './Navbar';
 export { default as SelectField } from './SelectField';
 export { default as LeftSidebar } from './LeftSidebar';
+export { default as Translate } from './Translate';

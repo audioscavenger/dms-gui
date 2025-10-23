@@ -125,8 +125,8 @@ accounts: {
   },
   
   delete: {
-    account:  `DELETE FROM accounts WHERE email = ?`,
-    accounts: `DELETE FROM accounts`,
+    account:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND email = ?`,
+    accounts: `DELETE FROM accounts WHERE 1=1 AND scope = ? `,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -149,6 +149,37 @@ accounts: {
       ],
     },
   ],
+},
+
+aliases: {
+      
+  select: {
+    aliases:  `SELECT source, destination, regex FROM aliases WHERE 1=1 AND scope = ?`,
+    bySource: `SELECT destination FROM aliases WHERE 1=1 AND scope = ? AND source = ?`,
+    byDest:   `SELECT source      FROM aliases WHERE 1=1 AND scope = ? AND destination = ?`,
+    regexes:  `SELECT source, destination FROM aliases WHERE 1=1 AND regex = 1 AND scope = ?`,
+  },
+  
+  insert: {
+    alias:    `REPLACE INTO aliases (source, destination, regex, scope) VALUES (@source, @destination, @regex, ?)`,
+  },
+  
+  delete: {
+    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = ? AND source = ?`,
+    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = ? AND destination = ?`,
+  },
+  
+  init:  `BEGIN TRANSACTION;
+          CREATE TABLE aliases (
+          id          INTEGER PRIMARY KEY,
+          source      TEXT NOT NULL UNIQUE,
+          destination TEXT NOT NULL,
+          regex       BIT DEFAULT 0,
+          scope       NOT NULL
+          );
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          COMMIT;`,
+  
 },
 
 domains: {

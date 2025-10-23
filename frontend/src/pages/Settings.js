@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
 
 const {
@@ -16,6 +16,7 @@ import {
   Card,
   DataTable,
   LoadingSpinner,
+  Translate,
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
@@ -28,7 +29,7 @@ import Col from 'react-bootstrap/Col'; // Import Col
 
 const Settings = () => {
   // const passwordFormRef = useRef(null);
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
 
   const [errorMessage, setErrorMessage] = useState(null);
@@ -69,7 +70,7 @@ const Settings = () => {
   // to handle data coming from the child form: <FormSettings onInfosSubmit={handleInfosReceived} />
   return (
     <div>
-      <h2 className="mb-4">{t('settings.title')}</h2>
+      <h2 className="mb-4">{Translate('settings.title')}</h2>
 
       <Accordion tabs={settingTabs}>
       </Accordion>
@@ -77,7 +78,7 @@ const Settings = () => {
       <Card title="settings.aboutTitle">
         <Card.Text>
           {' '}
-          {t('settings.aboutDescription')}
+          {Translate('settings.aboutDescription')}
         </Card.Text>{' '}
           
         <Card.Text>

@@ -1,9 +1,11 @@
 // https://icons.getbootstrap.com/
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
+
 import {
   Button,
+  Translate,
 } from './';
 
 // const tabs = [
@@ -32,9 +34,10 @@ const Accordion = ({
   className = '',
   noPadding = false,
   children,
+  translate = true,
   ...rest
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
 
   // not very clear what they want:
@@ -49,7 +52,7 @@ const Accordion = ({
       {tabs.map(tab => (
         <RBAccordion.Item key={tab.id} eventKey={tab.id}>
           <RBAccordion.Header>
-            {(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {t(tab.title)} {t(tab.titleExtra)}
+            {(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} {Translate(tab.title, translate)} {Translate(tab.titleExtra, translate)}
           </RBAccordion.Header>
           <RBAccordion.Body className={bodyClassName}>
             { // the refresh button is activated per tab when onClickRefresh is passed
@@ -59,7 +62,7 @@ const Accordion = ({
                   variant="info"
                   size="sm"
                   icon="recycle"
-                  title={t('common.refresh')}
+                  title="common.refresh"
                   className="me-2"
                   onClick={tab.onClickRefresh}
                 />

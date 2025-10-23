@@ -131,9 +131,17 @@ function mergeArrayOfObj(a=[], b=[], prop='name') {
 
 
 function getValueFromArrayOfObj(arr, propName, keyName='name', keyValue='value') {
-  if (!Array.isArray(arr)) return undefined;
   // this will return the value from an array of objects like [ {keyName: propName, keyValue: value}, .. ]
+  if (!Array.isArray(arr)) return undefined;
   return (arr.find(item => item[keyName] == propName)) ? arr.find(item => item[keyName] == propName)[keyValue] : undefined;
+}
+
+
+function pluck(arr, keyValue, uniq=true) {
+  // this will return the values from an array of objects like [ {keyName: propName, keyValue: value}, .. ]
+  if (!Array.isArray(arr)) return undefined;
+  let values = arr.map(item => item[keyValue]);
+  return (uniq) ? [... new Set(values)] : values;
 }
 
 
@@ -169,6 +177,7 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
 };

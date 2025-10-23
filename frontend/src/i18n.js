@@ -3,18 +3,20 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translations
-import translationEN from './locales/en/translation.json';
-import translationPL from './locales/pl/translation.json';
+const supportedLngs = ['en', 'pl'];
+import en from './locales/en/translation.json';
+import pl from './locales/pl/translation.json';
 
 const resources = {
   en: {
-    translation: translationEN,
+    translation: en,
   },
   pl: {
-    translation: translationPL,
+    translation: pl,
   },
 };
 
+// https://www.i18next.com/overview/configuration-options
 i18n
   // detect user language
   .use(LanguageDetector)
@@ -22,18 +24,18 @@ i18n
   .use(initReactI18next)
   // init i18next
   .init({
-    resources,
-    fallbackLng: 'pl', // Set Polish as default language
-    debug: false,
-
+    fallbackLng: 'en',    // default language
+    supportedLngs: supportedLngs,
+    nonExplicitSupportedLngs: true, //support language variation
     interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
+      escapeValue: false,   // not needed for react as it escapes by default
     },
-
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
     },
+    resources,
+    debug: false,
   });
 
 export default i18n;

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
@@ -11,10 +11,14 @@ import { useAuth } from '../hooks/useAuth';
 
 import {
   Button,
+  Translate,
 } from './';
 
-const Navbar = () => {
-  const { t } = useTranslation();
+const Navbar = ({
+  translate = true,
+  ...rest
+}) => {
+  // const { t } = useTranslation();
   
   const { logout } = useAuth();
   const { user } = useAuth();
@@ -28,7 +32,7 @@ const Navbar = () => {
       <Container fluid>
         <RBNavbar.Brand as={Link} to="/">
           <i className="bi bi-envelope-fill me-2"></i>
-          {t('app.title')}
+          {Translate('app.title')}
         </RBNavbar.Brand>
         <RBNavbar.Toggle aria-controls="navbarNav" />
         <RBNavbar.Collapse id="navbarNav">
@@ -47,7 +51,7 @@ const Navbar = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t('navbar.documentation')}
+              {Translate('navbar.documentation')}
             </Nav.Link>
             
             {/* LanguageSwitcher might need adjustment depending on its implementation */}

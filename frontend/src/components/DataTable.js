@@ -1,13 +1,22 @@
-const debug = false;
 // https://icons.getbootstrap.com/
 // https://www.npmjs.com/package/react-bootstrap
 // https://react-bootstrap.netlify.app/docs/components/table/
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, Form } from 'react-bootstrap';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
+
+const {
+  debugLog,
+  infoLog,
+  warnLog,
+  errorLog,
+  successLog,
+} = require('../../frontend.js');
+
 import {
   LoadingSpinner,
   AlertMessage,
+  Translate,
 } from './';
 
 /**
@@ -36,9 +45,10 @@ const DataTable = ({
   bordered = false,
   hover = false,
   responsive = true,      // Default to responsive
+  translate = true,
   ...rest // Pass other props to Table
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrders, setSortOrders] = useState({});       // { columnName: 0|1 }
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
@@ -46,9 +56,9 @@ const DataTable = ({
   const sortFunction = (col, currentData=[]) => {
     // we escape if currentData[0][col] is undefined == it's a rendered column
     if (currentData.length && currentData[0][col]) {
-      if (debug) console.debug(`ddebug col=${col} sortOrders=`,sortOrders);
-      if (debug) console.debug('sortFunction, currentData=',currentData);
-      if (debug) console.debug(`sortFunction, currentData[0][${col}]=`,currentData[0][col]);
+      debugLog(`ddebug col=${col} sortOrders=`,sortOrders);
+      debugLog('sortFunction, currentData=',currentData);
+      debugLog(`sortFunction, currentData[0][${col}]=`,currentData[0][col]);
 
       // if currentData[0][col] is a dictionary
       if (typeof currentData[0][col] == 'object') {
@@ -59,7 +69,7 @@ const DataTable = ({
         
         // sort by the sortKey found
         if (sortKey) {
-          if (debug) console.debug('sortFunction, sortKey=',sortKey);
+          debugLog('sortFunction, sortKey=',sortKey);
           if (Number(currentData[0][col][sortKey])) {
             if (sortOrders[col] == 0) currentData.sort((a, b) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
             else                      currentData.sort((b, a) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
@@ -101,17 +111,17 @@ const DataTable = ({
   }
 
   const handleSort = (column) => {
-    if (debug) console.debug(`columns=`,columns);
-    if (column in sortOrders) { if (debug) console.debug(`!!!${column} IN  (=${sortColumn}?)`,sortOrders);} else if (debug) console.debug(`!!!${column} NOT (=${sortColumn}?`,sortOrders);
+    debugLog(`columns=`,columns);
+    if (column in sortOrders) { debugLog(`!!!${column} IN  (=${sortColumn}?)`,sortOrders);} else debugLog(`!!!${column} NOT (=${sortColumn}?`,sortOrders);
     if (sortColumn === column) {
-      if (debug) console.debug(`>>>setSortOrders for ${column} from ${sortOrders[column]} to`,+(!sortOrders[column]));
+      debugLog(`>>>setSortOrders for ${column} from ${sortOrders[column]} to`,+(!sortOrders[column]));
       setSortOrders({ ...sortOrders, [column]: +(!sortOrders[column]) });  // flip bit 0 <-> 1
     } else {
-      if (debug) console.debug(`---setSortOrders for ${column} to 0 (sortColumn=${sortColumn})`);
+      debugLog(`---setSortOrders for ${column} to 0 (sortColumn=${sortColumn})`);
       setSortColumn(column);
       setSortOrders({ ...sortOrders, [column]: 0 });
     }
-    if (debug) console.debug(`^^^final content of sortOrders:`,sortOrders); // never shows updated values
+    debugLog(`^^^final content of sortOrders:`,sortOrders); // never shows updated values
   };
 
   const handleFilterChange = (column, value) => {
@@ -121,8 +131,8 @@ const DataTable = ({
   // BUG: crash when filtering objects: right-hand side of 'in' should be an object, got undefined
   const sortedAndFilteredData = useMemo(() => {
     let currentData = [...data];
-    if (debug) console.debug(`currentData before sortedAndFilteredData`,JSON.stringify(currentData));
-    if (debug) console.debug(`                   columnFilters`,columnFilters);
+    debugLog(`currentData before sortedAndFilteredData`, currentData);
+    debugLog(`                   columnFilters`,columnFilters);
 
     // TODO: handle objects too
     // Apply columnFilters
@@ -137,12 +147,12 @@ const DataTable = ({
 
     // Apply sorting ? '▲' : '▼'
     if (currentData.length && sortColumn) {
-      if (debug) console.debug(`currentData before sortColumn=${sortColumn}`,JSON.stringify(currentData));
+      // debugLog(`currentData before sortColumn=${sortColumn}`, currentData);
       // works:
       sortFunction(sortColumn, currentData);
     }
     
-    if (debug) console.debug(`currentData after  sortColumn=${sortColumn}`,JSON.stringify(currentData));
+    debugLog(`currentData after  sortColumn=${sortColumn}`, currentData);
     return currentData;
   }, [data, sortColumn, sortOrders, columnFilters]);
 
@@ -195,7 +205,7 @@ const DataTable = ({
             <th 
               key={column.key} 
             >
-            {t(column.label)}
+            {Translate(column.label)}
             <span className='cursor-pointer' onClick={() => handleSort(column.key)}> { ((sortColumn === column.key && sortedAndFilteredData[0] && column.key in sortedAndFilteredData[0]) && (!(column.key in sortOrders) || sortOrders[column.key] === 0) ? '▲' : '▼')}</span>
             <Form.Control type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
             />
@@ -216,7 +226,9 @@ const DataTable = ({
               return (
               <tr key={keyExtractor(item)}>
                 {columns.map((column) => (
-                  <td key={`${keyExtractor(item)}-${column.key}`} className={(previousItem && previousItem.value !== item.value) ? 'highlight-change' : ''}>
+                  <td key={`${keyExtractor(item)}-${column.key}`} className={
+                    (previousItem && previousItem.value !== item.value) ? 'highlight-change' : item?.color
+                  }>
                     {column.render ? column.render(item) : item[column.key]}
                   </td>
                 ))}

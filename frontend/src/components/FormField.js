@@ -1,6 +1,10 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form'; // Import react-bootstrap Form components
+
+import {
+  Translate,
+} from './';
 
 /**
  * Reusable form field component using react-bootstrap
@@ -14,6 +18,7 @@ import Form from 'react-bootstrap/Form'; // Import react-bootstrap Form componen
  * @param {string} [props.placeholder] Placeholder text
  * @param {string} [props.error] Error message (translation key)
  * @param {string} [props.helpText] Help text (translation key)
+ * @param {boolean} [props.translate] Whether the fields need translation
  * @param {boolean} [props.required] Whether the field is required
  */
 const FormField = ({
@@ -22,19 +27,21 @@ const FormField = ({
   name,
   label,
   value,
+  labelColor,
   onChange,
   placeholder,
   error,
   helpText,
   required = false,
+  translate = true,
   ...rest // Pass any other props down to Form.Control
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
 
   return (
     <Form.Group className="mb-3" controlId={id}>
-      <Form.Label>
-        {t(label)}
+      <Form.Label className={labelColor}>
+        {Translate(label, translate)}
         {required && <span className="text-danger ms-1">*</span>}
       </Form.Label>
       <Form.Control
@@ -48,9 +55,15 @@ const FormField = ({
         {...rest} // Spread remaining props
       />
       {error && (
-        <Form.Control.Feedback type="invalid">{t(error)}</Form.Control.Feedback>
+        <Form.Control.Feedback type="invalid">
+        {Translate(error, translate)}
+        </Form.Control.Feedback>
       )}
-      {helpText && <Form.Text muted>{t(helpText)}</Form.Text>}
+      {helpText && (
+        <Form.Text muted>
+        {Translate(helpText, translate)}
+        </Form.Text>
+      )}
     </Form.Group>
   );
 };

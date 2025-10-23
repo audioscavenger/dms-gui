@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import Row from 'react-bootstrap/Row'; // Import Row
+import Col from 'react-bootstrap/Col'; // Import Col
 
 const {
   debugLog,
@@ -7,13 +9,16 @@ const {
   warnLog,
   errorLog,
   successLog,
+  pluck,
 } = require('../../frontend.js');
+
 import {
   getAliases,
   addAlias,
   deleteAlias,
   getAccounts,
 } from '../services/api';
+
 import {
   AlertMessage,
   Button,
@@ -22,15 +27,15 @@ import {
   FormField,
   LoadingSpinner,
   SelectField,
+  Translate,
 } from '../components';
-import Row from 'react-bootstrap/Row'; // Import Row
-import Col from 'react-bootstrap/Col'; // Import Col
 
 const Aliases = () => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   
   const [aliases, setAliases] = useState([]);
+  const [isSource, setIsSource] = useState({valid:true, alias:true});
   const [accounts, setAccounts] = useState([]);
   
   const [successMessage, setSuccessMessage] = useState(null);
@@ -41,20 +46,20 @@ const Aliases = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
-/* 
-TODO: useEffect properly on object change
-const parentObject = useMemo(() => ({
-  prop: 'value'
-}), []); // Empty array ensures the object reference is stable
+  /* 
+  TODO: useEffect properly on object change
+  const parentObject = useMemo(() => ({
+    prop: 'value'
+  }), []); // Empty array ensures the object reference is stable
 
-const handleSubmit = useCallback(() => {
-  // The function reference is stable
-}, []);
+  const handleSubmit = useCallback(() => {
+    // The function reference is stable
+  }, []);
 
-useEffect(() => {
-  // This will now only re-run if parentObject actually changes
-}, [parentObject]);
- */
+  useEffect(() => {
+    // This will now only re-run if parentObject actually changes
+  }, [parentObject]);
+   */
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAliases(false);
@@ -68,14 +73,22 @@ useEffect(() => {
       setLoading(true);
       const [aliasesData, accountsData] = await Promise.all([
         getAliases(refresh),
-        getAccounts(false),
+        getAccounts(refresh),
       ]);
       setAccounts(accountsData);
-      setAliases(aliasesData);
+      
+      // add color column for regex aliases
+      let aliasesDataFormatted = aliasesData.map(alias => { return { 
+        ...alias, 
+        source: (alias.regex) ? JSON.parse(alias.source) : alias.source,
+        color:  (alias.regex) ? "text-info" : "",
+        }; });
+      setAliases(aliasesDataFormatted);
+      
       setErrorMessage(null);
 
-      debugLog('aliasesData', aliasesData);
-      debugLog('accountsData', accountsData);
+      debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
+      debugLog('accountsData', accountsData);                 // [ { email: 'a@a.com', domain:'a.com', storage: {} },{ email: 'b@b.com', domain:'b.com', storage: {} }, .. ]
 
     } catch (err) {
       errorLog(t('api.errors.fetchAliases'), err);
@@ -91,6 +104,16 @@ useEffect(() => {
       ...formData,
       [name]: value,
     });
+    
+    
+    if (name == 'source') {
+      console.debug('value.match(regexEmailStrict)',value.match(regexEmailStrict));
+      console.debug('value.match(regexEmailRegex)',value.match(regexEmailRegex));
+      setIsSource({
+        alias: value.trim().match(regexEmailStrict),
+        valid: value.trim().match(regexEmailStrict) || value.trim().match(regexEmailRegex),
+      });
+    }
 
     // Clear the error for this field while typing
     if (formErrors[name]) {
@@ -104,18 +127,28 @@ useEffect(() => {
 
   const validateForm = () => {
     const errors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    // with FormField type="text" we don;t need any of that, but since we deal with regex...
+    
+    let matchEmailStrict = formData.source.trim().match(regexEmailStrict);
+    let matchEmailRegex = formData.source.trim().match(regexEmailRegex);
+    console.debug('matchEmailStrict',matchEmailStrict)
+    console.debug('matchEmailRegex',matchEmailRegex)
 
     if (!formData.source.trim()) {
       errors.source = 'aliases.sourceRequired';
-    } else if (!emailRegex.test(formData.source)) {
+    } else if (!matchEmailStrict && !matchEmailRegex) {
       errors.source = 'aliases.invalidSource';
     }
 
     if (!formData.destination.trim()) {
       errors.destination = 'aliases.destinationRequired';
-    } else if (!emailRegex.test(formData.destination)) {
-      errors.destination = 'aliases.invalidDestination';
+    }
+
+    // Also test if source domain exist in domains when it's an email match
+    // I can't see how to test for regex as the domain part can be regex too
+    if (matchEmailStrict && !pluck(accounts, 'domain').includes(matchEmailStrict[2])) {
+      errors.source = 'aliases.invalidSourceDomain';
     }
 
     setFormErrors(errors);
@@ -132,7 +165,7 @@ useEffect(() => {
     }
 
     try {
-      await addAlias(formData.source, formData.destination);
+      await addAlias(formData.source.trim(), formData.destination.trim());
       setSuccessMessage('aliases.aliasCreated');
       setFormData({
         source: '',
@@ -140,6 +173,7 @@ useEffect(() => {
       });
       debugLog('call fetchAliases(true)');
       fetchAliases(true); // Refresh the aliases list
+      
     } catch (err) {
       errorLog(t('api.errors.addAlias'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAlias');
@@ -147,7 +181,7 @@ useEffect(() => {
   };
 
   const handleDelete = async (source, destination) => {
-    if (window.confirm(t('aliases.confirmDelete', { source, destination }))) {
+    if (window.confirm(t('aliases.confirmDelete', { source }))) {
       try {
         await deleteAlias(source, destination);
         setSuccessMessage('aliases.aliasDeleted');
@@ -193,7 +227,7 @@ useEffect(() => {
   
   return (
     <div>
-      <h2 className="mb-4">{t('aliases.title')}</h2>
+      <h2 className="mb-4">{Translate('aliases.title')}</h2>
       
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
@@ -208,10 +242,11 @@ useEffect(() => {
             {/* Removed mb-4 from Card, added to Col */}
             <form onSubmit={handleSubmit} className="form-wrapper">
               <FormField
-                type="email"
+                type="text"
                 id="source"
                 name="source"
-                label="aliases.sourceAddress"
+                label={isSource?.valid ? (isSource?.alias ? "aliases.sourceAlias" : "aliases.sourceRegex") : "aliases.sourceRequired"}
+                labelColor={isSource?.valid ? (isSource?.alias ? "" : "text-info") : "text-danger"}
                 value={formData.source}
                 onChange={handleInputChange}
                 placeholder="alias@domain.com"

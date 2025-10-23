@@ -20,6 +20,7 @@ import {
   DashboardCard,
   LoadingSpinner,
   Button,
+  Translate,
 } from '../components';
 
 import Row from 'react-bootstrap/Row'; // Import Row
@@ -47,7 +48,7 @@ const Dashboard = () => {
   const [isStatusLoading, setStatusLoading] = useState(true);
   const [isAccountsLoading, setAccountsLoading] = useState(true);
   const [isAliasesLoading, setAliasesLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   // const { logout } = useAuth();
   // const { user } = useAuth();
@@ -84,11 +85,11 @@ const Dashboard = () => {
       const statusData = await getServerStatus(true);
 
       setServerStatus(statusData);
-      setError(null);
+      setErrorMessage(null);
       
     } catch (err) {
       errorLog(t('api.errors.fetchServerStatus'), err);
-      setError('api.errors.fetchServerStatus');
+      setErrorMessage('api.errors.fetchServerStatus');
     } finally {
       // setLoading(false);
       setStatusLoading(false);
@@ -103,11 +104,11 @@ const Dashboard = () => {
       const accountsResponse = await getAccounts(false);
 
       setAccountsCount(accountsResponse.length);
-      setError(null);
+      setErrorMessage(null);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAccounts'), err);
-      setError('api.errors.fetchAccounts');
+      setErrorMessage('api.errors.fetchAccounts');
     } finally {
       setAccountsLoading(false);
     }
@@ -121,11 +122,11 @@ const Dashboard = () => {
       const aliasesResponse = await getAliases(false);
 
       setAliasesCount(aliasesResponse.length);
-      setError(null);
+      setErrorMessage(null);
       
     } catch (err) {
       errorLog(t('api.errors.fetchfetchAliases'), err);
-      setError('api.errors.fetchfetchAliases');
+      setErrorMessage('api.errors.fetchfetchAliases');
     } finally {
       setAliasesLoading(false);
     }
@@ -152,8 +153,8 @@ const Dashboard = () => {
 
   return (
     <div>
-      <h2 className="mb-4">{t('dashboard.title')}</h2>
-      <AlertMessage type="danger" message={error} />
+      <h2 className="mb-4">{Translate("dashboard.title")}</h2>
+      <AlertMessage type="danger" message={errorMessage} />
 
       <Row>
         {' '}

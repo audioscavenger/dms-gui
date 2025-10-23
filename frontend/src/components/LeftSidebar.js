@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import { Nav } from 'react-bootstrap';
 
 import {
   Button,
+  Translate,
 } from './';
 
 // https://getbootstrap.com/docs/5.0/examples/sidebars/
@@ -12,7 +13,7 @@ import {
 // https://coreui.io/react/docs/components/sidebar/bootstrap/
 
 const LeftSidebar = () => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   // const [isDropdownActive, setDropdownActive] = useState("false");  // we don't use it yet
@@ -40,22 +41,22 @@ const LeftSidebar = () => {
     <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
       <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
         <i className="bi bi-speedometer2 me-2"></i>
-        <span> {t('sidebar.dashboard')}</span>
+        <span> {Translate('sidebar.dashboard')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
         <i className="bi bi-person-circle me-2"></i>
-        <span> {t('sidebar.emailAccounts')}</span>
+        <span> {Translate('sidebar.emailAccounts')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
         <i className="bi bi-arrow-left-right me-2"></i>
-        <span> {t('sidebar.aliases')}</span>
+        <span> {Translate('sidebar.aliases')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
         <i className="bi bi-gear-fill me-2"></i>
-        <span> {t('sidebar.settings')}</span>
+        <span> {Translate('sidebar.settings')}</span>
       </Nav.Link>
     </Nav>
 
@@ -65,7 +66,7 @@ const LeftSidebar = () => {
         variant="outline-secondary"
         size="lg"
         icon="list"
-        title={t('common.collapse')}
+        title={"common.collapse"}
         onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
         className="leftsidebar-collapse-btn"
       />

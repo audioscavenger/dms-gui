@@ -1,6 +1,10 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBSpinner from 'react-bootstrap/Spinner'; // Import react-bootstrap Spinner
+
+import {
+  Translate,
+} from './';
 
 /**
  * Reusable loading spinner component using react-bootstrap
@@ -17,9 +21,10 @@ const LoadingSpinner = ({
   animation = 'border',
   customText,
   isInline = false,
+  translate = true,
   ...rest
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const className = isInline == true ? "d-inline" : "d-flex justify-content-center";
 
   return (
@@ -31,7 +36,7 @@ const LoadingSpinner = ({
         role="status"
       >
         <span className="visually-hidden">
-          {customText || t('dashboard.loading')}
+          {customText || Translate('dashboard.loading')}
         </span>
       </RBSpinner>
     </div>

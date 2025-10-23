@@ -1,6 +1,6 @@
 // https://icons.getbootstrap.com/
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card';
 import Collapse from 'react-bootstrap/Collapse';
 // https://react-bootstrap.netlify.app/docs/components/placeholder/
@@ -8,6 +8,7 @@ import Collapse from 'react-bootstrap/Collapse';
 import {
   Button,
   LoadingSpinner,
+  Translate,
 } from './';
 
 /**
@@ -36,9 +37,10 @@ const Card = ({
   startOpen = true,
   className = '',
   noPadding = false,
+  translate = true,
   ...rest
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
   const collapser       = collapsible    == true ? true : false;
   const refresher       = (typeof onClickRefresh  == "function") ? true : false;
@@ -56,7 +58,7 @@ const Card = ({
         <RBCard.Header>
           {title && (
             <RBCard.Title as="h5" className={titleClassName}>
-            <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {t(title)} {isLoading ? <span><LoadingSpinner isInline="true" size="sm"/></span> : titleExtra} </div>
+            <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {Translate(title, translate)} {isLoading ? <span><LoadingSpinner isInline="true" size="sm"/></span> : titleExtra} </div>
             {(refresher || collapser) && (
               <div>
               {refresher && (
@@ -64,7 +66,7 @@ const Card = ({
                   variant="info"
                   size="sm"
                   icon="recycle"
-                  title={t('common.refresh')}
+                  title="common.refresh"
                   className="me-2"
                   onClick={onClickRefresh}
                 />
@@ -74,7 +76,7 @@ const Card = ({
                   variant="secondary"
                   size="sm"
                   icon="arrows-collapse"
-                  title={t('common.collapse')}
+                  title="common.collapse"
                   onClick={() => setOpen(!open)}
                   aria-controls="collapsible"
                   aria-expanded={open}
