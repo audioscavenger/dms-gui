@@ -18,7 +18,7 @@ import {
   addAccount,
   deleteAccount,
   reindexAccount,
-  updateAccountPassword,
+  changePasswordAccount,
 } from '../services/api';
 
 import {
@@ -149,13 +149,13 @@ useEffect(() => {
     }
 
     if (!newAccountformData.password) {
-      errors.password = 'accounts.passwordRequired';
+      errors.password = 'password.passwordRequired';
     } else if (newAccountformData.password.length < 8) {
-      errors.password = 'accounts.passwordLength';
+      errors.password = 'password.passwordLength';
     }
 
     if (newAccountformData.password !== newAccountformData.confirmPassword) {
-      errors.confirmPassword = 'accounts.passwordsNotMatch';
+      errors.confirmPassword = 'password.passwordsNotMatch';
     }
 
     setNewAccountFormErrors(errors);
@@ -252,13 +252,13 @@ useEffect(() => {
     const errors = {};
 
     if (!passwordFormData.newPassword) {
-      errors.newPassword = 'accounts.passwordRequired';
+      errors.newPassword = 'password.passwordRequired';
     } else if (passwordFormData.newPassword.length < 8) {
-      errors.newPassword = 'accounts.passwordLength';
+      errors.newPassword = 'password.passwordLength';
     }
 
     if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-      errors.confirmPassword = 'accounts.passwordsNotMatch';
+      errors.confirmPassword = 'password.passwordsNotMatch';
     }
 
     setPasswordFormErrors(errors);
@@ -276,15 +276,15 @@ useEffect(() => {
     }
 
     try {
-      await updateAccountPassword(
+      await changePasswordAccount(
         selectedAccount.email,
         passwordFormData.newPassword
       );
       setSuccessMessage('accounts.passwordUpdated');
       handleClosePasswordModal(); // Close the modal
     } catch (err) {
-      errorLog(t('api.errors.updatePassword'), err);
-      setErrorMessage('api.errors.updatePassword');
+      errorLog(t('api.errors.changePassword'), err);
+      setErrorMessage('api.errors.changePassword');
     }
   };
   
@@ -328,16 +328,6 @@ useEffect(() => {
   const validateDNSForm = () => {
     const errors = {};
 
-    if (!dnsFormData.newPassword) {
-      errors.newPassword = 'accounts.passwordRequired';
-    } else if (dnsFormData.newPassword.length < 8) {
-      errors.newPassword = 'accounts.passwordLength';
-    }
-
-    if (dnsFormData.newPassword !== dnsFormData.confirmPassword) {
-      errors.confirmPassword = 'accounts.passwordsNotMatch';
-    }
-
     setDNSFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -366,7 +356,7 @@ useEffect(() => {
   };
 
 
-  if (isLoading && !accounts && !accounts.length) {
+  if (isLoading && !accounts) {
     return <LoadingSpinner />;
   }
   
@@ -424,7 +414,7 @@ useEffect(() => {
             variant="primary"
             size="sm"
             icon="key"
-            title={t('accounts.changePassword')}
+            title={t('password.changePassword')}
             onClick={() => handleChangePassword(account)}
             className="me-2"
           />
@@ -470,7 +460,7 @@ useEffect(() => {
               type="password"
               id="password"
               name="password"
-              label="accounts.password"
+              label="password.password"
               value={newAccountformData.password}
               onChange={handleNewAccountInputChange}
               error={newAccountFormErrors.password}
@@ -481,7 +471,7 @@ useEffect(() => {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
-              label="accounts.confirmPassword"
+              label="password.confirmPassword"
               value={newAccountformData.confirmPassword}
               onChange={handleNewAccountInputChange}
               error={newAccountFormErrors.confirmPassword}
@@ -528,7 +518,7 @@ useEffect(() => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('accounts.changePassword')} - {selectedAccount?.email}{' '}
+            {Translate('password.changePassword')} - {selectedAccount?.email}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>
@@ -539,7 +529,7 @@ useEffect(() => {
                 type="password"
                 id="newPassword"
                 name="newPassword"
-                label="accounts.newPassword"
+                label="password.newPassword"
                 value={passwordFormData.newPassword}
                 onChange={handlePasswordInputChange}
                 error={passwordFormErrors.newPassword}
@@ -550,7 +540,7 @@ useEffect(() => {
                 type="password"
                 id="confirmPasswordModal"
                 name="confirmPassword"
-                label="accounts.confirmPassword"
+                label="password.confirmPassword"
                 value={passwordFormData.confirmPassword}
                 onChange={handlePasswordInputChange}
                 error={passwordFormErrors.confirmPassword}
@@ -569,7 +559,7 @@ useEffect(() => {
           <Button
             variant="primary"
             onClick={handleSubmitPasswordChange}
-            text="accounts.updatePassword"
+            text="password.changePassword"
           />
         </Modal.Footer>
       </Modal>

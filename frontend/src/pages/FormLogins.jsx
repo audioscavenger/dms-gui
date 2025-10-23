@@ -1,3 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                                              // deprecated
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +47,7 @@ const {
 } = require('../../frontend.js');
 import {
   getLogins,
-  saveLogin,
+  addLogin,
 } from '../services/api';
 
 import { 
@@ -20,9 +57,6 @@ import {
   LoadingSpinner,
 } from '../components';
 
-const usernameRegex = /^[^\s]+$/;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const FormLogins = () => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
@@ -31,11 +65,14 @@ const FormLogins = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
-  const [formErrors, setFormErrors] = useState({});
-  const [login, setLogin] = useState({
+  // State for new login inputs ----------------------------------
+  const [newLoginformData, setNewLoginFormData] = useState({
     username: '',
     email: '',
+    password: '',
+    confirmPassword: '',
   });
+  const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
 
 
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -48,11 +85,8 @@ const FormLogins = () => {
     debugLog(`fetchAllLogins call fetchLogins`);
     setLoading(true);
 
-    const loginsData = await fetchLogins();
-    setLogin({
-      ...login,
-      ...loginsData,
-    });
+    // const loginsData = await fetchLogins();
+    await fetchLogins();
 
     setLoading(false);
 
@@ -67,13 +101,20 @@ const FormLogins = () => {
       const [loginsData] = await Promise.all([
         getLogins(),
       ]);
-      debugLog('loginsData', loginsData);
 
-      let loginData = (loginsData.length) ? loginsData[0] : {};
+      // let loginData = (loginsData.length) ? loginsData[0] : {};
+      // setLogin({
+        // ...login,
+        // ...loginsData,
+      // });
       // if (loginsData.password) loginsData['confirmPassword'] = loginsData.password;    // we can't pull passwords anymore
+      debugLog(`fetchAllLogins mergeArrayOfObj loginsData`,loginsData);
+      setLogins(loginsData);
+
 
       setErrorMessage(null);
-      return loginData;
+      // return loginData;
+      return loginsData;
 
     } catch (err) {
       errorLog(t('api.errors.fetchLogins'), err);
@@ -91,10 +132,15 @@ const FormLogins = () => {
   // };
   const handleChangeLogins = (e) => {
     const { name, value } = e.target;
-    setLogin({
-      ...login,
-      [name]: value,
-    });
+    // setLogin({
+      // ...login,
+      // [name]: value,
+    // });
+    // merge array of settings objects by their name
+    debugLog(`handleChangeLogins mergeArrayOfObj logins`,logins);
+    debugLog(`handleChangeLogins mergeArrayOfObj [{name: name, value:value}]`, [{name: name, value:value}]);
+    // setLogins(mergeArrayOfObj(logins, [{name: name, value:value}], 'name'));
+    setLogin(mergeArrayOfObj(logins, [{name: name, value:value}], 'name'));
 
     // Clear the error for this field while typing
     if (formErrors[name]) {
@@ -108,15 +154,15 @@ const FormLogins = () => {
   const validateFormLogins = () => {
     const errors = {};
 
-    if (!login.username || !login.username.trim()) {
+    if (!login.username.trim()) {
       errors.username = 'settings.usernameRequired';
     } else if (!usernameRegex.test(login.username)) {
       errors.username = 'settings.usernameInvalid';
     }
 
-    if (login.email && !emailRegex.test(login.email)) {
-      errors.email = 'accounts.invalidEmail';
-    }
+    // if (!regexEmailStrict.test(login.email)) {
+      // errors.email = 'accounts.invalidEmail';
+    // }
 
     if (!login.password) {
       errors.password = 'accounts.passwordRequired';
@@ -146,7 +192,7 @@ const FormLogins = () => {
     }
 
     try {
-      await saveLogin(
+      await addLogin(
         login.username,
         login.password,
         login.email,
@@ -158,8 +204,8 @@ const FormLogins = () => {
       
     } catch (err) {
       setSubmissionStatus('error');
-      errorLog(t('api.errors.saveLogin'), err);
-      setErrorMessage('api.errors.saveLogin');
+      errorLog(t('api.errors.addLogin'), err);
+      setErrorMessage('api.errors.addLogin');
     }
   };
 

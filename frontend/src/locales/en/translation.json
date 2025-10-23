@@ -5,14 +5,9 @@
   "navbar": {
     "documentation": "Documentation"
   },
-  "sidebar": {
-    "dashboard": "Dashboard",
-    "emailAccounts": "Email Accounts",
-    "aliases": "Aliases",
-    "settings": "Settings"
-  },
   "dashboard": {
     "title": "Dashboard",
+    "sidebar": "Dashboard",
     "serverStatus": "Server Status",
     "cpuUsage": "CPU Usage",
     "memoryUsage": "Memory Usage",
@@ -37,9 +32,7 @@
     "cannotCreateAccount": "Unable to create account. Please try again.",
     "cannotDeleteAccount": "Unable to delete account. Please try again.",
     "cannotUpdatePassword": "Unable to update password. Please try again.",
-    "changePassword": "Change Password",
     "confirmDelete": "Are you sure you want to delete account {{email}}?",
-    "confirmPassword": "Confirm Password",
     "dnsUpdated": "DNS records updated",
     "domain": "Domain",
     "email": "Email Address",
@@ -48,19 +41,14 @@
     "invalidEmail": "Invalid email format",
     "manageDNS": "Manage DNS",
     "newAccount": "Add New Account",
-    "newPassword": "New Password",
     "noAccounts": "No email accounts. Add your first account.",
-    "password": "Password",
-    "passwordLength": "Password must be at least 8 characters",
-    "passwordRequired": "Password is required",
-    "passwordUpdated": "Password updated successfully!",
-    "passwordsNotMatch": "Passwords do not match",
     "reindex": "Force reindex",
     "reindexStarted": "Reindex started",
     "storage": "Storage Usage",
     "title": "Email Accounts Management",
+    "sidebar": "Email Accounts",
     "updateDNS": "Update DNS",
-    "updatePassword": "Update Password"
+    "changePassword": "Update Password"
   },
   "aliases": {
     "addAlias": "Add Alias",
@@ -84,6 +72,7 @@
     "sourceRegex": "Source Address (<strong>Regex</strong>)",
     "sourceInfo": "This is the address mail will be sent to.",
     "sourceRequired": "Source address is required",
+    "sidebar": "Aliases",
     "title": "Aliases Management"
   },
   "settings": {
@@ -91,10 +80,6 @@
     "aboutDescription": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutText": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutTitle": "About Docker-Mailserver GUI",
-    "username": "admin username",
-    "usernameHelp": "admin username to login on this portal",
-    "usernameRequired": "username is required",
-    "usernameInvalid": "username contains invalid characters",
     "dnsProvider": "DNS provider API",
     "dnsProviderHelp": "Choose your DNS provider among the APIs we handle",
     "email": "admin email",
@@ -123,6 +108,7 @@
     "serverInternalsDescription": "Internals of dms-gui:",
     "serverEnvDescription": "Environment variables from DMS:",
     "name": "Name",
+    "sidebar": "Settings",
     "title": "Settings",
     "value": "Value",
     "version": "Version"
@@ -135,12 +121,34 @@
     "collapse": "Collapse",
     "refresh": "Refresh"
   },
-  "login": {
-    "title": "Login Page",
+  "password": {
+    "changePassword": "Change Password",
+    "confirmPassword": "Confirm Password",
+    "newPassword": "New Password",
+    "password": "Password",
+    "passwordLength": "Password must be at least 8 characters",
+    "passwordRequired": "Password is required",
+    "passwordUpdated": "Password updated successfully!",
+    "passwordsNotMatch": "Passwords do not match"
+  },
+  "logins": {
     "login": "Login",
-    "logout": "Logout",
+    "confirmDelete": "Are you sure you want to delete login {{username}}?",
+    "denied": "Login denied",
+    "email": "Email Address",
+    "existingLogins": "Logins in database",
     "isFirstRun": "WELCOME TO dms-gui:<br />This is the first time you access this page,<br />1️⃣ Please login with <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ Then change the password in <a href=\"settings\">/settings</a><br />3️⃣ Finally, also set the DMS container name in settings.",
-    "denied": "Login denied"
+    "logout": "Logout",
+    "loginCreated": "Login created successfully!",
+    "loginDeleted": "Login deleted successfully!",
+    "newLogin": "Add new login",
+    "noLogins": "No logins detected, that's impossible.",
+    "username": "Login username",
+    "usernameHelp": "Login username to login on this portal",
+    "usernameRequired": "username is required",
+    "usernameInvalid": "username contains invalid characters",
+    "sidebar": "Logins",
+    "title": "Logins Page"
   },
   "api": {
     "errors": {
@@ -152,11 +160,11 @@
       "fetchServerEnvs": "Error fetching DMS container environment",
       "fetchDomains": "Error fetching domains",
       "saveSettings": "Error saving settings",
-      "saveLogin": "Error saving admin credentials",
+      "addLogin": "Error saving login",
       "loginUser": "Error invalid password",
       "addAccount": "Error adding account",
       "deleteAccount": "Error deleting account",
-      "updatePassword": "Error updating password",
+      "changePassword": "Error updating password",
       "updateDNS": "Error updating DNS records",
       "fetchAliases": "Error fetching aliases",
       "addAlias": "Error adding alias",

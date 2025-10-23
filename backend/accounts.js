@@ -215,7 +215,7 @@ async function addAccount(email, password, containerName) {
 }
 
 // Function to update an email account password
-async function updateAccountPassword(email, password, containerName) {
+async function changePasswordAccount(email, password, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
@@ -305,7 +305,7 @@ async function reindexAccount(email, containerName) {
 module.exports = {
   getAccounts,
   addAccount,
-  updateAccountPassword,
+  changePasswordAccount,
   deleteAccount,
 };
 

@@ -20,8 +20,8 @@ import {
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
+// import FormLogins     from './FormLogins';   // deprecated
 import FormSettings   from './FormSettings';
-import FormLogins     from './FormLogins';
 import ServerInfos    from './ServerInfos';
 
 import Row from 'react-bootstrap/Row'; // Import Row
@@ -61,10 +61,11 @@ const Settings = () => {
   };
   */
 
+  // https://icons.getbootstrap.com/
   const settingTabs = [
-  { id: 1, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },
-  { id: 2, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
-  { id: 3, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
+  // { id: 1, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },   // deprecated
+  { id: 1, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
+  { id: 2, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
   ];
 
   // to handle data coming from the child form: <FormSettings onInfosSubmit={handleInfosReceived} />

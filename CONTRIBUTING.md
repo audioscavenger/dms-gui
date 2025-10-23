@@ -69,6 +69,10 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.5 - backend: renamed saveLogin to addLogin, same mechanics as accounts
+* [x] 1.1.5 - frontend/translation: merged all password related fields into password group
+* [x] 1.1.5 - backend/logins: created deleteLogin and changePasswordLogin
+* [x] 1.1.5 - frontend/Logins: created login page from Accounts page
 * [x] 1.1.4 - backend/aliases: handle virtual regex; add and delete all works + postfix reload
 * [x] 1.1.4 - frontend/LanguageSwitcher: mapped available languages + enabled nonExplicitSupportedLngs + supportedLngs
 * [x] 1.1.4 - frontend/Translate: replaces t(useTranslation) entirely
@@ -134,7 +138,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.15 - backend/db: automated patch upgrade of db
 * [x] 1.0.15 - backend/db: proper error handling for dbOpen, dbRun, dbGet, dbAll, dbInit, dbUpdate
 * [x] 1.0.15 - backend/env: handle versions with a "v" and keep only the numbers
-* [x] 1.0.15 - frontend/Settings/logins: test getLogins, saveLogin
+* [x] 1.0.15 - frontend/Settings/logins: test getLogins, addLogin
 * [x] 1.0.15 - frontend/Settings/logins: do not bring password back in as they are salted
 * [x] 1.0.14 - backend/logins: encrypt password in db.logins.json
 * [x] 1.0.14 - frontend/Button: add a link to parameters
@@ -209,8 +213,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.6.4 - frontend/Settings: refactor FormFields and load independent JSX forms
 * [x] 1.0.6.4 - docker: added chaingen.sh to generate TLSA entries for smtp and imap
 * [x] 1.0.6.4 - backend/index: add api POST /api/logins
-* [x] 1.0.6.4 - backend: add functions getLogins saveLogin
-* [x] 1.0.6.4 - frontend/api: add api call getLogins saveLogin
+* [x] 1.0.6.4 - backend: add functions getLogins addLogin
+* [x] 1.0.6.4 - frontend/api: add api call getLogins addLogin
 * [x] 1.0.6.4 - frontend/Settings: split data into multiple forms and columns
 * [x] 1.0.6.3 - removed python3 as octoDNS will be separate container
 * [x] 1.0.6.3 - added python3 for octoDNS but I cannot get it working after 3 hours of labor

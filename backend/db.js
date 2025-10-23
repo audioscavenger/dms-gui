@@ -72,7 +72,16 @@ logins: {
   },
   
   insert: {
-    login: `REPLACE INTO logins (username, salt, hash, email) VALUES (@username, @salt, @hash, @email)`,
+    login:  `REPLACE INTO logins (username, salt, hash, email) VALUES (@username, @salt, @hash, @email)`,
+  },
+  
+  update: {
+    email:    `REPLACE INTO logins (email) VALUES (@email) WHERE username = ?`,
+    password: `REPLACE INTO logins (salt, hash) VALUES (@salt, @hash) WHERE username = ?`,
+  },
+  
+  delete: {
+    login:  `DELETE from logins WHERE 1=1 AND username = ?`,
   },
   
   init:  `BEGIN TRANSACTION;

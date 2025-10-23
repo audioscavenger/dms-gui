@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
 import Aliases from './pages/Aliases';
 import Settings from './pages/Settings';
+import Logins from './pages/Logins';
 import Container from 'react-bootstrap/Container'; // Import Container
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
                 <Route path="/aliases" element={<ProtectedRoute><Aliases /></ProtectedRoute>} />
+                <Route path="/logins" element={<ProtectedRoute><Logins /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               </Routes>
           </Col>{' '}

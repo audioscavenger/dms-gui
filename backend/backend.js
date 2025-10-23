@@ -30,6 +30,7 @@ regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
 regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
 regexEmailLax = /^([\S]+)@([\S]+)$/;
 regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
+regexUsername = /^[^\s]+$/;
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
 const color = {

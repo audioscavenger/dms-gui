@@ -10,7 +10,7 @@ const {
 const { dbInit } = require('./db');
 const {
   getLogins,
-  saveLogin,
+  addLogin,
   loginUser,
 } = require('./logins');
 const {
@@ -25,7 +25,7 @@ const {
 const {
   getAccounts,
   addAccount,
-  updateAccountPassword,
+  changePasswordAccount,
   deleteAccount,
 } = require('./accounts');
 const {
@@ -282,43 +282,6 @@ app.post('/api/accounts', async (req, res) => {
   }
 });
 
-// Endpoint for deleting an email account
-/**
- * @swagger
- * /api/accounts/{email}:
- *   delete:
- *     summary: Delete an email account
- *     description: Delete an email account from the docker-mailserver
- *     parameters:
- *       - in: path
- *         name: email
- *         required: true
- *         schema:
- *           type: string
- *         description: Email address of the account to delete
- *     responses:
- *       200:
- *         description: Account deleted successfully
- *       400:
- *         description: Email is required
- *       500:
- *         description: Unable to delete account
- */
-app.delete('/api/accounts/:email', async (req, res) => {
-  try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-    await deleteAccount(email);
-    res.json({ message: 'Account deleted successfully', email });
-  } catch (error) {
-    errorLog(`index /api/accounts: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to delete account' });
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Endpoint for reindexing an email account
 /**
  * @swagger
@@ -352,6 +315,43 @@ app.put('/api/reindex/:email', async (req, res) => {
   } catch (error) {
     errorLog(`index /api/reindex: ${error.message}`);
     // res.status(500).json({ error: 'Unable to reindex account' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for deleting an email account
+/**
+ * @swagger
+ * /api/accounts/{email}:
+ *   delete:
+ *     summary: Delete an email account
+ *     description: Delete an email account from the docker-mailserver
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email address of the account to delete
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       400:
+ *         description: Email is required
+ *       500:
+ *         description: Unable to delete account
+ */
+app.delete('/api/accounts/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    await deleteAccount(email);
+    res.json({ message: 'Account deleted successfully', email });
+  } catch (error) {
+    errorLog(`index /api/accounts: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to delete account' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -400,7 +400,7 @@ app.put('/api/accounts/:email/password', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    await updateAccountPassword(email, password);
+    await changePasswordAccount(email, password);
     res.json({ message: 'Password updated successfully', email });
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
@@ -641,13 +641,13 @@ app.get('/api/logins', async (req, res) => {
 });
 
 
-// Endpoint for saving logins
+// Endpoint for adding logins
 /**
  * @swagger
  * /api/logins:
  *   post:
- *     summary: save Admin credentials
- *     description: save Admin credentials
+ *     summary: add Login
+ *     description: add Login in db
  *     requestBody:
  *       required: true
  *       content:
@@ -657,20 +657,20 @@ app.get('/api/logins', async (req, res) => {
  *             properties:
  *               username:
  *                 type: string
- *                 description: Login name of the new admin account
+ *                 description: Login name of the new login account
  *               password:
  *                 type: string
- *                 description: Password for the new admin account
+ *                 description: Password for the new login account
  *               email:
  *                 type: string
- *                 description: Email address of the new admin account
+ *                 description: Email address of the new login account
  *     responses:
  *       201:
- *         description: Admin credentials saved successfully
+ *         description: Login credentials saved successfully
  *       400:
  *         description: Something is missing
  *       500:
- *         description: Unable to save Admin credentials
+ *         description: Unable to save Login credentials
  */
 app.post('/api/logins', async (req, res) => {
   try {
@@ -678,15 +678,104 @@ app.post('/api/logins', async (req, res) => {
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await saveLogin(username, password, email);
-    res.status(201).json({ message: 'Admin credentials saved successfully' });
+    const result = await addLogin(username, password, email);
+    res.status(201).json({ message: 'Login credentials saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to save Admin credentials' });
+    // res.status(500).json({ error: 'Unable to save Login credentials' });
     res.status(500).json({ error: error.message });
   }
 });
 
+// Endpoint for deleting a login account
+/**
+ * @swagger
+ * /api/logins/{username}:
+ *   delete:
+ *     summary: Delete a login account
+ *     description: Delete a login account from dms-gui
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username of the account to delete
+ *     responses:
+ *       200:
+ *         description: Login deleted successfully
+ *       400:
+ *         description: Username is required
+ *       500:
+ *         description: Unable to delete login
+ */
+app.delete('/api/logins/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+    await deleteAccount(username);
+    res.json({ message: 'Login deleted successfully', username });
+  } catch (error) {
+    errorLog(`index /api/login: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to delete login' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for updating a Login account password
+/**
+ * @swagger
+ * /api/logins/{username}/password:
+ *   put:
+ *     summary: Update a login password
+ *     description: Update the password for an existing login account
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username address of the login account to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: New password for the login account
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Username and password are required
+ *       500:
+ *         description: Unable to update password
+ */
+app.put('/api/logins/:username/password', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { password } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    await changePasswordAccount(username, password);
+    res.json({ message: 'Password updated successfully', username });
+  } catch (error) {
+    errorLog(`index /api/logins: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to update password' });
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Endpoint to log in a user; API calls would use maybe a different method
 /**

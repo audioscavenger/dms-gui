@@ -48,15 +48,8 @@ function FormSettings() {
   const fetchAllSettings = async () => {
     setLoading(true);
 
-    const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
-    console.debug('fetchAllSettings: settingsData',settingsData)
-    // setSettings({
-      // ...settings,
-      // ...settingsData,
-    // });
-    debugLog(`fetchAllSettings mergeArrayOfObj settingsData`,settingsData);
-    debugLog(`fetchAllSettings mergeArrayOfObj settings`,settings);
-    setSettings(mergeArrayOfObj(settingsData, settings, 'name'));
+    // const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
+    await fetchSettings();  // [ {name:name, value: value}, ..]
 
     // onInfosSubmit(infosData);  // that's what you send back to the parent page
 
@@ -71,7 +64,13 @@ function FormSettings() {
       const [settingsData] = await Promise.all([
         getSettings(),
       ]);
-      debugLog('settingsData', settingsData);
+      // setSettings({
+        // ...settings,
+        // ...settingsData,
+      // });
+      // debugLog(`fetchAllSettings mergeArrayOfObj settingsData`,settingsData);
+      console.debug('fetchAllSettings: settingsData',settingsData)
+      setSettings(mergeArrayOfObj(settingsData, settings, 'name'));
 
       setErrorMessage(null);
       return settingsData;

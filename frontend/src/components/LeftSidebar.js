@@ -41,22 +41,27 @@ const LeftSidebar = () => {
     <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
       <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
         <i className="bi bi-speedometer2 me-2"></i>
-        <span> {Translate('sidebar.dashboard')}</span>
+        <span> {Translate('dashboard.sidebar')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
         <i className="bi bi-person-circle me-2"></i>
-        <span> {Translate('sidebar.emailAccounts')}</span>
+        <span> {Translate('accounts.sidebar')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
         <i className="bi bi-arrow-left-right me-2"></i>
-        <span> {Translate('sidebar.aliases')}</span>
+        <span> {Translate('aliases.sidebar')}</span>
+      </Nav.Link>
+      
+      <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
+        <i className="bi bi-person-lock me-2"></i>
+        <span> {Translate('logins.sidebar')}</span>
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
         <i className="bi bi-gear-fill me-2"></i>
-        <span> {Translate('sidebar.settings')}</span>
+        <span> {Translate('settings.sidebar')}</span>
       </Nav.Link>
     </Nav>
 

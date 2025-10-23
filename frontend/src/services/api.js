@@ -116,8 +116,8 @@ export async function getLogins() {
   }
 };
 
-// export const saveLogin = async (username, password, email='') => {
-export async function saveLogin(username, password, email='') {
+// export const addLogin = async (username, password, email='') => {
+export async function addLogin(username, password, email='') {
   try {
     const response = await api.post(`/logins`, { username, password, email });
     return response.data;
@@ -127,6 +127,25 @@ export async function saveLogin(username, password, email='') {
   }
 };
 
+export async function deleteLogin(username) {
+  try {
+    const response = await api.delete(`/logins/${username}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function changePasswordLogin(username, password) {
+  try {
+    const response = await api.put(`/logins/${username}/password`, { password });
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
 
 export async function loginUser(username, password) {
   try {
@@ -172,8 +191,8 @@ export async function reindexAccount(email) {
   }
 };
 
-// export const updateAccountPassword = async (email, password) => {
-export async function updateAccountPassword(email, password) {
+// export const changePasswordAccount = async (email, password) => {
+export async function changePasswordAccount(email, password) {
   try {
     const response = await api.put(`/accounts/${email}/password`, { password });
     return response.data;

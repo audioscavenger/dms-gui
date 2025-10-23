@@ -32,6 +32,7 @@ const {
 // const fsp = fs.promises;
 const path = require('node:path');
 
+// returns a string
 async function getSetting(name) {
   try {
     
@@ -51,6 +52,7 @@ async function getSetting(name) {
 }
 
 
+// this returns an array of objects
 async function getSettings(name) {
   if (name) return getSetting(name);
   
