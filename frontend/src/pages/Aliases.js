@@ -200,7 +200,7 @@ const Aliases = () => {
     { key: 'destination', label: 'aliases.destinationAddress' },
     {
       key: 'actions',
-      label: 'accounts.actions',
+      label: 'common.actions',
       render: (alias) => (
         <Button
           variant="danger"

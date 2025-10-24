@@ -19,6 +19,8 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 * [ ] - the left menu is only as high as the window on first load, when you scroll down it's blank
 * [ ] - DataTable usePrevious to highlight data change on reload does not work anymore
+* [ ] - DataTable sort does not work for FormFields
+* [ ] - DataTable sort should really hide arrows for rendered columns with no data
 
 ## TODO:
 
@@ -69,6 +71,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.6 - frontend/Logins: all seems to work, and isAdmin isActive flip switches too
+* [x] 1.1.6 - frontend: changePasswordLogin and changePasswordAccount have become updateLogin and updateAccount
+* [x] 1.1.6 - backend/logins: prevent deleting the last admin in db
+* [x] 1.1.6 - backend/db: added sql sorted by isActive
+* [x] 1.1.6 - backend/db: added roles table
 * [x] 1.1.5 - backend: renamed saveLogin to addLogin, same mechanics as accounts
 * [x] 1.1.5 - frontend/translation: merged all password related fields into password group
 * [x] 1.1.5 - backend/logins: created deleteLogin and changePasswordLogin

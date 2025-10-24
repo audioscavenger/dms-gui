@@ -14,7 +14,7 @@ import {
   getLogins,
   addLogin,
   deleteLogin,
-  changePasswordLogin,
+  updateLogin,
 } from '../services/api';
 
 import {
@@ -50,10 +50,12 @@ const Logins = () => {
   const [newLoginformData, setNewLoginFormData] = useState({
     username: '',
     email: '',
+    isAdmin: 0,
     password: '',
     confirmPassword: '',
   });
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
+  const [loginEmailFormErrors, setLoginEmailFormErrors] = useState(null);
 
   // State for password change modal -------------------------------
   const passwordFormRef = useRef(null);
@@ -77,10 +79,22 @@ const Logins = () => {
       const [loginsData] = await Promise.all([
         getLogins(),
       ]);
-      setLogins(loginsData);
+      
+    // add color column for admins
+      let loginsDataFormatted = loginsData.map(login => { return { 
+      ...login, 
+      color:    (login.isAdmin) ? "text-danger" : "",
+      }; });
+      
+    // add muted color for inactives
+      loginsDataFormatted = loginsDataFormatted.map(login => { return { 
+      ...login, 
+      color:  (login.isActive) ? login.color : login.color+" opacity-25",
+      }; });
+      setLogins(loginsDataFormatted);
       setErrorMessage(null);
       
-      debugLog('loginsData', loginsData);
+      debugLog('loginsDataFormatted', loginsDataFormatted);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAllLogins'), err);
@@ -138,7 +152,7 @@ const Logins = () => {
   };
 
 
-  const handleSubmit = async (e) => {
+  const handleSubmitNewLogin = async (e) => {
     e.preventDefault();
     setSuccessMessage(null);
 
@@ -149,13 +163,15 @@ const Logins = () => {
     try {
       await addLogin(
         newLoginformData.username,
-        newLoginformData.email,
         newLoginformData.password,
+        newLoginformData.email,
+        newLoginformData.isAdmin,
       );
       setSuccessMessage('logins.loginCreated');
       setNewLoginFormData({
         username: '',
         email: '',
+        isAdmin: 0,
         password: '',
         confirmPassword: '',
       });
@@ -167,10 +183,10 @@ const Logins = () => {
     }
   };
 
-  const handleDelete = async (username) => {
-    if (window.confirm(t('logins.confirmDelete', { username }))) {
+  const handleLoginDelete = async (login) => {
+    if (window.confirm(t('logins.confirmDelete', { username:login.username }))) {
       try {
-        await deleteLogin(username);
+        await deleteLogin(login.username);
         setSuccessMessage('logins.loginDeleted');
         fetchAllLogins(); // Refresh the logins list
       } catch (err) {
@@ -178,6 +194,42 @@ const Logins = () => {
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteLogin');
       }
     }
+  };
+
+
+  const handleLoginFlipAdmin = async (login) => {
+    try {
+      await updateLogin(
+        login.username,
+        { isAdmin: +!login.isAdmin }
+      );
+      setSuccessMessage(t('logins.updated', {username:login.username}));
+      fetchAllLogins(); // Refresh the logins list
+    } catch (err) {
+      errorLog(t('api.errors.updateLogin'), err);
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+    }
+  };
+
+  const handleLoginFlipActive = async (login) => {
+    try {
+      await updateLogin(
+        login.username,
+        { isActive: +!login.isActive }
+      );
+      setSuccessMessage(t('logins.updated', {username:login.username}));
+      fetchAllLogins(); // Refresh the logins list
+    } catch (err) {
+      errorLog(t('api.errors.updateLogin'), err);
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+    }
+  };
+
+  const handleLoginChange = (e) => {
+    // const { name, value } = e.target;
+    // debugLog('name, value', name, value);
+    
+    debugLog('e', e);
   };
 
 
@@ -244,9 +296,9 @@ const Logins = () => {
     }
 
     try {
-      await changePasswordLogin(
-        selectedLogin.email,
-        passwordFormData.newPassword
+      await updateLogin(
+        selectedLogin.username,
+        { password: passwordFormData.newPassword }
       );
       setSuccessMessage('password.passwordUpdated');
       handleClosePasswordModal(); // Close the modal
@@ -270,17 +322,45 @@ const Logins = () => {
     { 
       key: 'email',
       label: 'logins.email',
+      render: (login) => (
+        <FormField
+          type="email"
+          id="email"
+          name="email"
+          value={login.email}
+          onChange={handleLoginChange}
+          groupClass=""
+          className="form-control-sm"
+        />
+      ),
+    },
+    { 
+      key: 'isAdmin',
+      label: 'logins.isAdmin',
+      render: (login) => (
+        <>
+          {(login.isAdmin) ? "admin" : "user"}
+          <Button
+            variant="info"
+            size="sm"
+            icon={(login.isAdmin) ? "chevron-double-down" : "chevron-double-up"}
+            title={(login.isAdmin) ? t('logins.demote', { username: login.username}) : t('logins.promote', { username: login.username})}
+            onClick={() => handleLoginFlipAdmin(login)}
+            className="me-2 float-end"
+          />
+        </>
+      ),
     },
     {
       key: 'actions',
-      label: 'logins.actions',
+      label: 'common.actions',
       render: (login) => (
         <div className="d-flex">
           <Button
             variant="primary"
             size="sm"
             icon="key"
-            title={t('logins.changePassword')}
+            title={t('password.changePassword')}
             onClick={() => handleChangePassword(login)}
             className="me-2"
           />
@@ -289,7 +369,15 @@ const Logins = () => {
             size="sm"
             icon="trash"
             title={t('logins.confirmDelete', { username: login.username })}
-            onClick={() => handleDelete(login.username)}
+            onClick={() => handleLoginDelete(login)}
+            className="me-2"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={(login.isActive) ? "toggle-on" : "toggle-off"}
+            title={(login.isActive) ? t('logins.deactivate', { username: login.username }) : t('logins.activate', { username: login.username })}
+            onClick={() => handleLoginFlipActive(login)}
             className="me-2"
           />
         </div>
@@ -299,7 +387,7 @@ const Logins = () => {
 
 
   const FormNewLogin = (
-    <form onSubmit={handleSubmit} className="form-wrapper">
+    <form onSubmit={handleSubmitNewLogin} className="form-wrapper">
       <FormField
         type="text"
         id="username"
@@ -369,8 +457,8 @@ const Logins = () => {
   
   // https://icons.getbootstrap.com/
   const loginTabs = [
-  { id: 1, title: "logins.newLogin",        icon: "person-fill-add", content: FormNewLogin },
-  { id: 2, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchAllLogins(), content: DataTableLogins },
+  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchAllLogins(), content: DataTableLogins },
+  { id: 2, title: "logins.newLogin",        icon: "person-fill-add", content: FormNewLogin },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not

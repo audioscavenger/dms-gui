@@ -51,7 +51,7 @@ export const Login = () => {
     // if we can login with the default user, display first run welcome message
     if (isLoggedin) {
       setFirstRun(true);
-      setSuccessMessage('login.isFirstRun');
+      setSuccessMessage('logins.isFirstRun');
     }
 
   };
@@ -71,7 +71,7 @@ export const Login = () => {
       (firstRun) ? await login({username}, "/settings") : await login({username});
       
     } else {
-      setErrorMessage('login.denied');
+      setErrorMessage('logins.denied');
     }
   };
   
@@ -82,7 +82,7 @@ export const Login = () => {
     <Row className="align-items-center justify-content-center vh-100">
       <Col md={6}>{' '}
 
-        <Card title="login.title" icon="person-lock" collapsible="false">{' '}
+        <Card title="logins.title" icon="person-lock" collapsible="false">{' '}
           <AlertMessage type="success" message={successMessage} />
 
           <form onSubmit={handleLogin}>
@@ -111,7 +111,7 @@ export const Login = () => {
               type="submit"
               variant="primary"
               icon="box-arrow-in-right"
-              text="login.login"
+              text="logins.login"
             />
             
           </form>

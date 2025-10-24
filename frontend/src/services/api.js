@@ -116,10 +116,10 @@ export async function getLogins() {
   }
 };
 
-// export const addLogin = async (username, password, email='') => {
-export async function addLogin(username, password, email='') {
+export async function addLogin(username, password, email='', isAdmin=0) {
+    console.debug('ddebug password, email',password, email)
   try {
-    const response = await api.post(`/logins`, { username, password, email });
+    const response = await api.post(`/logins`, { username, password, email, isAdmin });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -137,9 +137,10 @@ export async function deleteLogin(username) {
   }
 };
 
-export async function changePasswordLogin(username, password) {
+export async function updateLogin(username, jsonDict) {
+  console.debug('ddebug api jsonDict',jsonDict)
   try {
-    const response = await api.put(`/logins/${username}/password`, { password });
+    const response = await api.put(`/logins/${username}/update`, jsonDict); // jsonDict = {email:email, isAdmin:0, isActive:0}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -156,7 +157,6 @@ export async function loginUser(username, password) {
     throw error;
   }
 };
-
 
 // export const addAccount = async (email, password) => {
 export async function addAccount(email, password) {
@@ -191,10 +191,9 @@ export async function reindexAccount(email) {
   }
 };
 
-// export const changePasswordAccount = async (email, password) => {
-export async function changePasswordAccount(email, password) {
+export async function updateAccount(email, jsonDict) {
   try {
-    const response = await api.put(`/accounts/${email}/password`, { password });
+    const response = await api.put(`/accounts/${email}/update`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);

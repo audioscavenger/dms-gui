@@ -11,6 +11,8 @@ const { dbInit } = require('./db');
 const {
   getLogins,
   addLogin,
+  updateLogin,
+  deleteLogin,
   loginUser,
 } = require('./logins');
 const {
@@ -25,7 +27,7 @@ const {
 const {
   getAccounts,
   addAccount,
-  changePasswordAccount,
+  updateAccount,
   deleteAccount,
 } = require('./accounts');
 const {
@@ -255,10 +257,14 @@ app.get('/api/accounts', async (req, res) => {
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 description: Email address of the new account
  *               password:
  *                 type: string
  *                 description: Password for the new account
+ *             required:
+ *               - email
+ *               - password
  *     responses:
  *       201:
  *         description: Account created successfully
@@ -312,6 +318,7 @@ app.put('/api/reindex/:email', async (req, res) => {
     }
     await reindexAccount(email);
     res.json({ message: 'Reindex started for account', email });
+    
   } catch (error) {
     errorLog(`index /api/reindex: ${error.message}`);
     // res.status(500).json({ error: 'Unable to reindex account' });
@@ -356,13 +363,13 @@ app.delete('/api/accounts/:email', async (req, res) => {
   }
 });
 
-// Endpoint for updating an email account password
+// Endpoint for updating an email account
 /**
  * @swagger
- * /api/accounts/{email}/password:
+ * /api/accounts/{email}/update:
  *   put:
- *     summary: Update an email account password
- *     description: Update the password for an existing email account
+ *     summary: Update an email account
+ *     description: Update an existing email account
  *     parameters:
  *       - in: path
  *         name: email
@@ -382,29 +389,25 @@ app.delete('/api/accounts/:email', async (req, res) => {
  *                 description: New password for the account
  *     responses:
  *       200:
- *         description: Password updated successfully
+ *         description: Account updated successfully
  *       400:
- *         description: Email and password are required
+ *         description: Account is required
  *       500:
- *         description: Unable to update password
+ *         description: Unable to update account
  */
-app.put('/api/accounts/:email/password', async (req, res) => {
+app.put('/api/accounts/:email/update', async (req, res) => {
   try {
     const { email } = req.params;
-    const { password } = req.body;
-
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    if (!password) {
-      return res.status(400).json({ error: 'Password is required' });
-    }
 
-    await changePasswordAccount(email, password);
-    res.json({ message: 'Password updated successfully', email });
+    await updateAccount(email, req.body);
+    res.json({ message: 'Account updated successfully', email });
+    
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to update password' });
+    // res.status(500).json({ error: 'Unable to update Account' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -462,6 +465,9 @@ app.get('/api/aliases', async (req, res) => {
  *               destination:
  *                 type: string
  *                 description: Destination email address for the alias
+ *             required:
+ *               - source
+ *               - destination
  *     responses:
  *       201:
  *         description: Alias created successfully
@@ -582,14 +588,16 @@ app.get('/api/settings', async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               containerName:
- *                 type: string
- *               setupPath:
- *                 type: string
- *               dnsProvider:
- *                 type: string
+ *             type: array
+ *             items:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                  type: string
+ *                 value:
+ *                  type: string
+ *             minItems: 1
+ *             uniqueItems: true
  *     responses:
  *       201:
  *         description: settings saved successfully
@@ -600,13 +608,7 @@ app.get('/api/settings', async (req, res) => {
  */
 app.post('/api/settings', async (req, res) => {
   try {
-    // const { containerName, setupPath=DMS_SETUP_SCRIPT, dnsProvider='' } = req.body;
-    // if (!containerName) return res.status(400).json({ error: 'containerName is missing' });
-    // if (!setupPath) return res.status(400).json({ error: 'setupPath is missing' });
-    // const result = await saveSettings(containerName, setupPath, dnsProvider);
-
-    // console.debug('ddebug settings API: req.body=',req.body);   // [{name:name, value:value}, ..]
-    const result = await saveSettings(req.body);
+    const result = await saveSettings(req.body);     // [{name:name, value:value}, ..]
     res.status(201).json({ message: 'Settings saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/settings: ${error.message}`);
@@ -663,7 +665,15 @@ app.get('/api/logins', async (req, res) => {
  *                 description: Password for the new login account
  *               email:
  *                 type: string
+ *                 format: email
  *                 description: Email address of the new login account
+ *               isAdmin:
+ *                 type: boolean
+ *                 description: Is the user an admin
+ *             required:
+ *               - username
+ *               - password
+ *               - isAdmin
  *     responses:
  *       201:
  *         description: Login credentials saved successfully
@@ -674,11 +684,13 @@ app.get('/api/logins', async (req, res) => {
  */
 app.post('/api/logins', async (req, res) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password, email, isAdmin } = req.body;
+    console.debug('req.body',req.body)
+    console.debug('ddebug password, email',password, email)
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(username, password, email);
+    const result = await addLogin(username, password, email, isAdmin);
     res.status(201).json({ message: 'Login credentials saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
@@ -686,6 +698,67 @@ app.post('/api/logins', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// https://swagger.io/docs/specification/v3_0/data-models/data-types/#objects
+/**
+ * @swagger
+ * /api/logins/{username}/update:
+ *   put:
+ *     summary: Update a login data
+ *     description: Update the data for an existing login account
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username address of the login account to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: New email for the login account
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: New email for the login account
+ *               isAdmin:
+ *                 type: integer
+ *                 description: is login account admin
+ *               isActive:
+ *                 type: integer
+ *                 description: de/activate login account
+ *     responses:
+ *       200:
+ *         description: Data updated successfully
+ *       400:
+ *         description: Username or data are required
+ *       500:
+ *         description: Unable to update login
+ */
+app.put('/api/logins/:username/update', async (req, res) => {
+  try {
+    const { username } = req.params;
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+
+    console.debug('api req.body',req.body)
+    await updateLogin(username, req.body);
+    res.json({ message: 'Login updated successfully', username });
+    
+  } catch (error) {
+    errorLog(`index PUT /api/logins: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to update login' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Endpoint for deleting a login account
 /**
@@ -715,7 +788,7 @@ app.delete('/api/logins/:username', async (req, res) => {
     if (!username) {
       return res.status(400).json({ error: 'Username is required' });
     }
-    await deleteAccount(username);
+    await deleteLogin(username);
     res.json({ message: 'Login deleted successfully', username });
   } catch (error) {
     errorLog(`index /api/login: ${error.message}`);
@@ -724,58 +797,6 @@ app.delete('/api/logins/:username', async (req, res) => {
   }
 });
 
-// Endpoint for updating a Login account password
-/**
- * @swagger
- * /api/logins/{username}/password:
- *   put:
- *     summary: Update a login password
- *     description: Update the password for an existing login account
- *     parameters:
- *       - in: path
- *         name: username
- *         required: true
- *         schema:
- *           type: string
- *         description: Username address of the login account to update
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               password:
- *                 type: string
- *                 description: New password for the login account
- *     responses:
- *       200:
- *         description: Password updated successfully
- *       400:
- *         description: Username and password are required
- *       500:
- *         description: Unable to update password
- */
-app.put('/api/logins/:username/password', async (req, res) => {
-  try {
-    const { username } = req.params;
-    const { password } = req.body;
-
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
-    }
-    if (!password) {
-      return res.status(400).json({ error: 'Password is required' });
-    }
-
-    await changePasswordAccount(username, password);
-    res.json({ message: 'Password updated successfully', username });
-  } catch (error) {
-    errorLog(`index /api/logins: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to update password' });
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // Endpoint to log in a user; API calls would use maybe a different method
 /**

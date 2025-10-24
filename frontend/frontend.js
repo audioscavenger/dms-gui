@@ -21,6 +21,8 @@ regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
 regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
 regexEmailLax = /^([\S]+)@([\S]+)$/;
 
+regexUsername = /^[^\s]+$/;
+
 const ICON = {
   success:  '✔️',
   error:    '❌',

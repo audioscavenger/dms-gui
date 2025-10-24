@@ -9,6 +9,7 @@ const {
   byteSize2HumanSize,
   jsonFixTrailingCommas,
   formatDMSError,
+  reduxPropertiesOfObj,
   execSetup,
   execCommand,
   readJson,
@@ -27,7 +28,7 @@ const fs = require("fs");
 const fsp = fs.promises;
 
 
-// this returns an array of objects
+// this returns an objects
 async function getLogin(username) {
   try {
     
@@ -69,7 +70,7 @@ async function getLogins(username) {
     // [ { username: username, email: email }, ..]
     
   } catch (error) {
-    let backendError = `getLogins: ${error.message}`;
+    let backendError = error.message;
     errorLog(backendError);
     throw new Error(backendError);
     // TODO: we should return smth to the index API instead of throwing an error
@@ -81,12 +82,13 @@ async function getLogins(username) {
 }
 
 
-async function addLogin(username, password, email='') {
+async function addLogin(username, password, email='', isAdmin=0) {
+  console.debug('ddebug password, email',password, email)
   try {
-    debugLog(username);
+    debugLog(username, password, email, isAdmin);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email });
+    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email, isAdmin:isAdmin });
     successLog(`Saved login ${username}`);
     return { success: true };
 
@@ -111,7 +113,7 @@ async function changePasswordLogin(username, password) {
     if (!result.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      dbRun(sql.logins.update.password, { salt:salt, hash:hash }, username);
+      dbRun(sql.logins.update.password, { username:username, salt:salt, hash:hash });
       successLog(`Password updated for login: ${username}`);
       return { success: true };
       
@@ -131,23 +133,62 @@ async function changePasswordLogin(username, password) {
 }
 
 
+async function updateLogin(username, jsonDict) {
+  // jsonArrayOfObjects = {email:email, isAdmin:isAdmin, isActive:isActive }
+  
+  try {
+    if (Object.keys(jsonDict).length = 0) {
+      throw new Error('nothing to modify was passed');
+    }
+    
+    debugLog(`Updating login ${username} with jsonDict:`, jsonDict);
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(validKeys.logins));
+    if (Object.keys(validDict).length = 0) {
+      throw new Error('nothing valid was passed');
+    }
+    
+    debugLog(`Updating login ${username} with validDict:`, validDict);    // { isAdmin: true }
+    for (const [key, value] of Object.entries(validDict)) {
+      if (key == 'password') {
+        return changePasswordLogin(username, value);
+      } else {
+        dbRun(sql.logins.update[key], {[key]:value}, username);
+        debugLog(`Updated login ${username} with ${key}=${value}`);
+        return { success: true };
+      }
+    }
+    
+  } catch (error) {
+    let backendError = 'Error updating login';
+    let ErrorMsg = await formatDMSError(backendError, error);
+    errorLog(`${backendError}: `, ErrorMsg);
+    throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
 async function deleteLogin(username) {
 
   try {
-    const logins = await dbAll(sql.logins.select.logins);
-    debugLog(`pulled ${logins.length} logins`);
+    const activeAdmins = await dbAll(sql.logins.select.isActive.admins);
+    const login =  getLogin(username);
+    debugLog(`pulled login:`,login);
+    debugLog(`pulled ${activeAdmins.length} admins`, activeAdmins);
 
-    if (logins.length > 1) {
-      debugLog(`Deleting login: ${username}`);
-      dbRun(sql.logins.delete.login, username);
-      if (!result.exitCode) {
-      
+    if (!login?.username) {
+      // don;t delete the last admin
+      if (activeAdmins.length && activeAdmins[0].username != username) {
+        dbRun(sql.logins.delete.login, username);
         successLog(`Login deleted: ${username}`);
-        return { success: true };
+        
+      } else errorLog("Cannot delete the last login, how will you log back in?");
       
-      } else errorLog(result.stderr);
-      
-    } else errorLog("Cannot delete the last login, how will you log back in?");
+    } else errorLog(`Login ${username} does not exist`);
     
   } catch (error) {
     let backendError = 'Error deleting login';
@@ -191,8 +232,11 @@ async function loginUser(username, password) {
 
 
 module.exports = {
+  getLogin,
   getLogins,
   addLogin,
+  deleteLogin,
+  updateLogin,
   loginUser,
 };
 

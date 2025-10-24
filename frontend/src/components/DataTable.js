@@ -131,8 +131,8 @@ const DataTable = ({
   // BUG: crash when filtering objects: right-hand side of 'in' should be an object, got undefined
   const sortedAndFilteredData = useMemo(() => {
     let currentData = [...data];
-    debugLog(`currentData before sortedAndFilteredData`, currentData);
-    debugLog(`                   columnFilters`,columnFilters);
+    // debugLog(`currentData before sortedAndFilteredData`, currentData);
+    // debugLog(`                   columnFilters`,columnFilters);
 
     // TODO: handle objects too
     // Apply columnFilters
@@ -152,7 +152,7 @@ const DataTable = ({
       sortFunction(sortColumn, currentData);
     }
     
-    debugLog(`currentData after  sortColumn=${sortColumn}`, currentData);
+    // debugLog(`currentData after  sortColumn=${sortColumn}`, currentData);
     return currentData;
   }, [data, sortColumn, sortOrders, columnFilters]);
 

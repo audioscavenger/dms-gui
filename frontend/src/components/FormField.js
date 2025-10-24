@@ -20,6 +20,7 @@ import {
  * @param {string} [props.helpText] Help text (translation key)
  * @param {boolean} [props.translate] Whether the fields need translation
  * @param {boolean} [props.required] Whether the field is required
+ * @param {string} [props.groupClass] Whether to replace the default className of the group
  */
 const FormField = ({
   type = 'text',
@@ -32,6 +33,7 @@ const FormField = ({
   placeholder,
   error,
   helpText,
+  groupClass="mb-3",
   required = false,
   translate = true,
   ...rest // Pass any other props down to Form.Control
@@ -39,11 +41,13 @@ const FormField = ({
   // const { t } = useTranslation();
 
   return (
-    <Form.Group className="mb-3" controlId={id}>
+    <Form.Group className={groupClass} controlId={id}>
+      {label && (
       <Form.Label className={labelColor}>
         {Translate(label, translate)}
         {required && <span className="text-danger ms-1">*</span>}
       </Form.Label>
+      )}
       <Form.Control
         type={type}
         name={name}

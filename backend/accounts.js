@@ -10,6 +10,7 @@ const {
   humanSize2ByteSize,
   jsonFixTrailingCommas,
   formatDMSError,
+  reduxPropertiesOfObj,
   execSetup,
   execCommand,
   readJson,
@@ -87,7 +88,7 @@ async function getAccounts(refresh, containerName) {
 
     // now save accounts in db
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
-    dbRun(sql.accounts.update.account, accountsDb, containerName);
+    dbRun(sql.accounts.insert.account, accountsDb, containerName);
     
     return accounts;
     
@@ -227,12 +228,50 @@ async function changePasswordAccount(email, password, containerName) {
       const { salt, hash } = await hashPassword(password);
       dbRun(sql.accounts.update.password, { email:email, salt:salt, hash:hash }, containerName);
       successLog(`Password updated for account: ${email}`);
-      return { success: true, email };
+      return { success: true };
       
     } else errorLog(result.stderr);
     
   } catch (error) {
     let backendError = 'Error updating account password';
+    let ErrorMsg = await formatDMSError(backendError, error);
+    errorLog(`${backendError}: `, ErrorMsg);
+    throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+async function updateAccount(email, jsonDict) {
+  // jsonDict = {password:password}
+  
+  try {
+    if (Object.keys(jsonDict).length = 0) {
+      throw new Error('nothing to modify was passed');
+    }
+    
+    debugLog(`Updating account ${email} with jsonDict:`, jsonDict);
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(validKeys.accounts));
+    if (Object.keys(validDict).length = 0) {
+      throw new Error('nothing valid was passed');
+    }
+    
+    debugLog(`Updating account ${email} with validDict:`, validDict);
+    for (const [key, value] of Object.entries(validDict)) {
+      if (key == 'password') {
+        return changePasswordAccount(email, value);
+      } else {
+        dbRun(sql.accounts.update.any, key, value, email);
+        debugLog(`Updated account ${email} with ${key}=${value}`);
+        return { success: true };
+      }
+    }
+    
+  } catch (error) {
+    let backendError = 'Error updating account';
     let ErrorMsg = await formatDMSError(backendError, error);
     errorLog(`${backendError}: `, ErrorMsg);
     throw new Error(ErrorMsg);
@@ -305,7 +344,7 @@ async function reindexAccount(email, containerName) {
 module.exports = {
   getAccounts,
   addAccount,
-  changePasswordAccount,
+  updateAccount,
   deleteAccount,
 };
 

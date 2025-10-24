@@ -18,7 +18,7 @@ import {
   addAccount,
   deleteAccount,
   reindexAccount,
-  changePasswordAccount,
+  updateAccount,
 } from '../services/api';
 
 import {
@@ -74,20 +74,7 @@ const Accounts = () => {
   const [showDNSModal, setShowDNSModal] = useState(false);
   const [dnsFormData, setDNSFormData] = useState({});
   const [dnsFormErrors, setDNSFormErrors] = useState({});
-/* 
-TODO: useEffect properly on object change
-const parentObject = useMemo(() => ({
-  prop: 'value'
-}), []); // Empty array ensures the object reference is stable
 
-const handleSubmit = useCallback(() => {
-  // The function reference is stable
-}, []);
-
-useEffect(() => {
-  // This will now only re-run if parentObject actually changes
-}, [parentObject]);
- */
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -162,7 +149,7 @@ useEffect(() => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitNewAccount = async (e) => {
     e.preventDefault();
     setSuccessMessage(null);
 
@@ -276,9 +263,9 @@ useEffect(() => {
     }
 
     try {
-      await changePasswordAccount(
+      await updateAccount(
         selectedAccount.email,
-        passwordFormData.newPassword
+        { password: passwordFormData.newPassword }
       );
       setSuccessMessage('accounts.passwordUpdated');
       handleClosePasswordModal(); // Close the modal
@@ -407,7 +394,7 @@ useEffect(() => {
     },
     {
       key: 'actions',
-      label: 'accounts.actions',
+      label: 'common.actions',
       render: (account) => (
         <div className="d-flex">
           <Button
@@ -443,7 +430,7 @@ useEffect(() => {
 
 
   const FormNewAccount = (
-          <form onSubmit={handleSubmit} className="form-wrapper">
+          <form onSubmit={handleSubmitNewAccount} className="form-wrapper">
             <FormField
               type="email"
               id="email"

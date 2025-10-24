@@ -75,18 +75,17 @@ function reduxArrayOfObj(obj, arrayToKeep) {
 function reduxPropertiesOfObj(obj, arrayToKeep) {
 // this will reduce:
   // const person = {
-  // firstName: 'Orpheus',
-  // lastName: 'De Jong',
-  // phone: '+1 123-456-7890',
-  // email: 'fake@email.tld',
-  // }
+        // firstName: 'Orpheus',
+        // lastName: 'De Jong',
+        // phone: '+1 123-456-7890',
+        // email: 'fake@email.tld',
+        // }
 // keeping:
   // arrayToKeep = ['firstName', 'lastName']
 // to:
   // person = {
   // firstName: 'Orpheus',
   // lastName: 'De Jong',
-  // email: 'fake@email.tld',
   // }
 
   const allKeys = Object.keys(obj);

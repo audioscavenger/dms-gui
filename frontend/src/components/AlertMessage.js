@@ -22,7 +22,6 @@ const AlertMessage = ({
   ...rest
 }) => {
   // const { t } = useTranslation();
-
   if (!message) return null;
 
   return (

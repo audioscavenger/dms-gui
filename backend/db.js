@@ -11,6 +11,25 @@ const crypto = require('node:crypto');
 
 var DB;
 
+// rsa-2048-dkim-$domain.private.txt
+// keytypes = ['rsa','ed25519']
+// keysizes = ['1024','2048']
+
+sqlMatch = {
+  add: {
+    patch: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
+    err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
+  },
+  drop: {
+    patch: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
+    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+  },
+  get: {
+    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+  },
+}
+
+
 // in-memory database: https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#serializeoptions---buffer
 // const buffer = DB.serialize();
 // DB.close();
@@ -62,22 +81,39 @@ settings: {
 logins: {
       
   select: {
-    usernames:`SELECT username from logins`,
-    username: `SELECT username from logins WHERE username = ?`,
-    logins:   `SELECT username, email from logins`,
-    login:    `SELECT username, email from logins WHERE username = ?`,
+    usernames:`SELECT username from logins WHERE 1=1`,
+    username: `SELECT username from logins WHERE 1=1 AND username = ?`,
+    logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1`,
+    admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isAdmin = 1`,
+    login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND username = ?`,
     salt:     `SELECT salt from logins WHERE username = ?`,
     hash:     `SELECT hash from logins WHERE username = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE username = ?`,
+    isActive: {
+      usernames:`SELECT username from logins WHERE 1=1 AND isActive = 1`,
+      username: `SELECT username from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+      logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1`,
+      admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
+      login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+    },
+    isInactive: {
+      usernames:`SELECT username from logins WHERE 1=1 AND isActive = 0`,
+      username: `SELECT username from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
+      logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0`,
+      admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
+    },
   },
   
   insert: {
-    login:  `REPLACE INTO logins (username, salt, hash, email) VALUES (@username, @salt, @hash, @email)`,
+    login:    `REPLACE INTO logins (username, salt, hash, email, isAdmin) VALUES (@username, @salt, @hash, @email, @isAdmin)`,
   },
   
   update: {
-    email:    `REPLACE INTO logins (email) VALUES (@email) WHERE username = ?`,
-    password: `REPLACE INTO logins (salt, hash) VALUES (@salt, @hash) WHERE username = ?`,
+    password: `REPLACE INTO logins (username, salt, hash) VALUES (@username, @salt, @hash)`,
+    email:    `UPDATE logins set email = @email WHERE username = ?`,
+    isAdmin:  `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
+    isActive: `UPDATE logins set isActive = @isActive WHERE username = ?`,
   },
   
   delete: {
@@ -89,9 +125,11 @@ logins: {
           username  TEXT NOT NULL UNIQUE PRIMARY KEY,
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
-          email     TEXT DEFAULT ''
+          email     TEXT DEFAULT '',
+          isAdmin   BIT DEFAULT 0,
+          isActive  BIT DEFAULT 1
           );
-          INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18');
+          INSERT OR IGNORE INTO logins (username, salt, hash, isAdmin) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1);
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
@@ -113,7 +151,44 @@ logins: {
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
       ],
     },
+    { DB_VERSION: '1.1.6',
+      patches: [
+        `ALTER TABLE logins ADD isAdmin   BIT DEFAULT 0`,
+        `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
+        `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${isImmutable})`,
+      ],
+    },
   ],
+},
+
+roles: {
+      
+  select: {
+    roles:    `SELECT username, email from roles`,
+    username: `SELECT username        from roles WHERE email = ?`,
+    email:    `SELECT email           from roles WHERE username = ?`,
+  },
+  
+  insert: {
+    role:     `REPLACE INTO roles (username, email) VALUES (@username, @email)`,
+  },
+  
+  delete: {
+    usernames: `DELETE from roles WHERE 1=1 AND username = ?`,
+    emails:    `DELETE from roles WHERE 1=1 AND email = ?`,
+    roles:     `DELETE from roles WHERE 1=1 AND username = ? AND email = ?`,
+  },
+  
+  init:  `BEGIN TRANSACTION;
+          CREATE TABLE roles (
+          id        INTEGER PRIMARY KEY,
+          username  TEXT NOT NULL,
+          email     TEXT NOT NULL
+          );
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_roles', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          COMMIT;`,
+  
 },
 
 accounts: {
@@ -125,12 +200,12 @@ accounts: {
   },
   
   insert: {
-    account:  `REPLACE INTO accounts (email, domain, salt, hash, scope) VALUES (@email, @domain, @salt, @hash, ?)`,
+    account:  `REPLACE INTO accounts (email, domain, storage, salt, hash, scope) VALUES (@email, @domain, @storage, @salt, @hash, ?)`,
   },
   
   update: {
-    account:  `REPLACE INTO accounts (email, domain, scope) VALUES (@email, @domain, ?)`,
     password: `REPLACE INTO accounts (email, salt, hash, scope) VALUES (@email, @salt, @hash, ?)`,
+    any:      `UPDATE accounts set ?=? WHERE scope=? and email=?)`,
   },
   
   delete: {
@@ -235,54 +310,6 @@ domains: {
 
 };
 
-// rsa-2048-dkim-$domain.private.txt
-// keytypes = ['rsa','ed25519']
-// keysizes = ['1024','2048']
-
-sqlMatch = {
-  add: {
-    patch: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
-    err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
-  },
-  drop: {
-    patch: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
-    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
-  },
-  get: {
-    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
-  },
-}
-
-// insert = DB.prepare(`REPLACE INTO settings (name, value) VALUES (@name, @value)`)
-// insert.run({name:'node',value:'v24'})  // { changes: 1, lastInsertRowid: 1 }
-
-// insert = DB.prepare(`REPLACE INTO settings               VALUES (?, ?)`)
-// insert.run(['node2','v26'])            // { changes: 1, lastInsertRowid: 2 }
-
-  // debug = true;
-  // DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
-  // DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
-  // DB = require('better-sqlite3')(DATABASE);
-  // DB.pragma('journal_mode = WAL');
-  // process.on('exit', () => DB.close());
-  // DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
-  // sql=`BEGIN TRANSACTION;
-            // CREATE TABLE IF NOT EXISTS logins (
-            // username  TEXT NOT NULL UNIQUE PRIMARY KEY,
-            // salt      TEXT NOT NULL,
-            // hash      TEXT NOT NULL,
-            // email     TEXT DEFAULT ''
-            // );
-            // REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
-            // COMMIT;`
-  // DB.prepare('SELECT username, email from logins').all()
-  // DB.exec(sql)
-  // DB.inTransaction
-  // DB.open
-  // DB.close()
-  // function debugLog(message) {console.debug(message)}
-  // dbRun(sql)
-
 
 function dbOpen() {
   try {
@@ -310,8 +337,8 @@ function dbOpen() {
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
 // dbRun takes params as Array = multiple inserts or String/Object = single insert
 // dbRun takes multiple anonymous parameters anonParams for WHERE clause value(s) when needed: can be multiple strings or an array, anonParams becomes an array anyways
-function dbRun(sql, params=[], ...anonParams) {
-
+function dbRun(sql, params, ...anonParams) {
+console.debug('anonParams',anonParams)
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
@@ -325,7 +352,8 @@ function dbRun(sql, params=[], ...anonParams) {
       debugLog(`DB.exec success`);
 
     // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
-    } else if (Array.isArray(params) && params.length > 1) {
+    } else if (Array.isArray(params) && params.length) {
+      
       if (anonParams.length) {
         debugLog(`DB.transaction(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
         const insertMany = DB.transaction((params) => {
@@ -360,6 +388,8 @@ function dbRun(sql, params=[], ...anonParams) {
     debugLog(`${err.code}: ${err.message}`);
     dbOpen()
     throw err;
+  }
+}
     // dupe table:
       // err.code=SQLITE_ERROR
       // err.message=table xyz already exists
@@ -375,8 +405,7 @@ function dbRun(sql, params=[], ...anonParams) {
     // add column that exists:
       // err.code=SQLITE_ERROR
       // err.message=duplicate column name: salt
-  }
-}
+
 
 function dbGet(sql, ...anonParams) {
   
@@ -590,3 +619,45 @@ module.exports = {
   hashPassword,
   verifyPassword,
 };
+
+
+// debug = true;
+// DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
+// DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+// DB = require('better-sqlite3')(DATABASE);
+// DB.pragma('journal_mode = WAL');
+// process.on('exit', () => DB.close());
+// DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
+// sql=`BEGIN TRANSACTION;
+          // CREATE TABLE IF NOT EXISTS logins (
+          // username  TEXT NOT NULL UNIQUE PRIMARY KEY,
+          // salt      TEXT NOT NULL,
+          // hash      TEXT NOT NULL,
+          // email     TEXT DEFAULT ''
+          // );
+          // REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
+          // COMMIT;`
+// DB.prepare('SELECT username, email from logins').all()
+// DB.exec(sql)
+// DB.inTransaction
+// DB.open
+// DB.close()
+
+// function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
+// function debugLog(message) {console.debug(message)}
+// dbRun(sql)
+
+// insert = DB.prepare(`REPLACE INTO settings (name, value) VALUES (@name, @value)`)
+// insert.run({name:'node',value:'v24'})  // { changes: 1, lastInsertRowid: 1 }
+
+// insert = DB.prepare(`REPLACE INTO settings               VALUES (?, ?)`)
+// insert.run(['node2','v26'])            // { changes: 1, lastInsertRowid: 2 }
+
+// key = 'isAdmin'
+// value = 1
+// username = 'admin2'
+// sql = { logins: { update: { any: `UPDATE logins set {@key}=? WHERE username = ?`, } } }
+// sql = { logins: { update: { any: `REPLACE INTO logins (username, salt, hash, email, isAdmin) VALUES (@username, @salt, @hash, @email, @isAdmin)`, } } }
+// dbRun(sql.logins.update.any, key, value, username)
+// sql = { logins: { update: { isAdmin: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`, } } }
+// dbRun(sql.logins.update.isAdmin, {isAdmin:value}, username) // works

@@ -91,7 +91,7 @@ async function saveSettings(jsonArrayOfObjects) {
     
     dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
     global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-    successLog(`Saved ${settings.length} settings in db`);
+    successLog(`Saved ${jsonArrayOfObjects.length} settings in db`);
     return { success: true };
 
   } catch (error) {
