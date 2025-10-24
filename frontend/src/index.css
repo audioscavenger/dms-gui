@@ -92,7 +92,9 @@ body {
 
 .cursor-pointer {cursor: pointer;}
 
-/* DataTable Highlight animation */
+
+/* -------------------- DataTable -------------------- */
+/* --- Highlight animation --- */
 @keyframes highlight {
   0%    { background-color: yellow; }
   4%    { background-color: transparent; }
@@ -102,9 +104,18 @@ body {
   100%  { background-color: transparent; }
 }
 
-/* Style for the cell with a recent change */
 .highlight-change {
   animation: highlight 4s ease-in-out;
 }
-/* DataTable Highlight animation */
+/* --- Highlight animation --- */
 
+/* opacity for text in td only, not the buttons or icons */
+.td-opacity-25 td span {
+  opacity: .25;
+}
+
+/* text-danger or any text color applied at row lever is superseeded by the below, from table class */
+.table > :not(caption) > * > * {
+  color: inherit;
+}
+/* -------------------- DataTable -------------------- */

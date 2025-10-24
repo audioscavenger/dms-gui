@@ -88,7 +88,7 @@ async function getAccounts(refresh, containerName) {
 
     // now save accounts in db
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
-    dbRun(sql.accounts.insert.account, accountsDb, containerName);
+    dbRun(sql.accounts.insert.fromDMS, accountsDb, containerName);
     
     return accounts;
     
@@ -196,7 +196,7 @@ async function addAccount(email, password, containerName) {
     if (!result.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      dbRun(sql.accounts.insert.account, { email:email, salt:salt, hash:hash, domain:email.split('@')[1] }, containerName);
+      dbRun(sql.accounts.insert.fromGUI, { email:email, domain:email.split('@')[1], salt:salt, hash:hash }, containerName);
       successLog(`Account created: ${email}`);
       return { success: true, email };
       
@@ -245,9 +245,11 @@ async function changePasswordAccount(email, password, containerName) {
   }
 }
 
-async function updateAccount(email, jsonDict) {
+async function updateAccount(email, jsonDict, containerName) {
   // jsonDict = {password:password}
-  
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
   try {
     if (Object.keys(jsonDict).length = 0) {
       throw new Error('nothing to modify was passed');
@@ -264,7 +266,7 @@ async function updateAccount(email, jsonDict) {
       if (key == 'password') {
         return changePasswordAccount(email, value);
       } else {
-        dbRun(sql.accounts.update.any, key, value, email);
+        dbRun(sql.accounts.update[key], {[key]:value}, containerName, email);
         debugLog(`Updated account ${email} with ${key}=${value}`);
         return { success: true };
       }

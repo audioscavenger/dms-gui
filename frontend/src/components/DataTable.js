@@ -35,7 +35,7 @@ import {
  */
 const DataTable = ({
   columns,
-  data,
+  data,                   // adding a color column will apply that class to each row tr
   keyExtractor,
   renderRow,
   sortKeysInObject = [],  // we will sort objects from data only by those keys
@@ -54,11 +54,14 @@ const DataTable = ({
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
 
   const sortFunction = (col, currentData=[]) => {
-    // we escape if currentData[0][col] is undefined == it's a rendered column
-    if (currentData.length && currentData[0][col]) {
+    // we escape if currentData[0][col] is null == it's a rendered column; both data and currentData columns are null when rendered
+    // debugLog(`sortFunction, currentData[0]=`, currentData[0]);                                              // { username: "admin", email: null, ..}
+    // debugLog(`sortFunction, currentData[0][${col}] (${typeof currentData[0][col]})=`, currentData[0][col]); // null for email column that is rendering a FormField inside a div
+    
+    // checking for currentData[0][col] not undefined helps not crashing the sort algorithm
+    if (currentData.length && currentData[0][col] != undefined) {
       debugLog(`ddebug col=${col} sortOrders=`,sortOrders);
       debugLog('sortFunction, currentData=',currentData);
-      debugLog(`sortFunction, currentData[0][${col}]=`,currentData[0][col]);
 
       // if currentData[0][col] is a dictionary
       if (typeof currentData[0][col] == 'object') {
@@ -112,7 +115,7 @@ const DataTable = ({
 
   const handleSort = (column) => {
     debugLog(`columns=`,columns);
-    if (column in sortOrders) { debugLog(`!!!${column} IN  (=${sortColumn}?)`,sortOrders);} else debugLog(`!!!${column} NOT (=${sortColumn}?`,sortOrders);
+    if (column in sortOrders) { debugLog(`!!!${column} IN  (=${sortColumn}?)`,sortOrders);} else debugLog(`!!!${column} NOT (=${sortColumn}?`, sortOrders);
     if (sortColumn === column) {
       debugLog(`>>>setSortOrders for ${column} from ${sortOrders[column]} to`,+(!sortOrders[column]));
       setSortOrders({ ...sortOrders, [column]: +(!sortOrders[column]) });  // flip bit 0 <-> 1
@@ -147,7 +150,7 @@ const DataTable = ({
 
     // Apply sorting ? '▲' : '▼'
     if (currentData.length && sortColumn) {
-      // debugLog(`currentData before sortColumn=${sortColumn}`, currentData);
+      debugLog(`currentData before sortColumn=${sortColumn}`, currentData);
       // works:
       sortFunction(sortColumn, currentData);
     }
@@ -188,7 +191,9 @@ const DataTable = ({
 
   // TODO: since we handle object columns, find a way to hide sort arrows span for rendered columns name are not in sortedAndFilteredData
   // BUG:  (column.key in sortedAndFilteredData[0]) should be false for rendered columns keys not in sortedAndFilteredData but it's always true for some reason
-  // BUG:  debug output of currentData in sortFunction clearly shows 'actions' column does not exist, so I am confused
+  // BUG:  hide the sorting arrows for rendered columns without data: column.key in sortedAndFilteredData[0] comes first!
+  // BUG:  opacity applied to the row also affect the buttons, solution is the wrap the text in a <span> and tweak the opacity class to affect td span only
+  // BUG:  fixed arrows not flipping on first click by removing !(column.key in sortOrders)
   
   return (
     <>
@@ -206,7 +211,11 @@ const DataTable = ({
               key={column.key} 
             >
             {Translate(column.label)}
-            <span className='cursor-pointer' onClick={() => handleSort(column.key)}> { ((sortColumn === column.key && sortedAndFilteredData[0] && column.key in sortedAndFilteredData[0]) && (!(column.key in sortOrders) || sortOrders[column.key] === 0) ? '▲' : '▼')}</span>
+            <span className='cursor-pointer' onClick={() => handleSort(column.key)}>
+            {((column.key in sortedAndFilteredData[0])
+               && ((sortOrders[column.key] === 0 ) ? '▲' : '▼') || ""
+            )}
+            </span>
             <Form.Control type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
             />
             </th>
@@ -224,12 +233,10 @@ const DataTable = ({
               const previousItem = null;
               
               return (
-              <tr key={keyExtractor(item)}>
+              <tr key={keyExtractor(item)} className={item?.color}>
                 {columns.map((column) => (
-                  <td key={`${keyExtractor(item)}-${column.key}`} className={
-                    (previousItem && previousItem.value !== item.value) ? 'highlight-change' : item?.color
-                  }>
-                    {column.render ? column.render(item) : item[column.key]}
+                  <td key={`${keyExtractor(item)}-${column.key}`} className={(previousItem && previousItem.value !== item.value) ? 'highlight-change' : ""}>
+                    {column.render ? column.render(item) : <span>{item[column.key]}</span>}
                   </td>
                 ))}
               </tr>

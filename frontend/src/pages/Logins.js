@@ -35,7 +35,7 @@ import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 const Logins = () => {
-  const sortKeysInObject = ['percent'];
+  const sortKeysInObject = ['email'];
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -89,7 +89,7 @@ const Logins = () => {
     // add muted color for inactives
       loginsDataFormatted = loginsDataFormatted.map(login => { return { 
       ...login, 
-      color:  (login.isActive) ? login.color : login.color+" opacity-25",
+      color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
       }; });
       setLogins(loginsDataFormatted);
       setErrorMessage(null);
@@ -314,6 +314,7 @@ const Logins = () => {
   }
   
   // Column definitions for existing logins table
+  // adding hidden data in the span before the FormField let us sort also this column
   const columns = [
     { 
       key: 'username',
@@ -323,6 +324,7 @@ const Logins = () => {
       key: 'email',
       label: 'logins.email',
       render: (login) => (
+        <span><span className="d-none">{login.email}</span>
         <FormField
           type="email"
           id="email"
@@ -332,14 +334,15 @@ const Logins = () => {
           groupClass=""
           className="form-control-sm"
         />
+        </span>
       ),
     },
     { 
       key: 'isAdmin',
       label: 'logins.isAdmin',
       render: (login) => (
-        <>
-          {(login.isAdmin) ? "admin" : "user"}
+          <>
+          <span>{(login.isAdmin) ? "admin" : "user"}</span>
           <Button
             variant="info"
             size="sm"
@@ -348,7 +351,7 @@ const Logins = () => {
             onClick={() => handleLoginFlipAdmin(login)}
             className="me-2 float-end"
           />
-        </>
+          </>
       ),
     },
     {
@@ -411,7 +414,6 @@ const Logins = () => {
         placeholder="user@domain.com"
         error={newLoginFormErrors.email}
         helpText="logins.emailHelp"
-        required
       />
 
       <FormField

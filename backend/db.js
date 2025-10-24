@@ -129,7 +129,7 @@ logins: {
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1
           );
-          INSERT OR IGNORE INTO logins (username, salt, hash, isAdmin) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1);
+          INSERT OR IGNORE INTO logins (username, salt, hash, email, isAdmin) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', '', 1);
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
@@ -145,15 +145,15 @@ logins: {
     { DB_VERSION: '1.1.1',
       patches: [
         `ALTER TABLE logins DROP COLUMN password;`,
-        `ALTER TABLE logins ADD salt TEXT NOT NULL DEFAULT ''`,
-        `ALTER TABLE logins ADD hash TEXT NOT NULL DEFAULT ''`,
+        `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
+        `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
         `INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.6',
       patches: [
-        `ALTER TABLE logins ADD isAdmin   BIT DEFAULT 0`,
+        `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
         `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
         `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${isImmutable})`,
@@ -200,12 +200,13 @@ accounts: {
   },
   
   insert: {
-    account:  `REPLACE INTO accounts (email, domain, storage, salt, hash, scope) VALUES (@email, @domain, @storage, @salt, @hash, ?)`,
+    fromDMS:  `REPLACE INTO accounts (email, domain, storage, scope) VALUES (@email, @domain, @storage, ?)`,
+    fromGUI:  `REPLACE INTO accounts (email, domain, salt, hash, scope) VALUES (@email, @domain, @salt, @hash, ?)`,
   },
   
   update: {
     password: `REPLACE INTO accounts (email, salt, hash, scope) VALUES (@email, @salt, @hash, ?)`,
-    any:      `UPDATE accounts set ?=? WHERE scope=? and email=?)`,
+    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = ? AND email = ?`,
   },
   
   delete: {

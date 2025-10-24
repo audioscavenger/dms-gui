@@ -42,7 +42,7 @@ const Navbar = ({
               <Button
               variant="secondary"
               onClick={handleLogout}
-              text="login.logout"
+              text="logins.logout"
               />
             }
             

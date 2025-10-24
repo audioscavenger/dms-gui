@@ -92,7 +92,7 @@ const Accounts = () => {
         getSettings('dnsProvider'),
         getServerEnv('DOVECOT_FTS'),
       ]);
-      setAccounts(accountsData);
+      setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
       setDnsProvider(dnsProviderData);
       setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);
@@ -354,7 +354,7 @@ const Accounts = () => {
       label: 'accounts.domain',
       render: (account) => (
         <>
-          {account.domain}
+          <span>{account.domain}</span>
           {(dnsProvider) && (
           <Button
             variant="info"
@@ -389,7 +389,7 @@ const Accounts = () => {
             />
           </div>
         ) : (
-          'N/A'
+          <span>N/A</span>
         ),
     },
     {

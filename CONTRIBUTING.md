@@ -17,10 +17,9 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 ## BUGS:
 
-* [ ] - the left menu is only as high as the window on first load, when you scroll down it's blank
-* [ ] - DataTable usePrevious to highlight data change on reload does not work anymore
-* [ ] - DataTable sort does not work for FormFields
-* [ ] - DataTable sort should really hide arrows for rendered columns with no data
+* [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
+* [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
+* [ ] - frontend/DataTable usePrevious to highlight data change on reload does not work anymore
 
 ## TODO:
 
@@ -71,6 +70,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.7 - frontend/DataTable: bugfix: sorting rendered columns is possible when hidden data is added inside a span
+* [x] 1.1.7 - frontend/DataTable: bugfix: fixed arrows not flipping on first click by removing !(column.key in sortOrders)
+* [x] 1.1.7 - frontend/DataTable: bugfix: hide sort arrows for rendered columns with no data
+* [x] 1.1.7 - frontend/Accounts: fixed storage object not showing anymore: split account.insert into 2 queries so storage data is not deleted
+* [x] 1.1.7 - frontend/DataTable: now wraps text inside <p> to get row color and avoid coloring buttons inside a td
 * [x] 1.1.6 - frontend/Logins: all seems to work, and isAdmin isActive flip switches too
 * [x] 1.1.6 - frontend: changePasswordLogin and changePasswordAccount have become updateLogin and updateAccount
 * [x] 1.1.6 - backend/logins: prevent deleting the last admin in db
