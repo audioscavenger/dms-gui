@@ -14,6 +14,7 @@ const {
   updateLogin,
   deleteLogin,
   loginUser,
+  getRoles,
 } = require('./logins');
 const {
   getServerStatus,
@@ -208,13 +209,13 @@ app.get('/api/envs', async (req, res) => {
   }
 });
 
-// Endpoint for retrieving email accounts
+// Endpoint for retrieving mailbox accounts
 /**
  * @swagger
  * /api/accounts:
  *   get:
- *     summary: Get email accounts
- *     description: Retrieve all email accounts
+ *     summary: Get mailbox accounts
+ *     description: Retrieve all mailbox accounts
  *     parameters:
  *       - in: query
  *         name: refresh
@@ -225,7 +226,7 @@ app.get('/api/envs', async (req, res) => {
  *         description: pull data from DMS instead of local database
  *     responses:
  *       200:
- *         description: List of email accounts
+ *         description: List of mailbox accounts
  *       500:
  *         description: Unable to retrieve accounts
  */
@@ -241,13 +242,13 @@ app.get('/api/accounts', async (req, res) => {
   }
 });
 
-// Endpoint for adding a new email account
+// Endpoint for adding a new mailbox account
 /**
  * @swagger
  * /api/accounts:
  *   post:
- *     summary: Add a new email account
- *     description: Add a new email account to the docker-mailserver
+ *     summary: Add a new mailbox account
+ *     description: Add a new mailbox account to the docker-mailserver
  *     requestBody:
  *       required: true
  *       content:
@@ -255,32 +256,32 @@ app.get('/api/accounts', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               email:
+ *               mailbox:
  *                 type: string
  *                 format: email
- *                 description: Email address of the new account
+ *                 description: mailbox address of the new account
  *               password:
  *                 type: string
  *                 description: Password for the new account
  *             required:
- *               - email
+ *               - mailbox
  *               - password
  *     responses:
  *       201:
  *         description: Account created successfully
  *       400:
- *         description: Email and password are required
+ *         description: mailbox and password are required
  *       500:
  *         description: Unable to create account
  */
 app.post('/api/accounts', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    const { mailbox, password } = req.body;
+    if (!mailbox || !password) {
+      return res.status(400).json({ error: 'Mailbox and password are required' });
     }
-    const result = await addAccount(email, password);
-    res.status(201).json({ message: 'Account created successfully', email });
+    const result = await addAccount(mailbox, password);
+    res.status(201).json({ message: 'Account created successfully', mailbox });
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
@@ -288,36 +289,36 @@ app.post('/api/accounts', async (req, res) => {
   }
 });
 
-// Endpoint for reindexing an email account
+// Endpoint for reindexing an mailbox account
 /**
  * @swagger
- * /api/reindex/{email}:
+ * /api/reindex/{mailbox}:
  *   put:
- *     summary: Reindex an email account
- *     description: Reindex an email account by doveadm
+ *     summary: Reindex an mailbox account
+ *     description: Reindex an mailbox account by doveadm
  *     parameters:
  *       - in: path
- *         name: email
+ *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: Email address of the account to reindex
+ *         description: mailbox address of the account to reindex
  *     responses:
  *       200:
  *         description: Account deleted successfully
  *       400:
- *         description: Email is required
+ *         description: mailbox is required
  *       500:
  *         description: Unable to reindex account
  */
-app.put('/api/reindex/:email', async (req, res) => {
+app.put('/api/reindex/:mailbox', async (req, res) => {
   try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { mailbox } = req.params;
+    if (!mailbox) {
+      return res.status(400).json({ error: 'Mailbox is required' });
     }
-    await reindexAccount(email);
-    res.json({ message: 'Reindex started for account', email });
+    await reindexAccount(mailbox);
+    res.json({ message: 'Reindex started for account', mailbox });
     
   } catch (error) {
     errorLog(`index /api/reindex: ${error.message}`);
@@ -326,36 +327,36 @@ app.put('/api/reindex/:email', async (req, res) => {
   }
 });
 
-// Endpoint for deleting an email account
+// Endpoint for deleting a mailbox account
 /**
  * @swagger
- * /api/accounts/{email}:
+ * /api/accounts/{mailbox}:
  *   delete:
- *     summary: Delete an email account
- *     description: Delete an email account from the docker-mailserver
+ *     summary: Delete a mailbox account
+ *     description: Delete an mailbox account from the docker-mailserver
  *     parameters:
  *       - in: path
- *         name: email
+ *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: Email address of the account to delete
+ *         description: mailbox address of the account to delete
  *     responses:
  *       200:
  *         description: Account deleted successfully
  *       400:
- *         description: Email is required
+ *         description: mailbox is required
  *       500:
  *         description: Unable to delete account
  */
-app.delete('/api/accounts/:email', async (req, res) => {
+app.delete('/api/accounts/:mailbox', async (req, res) => {
   try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { mailbox } = req.params;
+    if (!mailbox) {
+      return res.status(400).json({ error: 'Mailbox is required' });
     }
-    await deleteAccount(email);
-    res.json({ message: 'Account deleted successfully', email });
+    await deleteAccount(mailbox);
+    res.json({ message: 'Account deleted successfully', mailbox });
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
@@ -363,20 +364,20 @@ app.delete('/api/accounts/:email', async (req, res) => {
   }
 });
 
-// Endpoint for updating an email account
+// Endpoint for updating an mailbox account
 /**
  * @swagger
- * /api/accounts/{email}/update:
+ * /api/accounts/{mailbox}/update:
  *   put:
- *     summary: Update an email account
- *     description: Update an existing email account
+ *     summary: Update an mailbox account
+ *     description: Update an existing mailbox account
  *     parameters:
  *       - in: path
- *         name: email
+ *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: Email address of the account to update
+ *         description: mailbox address of the account to update
  *     requestBody:
  *       required: true
  *       content:
@@ -395,15 +396,15 @@ app.delete('/api/accounts/:email', async (req, res) => {
  *       500:
  *         description: Unable to update account
  */
-app.put('/api/accounts/:email/update', async (req, res) => {
+app.put('/api/accounts/:mailbox/update', async (req, res) => {
   try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { mailbox } = req.params;
+    if (!mailbox) {
+      return res.status(400).json({ error: 'Mailbox is required' });
     }
 
-    await updateAccount(email, req.body);
-    res.json({ message: 'Account updated successfully', email });
+    await updateAccount(mailbox, req.body);
+    res.json({ message: 'Account updated successfully', mailbox });
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
@@ -618,13 +619,38 @@ app.post('/api/settings', async (req, res) => {
 });
 
 
+// Endpoint for retrieving roles
+/**
+ * @swagger
+ * /api/roles:
+ *   get:
+ *     summary: Get roles
+ *     description: Retrieve all roles
+ *     responses:
+ *       200:
+ *         description: all roles even if empty
+ *       500:
+ *         description: Unable to retrieve roles
+ */
+app.get('/api/roles', async (req, res) => {
+  try {
+    const roles = await getRoles();
+    res.json(roles);
+  } catch (error) {
+    errorLog(`index GET /api/roles: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to retrieve roles' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // Endpoint for retrieving logins
 /**
  * @swagger
  * /api/logins:
  *   get:
  *     summary: Get logins
- *     description: Retrieve all admin logins
+ *     description: Retrieve all logins
  *     responses:
  *       200:
  *         description: all logins even if empty
@@ -666,35 +692,45 @@ app.get('/api/logins', async (req, res) => {
  *               email:
  *                 type: string
  *                 format: email
+ *                 default: ''
  *                 description: Email address of the new login account
  *               isAdmin:
  *                 type: boolean
+ *                 default: 0
  *                 description: Is the user an admin
+ *               isActive:
+ *                 type: boolean
+ *                 default: 1
+ *                 description: Is the user active
+ *               roles:
+ *                 type: array
+ *                 default: []
+ *                 description: mailboxes the user can manage
  *             required:
  *               - username
  *               - password
  *               - isAdmin
  *     responses:
  *       201:
- *         description: Login credentials saved successfully
+ *         description: Login saved successfully
  *       400:
  *         description: Something is missing
  *       500:
- *         description: Unable to save Login credentials
+ *         description: Unable to save Login
  */
 app.post('/api/logins', async (req, res) => {
   try {
-    const { username, password, email, isAdmin } = req.body;
+    const { username, password, email, isAdmin, isActive, roles } = req.body;
     console.debug('req.body',req.body)
     console.debug('ddebug password, email',password, email)
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(username, password, email, isAdmin);
-    res.status(201).json({ message: 'Login credentials saved successfully' });
+    const result = await addLogin(username, password, email, isAdmin, isActive, roles);
+    res.status(201).json({ message: 'Login saved successfully' });
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to save Login credentials' });
+    // res.status(500).json({ error: 'Unable to save Login' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -831,11 +867,13 @@ app.post('/api/loginUser', async (req, res) => {
     const { username, password } = req.body;
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
+    console.debug('ddebug api loginUser(username, password)',username, password)
 
     const result = await loginUser(username, password);
+    console.debug('ddebug api loginUser result',result)
     res.status(201).json(result);
   } catch (error) {
-    errorLog(`index POST /api/login: ${error.message}`);
+    errorLog(`index POST /api/loginUser: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });

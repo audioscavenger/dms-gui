@@ -28,11 +28,36 @@ const fs = require("fs");
 const fsp = fs.promises;
 
 
+// this returns an array
+async function getRoles(username, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
+  try {
+    
+    const roles = await dbGet(sql.logins.select.roles, containerName, username);
+    return JSON.parse(roles);
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
 // this returns an objects
 async function getLogin(username) {
   try {
     
-    const login = await dbGet(sql.logins.select.login, username);
+    let login = await dbGet(sql.logins.select.login, username);
+    // now JSON.parse roles as it's stored stringified in the db
+    login.roles = JSON.parse(login.roles);
     return login;
     
   } catch (error) {
@@ -52,15 +77,18 @@ async function getLogin(username) {
 async function getLogins(username) {
   if (username) return getLogin(username);
 
-  debugLog(`start`);
+  let logins = [];
   try {
     
-    const logins = await dbAll(sql.logins.select.logins);
+    logins = await dbAll(sql.logins.select.logins);
     debugLog(`pulled ${logins.length} logins`);
     
     // we could read DB_Logins and it is valid
     if (logins.length) {
       infoLog(`Found ${logins.length} entries in logins`);
+      
+      // now JSON.parse roles as it's stored stringified in the db
+      logins = logins.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
       
     } else {
       warnLog(`logins in db seems empty:`, logins);
@@ -82,13 +110,13 @@ async function getLogins(username) {
 }
 
 
-async function addLogin(username, password, email='', isAdmin=0) {
+async function addLogin(username, password, email='', isAdmin=0, isActive=1, roles=[]) {
   console.debug('ddebug password, email',password, email)
   try {
     debugLog(username, password, email, isAdmin);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email, isAdmin:isAdmin });
+    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email, isAdmin:isAdmin, isActive:isActive, roles:JSON.stringify(roles) });
     successLog(`Saved login ${username}`);
     return { success: true };
 
@@ -109,15 +137,11 @@ async function changePasswordLogin(username, password) {
 
   try {
     debugLog(`Updating password for login: ${username}`);
-    const result = await execSetup(`username update ${username} ${password}`);
-    if (!result.exitCode) {
-      
-      const { salt, hash } = await hashPassword(password);
-      dbRun(sql.logins.update.password, { username:username, salt:salt, hash:hash });
-      successLog(`Password updated for login: ${username}`);
-      return { success: true };
-      
-    } else errorLog(result.stderr);
+    
+    const { salt, hash } = await hashPassword(password);
+    dbRun(sql.logins.update.password, { username:username, salt:salt, hash:hash });
+    successLog(`Password updated for login: ${username}`);
+    return { success: true };
     
   } catch (error) {
     let backendError = 'Error updating login password';
@@ -142,7 +166,7 @@ async function updateLogin(username, jsonDict) {
     }
     
     debugLog(`Updating login ${username} with jsonDict:`, jsonDict);
-    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(validKeys.logins));
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys.logins));
     if (Object.keys(validDict).length = 0) {
       throw new Error('nothing valid was passed');
     }
@@ -151,6 +175,12 @@ async function updateLogin(username, jsonDict) {
     for (const [key, value] of Object.entries(validDict)) {
       if (key == 'password') {
         return changePasswordLogin(username, value);
+        
+      } else if (key == 'roles') {
+        dbRun(sql.logins.update[key], {[key]:JSON.stringify(value)}, username);
+        debugLog(`Updated login ${username} with ${key}=${value}`);
+        return { success: true };
+        
       } else {
         dbRun(sql.logins.update[key], {[key]:value}, username);
         debugLog(`Updated login ${username} with ${key}=${value}`);
@@ -204,23 +234,67 @@ async function deleteLogin(username) {
 }
 
 
+// loginUser will not throw an error an attacker can exploit
 async function loginUser(username, password) {
   
   try {
-    const isValid = await verifyPassword(username, password, 'logins');
-    debugLog(`${username} password =`, isValid);
-    
-    if (isValid) {
-      successLog(`User ${username} logged in successfully.`);
-      return true;
+    const isActive = await dbGet(sql.logins.select.isActive.username, username);
+    if (isActive) {
+      const isValid = await verifyPassword(username, password, 'logins');
+      debugLog(`${username} password =`, isValid);
       
+      if (isValid) {
+        successLog(`User ${username} logged in successfully.`);
+        return true;
+        
+      } else {
+        warnLog(`User ${username} invalid password.`);
+        return false;
+      }
     } else {
-      warnLog(`User ${username} invalid password.`);
+      warnLog(`User ${username} is inactive.`);
       return false;
     }
   } catch (error) {
     let backendError = error.message;
     errorLog(`${backendError}`);
+    return false;
+    // throw new Error(backendError);
+    
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// this returns an array of objects // cancelled
+async function getRolesFromRoles(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
+  debugLog(`start`);
+  try {
+    
+    const roles = await dbAll(sql.roles.select.roles, containerName);
+    debugLog(`pulled ${roles.length} roles`);
+    
+    // we could read DB_Logins and it is valid
+    if (roles.length) {
+      infoLog(`Found ${roles.length} entries in roles`);
+      
+    } else {
+      warnLog(`roles in db seems empty:`, roles);
+    }
+    
+    return roles;
+    // [ { username: username, email: email }, ..]
+    
+  } catch (error) {
+    let backendError = error.message;
+    errorLog(backendError);
     throw new Error(backendError);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
@@ -238,6 +312,7 @@ module.exports = {
   deleteLogin,
   updateLogin,
   loginUser,
+  getRoles,
 };
 
 

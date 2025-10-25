@@ -88,7 +88,7 @@ const Aliases = () => {
       setErrorMessage(null);
 
       debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
-      debugLog('accountsData', accountsData);                 // [ { email: 'a@a.com', domain:'a.com', storage: {} },{ email: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+      debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
 
     } catch (err) {
       errorLog(t('api.errors.fetchAliases'), err);
@@ -145,7 +145,7 @@ const Aliases = () => {
       errors.destination = 'aliases.destinationRequired';
     }
 
-    // Also test if source domain exist in domains when it's an email match
+    // Also test if source domain exist in domains when it's a mailbox match
     // I can't see how to test for regex as the domain part can be regex too
     if (matchEmailStrict && !pluck(accounts, 'domain').includes(matchEmailStrict[2])) {
       errors.source = 'aliases.invalidSourceDomain';
@@ -214,8 +214,8 @@ const Aliases = () => {
 
   // Prepare account options for the select field
   const accountOptions = accounts.map((account) => ({
-    value: account.email,
-    label: account.email,
+    value: account.mailbox,
+    label: account.mailbox,
   }));
 
 

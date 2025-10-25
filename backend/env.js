@@ -9,7 +9,6 @@ HOSTNAME = process.env.HOSTNAME;
 NODE_ENV = process.env.NODE_ENV || 'production';
 PORT_NODEJS = process.env.PORT_NODEJS || 3001;
 TZ = process.env.TZ || 'UTC';
-containers = {};
 
 DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
 DB_Accounts   = DMSGUI_CONFIG_PATH + '/db.accounts.json';
@@ -20,7 +19,9 @@ DB_Logins     = DMSGUI_CONFIG_PATH + '/db.logins.json';
 DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
 
 // Docker container name for docker-mailserver
-DMS_CONTAINER = process.env.DMS_CONTAINER;
+DMS_CONTAINER = (typeof DMS_CONTAINER) ? process.env.DMS_CONTAINER : DMS_CONTAINER;
+containers = (typeof containers) ? {} : containers;
+
 DMS_SETUP_SCRIPT  = process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup';
 DMS_CONFIG_PATH = process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver';
 DKIM_SELECTOR_DEFAULT = 'mail';

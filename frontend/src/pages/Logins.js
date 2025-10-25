@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// https://mui.com/material-ui/react-autocomplete/#multiple-values
+import Chip from '@mui/material/Chip';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
+import Stack from '@mui/material/Stack';
+
 const {
   debugLog,
   infoLog,
@@ -8,6 +14,7 @@ const {
   errorLog,
   successLog,
   getValueFromArrayOfObj,
+  pluck,
 } = require('../../frontend.js');
 
 import {
@@ -15,6 +22,8 @@ import {
   addLogin,
   deleteLogin,
   updateLogin,
+  getAccounts,
+  getRoles,
 } from '../services/api';
 
 import {
@@ -42,6 +51,9 @@ const Logins = () => {
 
   const [logins, setLogins] = useState([]);
 
+  // Roles states -------------------------------------------------- // https://mui.com/material-ui/react-autocomplete/#multiple-values
+  const [rolesAvailable, setRolesAvailable] = useState([]);
+  
   // Common states -------------------------------------------------
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedLogin, setSelectedLogin] = useState(null);
@@ -51,6 +63,7 @@ const Logins = () => {
     username: '',
     email: '',
     isAdmin: 0,
+    roles: [],
     password: '',
     confirmPassword: '',
   });
@@ -66,7 +79,6 @@ const Logins = () => {
   });
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
-
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAllLogins();
@@ -76,25 +88,36 @@ const Logins = () => {
     
     try {
       setLoading(true);
-      const [loginsData] = await Promise.all([
+      const [loginsData, accountsData] = await Promise.all([
         getLogins(),
+        getAccounts(),
+        // getRoles(),
       ]);
       
     // add color column for admins
-      let loginsDataFormatted = loginsData.map(login => { return { 
+      let loginsDataAltered = loginsData.map(login => { return { 
       ...login, 
       color:    (login.isAdmin) ? "text-danger" : "",
       }; });
       
     // add muted color for inactives
-      loginsDataFormatted = loginsDataFormatted.map(login => { return { 
+      loginsDataAltered = loginsDataAltered.map(login => { return { 
       ...login, 
       color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
       }; });
-      setLogins(loginsDataFormatted);
+      
+    // temporary parse roles
+      loginsDataAltered = loginsDataAltered.map(login => { return { 
+      ...login, 
+      roles:  JSON.parse(login.roles),
+      }; });
+      
+      debugLog('loginsDataAltered', loginsDataAltered);
+      
+      setLogins(loginsDataAltered);
+      setRolesAvailable(pluck(accountsData, 'mailbox'));   // we keep only an array of mailbox names [box1@domain.com, ..]
       setErrorMessage(null);
       
-      debugLog('loginsDataFormatted', loginsDataFormatted);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAllLogins'), err);
@@ -166,14 +189,18 @@ const Logins = () => {
         newLoginformData.password,
         newLoginformData.email,
         newLoginformData.isAdmin,
+        newLoginformData.isActive,
+        [],
       );
       setSuccessMessage('logins.loginCreated');
       setNewLoginFormData({
         username: '',
-        email: '',
-        isAdmin: 0,
         password: '',
         confirmPassword: '',
+        email: '',
+        isAdmin: 0,
+        isActive: 1,
+        roles: [],
       });
       fetchAllLogins(); // Refresh the logins list
       
@@ -183,7 +210,29 @@ const Logins = () => {
     }
   };
 
+
+
+  const handleRolesChange = (login, newValue) => {
+
+    console.debug('ddebug login', login);       // { username: "admin2", email: "", isAdmin: 0, isActive: 1, color: "" }
+    console.debug('ddebug newValue', newValue); // [ { mailbox: "eric@derewonko.com", domain: "derewonko.com", storage: {} }, .. ]
+    
+    setLogins(prevLogins =>
+      prevLogins.map(item =>
+        item.username === login.username  // for that login...
+          ? { ...item, roles: newValue }  // update its roles
+          : item                          // and keep other items as they are
+      )
+    );
+    
+  };
+
+
   const handleLoginDelete = async (login) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     if (window.confirm(t('logins.confirmDelete', { username:login.username }))) {
       try {
         await deleteLogin(login.username);
@@ -198,6 +247,10 @@ const Logins = () => {
 
 
   const handleLoginFlipAdmin = async (login) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     try {
       await updateLogin(
         login.username,
@@ -212,6 +265,10 @@ const Logins = () => {
   };
 
   const handleLoginFlipActive = async (login) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     try {
       await updateLogin(
         login.username,
@@ -225,11 +282,30 @@ const Logins = () => {
     }
   };
 
+  const handleLoginSave = async (login) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      
+      console.debug('ddebug save login',login)
+      setSuccessMessage(t('logins.saved', {username:login.username}));
+      
+    } catch (err) {
+      errorLog(t('api.errors.updateLogin'), err);
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+    }
+  };
+
   const handleLoginChange = (e) => {
+    e.preventDefault();
+    debugLog('e.target', e.target);   // e.target.id|name = email  //  e.target.value = a@b.com
+    const { name, value } = e.target;
+    
     // const { name, value } = e.target;
     // debugLog('name, value', name, value);
     
-    debugLog('e', e);
   };
 
 
@@ -309,10 +385,13 @@ const Logins = () => {
   };
 
 
+
   if (isLoading && !logins) {
     return <LoadingSpinner />;
   }
-  
+
+            // getOptionLabel={rolesAvailable}    // requires a dict
+
   // Column definitions for existing logins table
   // adding hidden data in the span before the FormField let us sort also this column
   const columns = [
@@ -354,6 +433,31 @@ const Logins = () => {
           </>
       ),
     },
+    { 
+      key: 'roles',
+      label: 'logins.roles',
+      render: (login) => (
+        <>
+          <Autocomplete
+            multiple
+            id="roles"
+            size="small"
+            options={rolesAvailable}
+            filterSelectedOptions
+            
+            value={login.roles}
+            onChange={(event, newValue) => handleRolesChange(login, newValue)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={t('logins.roles')}
+                placeholder={t('logins.roles2pick')}
+              />
+            )}
+          />
+        </>
+      ),
+    },
     {
       key: 'actions',
       label: 'common.actions',
@@ -381,6 +485,14 @@ const Logins = () => {
             icon={(login.isActive) ? "toggle-on" : "toggle-off"}
             title={(login.isActive) ? t('logins.deactivate', { username: login.username }) : t('logins.activate', { username: login.username })}
             onClick={() => handleLoginFlipActive(login)}
+            className="me-2"
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            icon="floppy2-fill"
+            title={t('logins.save')}
+            onClick={() => handleLoginSave(login)}
             className="me-2"
           />
         </div>

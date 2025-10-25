@@ -205,7 +205,7 @@ const Dashboard = () => {
         {/* Use Row component */}
         <Col md={6} className="mb-3">
           <DashboardCard
-            title="dashboard.emailAccounts"
+            title="dashboard.mailboxAccounts"
             icon="person-circle"
             iconColor={isAccountsLoading ? "secondary" : "success"}
             isLoading={isAccountsLoading}

@@ -137,7 +137,7 @@ function getValueFromArrayOfObj(arr, propName, keyName='name', keyValue='value')
 
 
 function pluck(arr, keyValue, uniq=true) {
-  // this will return the values from an array of objects like [ {keyName: propName, keyValue: value}, .. ]
+  // this will return the values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
   if (!Array.isArray(arr)) return undefined;
   let values = arr.map(item => item[keyValue]);
   return (uniq) ? [... new Set(values)] : values;

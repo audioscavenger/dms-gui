@@ -54,7 +54,7 @@ const Accounts = () => {
   
   // State for new account inputs ----------------------------------
   const [newAccountformData, setNewAccountFormData] = useState({
-    email: '',
+    mailbox: '',
     password: '',
     confirmPassword: '',
   });
@@ -129,10 +129,10 @@ const Accounts = () => {
   const validateNewAccountForm = () => {
     const errors = {};
 
-    if (!newAccountformData.email.trim()) {
-      errors.email = 'accounts.emailRequired';
-    } else if (!regexEmailStrict.test(newAccountformData.email)) {
-      errors.email = 'accounts.invalidEmail';
+    if (!newAccountformData.mailbox.trim()) {
+      errors.mailbox = 'accounts.mailboxRequired';
+    } else if (!regexEmailStrict.test(newAccountformData.mailbox)) {
+      errors.mailbox = 'accounts.invalidMailbox';
     }
 
     if (!newAccountformData.password) {
@@ -159,12 +159,12 @@ const Accounts = () => {
 
     try {
       await addAccount(
-        newAccountformData.email,
+        newAccountformData.mailbox,
         newAccountformData.password,
       );
       setSuccessMessage('accounts.accountCreated');
       setNewAccountFormData({
-        email: '',
+        mailbox: '',
         password: '',
         confirmPassword: '',
       });
@@ -175,10 +175,10 @@ const Accounts = () => {
     }
   };
 
-  const handleDelete = async (email) => {
-    if (window.confirm(t('accounts.confirmDelete', { email }))) {
+  const handleDelete = async (mailbox) => {
+    if (window.confirm(t('accounts.confirmDelete', { mailbox }))) {
       try {
-        await deleteAccount(email);
+        await deleteAccount(mailbox);
         setSuccessMessage('accounts.accountDeleted');
         fetchAllAccounts(true); // Refresh the accounts list
       } catch (err) {
@@ -188,9 +188,9 @@ const Accounts = () => {
     }
   };
 
-  const handleReindex = async (email) => {
+  const handleReindex = async (mailbox) => {
     try {
-      await reindexAccount(email);
+      await reindexAccount(mailbox);
       setSuccessMessage('accounts.reindexStarted');
     } catch (err) {
       errorLog(t('api.errors.reindexAccount'), err);
@@ -264,7 +264,7 @@ const Accounts = () => {
 
     try {
       await updateAccount(
-        selectedAccount.email,
+        selectedAccount.mailbox,
         { password: passwordFormData.newPassword }
       );
       setSuccessMessage('accounts.passwordUpdated');
@@ -369,8 +369,8 @@ const Accounts = () => {
       ),
     },
     { 
-      key: 'email',
-      label: 'accounts.account',
+      key: 'mailbox',
+      label: 'accounts.mailbox',
     },
     {
       key: 'storage',
@@ -409,8 +409,8 @@ const Accounts = () => {
             variant="danger"
             size="sm"
             icon="trash"
-            title={t('accounts.confirmDelete', { email: account.email })}
-            onClick={() => handleDelete(account.email)}
+            title={t('accounts.confirmDelete', { mailbox: account.mailbox })}
+            onClick={() => handleDelete(account.mailbox)}
             className="me-2"
           />
           {(DOVECOT_FTS) && (
@@ -419,7 +419,7 @@ const Accounts = () => {
             size="sm"
             icon="recycle"
             title={t('accounts.reindex')}
-            onClick={() => handleReindex(account.email)}
+            onClick={() => handleReindex(account.mailbox)}
             className="me-2"
           />
           )}
@@ -432,14 +432,14 @@ const Accounts = () => {
   const FormNewAccount = (
           <form onSubmit={handleSubmitNewAccount} className="form-wrapper">
             <FormField
-              type="email"
-              id="email"
-              name="email"
-              label="accounts.email"
-              value={newAccountformData.email}
+              type="mailbox"
+              id="mailbox"
+              name="mailbox"
+              label="accounts.mailbox"
+              value={newAccountformData.mailbox}
               onChange={handleNewAccountInputChange}
               placeholder="user@domain.com"
-              error={newAccountFormErrors.email}
+              error={newAccountFormErrors.mailbox}
               required
             />
 
@@ -477,7 +477,7 @@ const Accounts = () => {
             <DataTable
             columns={columns}
             data={accounts}
-            keyExtractor={(account) => account.email}
+            keyExtractor={(account) => account.mailbox}
             isLoading={isLoading}
             emptyMessage="accounts.noAccounts"
             sortKeysInObject={sortKeysInObject}
@@ -505,7 +505,7 @@ const Accounts = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedAccount?.email}{' '}
+            {Translate('password.changePassword')} - {selectedAccount?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

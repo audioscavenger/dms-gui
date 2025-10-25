@@ -69,18 +69,6 @@ export async function getServerEnvs(refresh) {
   }
 };
 
-// export const getAccounts = async (refresh) => {
-export async function getAccounts(refresh) {
-  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
-  try {
-    const response = await api.get(`/accounts${query}`);
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
 // export const getSettings = async () => {
 export async function getSettings(name='') {
   try {
@@ -104,8 +92,6 @@ export async function saveSettings(jsonArrayOfObjects) {
   }
 };
 
-
-// export const getLogins = async () => {
 export async function getLogins() {
   try {
     const response = await api.get(`/logins`);
@@ -116,10 +102,20 @@ export async function getLogins() {
   }
 };
 
-export async function addLogin(username, password, email='', isAdmin=0) {
+export async function getRoles() {
+  try {
+    const response = await api.get(`/roles`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function addLogin(username, password, email='', isAdmin=0, isActive=0, roles=[]) {
     console.debug('ddebug password, email',password, email)
   try {
-    const response = await api.post(`/logins`, { username, password, email, isAdmin });
+    const response = await api.post(`/logins`, { username, password, email, isAdmin, isActive, roles });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -150,6 +146,7 @@ export async function updateLogin(username, jsonDict) {
 
 export async function loginUser(username, password) {
   try {
+    console.debug('ddebug loginUser(username, password)',username, password)
     const response = await api.post(`/loginUser`, { username, password });
     return response.data;
   } catch (error) {
@@ -158,10 +155,11 @@ export async function loginUser(username, password) {
   }
 };
 
-// export const addAccount = async (email, password) => {
-export async function addAccount(email, password) {
+// export const getAccounts = async (refresh) => {
+export async function getAccounts(refresh) {
+  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
   try {
-    const response = await api.post(`/accounts`, { email, password });
+    const response = await api.get(`/accounts${query}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -169,10 +167,10 @@ export async function addAccount(email, password) {
   }
 };
 
-// export const deleteAccount = async (email) => {
-export async function deleteAccount(email) {
+// export const addAccount = async (mailbox, password) => {
+export async function addAccount(mailbox, password) {
   try {
-    const response = await api.delete(`/accounts/${email}`);
+    const response = await api.post(`/accounts`, { mailbox, password });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -180,10 +178,10 @@ export async function deleteAccount(email) {
   }
 };
 
-// export const reindexAccount = async (email) => {
-export async function reindexAccount(email) {
+// export const deleteAccount = async (mailbox) => {
+export async function deleteAccount(mailbox) {
   try {
-    const response = await api.put(`/reindex/${email}`);
+    const response = await api.delete(`/accounts/${mailbox}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -191,9 +189,20 @@ export async function reindexAccount(email) {
   }
 };
 
-export async function updateAccount(email, jsonDict) {
+// export const reindexAccount = async (mailbox) => {
+export async function reindexAccount(mailbox) {
   try {
-    const response = await api.put(`/accounts/${email}/update`, jsonDict); // jsonDict = {password:password}
+    const response = await api.put(`/reindex/${mailbox}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function updateAccount(mailbox, jsonDict) {
+  try {
+    const response = await api.put(`/accounts/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);

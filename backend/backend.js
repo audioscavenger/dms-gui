@@ -35,7 +35,7 @@ regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
 regexUsername = /^[^\s]+$/;
 
 
-validKeys = {
+updateValidKeys = {
   accounts: {password:'string', },
   logins:   {password:'string', email:'string', isAdmin:'number', isActive:'number'},
 }

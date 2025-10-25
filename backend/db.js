@@ -83,30 +83,33 @@ logins: {
   select: {
     usernames:`SELECT username from logins WHERE 1=1`,
     username: `SELECT username from logins WHERE 1=1 AND username = ?`,
-    logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1`,
-    admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isAdmin = 1`,
-    login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND username = ?`,
+    logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1`,
+    admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isAdmin = 1`,
+    login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND username = ?`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND username = ?`,
     salt:     `SELECT salt from logins WHERE username = ?`,
     hash:     `SELECT hash from logins WHERE username = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE username = ?`,
     isActive: {
       usernames:`SELECT username from logins WHERE 1=1 AND isActive = 1`,
       username: `SELECT username from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
-      logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1`,
-      admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
-      login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+      logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1`,
+      admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
+      login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
     },
     isInactive: {
       usernames:`SELECT username from logins WHERE 1=1 AND isActive = 0`,
       username: `SELECT username from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
-      logins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0`,
-      admins:   `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      login:    `SELECT username, email, isAdmin, isActive from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
+      logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0`,
+      admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
     },
   },
   
   insert: {
-    login:    `REPLACE INTO logins (username, salt, hash, email, isAdmin) VALUES (@username, @salt, @hash, @email, @isAdmin)`,
+    login:    `REPLACE INTO logins (username, salt, hash, email, isAdmin, roles) VALUES (@username, @salt, @hash, @email, @isAdmin, @roles)`,
   },
   
   update: {
@@ -114,6 +117,7 @@ logins: {
     email:    `UPDATE logins set email = @email WHERE username = ?`,
     isAdmin:  `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
     isActive: `UPDATE logins set isActive = @isActive WHERE username = ?`,
+    roles:    `UPDATE logins set roles = @roles WHERE username = ?`,
   },
   
   delete: {
@@ -127,9 +131,10 @@ logins: {
           hash      TEXT DEFAULT '',
           email     TEXT DEFAULT '',
           isAdmin   BIT DEFAULT 0,
-          isActive  BIT DEFAULT 1
+          isActive  BIT DEFAULT 1,
+          roles     TEXT DEFAULT '[]'
           );
-          INSERT OR IGNORE INTO logins (username, salt, hash, email, isAdmin) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', '', 1);
+          INSERT OR IGNORE INTO logins (username, salt, hash, email, isAdmin, isActive, roles) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', '', 1, 1, '[]');
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
@@ -159,32 +164,40 @@ logins: {
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${isImmutable})`,
       ],
     },
+    { DB_VERSION: '1.1.9',
+      patches: [
+        `ALTER TABLE logins ADD roles    TEXT DEFAULT '"[]"'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${isImmutable})`,
+      ],
+    },
   ],
 },
 
 roles: {
       
   select: {
-    roles:    `SELECT username, email from roles`,
-    username: `SELECT username        from roles WHERE email = ?`,
-    email:    `SELECT email           from roles WHERE username = ?`,
+    roles:    `SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`,
+    username: `SELECT username        from roles WHERE 1=1 AND scope = ? AND mailbox = ?`,
+    mailbox:  `SELECT mailbox           from roles WHERE 1=1 AND scope = ? AND username = ?`,
   },
   
   insert: {
-    role:     `REPLACE INTO roles (username, email) VALUES (@username, @email)`,
+    role:     `REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`,
   },
   
   delete: {
-    usernames: `DELETE from roles WHERE 1=1 AND username = ?`,
-    emails:    `DELETE from roles WHERE 1=1 AND email = ?`,
-    roles:     `DELETE from roles WHERE 1=1 AND username = ? AND email = ?`,
+    all:       `DELETE from roles`,
+    usernames: `DELETE from roles WHERE 1=1 AND scope = ? AND username = ?`,
+    emails:    `DELETE from roles WHERE 1=1 AND scope = ? AND mailbox = ?`,
+    role:      `DELETE from roles WHERE 1=1 AND scope = ? AND username = ? AND mailbox = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE roles (
           id        INTEGER PRIMARY KEY,
           username  TEXT NOT NULL,
-          email     TEXT NOT NULL
+          mailbox     TEXT NOT NULL,
+          scope     TEXT NOT NULL
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_roles', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
@@ -194,29 +207,30 @@ roles: {
 accounts: {
       
   select: {
-    accounts: `SELECT email, domain, storage FROM accounts WHERE 1=1 AND scope = ?`,
-    account:  `SELECT email FROM accounts WHERE 1=1 AND scope = ? AND email = ?`,
-    byDomain: `SELECT email FROM accounts WHERE 1=1 AND scope = ? AND domain = ?`,
+    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = ?`,
+    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = ?`,
+    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
+    byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND domain = ?`,
   },
   
   insert: {
-    fromDMS:  `REPLACE INTO accounts (email, domain, storage, scope) VALUES (@email, @domain, @storage, ?)`,
-    fromGUI:  `REPLACE INTO accounts (email, domain, salt, hash, scope) VALUES (@email, @domain, @salt, @hash, ?)`,
+    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, scope) VALUES (@mailbox, @domain, @storage, ?)`,
+    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, scope) VALUES (@mailbox, @domain, @salt, @hash, ?)`,
   },
   
   update: {
-    password: `REPLACE INTO accounts (email, salt, hash, scope) VALUES (@email, @salt, @hash, ?)`,
-    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = ? AND email = ?`,
+    password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
+    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = ? AND mailbox = ?`,
   },
   
   delete: {
-    account:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND email = ?`,
+    account:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
     accounts: `DELETE FROM accounts WHERE 1=1 AND scope = ? `,
   },
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE accounts (
-          email     TEXT NOT NULL UNIQUE PRIMARY KEY,
+          mailbox   TEXT NOT NULL UNIQUE PRIMARY KEY,
           domain    TEXT DEFAULT '',
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
@@ -289,7 +303,7 @@ domains: {
           path      TEXT DEFAULT '${DMS_CONFIG_PATH}/rspamd/dkim/${DKIM_KEYTYPE_DEFAULT}-${DKIM_KEYSIZE_DEFAULT}-${DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
           scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO domains (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
   patch: [
@@ -338,7 +352,7 @@ function dbOpen() {
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
 // dbRun takes params as Array = multiple inserts or String/Object = single insert
 // dbRun takes multiple anonymous parameters anonParams for WHERE clause value(s) when needed: can be multiple strings or an array, anonParams becomes an array anyways
-function dbRun(sql, params, ...anonParams) {
+function dbRun(sql, params=[], ...anonParams) {
 console.debug('anonParams',anonParams)
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
@@ -623,8 +637,14 @@ module.exports = {
 
 
 // debug = true;
+// containerName = 'dms';
+// DB = require('better-sqlite3')(DATABASE);
 // DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
 // DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+// function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
+// function debugLog(message) {console.debug(message)}
+// function errorLog(message) {console.debug(message)}
+
 // DB = require('better-sqlite3')(DATABASE);
 // DB.pragma('journal_mode = WAL');
 // process.on('exit', () => DB.close());
@@ -644,8 +664,6 @@ module.exports = {
 // DB.open
 // DB.close()
 
-// function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
-// function debugLog(message) {console.debug(message)}
 // dbRun(sql)
 
 // insert = DB.prepare(`REPLACE INTO settings (name, value) VALUES (@name, @value)`)
@@ -657,8 +675,20 @@ module.exports = {
 // key = 'isAdmin'
 // value = 1
 // username = 'admin2'
+
 // sql = { logins: { update: { any: `UPDATE logins set {@key}=? WHERE username = ?`, } } }
 // sql = { logins: { update: { any: `REPLACE INTO logins (username, salt, hash, email, isAdmin) VALUES (@username, @salt, @hash, @email, @isAdmin)`, } } }
 // dbRun(sql.logins.update.any, key, value, username)
+
 // sql = { logins: { update: { isAdmin: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`, } } }
 // dbRun(sql.logins.update.isAdmin, {isAdmin:value}, username) // works
+
+// dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@doctusit.com'},{username:'user2',mailbox:'admin@doctusit.com'}], containerName )
+// dbAll(`SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`, containerName)
+
+// dbAll(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = ?`, containerName)
+  // { username: 'user2', mailbox: 'ops@doctusit.com' },
+  // { username: 'user2', mailbox: 'admin@doctusit.com' }
+
+// dbAll(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = ?`, containerName)
+

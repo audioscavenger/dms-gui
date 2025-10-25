@@ -54,7 +54,7 @@ async function getAliases(refresh, containerName) {
     // refresh
     // virtual aliases: -------------------------------
     aliases = await pullAliasesFromDMS(containerName);
-    // [{ email: 'a@b.com', storage: {} }, .. ]
+    
     infoLog(`got ${aliases.length} aliases from pullAliasesFromDMS(${containerName})`);
 
     // now add the alias type 0

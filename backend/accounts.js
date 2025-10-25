@@ -30,34 +30,12 @@ const fs = require("fs");
 const fsp = fs.promises;
 
 
-async function getAccount(name, containerName) {  // TODO: do we need that?
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
-
-  try {
-    
-    const account = await dbGet(sql.accounts.select.account, containerName, name);
-    return account?.value;
-    
-  } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
-    // TODO: we should return smth to the index API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
 async function getAccounts(refresh, containerName) {
   refresh = (refresh === undefined) ? false : refresh;
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
   
-  var accounts = [];
+  let accounts = [];
   try {
     
     if (!refresh) {
@@ -67,7 +45,7 @@ async function getAccounts(refresh, containerName) {
       if (accounts && accounts.length) {
         infoLog(`Found ${accounts.length} entries in accounts`);
         
-        // now parse storage JSON as it's stored stringified in the db
+        // now JSON.parse storage as it's stored stringified in the db
         accounts = accounts.map(account => { return { ...account, storage: JSON.parse(account.storage) }; });
         
       } else {
@@ -75,16 +53,16 @@ async function getAccounts(refresh, containerName) {
       }
       
       return accounts;
-      // [ { email: 'a@b.com', domain:'b.com', storage: {} }, .. ]
+      // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
     }
     
     // refresh
     accounts = await pullAccountsFromDMS(containerName);
-    // [{ email: 'a@b.com', storage: {} }, .. ]
+    // [{ mailbox: 'a@b.com', storage: {} }, .. ]
     infoLog(`got ${accounts.length} accounts from pullAccountsFromDMS(${containerName})`);
 
     // now add the domain item
-    accounts = accounts.map(account => { return { ...account, domain: account.email.split('@')[1] }; });
+    accounts = accounts.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
 
     // now save accounts in db
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
@@ -105,7 +83,7 @@ async function getAccounts(refresh, containerName) {
 }
 
 
-// Function to retrieve email accounts from DMS
+// Function to retrieve mailbox accounts from DMS
 async function pullAccountsFromDMS(containerName) {
   const command = 'email list';
   const accounts = [];
@@ -141,17 +119,17 @@ async function pullAccountsFromDMS(containerName) {
           if (matchQuotaON) {
             // matchQuotaON = [ "* user@domain.com ( 2.5G / 30G ) [8%]", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
             // matchQuotaON = [ "* user@domain.com 2.5G 30G 8%", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
-            const email = `${matchQuotaON[2]}@${matchQuotaON[3]}`;
+            const mailbox = `${matchQuotaON[2]}@${matchQuotaON[3]}`;
             
             // this works only if Dovecot ENABLE_QUOTAS=1
             const usedSpace = matchQuotaON[4];
             const totalSpace = matchQuotaON[5] === '~' ? 'unlimited' : matchQuotaON[5];
             const usagePercent = matchQuotaON[6];
 
-            debugLog(`Parsed account: ${email}, Storage: ${usedSpace}/${totalSpace} [${usagePercent}%]`);
+            debugLog(`Parsed account: ${mailbox}, Storage: ${usedSpace}/${totalSpace} [${usagePercent}%]`);
 
             accounts.push({
-              email:email,
+              mailbox:mailbox,
               storage: {
                 used: usedSpace,
                 total: totalSpace,
@@ -160,10 +138,10 @@ async function pullAccountsFromDMS(containerName) {
             });
           } else if  (matchQuotaOFF) {
             // matchQuotaOFF = [ "* user@domain.com", "* ", "user", "domain.com" ]
-            const email = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
+            const mailbox = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
 
             accounts.push({
-              email:email,
+              mailbox:mailbox,
               storage: {},
             });
           } else {
@@ -185,20 +163,20 @@ async function pullAccountsFromDMS(containerName) {
 }
 
 
-// Function to add a new email account
-async function addAccount(email, password, containerName) {
+// Function to add a new mailbox account
+async function addAccount(mailbox, password, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
 
   try {
-    debugLog(`Adding new email account: ${email}`);
-    const result = await execSetup(`email add ${email} ${password}`);
+    debugLog(`Adding new mailbox account: ${mailbox}`);
+    const result = await execSetup(`email add ${mailbox} ${password}`);
     if (!result.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      dbRun(sql.accounts.insert.fromGUI, { email:email, domain:email.split('@')[1], salt:salt, hash:hash }, containerName);
-      successLog(`Account created: ${email}`);
-      return { success: true, email };
+      dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash }, containerName);
+      successLog(`Account created: ${mailbox}`);
+      return { success: true };
       
     } else errorLog(result.stderr);
     
@@ -215,19 +193,19 @@ async function addAccount(email, password, containerName) {
   }
 }
 
-// Function to update an email account password
-async function changePasswordAccount(email, password, containerName) {
+// Function to update an mailbox account password
+async function changePasswordAccount(mailbox, password, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   try {
-    debugLog(`Updating password for account: ${email}`);
-    const result = await execSetup(`email update ${email} ${password}`);
+    debugLog(`Updating password for account: ${mailbox}`);
+    const result = await execSetup(`email update ${mailbox} ${password}`);
     if (!result.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      dbRun(sql.accounts.update.password, { email:email, salt:salt, hash:hash }, containerName);
-      successLog(`Password updated for account: ${email}`);
+      dbRun(sql.accounts.update.password, { mailbox:mailbox, salt:salt, hash:hash }, containerName);
+      successLog(`Password updated for account: ${mailbox}`);
       return { success: true };
       
     } else errorLog(result.stderr);
@@ -245,7 +223,7 @@ async function changePasswordAccount(email, password, containerName) {
   }
 }
 
-async function updateAccount(email, jsonDict, containerName) {
+async function updateAccount(mailbox, jsonDict, containerName) {
   // jsonDict = {password:password}
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
@@ -255,19 +233,25 @@ async function updateAccount(email, jsonDict, containerName) {
       throw new Error('nothing to modify was passed');
     }
     
-    debugLog(`Updating account ${email} with jsonDict:`, jsonDict);
-    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(validKeys.accounts));
+    debugLog(`Updating account ${mailbox} with jsonDict:`, jsonDict);
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys.accounts));
     if (Object.keys(validDict).length = 0) {
       throw new Error('nothing valid was passed');
     }
     
-    debugLog(`Updating account ${email} with validDict:`, validDict);
+    debugLog(`Updating account ${mailbox} with validDict:`, validDict);
     for (const [key, value] of Object.entries(validDict)) {
       if (key == 'password') {
-        return changePasswordAccount(email, value);
+        return changePasswordAccount(mailbox, value);
+        
+      } else if (key == 'storage') {
+        dbRun(sql.accounts.update[key], {[key]:JSON.stringify(value)}, containerName, mailbox);
+        debugLog(`Updated account ${mailbox} with ${key}=${value}`);
+        return { success: true };
+        
       } else {
-        dbRun(sql.accounts.update[key], {[key]:value}, containerName, email);
-        debugLog(`Updated account ${email} with ${key}=${value}`);
+        dbRun(sql.accounts.update[key], {[key]:value}, containerName, mailbox);
+        debugLog(`Updated account ${mailbox} with ${key}=${value}`);
         return { success: true };
       }
     }
@@ -285,19 +269,19 @@ async function updateAccount(email, jsonDict, containerName) {
   }
 }
 
-// Function to delete an email account
-async function deleteAccount(email, containerName) {
+// Function to delete an mailbox account
+async function deleteAccount(mailbox, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   try {
-    debugLog(`Deleting email account: ${email}`);
-    const result = await execSetup(`email del ${email}`);
+    debugLog(`Deleting mailbox account: ${mailbox}`);
+    const result = await execSetup(`email del ${mailbox}`);
     if (!result.exitCode) {
       
-      dbRun(sql.accounts.delete.account, containerName, email);
-      successLog(`Account deleted: ${email}`);
-      return { success: true, email };
+      dbRun(sql.accounts.delete.account, containerName, mailbox);
+      successLog(`Account deleted: ${mailbox}`);
+      return { success: true };
       
     } else errorLog(result.stderr);
     
@@ -314,18 +298,18 @@ async function deleteAccount(email, containerName) {
   }
 }
 
-// Function to reindex an email account
-async function reindexAccount(email, containerName) {
+// Function to reindex an mailbox account
+async function reindexAccount(mailbox, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   try {
-    debugLog(`Reindexing email account: ${email}`);
-    const result = await execSetup(`doveadm index -u ${email} -q \\*`);
+    debugLog(`Reindexing mailbox account: ${mailbox}`);
+    const result = await execSetup(`doveadm index -u ${mailbox} -q \\*`);
     if (!result.exitCode) {
       
-      successLog(`Account reindex started for ${email}`);
-      return { success: true, email };
+      successLog(`Account reindex started for ${mailbox}`);
+      return { success: true };
       
     } else errorLog(result.stderr);
     

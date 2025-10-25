@@ -20,6 +20,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload does not work anymore
+* [ ] - frontend/DataTable filter crashes when typing inexistent values at column.key in sortedAndFilteredData[0] && (sortOrders[column.key] === 0 ? '▲' : '▼')
 
 ## TODO:
 
@@ -51,6 +52,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - frontend/Accounts: transform account storage values into bytes so we can sort them
 * [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
 
+* [ ] - frontend/Logins: provide a way for users to change their profile email and password
+* [ ] - frontend/Logins: why can't I change the email directly in the email field?
+
 * [ ] - frontend/backups.js: add file
 * [ ] - frontend/imports.js: add file
 
@@ -60,16 +64,25 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
 * [ ] - backend: mutate the String with data transform/validation functions as Class
 * [ ] - backend/domains: add dkim modules and exec calls
-* [ ] - backend/settings: pullServerEnvs should also look for quota
+* [ ] - backend/settings: pullServerEnvs should also look for quota?
 
 * [ ] - frontend/Backups: add page
 * [ ] - frontend/Imports: add page
 * [ ] - frontend/Domains: add FormDNS or page
 
-* [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls
+* [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 
 ### history:
 
+* [x] 1.1.9 - BREAKING CHANGE: db accounts.email becomes accounts.mailbox
+* [x] 1.1.8 - frontend/Logins: handling of roles with Autocomplete, and shenanigans to parse/stringify roles array in logins
+* [x] 1.1.8 - frontend/Logins: handling of roles with Autocomplete, and shenanigans to parse/stringify roles array in logins
+* [x] 1.1.8 - backend/db: roles table is the correct way, but heck lot of a work, let's store roles as stringified json in logins instead
+* [x] 1.1.8 - frontend: added getRoles
+* [x] 1.1.8 - backend: added getRoles
+* [x] 1.1.8 - backend/settings: propagated new execCommand output syntax
+* [x] 1.1.8 - frontend: added @mui/material @emotion/react @emotion/styled
+* [x] 1.1.8 - backend/logins: prevents inactive logins from login
 * [x] 1.1.7 - frontend/DataTable: bugfix: sorting rendered columns is possible when hidden data is added inside a span
 * [x] 1.1.7 - frontend/DataTable: bugfix: fixed arrows not flipping on first click by removing !(column.key in sortOrders)
 * [x] 1.1.7 - frontend/DataTable: bugfix: hide sort arrows for rendered columns with no data

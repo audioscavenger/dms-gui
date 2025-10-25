@@ -91,7 +91,7 @@ export const Login = () => {
               type="text"
               id="username"
               name="username"
-              label="settings.username"
+              label="logins.username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -101,7 +101,7 @@ export const Login = () => {
               type="password"
               id="password"
               name="password"
-              label="settings.password"
+              label="logins.password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

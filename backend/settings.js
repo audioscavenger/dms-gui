@@ -85,7 +85,6 @@ async function getSettings(name) {
 }
 
 
-// async function saveSettings(username, password, email='') {
 async function saveSettings(jsonArrayOfObjects) {
   try {
     
@@ -413,17 +412,19 @@ async function pullFTS(containerName, containerInfo) {
 
     // if we found fts override plugin, let's load it
     if (ftsMount) {
-      const ftsMount_out = await execCommand(`cat ${ftsMount}`, containerName);
-      debugLog(`dovecot file content:`,ftsMount_out);
-      const ftsConfig = await readDovecotConfFile(ftsMount_out);
-      debugLog(`dovecot json:`, ftsConfig);
-      
-      if (ftsConfig?.plugin?.fts) {
+      const result = await execCommand(`cat ${ftsMount}`, containerName);
+      if (!result.exitCode) {
+        debugLog(`dovecot file content:`,result.stdout);
+        const ftsConfig = await readDovecotConfFile(result.stdout);
+        debugLog(`dovecot json:`, ftsConfig);
+        
+        if (ftsConfig?.plugin?.fts) {
+          envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
+          envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
 
-        envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
-        envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-
-      }
+        }
+      } else errorLog(result.stderr);
+    
     }
     
   } catch (error) {
@@ -441,28 +442,30 @@ async function pullDkimRspamd(containerName) {
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
   try {
-    const dkim_out = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
-    debugLog(`dkim file content:`, dkim_out);
-    // TODO: decide if we want to propagate execInContainer errors, since dkim_out can very well be stderr="cat: whatever: No such file or directory"
-    
-    const dkimConfig = await readDkimFile(dkim_out);
-    debugLog(`dkim json:`, dkimConfig);
-    
-    envs.DKIM_ENABLED   = dkimConfig?.enabled;
-    envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
-    envs.DKIM_PATH      = dkimConfig?.path;
+    const result = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
+    if (!result.exitCode) {
+      debugLog(`dkim file content:`, result.stdout);
+      const dkimConfig = await readDkimFile(result.stdout);
+      debugLog(`dkim json:`, dkimConfig);
+      
+      envs.DKIM_ENABLED   = dkimConfig?.enabled;
+      envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
+      envs.DKIM_PATH      = dkimConfig?.path;
 
-    if (dkimConfig?.domain) {
-      for (const [domain, item] of Object.entries(dkimConfig.domain)) {
-        let split, [keytype, keysize] = ['', ''];
-        if (item?.path) {
-          split = path.basename(item.path).split('-');  // [ 'rsa', '2048', 'dkim', '$domain.private.txt' ]
-          keytype = split[0];
-          keysize = split[1];
+      if (dkimConfig?.domain) {
+        for (const [domain, item] of Object.entries(dkimConfig.domain)) {
+          let split, [keytype, keysize] = ['', ''];
+          if (item?.path) {
+            split = path.basename(item.path).split('-');  // [ 'rsa', '2048', 'dkim', '$domain.private.txt' ]
+            keytype = split[0];
+            keysize = split[1];
+          }
+          (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
         }
-        (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
       }
-    }
+
+    } else errorLog(result.stderr);
+
 
   } catch (error) {
     errorLog(`execCommand failed with error:`,error);
@@ -497,12 +500,16 @@ async function pullServerEnvs(containerName) {
       envs = { ...envs, ...dictEnvDMSredux };
 
       // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
-      const mail_plugins = await execCommand(`doveconf mail_plugins`, containerName);   // mail_plugins =  quota fts fts_xapian zlib
-      // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
-      // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
-      for (const PLUGIN of mail_plugins.split(/[=\s]+/)) {
-        if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
-      }
+      const result = await execCommand(`doveconf mail_plugins`, containerName);   // result.stdout =  quota fts fts_xapian zlib
+        if (!result.exitCode) {
+        // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
+        // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
+        for (const PLUGIN of result.stdout.split(/[=\s]+/)) {
+          if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+        }
+
+      } else errorLog(result.stderr);
+
       
       // TODO: look for quotas -------------------------------------------------- quota
       
