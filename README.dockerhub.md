@@ -9,19 +9,23 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 
 - 🔐 Login page, crypto-secure hashed passwords
 - 📊 Dashboard with server status information
-- 👤 Email account management (add, delete)
-- ↔️ Email alias management
+- 👤 User management with roles for their mailboxes
+- 📬 Mailbox account management
+- 📧 Email alias management (includes regex)
 - 🔧 Docker-Mailserver connection configuration
 - 🛢️ better-sqlite3 database!
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp?raw=true)
 ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
-<!-- ![Dashboard](/assets/dms-gui-Login.webp)
+<!--
 ![Dashboard](/assets/dms-gui-Dashboard.webp)
+![Logins](/assets/dms-gui-Logins.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
-![Settings](/assets/dms-gui-Settings.webp) -->
+![Settings](/assets/dms-gui-Settings.webp)
+-->
 
 ## Requirements
 
@@ -49,6 +53,7 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for your own environment:
 
 ```
+# Docker Mailserver Configuration
 # Docker Mailserver Configuration
 DMS_SETUP_SCRIPT=/usr/local/bin/setup
 DMS_CONTAINER=dms
@@ -261,7 +266,9 @@ OAS description of all API endpoints is available at:
 * using raw ports: http://localhost:3001/
 
 ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true)
-<!-- ![API](/assets/dms-gui-docs.webp) -->
+<!--
+![API](/assets/dms-gui-docs.webp)
+-->
 
 
 ### API call Example:
@@ -292,11 +299,16 @@ Result:
 
 ## Behind the Scenes
 
-Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
+### Logging
+
+Formatted logging with colors, that actually helps!
+![Logins](/assets/dms-gui-logs.webp)
 
 ### Automatic Formatting
 
-Formatting is automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensures that all committed code adheres to the defined style guide.
+Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
+
+Formatting was automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensured that all committed code adheres to the defined style guide.
 
 ### Manual Formatting
 

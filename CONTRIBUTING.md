@@ -19,7 +19,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
-* [ ] - frontend/DataTable usePrevious to highlight data change on reload does not work anymore
+* [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore
 * [ ] - frontend/DataTable filter crashes when typing inexistent values at column.key in sortedAndFilteredData[0] && (sortOrders[column.key] === 0 ? '▲' : '▼')
 
 ## TODO:
@@ -74,6 +74,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.10 - backend: massive refactoring of updateLogin and updateAccount into db as updateDB
+* [x] 1.1.10 - backend/logins: properly updateLogin
+* [x] 1.1.10 - frontend/Logins: updated roles for each login are correctly pushed to updateLogin and correctly pulled from getLogins
 * [x] 1.1.9 - BREAKING CHANGE: db accounts.email becomes accounts.mailbox
 * [x] 1.1.8 - frontend/Logins: handling of roles with Autocomplete, and shenanigans to parse/stringify roles array in logins
 * [x] 1.1.8 - frontend/Logins: handling of roles with Autocomplete, and shenanigans to parse/stringify roles array in logins

@@ -10,7 +10,7 @@ const {
   errorLog,
   successLog,
   pluck,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import {
   getAliases,

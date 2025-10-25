@@ -16,15 +16,15 @@ const {
   readJson,
   writeJson,
   getContainer,
-} = require('./backend.js');
+} = require('./backend');
+
 const {
   sql,
   dbRun,
   dbAll,
   dbGet,
   hashPassword,
-  verifyPassword,
-} = require('./db.js');
+} = require('./db');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -157,11 +157,10 @@ async function pullAccountsFromDMS(containerName) {
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
-
 
 // Function to add a new mailbox account
 async function addAccount(mailbox, password, containerName) {
@@ -183,7 +182,7 @@ async function addAccount(mailbox, password, containerName) {
   } catch (error) {
     let backendError = 'Error adding account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -193,81 +192,6 @@ async function addAccount(mailbox, password, containerName) {
   }
 }
 
-// Function to update an mailbox account password
-async function changePasswordAccount(mailbox, password, containerName) {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
-
-  try {
-    debugLog(`Updating password for account: ${mailbox}`);
-    const result = await execSetup(`email update ${mailbox} ${password}`);
-    if (!result.exitCode) {
-      
-      const { salt, hash } = await hashPassword(password);
-      dbRun(sql.accounts.update.password, { mailbox:mailbox, salt:salt, hash:hash }, containerName);
-      successLog(`Password updated for account: ${mailbox}`);
-      return { success: true };
-      
-    } else errorLog(result.stderr);
-    
-  } catch (error) {
-    let backendError = 'Error updating account password';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-async function updateAccount(mailbox, jsonDict, containerName) {
-  // jsonDict = {password:password}
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
-
-  try {
-    if (Object.keys(jsonDict).length = 0) {
-      throw new Error('nothing to modify was passed');
-    }
-    
-    debugLog(`Updating account ${mailbox} with jsonDict:`, jsonDict);
-    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys.accounts));
-    if (Object.keys(validDict).length = 0) {
-      throw new Error('nothing valid was passed');
-    }
-    
-    debugLog(`Updating account ${mailbox} with validDict:`, validDict);
-    for (const [key, value] of Object.entries(validDict)) {
-      if (key == 'password') {
-        return changePasswordAccount(mailbox, value);
-        
-      } else if (key == 'storage') {
-        dbRun(sql.accounts.update[key], {[key]:JSON.stringify(value)}, containerName, mailbox);
-        debugLog(`Updated account ${mailbox} with ${key}=${value}`);
-        return { success: true };
-        
-      } else {
-        dbRun(sql.accounts.update[key], {[key]:value}, containerName, mailbox);
-        debugLog(`Updated account ${mailbox} with ${key}=${value}`);
-        return { success: true };
-      }
-    }
-    
-  } catch (error) {
-    let backendError = 'Error updating account';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
 
 // Function to delete an mailbox account
 async function deleteAccount(mailbox, containerName) {
@@ -288,7 +212,7 @@ async function deleteAccount(mailbox, containerName) {
   } catch (error) {
     let backendError = 'Error deleting account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -316,7 +240,7 @@ async function reindexAccount(mailbox, containerName) {
   } catch (error) {
     let backendError = 'Error reindexing account';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -330,7 +254,6 @@ async function reindexAccount(mailbox, containerName) {
 module.exports = {
   getAccounts,
   addAccount,
-  updateAccount,
   deleteAccount,
 };
 

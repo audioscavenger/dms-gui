@@ -14,7 +14,8 @@ const {
   execCommand,
   readJson,
   writeJson,
-} = require('./backend.js');
+} = require('./backend');
+
 const {
   sql,
   dbRun,
@@ -22,7 +23,9 @@ const {
   dbGet,
   hashPassword,
   verifyPassword,
-} = require('./db.js');
+  changePassword,
+  updateDB,
+} = require('./db');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -111,7 +114,7 @@ async function getLogins(username) {
 
 
 async function addLogin(username, password, email='', isAdmin=0, isActive=1, roles=[]) {
-  console.debug('ddebug password, email',password, email)
+
   try {
     debugLog(username, password, email, isAdmin);
     
@@ -133,86 +136,19 @@ async function addLogin(username, password, email='', isAdmin=0, isActive=1, rol
 }
 
 
-async function changePasswordLogin(username, password) {
-
-  try {
-    debugLog(`Updating password for login: ${username}`);
-    
-    const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.update.password, { username:username, salt:salt, hash:hash });
-    successLog(`Password updated for login: ${username}`);
-    return { success: true };
-    
-  } catch (error) {
-    let backendError = 'Error updating login password';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
-async function updateLogin(username, jsonDict) {
-  // jsonArrayOfObjects = {email:email, isAdmin:isAdmin, isActive:isActive }
-  
-  try {
-    if (Object.keys(jsonDict).length = 0) {
-      throw new Error('nothing to modify was passed');
-    }
-    
-    debugLog(`Updating login ${username} with jsonDict:`, jsonDict);
-    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys.logins));
-    if (Object.keys(validDict).length = 0) {
-      throw new Error('nothing valid was passed');
-    }
-    
-    debugLog(`Updating login ${username} with validDict:`, validDict);    // { isAdmin: true }
-    for (const [key, value] of Object.entries(validDict)) {
-      if (key == 'password') {
-        return changePasswordLogin(username, value);
-        
-      } else if (key == 'roles') {
-        dbRun(sql.logins.update[key], {[key]:JSON.stringify(value)}, username);
-        debugLog(`Updated login ${username} with ${key}=${value}`);
-        return { success: true };
-        
-      } else {
-        dbRun(sql.logins.update[key], {[key]:value}, username);
-        debugLog(`Updated login ${username} with ${key}=${value}`);
-        return { success: true };
-      }
-    }
-    
-  } catch (error) {
-    let backendError = 'Error updating login';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
 async function deleteLogin(username) {
 
   try {
     const activeAdmins = await dbAll(sql.logins.select.isActive.admins);
-    const login =  getLogin(username);
+    const login =  await getLogin(username);
     debugLog(`pulled login:`,login);
     debugLog(`pulled ${activeAdmins.length} admins`, activeAdmins);
-
-    if (!login?.username) {
-      // don;t delete the last admin
-      if (activeAdmins.length && activeAdmins[0].username != username) {
+    
+    // if login exist...
+    if (login.username) {
+      
+      // don't delete the last admin
+      if (activeAdmins.length > 1) {
         dbRun(sql.logins.delete.login, username);
         successLog(`Login deleted: ${username}`);
         
@@ -223,7 +159,7 @@ async function deleteLogin(username) {
   } catch (error) {
     let backendError = 'Error deleting login';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -310,7 +246,6 @@ module.exports = {
   getLogins,
   addLogin,
   deleteLogin,
-  updateLogin,
   loginUser,
   getRoles,
 };

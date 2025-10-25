@@ -9,7 +9,7 @@ const {
   errorLog,
   successLog,
   byteSize2HumanSize,
-} = require('../../frontend.js');
+} = require('../../frontend');
 import {
   getServerStatus, 
   getAccounts, 

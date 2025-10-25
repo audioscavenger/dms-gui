@@ -1,21 +1,25 @@
-require('./env.js');
+require('./env');
 const {
   debugLog,
   infoLog,
   warnLog,
   errorLog,
   successLog,
-} = require('./backend.js');
+} = require('./backend');
 
-const { dbInit } = require('./db');
+const { 
+  dbInit,
+  updateDB,
+} = require('./db');
+
 const {
   getLogins,
   addLogin,
-  updateLogin,
   deleteLogin,
   loginUser,
   getRoles,
 } = require('./logins');
+
 const {
   getServerStatus,
   getServerInfos,
@@ -25,12 +29,13 @@ const {
   saveSettings,
   getDomains,
 } = require('./settings');
+
 const {
   getAccounts,
   addAccount,
-  updateAccount,
   deleteAccount,
 } = require('./accounts');
+
 const {
   getAliases,
   addAlias,
@@ -403,7 +408,8 @@ app.put('/api/accounts/:mailbox/update', async (req, res) => {
       return res.status(400).json({ error: 'Mailbox is required' });
     }
 
-    await updateAccount(mailbox, req.body);
+    // await updateAccount(mailbox, req.body);
+    await updateDB('accounts', mailbox, req.body);
     res.json({ message: 'Account updated successfully', mailbox });
     
   } catch (error) {
@@ -526,7 +532,6 @@ app.post('/api/aliases', async (req, res) => {
  */
 app.delete('/api/aliases', async (req, res) => {
   try {
-    debugLog('ddebug',req.body)
     // const { source, destination } = req.params;
     const { source, destination } = req.body;
     if (!source || !destination) {
@@ -721,8 +726,6 @@ app.get('/api/logins', async (req, res) => {
 app.post('/api/logins', async (req, res) => {
   try {
     const { username, password, email, isAdmin, isActive, roles } = req.body;
-    console.debug('req.body',req.body)
-    console.debug('ddebug password, email',password, email)
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
@@ -784,8 +787,7 @@ app.put('/api/logins/:username/update', async (req, res) => {
       return res.status(400).json({ error: 'Username is required' });
     }
 
-    console.debug('api req.body',req.body)
-    await updateLogin(username, req.body);
+    await updateDB('logins', username, req.body);
     res.json({ message: 'Login updated successfully', username });
     
   } catch (error) {
@@ -867,10 +869,8 @@ app.post('/api/loginUser', async (req, res) => {
     const { username, password } = req.body;
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
-    console.debug('ddebug api loginUser(username, password)',username, password)
 
     const result = await loginUser(username, password);
-    console.debug('ddebug api loginUser result',result)
     res.status(201).json(result);
   } catch (error) {
     errorLog(`index POST /api/loginUser: ${error.message}`);

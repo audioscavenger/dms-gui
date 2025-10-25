@@ -11,7 +11,7 @@ const {
   warnLog,
   errorLog,
   successLog,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import {
   LoadingSpinner,
@@ -60,8 +60,8 @@ const DataTable = ({
     
     // checking for currentData[0][col] not undefined helps not crashing the sort algorithm
     if (currentData.length && currentData[0][col] != undefined) {
-      debugLog(`ddebug col=${col} sortOrders=`,sortOrders);
-      debugLog('sortFunction, currentData=',currentData);
+      // debugLog(`ddebug sortFunction col=${col} sortOrders=`,sortOrders);
+      // debugLog('ddebug sortFunction currentData=',currentData);
 
       // if currentData[0][col] is a dictionary
       if (typeof currentData[0][col] == 'object') {
@@ -235,7 +235,7 @@ const DataTable = ({
               return (
               <tr key={keyExtractor(item)} className={item?.color}>
                 {columns.map((column) => (
-                  <td key={`${keyExtractor(item)}-${column.key}`} className={(previousItem && previousItem.value !== item.value) ? 'highlight-change' : ""}>
+                  <td key={`${keyExtractor(item)}-${column.key}`} className={(previousItem && previousItem.value !== item.value) ? "highlight-change" : ""}>
                     {column.render ? column.render(item) : <span>{item[column.key]}</span>}
                   </td>
                 ))}

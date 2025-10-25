@@ -8,7 +8,7 @@ const {
   warnLog,
   errorLog,
   successLog,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import { 
   Accordion,

@@ -16,29 +16,8 @@ const {
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
-} = require('./common.js');
+} = require('./common');
 
-
-// not const so they are exported and we don't have to mention them
-regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
-// regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
-regexPrintOnly = /[^\S]/;
-
-regexFindEmailRegex = /\/[\S]+@[\S]+\//;
-regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
-regexFindEmailLax = /([\S]+)@([\S]+)/;
-regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
-regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
-regexEmailLax = /^([\S]+)@([\S]+)$/;
-regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
-
-regexUsername = /^[^\s]+$/;
-
-
-updateValidKeys = {
-  accounts: {password:'string', },
-  logins:   {password:'string', email:'string', isAdmin:'number', isActive:'number'},
-}
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
 const color = {
@@ -79,15 +58,15 @@ const LEVEL = {
       // }, { native }
    // );
 // });
-async function logger(level, message='', data = '') {
+async function logger(level, message='', ...data) {
   // console[level](`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level]+color.end, color.LOW+funcName(4)+color.end, message, data);
-  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, data, color.end);
+  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, ...data, color.end);
 }
-async function successLog(message, data = '') { logger('success', message, data) }
-async function errorLog(message, data = '') { logger('error', message, data) }
-async function warnLog(message, data = '') { logger('warn', message, data) }
-async function infoLog(message, data = '')  { logger('info', message, data) }
-async function debugLog(message, data = '') { if (debug) logger('debug', message, data) }
+async function successLog(message, ...data) { logger('success', message, ...data) }
+async function errorLog(message, ...data) { logger('error', message, ...data) }
+async function warnLog(message, ...data) { logger('warn', message, ...data) }
+async function infoLog(message, ...data)  { logger('info', message, ...data) }
+async function debugLog(message, ...data) { if (debug) logger('debug', message, ...data) }
 
 
 function jsonFixTrailingCommas(jsonString, returnJson=false) {
@@ -345,6 +324,7 @@ function getContainer(containerName) {
   if (!containers[containerName]) global.containers[containerName] = docker.getContainer(containerName);
   return containers[containerName];
 }
+
 
 module.exports = {
   funcName,

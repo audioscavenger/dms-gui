@@ -9,7 +9,7 @@ const {
   successLog,
   getValueFromArrayOfObj,
   byteSize2HumanSize,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import {
   getAccounts,
@@ -92,7 +92,7 @@ const Accounts = () => {
         getSettings('dnsProvider'),
         getServerEnv('DOVECOT_FTS'),
       ]);
-      setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
+      // setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
       setDnsProvider(dnsProviderData);
       setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);

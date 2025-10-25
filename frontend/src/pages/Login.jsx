@@ -13,7 +13,7 @@ const {
   warnLog,
   errorLog,
   successLog,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import {
   loginUser,
@@ -63,7 +63,7 @@ export const Login = () => {
     // For the sake of this example, we're using a mock authentication
     // if (username === "admin" && password === "password") {
     const isLoggedin = await loginUser(username, password)
-    console.debug('ddebug isLoggedin=', isLoggedin);
+    // console.debug('ddebug isLoggedin=', isLoggedin);
     if (isLoggedin) {
       
       setSuccessMessage(null);

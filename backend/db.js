@@ -5,7 +5,8 @@ const {
   warnLog,
   errorLog,
   successLog,
-} = require('./backend.js');
+  reduxPropertiesOfObj,
+} = require('./backend');
 
 const crypto = require('node:crypto');
 
@@ -35,8 +36,15 @@ sqlMatch = {
 // DB.close();
 // DB = new Database(buffer);
 
+// columns we can update for each table along with their type
+updateValidKeys = {
+  accounts: {password:'string', },
+  logins:   {password:'string', email:'string', isAdmin:'number', isActive:'number', roles:'object'},
+}
+
+
 // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#transactionfunction---function
-// BEWARE: 
+    // password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 sql = {
 settings: {
 
@@ -113,7 +121,7 @@ logins: {
   },
   
   update: {
-    password: `REPLACE INTO logins (username, salt, hash) VALUES (@username, @salt, @hash)`,
+    password: `UPDATE logins set salt=@salt, hash=@hash WHERE username = ?`,
     email:    `UPDATE logins set email = @email WHERE username = ?`,
     isAdmin:  `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
     isActive: `UPDATE logins set isActive = @isActive WHERE username = ?`,
@@ -219,7 +227,7 @@ accounts: {
   },
   
   update: {
-    password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
+    password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope=? AND mailbox = ?`,
     storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = ? AND mailbox = ?`,
   },
   
@@ -351,9 +359,9 @@ function dbOpen() {
 
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
 // dbRun takes params as Array = multiple inserts or String/Object = single insert
-// dbRun takes multiple anonymous parameters anonParams for WHERE clause value(s) when needed: can be multiple strings or an array, anonParams becomes an array anyways
+// dbRun takes multiple anonymous parameters anonParams as an array of strings, for WHERE clause value(s) when needed
 function dbRun(sql, params=[], ...anonParams) {
-console.debug('anonParams',anonParams)
+
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
@@ -622,6 +630,103 @@ async function verifyPassword(username, password, table='logins') {
 };
 
 
+// Function to update a password in a table
+async function changePassword(table, id, password, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
+  try {
+    const { salt, hash } = await hashPassword(password);
+    
+    // special case for accounts as we need to run a command in the container
+    if (table == 'accounts') {
+      debugLog(`Updating password for ${id} in ${containerName}...`);
+      const result = await execSetup(`email update ${id} ${password}`);
+      if (!result.exitCode) {
+        
+        debugLog(`Updating password for ${id} in ${table}...`);
+        dbRun(sql[table].update.password, { salt:salt, hash:hash }, containerName, id);
+        successLog(`Password updated for ${table}: ${mailbox}`);
+        return { success: true };
+        
+      } else errorLog(result.stderr);
+      
+    } else {
+      debugLog(`Updating password for ${id} in ${table}...`);
+      dbRun(sql.logins.update.password, { salt:salt, hash:hash }, id);
+      successLog(`Password updated for ${table}: ${username}`);
+      return { success: true };
+    }
+    
+  } catch (error) {
+    let ErrorMsg = error.message;
+    errorLog(ErrorMsg);
+    throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// Function to update a table in the db
+async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { column:value, .. }
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`${id} in ${table} with`, jsonDict);
+
+  try {
+    if (!updateValidKeys[table]) {
+      throw new Error(`unknown table ${table}`);
+    }
+    
+    if (Object.keys(jsonDict).length = 0) {
+      throw new Error('nothing to modify was passed');
+    }
+    
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys[table]));
+    if (Object.keys(validDict).length = 0) {
+      throw new Error('jsonDict is invalid');
+    }
+    
+    // for each new value to update...
+    for (const [key, value] of Object.entries(validDict)) {
+      
+      // is the value the right type...
+      if (typeof value == updateValidKeys[table][key]) {
+        
+        // password has its own function
+        if (key == 'password') {
+          changePassword(id, value, containerName);
+          
+        // objects must be saved as JSON
+        } else if (typeof value == 'object') {
+          dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
+          successLog(`Updated ${table} ${id} with ${key}=`, value);
+        
+        // other sqlite3 valid types
+        } else {
+          dbRun(sql[table].update[key], {[key]:value}, id);
+          successLog(`Updated ${table} ${id} with ${key}=${value}`);
+        }
+        
+      } else errorLog(`typeof ${value} for ${key} is not ${updateValidKeys[table][key]}`)
+    }
+    return { success: true };
+    
+  } catch (error) {
+    let ErrorMsg = error.message;
+    errorLog(ErrorMsg);
+    throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
 module.exports = {
   DB,
   sql,
@@ -633,6 +738,8 @@ module.exports = {
   dbAll,
   hashPassword,
   verifyPassword,
+  changePassword,
+  updateDB,
 };
 
 

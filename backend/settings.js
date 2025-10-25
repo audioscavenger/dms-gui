@@ -20,13 +20,14 @@ const {
   regexColors,
   regexPrintOnly,
   getContainer,
-} = require('./backend.js');
+} = require('./backend');
+
 const {
   sql,
   dbRun,
   dbAll,
   dbGet,
-} = require('./db.js');
+} = require('./db');
 
 // const fs = require("fs");
 // const fsp = fs.promises;

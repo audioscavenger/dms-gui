@@ -1,4 +1,20 @@
 
+// not const so they are exported and we don't have to mention them
+regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
+// regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
+regexPrintOnly = /[^\S]/;
+
+regexFindEmailRegex = /\/[\S]+@[\S]+\//;
+regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
+regexFindEmailLax = /([\S]+)@([\S]+)/;
+regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
+regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
+regexEmailLax = /^([\S]+)@([\S]+)$/;
+
+regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
+regexUsername = /^[^\s]+$/;
+
+
 function funcName(parent=4) {
   const err = new Error();
   // The stack trace is formatted differently depending on the Node.js version.

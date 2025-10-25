@@ -12,16 +12,8 @@ const {
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
-} = require('./common.js');
+} = require('./common');
 
-regexFindEmailRegex = /\/[\S]+@[\S]+\//;
-regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
-regexFindEmailLax = /([\S]+)@([\S]+)/;
-regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
-regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
-regexEmailLax = /^([\S]+)@([\S]+)$/;
-
-regexUsername = /^[^\s]+$/;
 
 const ICON = {
   success:  '✔️',

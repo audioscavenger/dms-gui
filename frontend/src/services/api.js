@@ -113,7 +113,7 @@ export async function getRoles() {
 };
 
 export async function addLogin(username, password, email='', isAdmin=0, isActive=0, roles=[]) {
-    console.debug('ddebug password, email',password, email)
+    // console.debug('ddebug api password, email',password, email)
   try {
     const response = await api.post(`/logins`, { username, password, email, isAdmin, isActive, roles });
     return response.data;
@@ -134,7 +134,7 @@ export async function deleteLogin(username) {
 };
 
 export async function updateLogin(username, jsonDict) {
-  console.debug('ddebug api jsonDict',jsonDict)
+  // console.debug('ddebug api jsonDict',jsonDict)
   try {
     const response = await api.put(`/logins/${username}/update`, jsonDict); // jsonDict = {email:email, isAdmin:0, isActive:0}
     return response.data;
@@ -146,7 +146,7 @@ export async function updateLogin(username, jsonDict) {
 
 export async function loginUser(username, password) {
   try {
-    console.debug('ddebug loginUser(username, password)',username, password)
+    // console.debug('ddebug api loginUser(username, password)',username, password)
     const response = await api.post(`/loginUser`, { username, password });
     return response.data;
   } catch (error) {

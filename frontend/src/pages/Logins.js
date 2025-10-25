@@ -15,7 +15,7 @@ const {
   successLog,
   getValueFromArrayOfObj,
   pluck,
-} = require('../../frontend.js');
+} = require('../../frontend');
 
 import {
   getLogins,
@@ -106,10 +106,10 @@ const Logins = () => {
       color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
       }; });
       
-    // temporary parse roles
+    // has anything changed?
       loginsDataAltered = loginsDataAltered.map(login => { return { 
       ...login, 
-      roles:  JSON.parse(login.roles),
+      hasChanged:  false,
       }; });
       
       debugLog('loginsDataAltered', loginsDataAltered);
@@ -212,16 +212,17 @@ const Logins = () => {
 
 
 
-  const handleRolesChange = (login, newValue) => {
+  const handleLoginChange = (login, key, newValue) => {
 
-    console.debug('ddebug login', login);       // { username: "admin2", email: "", isAdmin: 0, isActive: 1, color: "" }
-    console.debug('ddebug newValue', newValue); // [ { mailbox: "eric@derewonko.com", domain: "derewonko.com", storage: {} }, .. ]
+    // console.debug('ddebug event', event);       // { username: "admin2", email: "", isAdmin: 0, isActive: 1, color: "" }
+    // console.debug('ddebug login', login);       // { username: "admin2", email: "", isAdmin: 0, isActive: 1, color: "" }
+    // console.debug('ddebug newValue', newValue); // [ "box1@domain.com", .. ] or "new.email@domain.com"
     
     setLogins(prevLogins =>
       prevLogins.map(item =>
-        item.username === login.username  // for that login...
-          ? { ...item, roles: newValue }  // update its roles
-          : item                          // and keep other items as they are
+        item.username === login.username                    // for that login...
+          ? { ...item, [key]: newValue, hasChanged:true }   // update its roles and mark as changed
+          : item                                            // and keep other items as they are
       )
     );
     
@@ -229,7 +230,6 @@ const Logins = () => {
 
 
   const handleLoginDelete = async (login) => {
-    e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -247,7 +247,6 @@ const Logins = () => {
 
 
   const handleLoginFlipAdmin = async (login) => {
-    e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -265,7 +264,6 @@ const Logins = () => {
   };
 
   const handleLoginFlipActive = async (login) => {
-    e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -283,13 +281,24 @@ const Logins = () => {
   };
 
   const handleLoginSave = async (login) => {
-    e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
       
-      console.debug('ddebug save login',login)
+      await updateLogin(
+        login.username,
+        { email: login.email, roles:login.roles }
+      );
+      
+      // reset changes detector. We could instead fetchAllLogins but that would also reset the filters and sorting and lead to bad UI experience
+      setLogins(prevLogins =>
+        prevLogins.map(item =>
+          item.username === login.username  // for that login...
+            ? { ...item, hasChanged:false } // reset hasChanged
+            : item                          // and keep other items as they are
+        )
+      );
       setSuccessMessage(t('logins.saved', {username:login.username}));
       
     } catch (err) {
@@ -297,17 +306,6 @@ const Logins = () => {
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
     }
   };
-
-  const handleLoginChange = (e) => {
-    e.preventDefault();
-    debugLog('e.target', e.target);   // e.target.id|name = email  //  e.target.value = a@b.com
-    const { name, value } = e.target;
-    
-    // const { name, value } = e.target;
-    // debugLog('name, value', name, value);
-    
-  };
-
 
   // Open password change modal for a login
   const handleChangePassword = (login) => {
@@ -409,7 +407,7 @@ const Logins = () => {
           id="email"
           name="email"
           value={login.email}
-          onChange={handleLoginChange}
+          onChange={(event) => handleLoginChange(login, "email", event.target.value)}
           groupClass=""
           className="form-control-sm"
         />
@@ -446,7 +444,7 @@ const Logins = () => {
             filterSelectedOptions
             
             value={login.roles}
-            onChange={(event, newValue) => handleRolesChange(login, newValue)}
+            onChange={(event, newValue) => handleLoginChange(login, "roles", newValue)}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -487,6 +485,7 @@ const Logins = () => {
             onClick={() => handleLoginFlipActive(login)}
             className="me-2"
           />
+          {login.hasChanged &&
           <Button
             variant="primary"
             size="sm"
@@ -495,6 +494,7 @@ const Logins = () => {
             onClick={() => handleLoginSave(login)}
             className="me-2"
           />
+          }
         </div>
       ),
     },

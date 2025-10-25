@@ -9,16 +9,21 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 
 - 🔐 Login page, crypto-secure hashed passwords
 - 📊 Dashboard with server status information
-- 👤 Email account management (add, delete)
-- ↔️ Email alias management
+- 👤 User management with roles for their mailboxes
+- 📬 Mailbox account management
+- 📧 Email alias management (includes regex)
 - 🔧 Docker-Mailserver connection configuration
 - 🛢️ better-sqlite3 database!
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
-<!-- ![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true) -->
+<!--
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
+-->
 ![Login](/assets/dms-gui-Login.webp)
 ![Dashboard](/assets/dms-gui-Dashboard.webp)
+![Logins](/assets/dms-gui-Logins.webp)
 ![Accounts](/assets/dms-gui-Accounts.webp)
 ![Aliases](/assets/dms-gui-Aliases.webp)
 ![Settings](/assets/dms-gui-Settings.webp)
@@ -261,7 +266,9 @@ OAS description of all API endpoints is available at:
 * using compose + proxy: http://localhost/docs or https://dms.domain.com/docs (with proxy)
 * using raw ports: http://localhost:3001/
 
-<!-- ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true) -->
+<!--
+![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true)
+-->
 ![API](/assets/dms-gui-docs.webp)
 
 
@@ -293,9 +300,14 @@ Result:
 
 ## Behind the Scenes
 
-Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
+### Logging
+
+Formatted logging with colors, that actually helps!
+![Logins](/assets/dms-gui-logs.webp)
 
 ### Automatic Formatting
+
+Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
 
 Formatting was automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensured that all committed code adheres to the defined style guide.
 

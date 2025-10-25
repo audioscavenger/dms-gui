@@ -14,13 +14,14 @@ const {
   readJson,
   writeJson,
   getContainer,
-} = require('./backend.js');
+} = require('./backend');
+
 const {
   sql,
   dbRun,
   dbAll,
   dbGet,
-} = require('./db.js');
+} = require('./db');
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -109,7 +110,7 @@ async function pullAliasesFromDMS(containerName) {
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -171,7 +172,7 @@ async function pullPostfixRegexFromDMS(containerName) {
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
 }
@@ -249,7 +250,7 @@ async function addAlias(source, destination, containerName) {
   } catch (error) {
     let backendError = 'Unable to add alias';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
@@ -301,7 +302,7 @@ async function deleteAlias(source, destination, containerName) {
   } catch (error) {
     let backendError = 'Unable to delete alias';
     let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}: `, ErrorMsg);
+    errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
