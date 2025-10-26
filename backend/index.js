@@ -10,6 +10,7 @@ const {
 const { 
   dbInit,
   updateDB,
+  dbCount,
 } = require('./db');
 
 const {
@@ -409,7 +410,7 @@ app.put('/api/accounts/:mailbox/update', async (req, res) => {
     }
 
     // await updateAccount(mailbox, req.body);
-    await updateDB('accounts', mailbox, req.body);
+    await updateDB('accounts', [mailbox, containerName], req.body);
     res.json({ message: 'Account updated successfully', mailbox });
     
   } catch (error) {
@@ -907,6 +908,45 @@ app.get('/api/domains', async (req, res) => {
   } catch (error) {
     errorLog(`index GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for retrieving count of any table
+/**
+ * @swagger
+ * /api/getCount/{table}:
+ *   post:
+ *     summary: Get count
+ *     description: Get count from a table
+ *     parameters:
+ *       - in: query
+ *         name: table
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Get count from a table
+ *     responses:
+ *       200:
+ *         description: Return count from a table
+ *       400:
+ *         description: parameter table is missing
+ *       500:
+ *         description: Unable to count table
+ */
+app.post('/api/getCount/:table', async (req, res) => {
+  try {
+    // const table = ('table' in req.query) ? req.query.table : '';
+    const { table } = req.params;
+    if (!table) {
+      return res.status(400).json({ error: 'table is required' });
+    }
+
+    const count = await dbCount(table);
+    res.json(count);
+  } catch (error) {
+    errorLog(`index POST /api/getCount: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to count table' });
     res.status(500).json({ error: error.message });
   }
 });

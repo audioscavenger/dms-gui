@@ -174,7 +174,7 @@ function FormDomains() {
       
         <div className="float-end">
           <Button
-            variant="info"
+            variant="warning"
             size="sm"
             icon="recycle"
             title={t('common.refresh')}

@@ -81,10 +81,10 @@ const Logins = () => {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAllLogins();
+    fetchLogins();
   }, []);
 
-  const fetchAllLogins = async () => {
+  const fetchLogins = async () => {
     
     try {
       setLoading(true);
@@ -120,8 +120,8 @@ const Logins = () => {
       
       
     } catch (err) {
-      errorLog(t('api.errors.fetchAllLogins'), err);
-      setErrorMessage('api.errors.fetchAllLogins');
+      errorLog(t('api.errors.fetchLogins'), err);
+      setErrorMessage('api.errors.fetchLogins');
       
     } finally {
       setLoading(false);
@@ -202,7 +202,7 @@ const Logins = () => {
         isActive: 1,
         roles: [],
       });
-      fetchAllLogins(); // Refresh the logins list
+      fetchLogins(); // Refresh the logins list
       
     } catch (err) {
       errorLog(t('api.errors.addLogin'), err);
@@ -237,7 +237,7 @@ const Logins = () => {
       try {
         await deleteLogin(login.username);
         setSuccessMessage('logins.loginDeleted');
-        fetchAllLogins(); // Refresh the logins list
+        fetchLogins(); // Refresh the logins list
       } catch (err) {
         errorLog(t('api.errors.deleteLogin'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteLogin');
@@ -256,7 +256,7 @@ const Logins = () => {
         { isAdmin: +!login.isAdmin }
       );
       setSuccessMessage(t('logins.updated', {username:login.username}));
-      fetchAllLogins(); // Refresh the logins list
+      fetchLogins(); // Refresh the logins list
     } catch (err) {
       errorLog(t('api.errors.updateLogin'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
@@ -273,7 +273,7 @@ const Logins = () => {
         { isActive: +!login.isActive }
       );
       setSuccessMessage(t('logins.updated', {username:login.username}));
-      fetchAllLogins(); // Refresh the logins list
+      fetchLogins(); // Refresh the logins list
     } catch (err) {
       errorLog(t('api.errors.updateLogin'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
@@ -291,7 +291,7 @@ const Logins = () => {
         { email: login.email, roles:login.roles }
       );
       
-      // reset changes detector. We could instead fetchAllLogins but that would also reset the filters and sorting and lead to bad UI experience
+      // reset changes detector. We could instead fetchLogins but that would also reset the filters and sorting and lead to bad UI experience
       setLogins(prevLogins =>
         prevLogins.map(item =>
           item.username === login.username  // for that login...
@@ -389,6 +389,7 @@ const Logins = () => {
   }
 
             // getOptionLabel={rolesAvailable}    // requires a dict
+                // placeholder={t('logins.roles2pick')}
 
   // Column definitions for existing logins table
   // adding hidden data in the span before the FormField let us sort also this column
@@ -417,12 +418,13 @@ const Logins = () => {
     { 
       key: 'isAdmin',
       label: 'logins.isAdmin',
+      noFilter: true,
       render: (login) => (
           <>
           <span>{(login.isAdmin) ? "admin" : "user"}</span>
           <Button
-            variant="info"
-            size="sm"
+            variant={(login.isAdmin) ? "info" : "warning"}
+            size="xs"
             icon={(login.isAdmin) ? "chevron-double-down" : "chevron-double-up"}
             title={(login.isAdmin) ? t('logins.demote', { username: login.username}) : t('logins.promote', { username: login.username})}
             onClick={() => handleLoginFlipAdmin(login)}
@@ -449,7 +451,6 @@ const Logins = () => {
               <TextField
                 {...params}
                 label={t('logins.roles')}
-                placeholder={t('logins.roles2pick')}
               />
             )}
           />
@@ -459,6 +460,8 @@ const Logins = () => {
     {
       key: 'actions',
       label: 'common.actions',
+      noSort: true,
+      noFilter: true,
       render: (login) => (
         <div className="d-flex">
           <Button
@@ -571,7 +574,7 @@ const Logins = () => {
   
   // https://icons.getbootstrap.com/
   const loginTabs = [
-  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchAllLogins(), content: DataTableLogins },
+  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchLogins(), content: DataTableLogins },
   { id: 2, title: "logins.newLogin",        icon: "person-fill-add", content: FormNewLogin },
   ];
 

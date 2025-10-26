@@ -1,6 +1,6 @@
 // https://icons.getbootstrap.com/
 import React, { useState } from 'react';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card';
 import Collapse from 'react-bootstrap/Collapse';
 // https://react-bootstrap.netlify.app/docs/components/placeholder/
@@ -40,7 +40,7 @@ const Card = ({
   translate = true,
   ...rest
 }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
   const collapser       = collapsible    == true ? true : false;
   const refresher       = (typeof onClickRefresh  == "function") ? true : false;
@@ -63,10 +63,10 @@ const Card = ({
               <div>
               {refresher && (
                 <Button
-                  variant="info"
+                  variant="warning"
                   size="sm"
                   icon="recycle"
-                  title="common.refresh"
+                  title={t('common.refresh')}
                   className="me-2"
                   onClick={onClickRefresh}
                 />

@@ -31,6 +31,8 @@ sqlMatch = {
 }
 
 
+// https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#transactionfunction---function
+
 // in-memory database: https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#serializeoptions---buffer
 // const buffer = DB.serialize();
 // DB.close();
@@ -42,13 +44,16 @@ updateValidKeys = {
   logins:   {password:'string', email:'string', isAdmin:'number', isActive:'number', roles:'object'},
 }
 
+// columns which require a special test before they are changed, like for instance do not disable/demote the last admin in the db...
+// isAdmin:   do not delete last admin: handled by deleteLogin()
+// isActive:  do not deactivate last admin
 
-// https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#transactionfunction---function
-    // password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 sql = {
 settings: {
 
+  scope:  false,
   select: {
+    count:    `SELECT COUNT(*) count from settings`,
     settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui'`,
     setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui' AND name = ?`,
     envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
@@ -88,7 +93,9 @@ settings: {
 
 logins: {
       
+  scope:  false,
   select: {
+    count:    `SELECT COUNT(*) count from logins`,
     usernames:`SELECT username from logins WHERE 1=1`,
     username: `SELECT username from logins WHERE 1=1 AND username = ?`,
     logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1`,
@@ -105,6 +112,10 @@ logins: {
       admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
       login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
       roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+      count: {
+        usernames:`SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0`,
+        admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      },
     },
     isInactive: {
       usernames:`SELECT username from logins WHERE 1=1 AND isActive = 0`,
@@ -123,8 +134,26 @@ logins: {
   update: {
     password: `UPDATE logins set salt=@salt, hash=@hash WHERE username = ?`,
     email:    `UPDATE logins set email = @email WHERE username = ?`,
-    isAdmin:  `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
-    isActive: `UPDATE logins set isActive = @isActive WHERE username = ?`,
+    isAdmin: {
+      test: {
+        value: 0,
+        scope: false,
+        check: `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`,
+        eval:  function(result) { return result.count > 0; },
+        pass: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
+        fail: "Cannot demote the last admin, how will you administer dms-gui?",
+      },
+    },
+    isActive: {
+      test: {
+        value: 0,
+        scope: false,
+        check: `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`,
+        eval:  function(result) { return result.count > 0; },
+        pass: `UPDATE logins set isActive = @isActive WHERE username = ?`,
+        fail: "Cannot deactivate the last admin, how will you administer dms-gui?",
+      },
+    },
     roles:    `UPDATE logins set roles = @roles WHERE username = ?`,
   },
   
@@ -174,7 +203,7 @@ logins: {
     },
     { DB_VERSION: '1.1.9',
       patches: [
-        `ALTER TABLE logins ADD roles    TEXT DEFAULT '"[]"'`,
+        `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${isImmutable})`,
       ],
     },
@@ -183,6 +212,7 @@ logins: {
 
 roles: {
       
+  scope:  true,
   select: {
     roles:    `SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`,
     username: `SELECT username        from roles WHERE 1=1 AND scope = ? AND mailbox = ?`,
@@ -214,7 +244,9 @@ roles: {
 
 accounts: {
       
+  scope:  true,
   select: {
+    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = ?`,
     accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = ?`,
     mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = ?`,
     mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
@@ -260,7 +292,9 @@ accounts: {
 
 aliases: {
       
+  scope:  true,
   select: {
+    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND scope = ?`,
     aliases:  `SELECT source, destination, regex FROM aliases WHERE 1=1 AND scope = ?`,
     bySource: `SELECT destination FROM aliases WHERE 1=1 AND scope = ? AND source = ?`,
     byDest:   `SELECT source      FROM aliases WHERE 1=1 AND scope = ? AND destination = ?`,
@@ -291,7 +325,9 @@ aliases: {
 
 domains: {
       
+  scope:  true,
   select: {
+    count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = ?`,
     domains:  `SELECT * FROM domains WHERE 1=1 AND scope = ?`,
     domain:   `SELECT * FROM domains WHERE 1=1 AND scope = ? AND domain = ?`,
     dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND scope = ?`,
@@ -332,6 +368,7 @@ domains: {
 },
 
 };
+    // password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 
 
 function dbOpen() {
@@ -429,6 +466,25 @@ function dbRun(sql, params=[], ...anonParams) {
       // err.code=SQLITE_ERROR
       // err.message=duplicate column name: salt
 
+
+function dbCount(table, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  
+  try {
+    let scope = (sql[table]?.scope) ? containerName : [];
+    
+    debugLog(`DB.prepare(sql[${table}].select.count).get(${scope})`);
+    const result = DB.prepare(sql[table].select.count).get(scope);
+    debugLog(`success:`, result);
+    
+    return result.count;
+
+  } catch (err) {
+    errorLog(`${err.code}: ${err.message}`);
+    dbOpen();
+    throw err;
+  }
+}
 
 function dbGet(sql, ...anonParams) {
   
@@ -671,7 +727,7 @@ async function changePassword(table, id, password, containerName) {
 }
 
 
-// Function to update a table in the db
+// Function to update a table in the db; id can very well be an array as well
 async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { column:value, .. }
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`${id} in ${table} with`, jsonDict);
@@ -698,17 +754,49 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
         
         // password has its own function
         if (key == 'password') {
-          changePassword(id, value, containerName);
+          changePassword(table, id, value, containerName);
           
         // objects must be saved as JSON
         } else if (typeof value == 'object') {
           dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
           successLog(`Updated ${table} ${id} with ${key}=`, value);
         
-        // other sqlite3 valid types
+        // other sqlite3 valid types and we can test specific scenarios
         } else {
-          dbRun(sql[table].update[key], {[key]:value}, id);
-          successLog(`Updated ${table} ${id} with ${key}=${value}`);
+          
+          // check if there is a test for the value about to be set
+          if (sql[table].update[key]?.test) {
+            
+            // there is a test and now we check if the value should be tested
+            if (sql[table].update[key].test.value = value) {
+              
+              // value is now tested with id in mind
+              let result = (sql[table].update[key].test.scope) ? dbGet(sql[table].update[key].test.check, containerName, id) : dbGet(sql[table].update[key].test.check, id);
+            
+              // test the result in the eval function
+              if (sql[table].update[key].test.eval(result)) {
+                
+                // we pass the test
+                dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
+                successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                
+              } else {
+                // we do not pass the test
+                errorLog(sql[table].update[key].test.fail);
+              }
+            
+            // there is a test but value does not need to be tested
+            } else {
+              dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
+              successLog(`Updated ${table} ${id} with ${key}=${value}`);
+            }
+            
+          // no test
+          } else {
+            dbRun(sql[table].update[key], {[key]:value}, id);
+            successLog(`Updated ${table} ${id} with ${key}=${value}`);
+          }
+          
         }
         
       } else errorLog(`typeof ${value} for ${key} is not ${updateValidKeys[table][key]}`)
@@ -736,6 +824,7 @@ module.exports = {
   dbRun,
   dbGet,
   dbAll,
+  dbCount,
   hashPassword,
   verifyPassword,
   changePassword,
@@ -745,9 +834,9 @@ module.exports = {
 
 // debug = true;
 // containerName = 'dms';
-// DB = require('better-sqlite3')(DATABASE);
 // DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
 // DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+// DB = require('better-sqlite3')(DATABASE);
 // function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
 // function debugLog(message) {console.debug(message)}
 // function errorLog(message) {console.debug(message)}
@@ -791,11 +880,15 @@ module.exports = {
 // dbRun(sql.logins.update.isAdmin, {isAdmin:value}, username) // works
 
 // dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@doctusit.com'},{username:'user2',mailbox:'admin@doctusit.com'}], containerName )
-// dbAll(`SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`, containerName)
+// DB.prepare(`SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`).all(containerName)
 
-// dbAll(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = ?`, containerName)
+// DB.prepare(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = ?`).all(containerName)
   // { username: 'user2', mailbox: 'ops@doctusit.com' },
   // { username: 'user2', mailbox: 'admin@doctusit.com' }
 
-// dbAll(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = ?`, containerName)
+// DB.prepare(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = ?`).all(containerName)
+
+// test and check:
+// DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`).get()  // { value: 2 }
+// DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`).get('diane')
 

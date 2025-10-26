@@ -45,7 +45,7 @@ const LeftSidebar = () => {
       </Nav.Link>
       
       <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
-        <i className="bi bi-person-circle me-2"></i>
+        <i className="bi bi-inboxes-fill me-2"></i>
         <span> {Translate('accounts.sidebar')}</span>
       </Nav.Link>
       

@@ -47,9 +47,9 @@ export const Login = () => {
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
     
-    const isLoggedin = await loginUser('admin', 'changeme');
+    const user = await loginUser('admin', 'changeme');
     // if we can login with the default user, display first run welcome message
-    if (isLoggedin) {
+    if (user) {
       setFirstRun(true);
       setSuccessMessage('logins.isFirstRun');
     }
@@ -62,13 +62,15 @@ export const Login = () => {
     // Here you would usually send a request to your backend to authenticate the user
     // For the sake of this example, we're using a mock authentication
     // if (username === "admin" && password === "password") {
-    const isLoggedin = await loginUser(username, password)
-    // console.debug('ddebug isLoggedin=', isLoggedin);
-    if (isLoggedin) {
+    // const user = await loginUser(username, password)
+    const user = await loginUser(username, password)
+    // console.debug('ddebug user=', user);
+    if (user) {
       
       setSuccessMessage(null);
       setErrorMessage(null);
-      (firstRun) ? await login({username}, "/settings") : await login({username});
+      // (firstRun) ? await login({username}, "/settings") : await login({username});
+      (firstRun) ? await login(user, "/settings") : await login(user);
       
     } else {
       setErrorMessage('logins.denied');

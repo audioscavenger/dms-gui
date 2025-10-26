@@ -256,5 +256,16 @@ export async function getDomains(name) {
   }
 };
 
+export async function getCount(table) {
+  try {
+    // const response = await api.post(`/getCount?table=${table}`);
+    const response = await api.post(`/getCount/${table}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
 
 export default api;

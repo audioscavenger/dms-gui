@@ -141,7 +141,7 @@ async function getServerStatus(containerName) {
       
       // Check if container is running
       const isRunning = containerInfo.State.Running === true;
-      debugLog(`Container running: ${isRunning} status.status=`, status.status);
+      // debugLog(`Container running: ${isRunning} status.status=`, status.status);
 
       // get also errors and stuff
       status.status.Error = containerInfo.State.Error;
@@ -154,7 +154,7 @@ async function getServerStatus(containerName) {
         status.status.status = 'running';
         
         // Get container stats
-        debugLog(`Getting container stats`);
+        // debugLog(`Getting container stats`);
         const stats = await container.stats({ stream: false });
         // debugLog('stats:',stats);
         
@@ -184,7 +184,8 @@ async function getServerStatus(containerName) {
       }
     }
 
-    debugLog(`Server pull status result:`, status);
+    // debugLog(`Server pull status result:`, status);
+    successLog(`Server pull status`);
     return status;
     
   } catch (error) {

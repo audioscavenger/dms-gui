@@ -1,6 +1,6 @@
 // https://icons.getbootstrap.com/
 import React from 'react';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
 
 import {
@@ -26,7 +26,8 @@ import {
  * @param {string} props.className Additional CSS classes
  * @param {boolean} props.noPadding Remove padding from card body
  * @param {number} props.defaultActiveKey
- * @param TODO: {React.ReactNode} props.children Children elements - do we want to handle that? one child per tab?
+ * @param {object} props.children
+ * @param {boolean} props.translate
  */
 const Accordion = ({
   tabs,
@@ -37,7 +38,7 @@ const Accordion = ({
   translate = true,
   ...rest
 }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
 
   // not very clear what they want:
@@ -59,10 +60,10 @@ const Accordion = ({
               ('onClickRefresh' in tab && typeof tab.onClickRefresh == "function") && (
               <div className="float-end position-sticky z-1">
                 <Button
-                  variant="info"
+                  variant="warning"
                   size="sm"
                   icon="recycle"
-                  title="common.refresh"
+                  title={t('common.refresh')}
                   className="me-2"
                   onClick={tab.onClickRefresh}
                 />

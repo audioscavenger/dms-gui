@@ -8,6 +8,20 @@ body {
   background-color: #f8f9fa;
 }
 
+.btn-group-xs > .btn, .btn-xs {
+  --bs-btn-padding-y: 0.25rem;
+  --bs-btn-padding-x: 0.10rem;
+  --bs-btn-font-size: 0.875rem;
+  --bs-btn-border-radius: .25rem;
+}
+
+.card-clickable {
+  cursor: pointer;
+  text-decoration: inherit;
+  color: inherit;
+}
+
+
 /* -------------------- leftsidebar -------------------- */
 
 .leftsidebar {

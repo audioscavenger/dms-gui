@@ -22,7 +22,7 @@ import {
 /**
  * Reusable data table component using react-bootstrap
  * @param {Object} props Component props
- * @param {Array} props.columns Array of column definitions with {key, label, render?} objects
+ * @param {Array} props.columns Array of column definitions with {key, label, noSort, noFilter, render?} objects
  * @param {Array} props.data Array of data objects to display
  * @param {function} props.keyExtractor Function to extract unique key from data item
  * @param {boolean} props.loading Whether data is loading
@@ -32,6 +32,9 @@ import {
  * @param {boolean} props.bordered Add borders
  * @param {boolean} props.hover Enable hover state
  * @param {boolean|string} props.responsive Make table responsive ('sm', 'md', 'lg', 'xl', true)
+ * @param {boolean} props.translate uses Translate or not
+ * @param {boolean} props.noSort disable sorting entirely
+ * @param {boolean} props.noFilter disable filtering entirely
  */
 const DataTable = ({
   columns,
@@ -46,6 +49,8 @@ const DataTable = ({
   hover = false,
   responsive = true,      // Default to responsive
   translate = true,
+  noSort = false,
+  noFilter = false,
   ...rest // Pass other props to Table
 }) => {
   // const { t } = useTranslation();
@@ -137,8 +142,7 @@ const DataTable = ({
     // debugLog(`currentData before sortedAndFilteredData`, currentData);
     // debugLog(`                   columnFilters`,columnFilters);
 
-    // TODO: handle objects too
-    // Apply columnFilters
+    // Apply columnFilters?
     Object.keys(columnFilters).forEach((column) => {
       const filterValue = columnFilters[column].toLowerCase();
       if (filterValue) {
@@ -212,11 +216,11 @@ const DataTable = ({
             >
             {Translate(column.label)}
             <span className='cursor-pointer' onClick={() => handleSort(column.key)}>
-            {((column.key in sortedAndFilteredData[0])
+            {((!noSort && sortedAndFilteredData.length && column.key in sortedAndFilteredData[0] && !column?.noSort)
                && ((sortOrders[column.key] === 0 ) ? '▲' : '▼') || ""
             )}
             </span>
-            <Form.Control type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
+            <Form.Control className={(!noFilter && column?.noFilter) ? "invisible" : ""} type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
             />
             </th>
           ))}

@@ -78,12 +78,11 @@ const Accounts = () => {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAllAccounts(false);
+    fetchAccounts();
   }, []);
 
-  const fetchAllAccounts = async (refresh) => {
+  const fetchAccounts = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchAllAccounts refresh=(${refresh})`);
     
     try {
       setLoading(true);
@@ -92,7 +91,7 @@ const Accounts = () => {
         getSettings('dnsProvider'),
         getServerEnv('DOVECOT_FTS'),
       ]);
-      // setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
+      setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
       setDnsProvider(dnsProviderData);
       setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);
@@ -102,8 +101,8 @@ const Accounts = () => {
       debugLog('DOVECOT_FTS', DOVECOT_FTS);
       
     } catch (err) {
-      errorLog(t('api.errors.fetchAllAccounts'), err);
-      setErrorMessage('api.errors.fetchAllAccounts');
+      errorLog(t('api.errors.fetchAccounts'), err);
+      setErrorMessage('api.errors.fetchAccounts');
       
     } finally {
       setLoading(false);
@@ -168,7 +167,7 @@ const Accounts = () => {
         password: '',
         confirmPassword: '',
       });
-      fetchAllAccounts(true); // Refresh the accounts list
+      fetchAccounts(true); // Refresh the accounts list
     } catch (err) {
       errorLog(t('api.errors.addAccount'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAccount');
@@ -180,7 +179,7 @@ const Accounts = () => {
       try {
         await deleteAccount(mailbox);
         setSuccessMessage('accounts.accountDeleted');
-        fetchAllAccounts(true); // Refresh the accounts list
+        fetchAccounts(true); // Refresh the accounts list
       } catch (err) {
         errorLog(t('api.errors.deleteAccount'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAccount');
@@ -485,8 +484,8 @@ const Accounts = () => {
   );
   
   const accountTabs = [
-  { id: 1, title: "accounts.newAccount",        icon: "envelope-plus-fill", content: FormNewAccount },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAllAccounts(true), content: DataTableAccounts },
+  { id: 1, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount },
+  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not

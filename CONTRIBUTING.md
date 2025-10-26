@@ -20,7 +20,6 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore
-* [ ] - frontend/DataTable filter crashes when typing inexistent values at column.key in sortedAndFilteredData[0] && (sortOrders[column.key] === 0 ? '▲' : '▼')
 
 ## TODO:
 
@@ -58,6 +57,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - frontend/backups.js: add file
 * [ ] - frontend/imports.js: add file
 
+* [ ] - frontend/Logins: also ProtectedRoute: get isAdmin isActive and roles to deny login and not display certain pages
+
 ### backend:
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
 * [ ] - backend: get rid of the common.js?
@@ -72,8 +73,18 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 
+
 ### history:
 
+* [x] 1.1.11 - backend/db: added dbCount and getCount api
+* [x] 1.1.11 - frontend/DashboardCard: navigate instead of href
+* [x] 1.1.11 - backend/db: refuse to deactivate the last admin
+* [x] 1.1.11 - backend/db: refuse to demote the last admin
+* [x] 1.1.11 - backend/db: updateDB test and check before updating values based off tests in sql object!
+* [x] 1.1.11 - frontend/DataTable: now accepts column.noSort and column.noFilter
+* [x] 1.1.11 - frontend/DataTable: bugfix: filter crashed when typing inexistent values
+* [x] 1.1.11 - frontend/DashboardCards: added link param so you can click them
+* [x] 1.1.11 - frontend/Dashboard: also show logins
 * [x] 1.1.10 - backend: massive refactoring of updateLogin and updateAccount into db as updateDB
 * [x] 1.1.10 - backend/logins: properly updateLogin
 * [x] 1.1.10 - frontend/Logins: updated roles for each login are correctly pushed to updateLogin and correctly pulled from getLogins

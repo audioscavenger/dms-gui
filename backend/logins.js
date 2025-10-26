@@ -23,8 +23,6 @@ const {
   dbGet,
   hashPassword,
   verifyPassword,
-  changePassword,
-  updateDB,
 } = require('./db');
 
 const fs = require("fs");
@@ -174,14 +172,14 @@ async function deleteLogin(username) {
 async function loginUser(username, password) {
   
   try {
-    const isActive = await dbGet(sql.logins.select.isActive.username, username);
-    if (isActive) {
+    // const isActive = await dbGet(sql.logins.select.isActive.username, username);
+    const login = await dbGet(sql.logins.select.isActive.login, username);
+    if (login.isActive) {
       const isValid = await verifyPassword(username, password, 'logins');
-      debugLog(`${username} password =`, isValid);
       
       if (isValid) {
         successLog(`User ${username} logged in successfully.`);
-        return true;
+        return login;
         
       } else {
         warnLog(`User ${username} invalid password.`);

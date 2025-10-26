@@ -167,10 +167,10 @@ function FormSettings() {
       
         <div className="float-end">
           <Button
-            variant="info"
+            variant="warning"
             size="sm"
             icon="recycle"
-            title="common.refresh"
+            title={t('common.refresh')}
             className="me-2"
             onClick={() => fetchAllSettings()}
           />

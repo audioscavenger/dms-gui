@@ -14,6 +14,7 @@
     "diskUsage": "Disk Usage",
     "mailboxAccounts": "Mailbox Accounts",
     "aliases": "Aliases",
+    "logins": "Login accounts",
     "loading": "Loading...",
     "status": {
       "running": "Running",
@@ -168,7 +169,7 @@
       "fetchServerStatus": "Error fetching server status",
       "fetchAccounts": "Error fetching accounts",
       "fetchSettings": "Error fetching settings",
-      "fetchAllLogins": "Error fetching logins",
+      "fetchLogins": "Error fetching logins",
       "fetchServerInfos": "Error fetching DMS container info",
       "fetchServerEnvs": "Error fetching DMS container environment",
       "fetchDomains": "Error fetching domains",
