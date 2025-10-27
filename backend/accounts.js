@@ -222,26 +222,114 @@ async function deleteAccount(mailbox, containerName) {
   }
 }
 
-// Function to reindex an mailbox account
-async function reindexAccount(mailbox, containerName) {
+// doveadm function
+// https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
+async function doveadm(command, mailbox, jsonDict={}, containerName) {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
+
+  const doveadm = {
+    reindex: {    // https://doc.dovecot.org/main/core/man/doveadm-index.1.html
+      mailbox: true,
+      cmd: 'doveadm index -u {mailbox} -q \\*',
+      stdout: false,
+      messages: {
+        pass: 'Reindexing started for {mailbox}',
+      },
+    },
+    list: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
+      mailbox: true,
+      cmd: 'doveadm mailbox list -u {mailbox}',
+      stdout: true,
+      messages: {
+        pass: 'Folder list for {mailbox}:',
+      },
+      // Junk
+      // Drafts
+      // Trash
+      // Sent
+      // INBOX
+    },
+    subscribed: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
+      mailbox: true,
+      cmd: 'doveadm mailbox list -u {mailbox} -s',
+      stdout: true,
+      messages: {
+        pass: 'Subscribed folder list for {mailbox}:',
+      },
+      // Junk
+      // Drafts
+      // Trash
+      // Sent
+    },
+    metaGet: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20metadata%20list https://manpages.ubuntu.com/manpages/jammy/man1/doveadm-mailbox.1.html
+      mailbox: true,
+      cmd: 'doveadm mailbox metadata list -p -u {mailbox} {box}',
+      defaults: {
+        box: 'INBOX',
+      },
+      stdout: true,
+      messages: {
+        pass: 'Metadata list for {mailbox}/{box}:',
+      },
+      // /private/specialuse
+      // /shared/vendor/vendor.dovecot/pvt/server/admin
+      // /shared/vendor/vendor.dovecot/pvt/server/comment
+    },
+    status: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+      mailbox: true,
+      cmd: 'doveadm mailbox status -u {mailbox} {field} {box}',
+      defaults: {
+        field: 'all',
+        box: 'INBOX',
+      },
+      stdout: true,
+      messages: {
+        pass: 'Status from {mailbox}/{box}:',
+      },
+      // INBOX messages=5119 recent=0 uidnext=5125 uidvalidity=1759246520 unseen=703 highestmodseq=356 vsize=459768297 guid=68e18d2db8f8db68550f00008e1fe135 firstsaved=1759247564
+    },
+    resync: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+      mailbox: true,
+      cmd: 'doveadm force-resync -u {mailbox} --mailbox-mask {box}',
+      defaults: {
+        box: 'INBOX',
+      },
+      stdout: false,
+      messages: {
+        pass: 'Force-resync started for {mailbox}/{box}',
+      },
+      // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_6076763531fadb68571400008e1fe135_exp.db
+      // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_e170c41cf00be3687d3400008e1fe135_exp.db
+    },
+  }
 
   try {
-    debugLog(`Reindexing mailbox account: ${mailbox}`);
-    const result = await execSetup(`doveadm index -u ${mailbox} -q \\*`);
+    if (!doveadm[command]) throw new Error(`unknown command: ${command}`);
+    
+    let formattedCommand = doveadm[command].cmd.replace(/{mailbox}/g, mailbox);
+    let formattedPass    = doveadm[command].messages.pass.replace(/{mailbox}/g, mailbox);
+    // also apply whatever is in the jsonDict if anything like fields or mailboxes... and also apply defaults if any
+    // by parsing the defaults instead of the jsonDict, we also ensure only valid keys are replaced
+    if (doveadm[command]?.defaults) {
+      for (const [key, defaultValue] of Object.entries(doveadm[command].defaults)) {
+        formattedCommand = (jsonDict[key]) ? formattedCommand.replace(`{${key}}`, jsonDict[key]) : formattedCommand.replace(`{${key}}`, defaultValue);
+        formattedPass = (jsonDict[key]) ? formattedPass.replace(`{${key}}`, jsonDict[key]) : formattedPass.replace(`{${key}}`, defaultValue);
+      }
+    }
+    
+    const result = await execCommand(formattedCommand);
     if (!result.exitCode) {
       
-      successLog(`Account reindex started for ${mailbox}`);
-      return { success: true };
+      successLog(formattedPass, result.stdout);
+      return { success: true, result: result.stdout };
       
     } else errorLog(result.stderr);
     
   } catch (error) {
-    let backendError = 'Error reindexing account';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -255,6 +343,7 @@ module.exports = {
   getAccounts,
   addAccount,
   deleteAccount,
+  doveadm,
 };
 
 

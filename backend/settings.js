@@ -516,11 +516,9 @@ async function pullServerEnvs(containerName) {
       // TODO: look for quotas -------------------------------------------------- quota
       
       // look for FTS values -------------------------------------------------- fts
-      // if (envs?.DOVECOT_FTS) envs = await pullFTS(envs, containerName, containerInfo);
       if (envs?.DOVECOT_FTS) envs = await { ...envs, ...pullFTS(containerName, containerInfo) };
 
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      // if (envs?.ENABLE_RSPAMD) envs = await pullDkimRspamd(envs, containerName);
       if (envs?.ENABLE_RSPAMD) envs = await { ...envs, ...pullDkimRspamd(containerName) };
 
     }
@@ -542,7 +540,7 @@ async function getServerEnv(name, containerName) {
   
   try {
 
-    const env = await dbGet(sql.settings.select.env, name, containerName);
+    const env = await dbGet(sql.settings.select.env, containerName, name);
     return env?.value;
     
   } catch (error) {
@@ -607,6 +605,7 @@ async function getServerEnvs(refresh, containerName) {
 
 
 async function saveServerEnvs(jsonArrayOfObjects, containerName) {
+  
   try {
     dbRun(sql.settings.delete.envs, containerName);
     dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]

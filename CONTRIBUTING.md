@@ -76,6 +76,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.12 - backend/settings: reindexAccount() becomes doveadm() with a complete set of commands and messages etc
 * [x] 1.1.11 - backend/db: added dbCount and getCount api
 * [x] 1.1.11 - frontend/DashboardCard: navigate instead of href
 * [x] 1.1.11 - backend/db: refuse to deactivate the last admin

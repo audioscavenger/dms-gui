@@ -489,7 +489,7 @@ function dbCount(table, containerName) {
 function dbGet(sql, ...anonParams) {
   
   if (typeof sql != "string") {
-    throw new Error("Error: sql argument must be a string: sql=",sql);
+    throw new Error("Error: sql argument must be a string: sql=", sql);
   }
   
   try {

@@ -35,6 +35,7 @@ const {
   getAccounts,
   addAccount,
   deleteAccount,
+  doveadm,
 } = require('./accounts');
 
 const {
@@ -288,6 +289,7 @@ app.post('/api/accounts', async (req, res) => {
     }
     const result = await addAccount(mailbox, password);
     res.status(201).json({ message: 'Account created successfully', mailbox });
+    
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
@@ -295,40 +297,46 @@ app.post('/api/accounts', async (req, res) => {
   }
 });
 
-// Endpoint for reindexing an mailbox account
+// Endpoint for doveadm command on mailbox
 /**
  * @swagger
- * /api/reindex/{mailbox}:
+ * /api/doveadm/{command}/{mailbox}:
  *   put:
- *     summary: Reindex an mailbox account
- *     description: Reindex an mailbox account by doveadm
+ *     summary: Execute doveadm command on mailbox
+ *     description: Execute doveadm command on mailbox
  *     parameters:
+ *       - in: path
+ *         name: command
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: command to execute
  *       - in: path
  *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: mailbox address of the account to reindex
+ *         description: mailbox to act upon
  *     responses:
  *       200:
- *         description: Account deleted successfully
+ *         description: command executed successfully
  *       400:
- *         description: mailbox is required
+ *         description: smth is missing
  *       500:
- *         description: Unable to reindex account
+ *         description: See error message
  */
-app.put('/api/reindex/:mailbox', async (req, res) => {
+app.put('/api/doveadm/:command/:mailbox', async (req, res) => {
   try {
-    const { mailbox } = req.params;
-    if (!mailbox) {
-      return res.status(400).json({ error: 'Mailbox is required' });
+    const { command, mailbox } = req.params;
+    if (!command || !mailbox) {
+      return res.status(400).json({ error: 'Command and Mailbox are required' });
     }
-    await reindexAccount(mailbox);
-    res.json({ message: 'Reindex started for account', mailbox });
+    const result = await doveadm(command, mailbox, req.body);
+    res.status(200).json(result?.result);
     
   } catch (error) {
-    errorLog(`index /api/reindex: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to reindex account' });
+    errorLog(`PUT /api/doveadm/:command/:mailbox: ${error.message}`);
+    // res.status(500).json({ error: 'Unable to execute doveadm' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -363,6 +371,7 @@ app.delete('/api/accounts/:mailbox', async (req, res) => {
     }
     await deleteAccount(mailbox);
     res.json({ message: 'Account deleted successfully', mailbox });
+    
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
@@ -370,7 +379,7 @@ app.delete('/api/accounts/:mailbox', async (req, res) => {
   }
 });
 
-// Endpoint for updating an mailbox account
+// Endpoint for updating a mailbox account; only password is covered atm
 /**
  * @swagger
  * /api/accounts/{mailbox}/update:
@@ -493,9 +502,8 @@ app.post('/api/aliases', async (req, res) => {
         .json({ error: 'Source and destination are required' });
     }
     await addAlias(source, destination);
-    res
-      .status(201)
-      .json({ message: 'Alias created successfully', source, destination });
+    res.status(201).json({ message: 'Alias created successfully', source, destination });
+    
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create alias' });
@@ -543,8 +551,9 @@ app.delete('/api/aliases', async (req, res) => {
     
     await deleteAlias(source, destination);
     res.json({ message: 'Alias deleted successfully', source, destination });
+    
   } catch (error) {
-    errorLog(`index /api/aliases: ${error.message}`);
+    errorLog(`DELETE /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete alias' });
     res.status(500).json({ error: error.message });
   }
@@ -577,7 +586,7 @@ app.get('/api/settings', async (req, res) => {
     const settings = await getSettings(name);
     res.json(settings);
   } catch (error) {
-    errorLog(`index GET /api/settings: ${error.message}`);
+    errorLog(`GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
     res.status(500).json({ error: error.message });
   }
@@ -731,7 +740,8 @@ app.post('/api/logins', async (req, res) => {
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
     const result = await addLogin(username, password, email, isAdmin, isActive, roles);
-    res.status(201).json({ message: 'Login saved successfully' });
+    res.status(201).json({ message: 'Login created successfully' });
+    
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Login' });
