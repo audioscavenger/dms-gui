@@ -17,8 +17,8 @@ import {
   getServerEnv,
   addAccount,
   deleteAccount,
-  reindexAccount,
   updateAccount,
+  doveadm,
 } from '../services/api';
 
 import {
@@ -175,6 +175,7 @@ const Accounts = () => {
   };
 
   const handleDelete = async (mailbox) => {
+    setErrorMessage(null);
     if (window.confirm(t('accounts.confirmDelete', { mailbox }))) {
       try {
         await deleteAccount(mailbox);
@@ -187,13 +188,17 @@ const Accounts = () => {
     }
   };
 
-  const handleReindex = async (mailbox) => {
+  const handleDoveadm = async (command, mailbox) => {
+    setErrorMessage(null);
     try {
-      await reindexAccount(mailbox);
-      setSuccessMessage('accounts.reindexStarted');
+      const result = await doveadm(command, mailbox);
+      debugLog('result',result);
+      
+      // setSuccessMessage('accounts.doveadmExecuted');
+      setSuccessMessage(result);
     } catch (err) {
-      errorLog(t('api.errors.reindexAccount'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.reindexAccount');
+      errorLog(t('api.errors.doveadm'), err);
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.doveadm');
     }
   };
 
@@ -374,6 +379,7 @@ const Accounts = () => {
     {
       key: 'storage',
       label: 'accounts.storage',
+      noFilter: true,
       render: (account) =>
         account.storage ? (
           <div>
@@ -394,6 +400,8 @@ const Accounts = () => {
     {
       key: 'actions',
       label: 'common.actions',
+      noSort: true,
+      noFilter: true,
       render: (account) => (
         <div className="d-flex">
           <Button
@@ -414,14 +422,30 @@ const Accounts = () => {
           />
           {(DOVECOT_FTS) && (
           <Button
-            variant="info"
+            variant="warning"
             size="sm"
-            icon="recycle"
+            icon="stack-overflow"
             title={t('accounts.reindex')}
-            onClick={() => handleReindex(account.mailbox)}
+            onClick={() => handleDoveadm('reindex', account.mailbox)}
             className="me-2"
           />
           )}
+          <Button
+            variant="warning"
+            size="sm"
+            icon="arrow-repeat"
+            title={t('accounts.resync')}
+            onClick={() => handleDoveadm('resync', account.mailbox)}
+            className="me-2"
+          />
+          <Button
+            variant="info"
+            size="sm"
+            icon="bar-chart-fill"
+            title={t('accounts.status')}
+            onClick={() => handleDoveadm('status', account.mailbox)}
+            className="me-2"
+          />
         </div>
       ),
     },
@@ -484,8 +508,8 @@ const Accounts = () => {
   );
   
   const accountTabs = [
-  { id: 1, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount },
-  { id: 2, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
+  { id: 1, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
+  { id: 2, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not

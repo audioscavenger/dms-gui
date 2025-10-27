@@ -76,6 +76,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.1.13 - backend/db: presort accounts by domain and mailbox, this way the Autocomplete selector in Logins is perfect with no extra step
+* [x] 1.1.13 - frontend/Logins: back to simple sorted array of strings for options, and groupBy is handled on the fly. So much easier
+* [x] 1.1.13 - frontend/Logins: now useState of role objects because of groupBy, lost of complexity for no reason
+* [x] 1.1.13 - common: created reduxArrayOfObjByValue
+* [x] 1.1.13 - frontend: cosmetics around refresh button, filter control width when invisible
 * [x] 1.1.12 - backend/settings: reindexAccount() becomes doveadm() with a complete set of commands and messages etc
 * [x] 1.1.11 - backend/db: added dbCount and getCount api
 * [x] 1.1.11 - frontend/DashboardCard: navigate instead of href

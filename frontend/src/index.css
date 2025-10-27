@@ -21,6 +21,10 @@ body {
   color: inherit;
 }
 
+.w-0 {
+  width: 0;
+}
+
 
 /* -------------------- leftsidebar -------------------- */
 

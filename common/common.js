@@ -38,7 +38,7 @@ function fixStringType(string) {
 }
 
 
-function arrayOfStringToDict(array, separator) {
+function arrayOfStringToDict(array=[], separator=',') {
   var dict={};
   
   array.map((item) => {
@@ -58,7 +58,7 @@ function arrayOfStringToDict(array, separator) {
 }
 
 
-function obj2ArrayOfObj(obj, stringify=false, props=['name','value']) {
+function obj2ArrayOfObj(obj={}, stringify=false, props=['name','value']) {
   return (stringify) ? Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: String(obj[key])})) : Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: obj[key]}));
   
   // transform this: { a:1, b:2, .. }
@@ -66,29 +66,47 @@ function obj2ArrayOfObj(obj, stringify=false, props=['name','value']) {
 }
 
 
-function reduxArrayOfObj(obj, arrayToKeep) {
+function reduxArrayOfObjByKey(array=[], keys2Keep=[]) {
 // this will reduce:
   // data = [
   // {name: 'John', city: 'London', age: 42},
   // {name: 'Mike', city: 'Warsaw', age: 18},
   // ]
 // keeping:
-  // arrayToKeep = ['name', 'city']
+  // keys2Keep = ['name', 'city']
 // to:
   // data = [
   // {name: 'John', city: 'London'},
   // {name: 'Mike', city: 'Warsaw'},
   // ]
 
-  const redux = array => array.map(o => keys_to_keep.reduce((acc, curr) => {
+  const redux = array => array.map(o => keys2Keep.reduce((acc, curr) => {
     acc[curr] = o[curr];
     return acc;
   }, {}));
   
-  return redux(obj);
+  return redux(array);
 }
 
-function reduxPropertiesOfObj(obj, arrayToKeep) {
+function reduxArrayOfObjByValue(array=[], key, values2Keep=[]) {
+// this will reduce:
+  // data = [
+  // {name: 'John', city: 'London', age: 42},
+  // {name: 'Mike', city: 'Warsaw', age: 18},
+  // ]
+// keeping:
+  // key = "city"
+  // values2Keep = ['London']
+// to:
+  // data = [
+  // {name: 'John', city: 'London', age: 42},
+  // ]
+
+  return array.filter(item => values2Keep.includes(item[key]));
+  
+}
+
+function reduxPropertiesOfObj(obj={}, keys2Keep=[]) {
 // this will reduce:
   // const person = {
         // firstName: 'Orpheus',
@@ -97,7 +115,7 @@ function reduxPropertiesOfObj(obj, arrayToKeep) {
         // email: 'fake@email.tld',
         // }
 // keeping:
-  // arrayToKeep = ['firstName', 'lastName']
+  // keys2Keep = ['firstName', 'lastName']
 // to:
   // person = {
   // firstName: 'Orpheus',
@@ -106,7 +124,7 @@ function reduxPropertiesOfObj(obj, arrayToKeep) {
 
   const allKeys = Object.keys(obj);
   return allKept = allKeys.reduce((next, key) => {
-    if (arrayToKeep.includes(key)) {
+    if (keys2Keep.includes(key)) {
       return { ...next, [key]: obj[key] };
     } else {
       return next;
@@ -145,18 +163,19 @@ function mergeArrayOfObj(a=[], b=[], prop='name') {
 }
 
 
-function getValueFromArrayOfObj(arr, propName, keyName='name', keyValue='value') {
-  // this will return the value from an array of objects like [ {keyName: propName, keyValue: value}, .. ]
+function getValueFromArrayOfObj(arr, propValue, keyName='name', keyValue='value') {
+  // this will return the value from an array of objects like arr = [ {name: prop1, value: value1}, {name: prop2, value: value2}, .. ] -> propValue = prop1 => "value1"
   if (!Array.isArray(arr)) return undefined;
-  return (arr.find(item => item[keyName] == propName)) ? arr.find(item => item[keyName] == propName)[keyValue] : undefined;
+  return (arr.find(item => item[keyName] == propValue)) ? arr.find(item => item[keyName] == propValue)[keyValue] : undefined;
 }
 
 
-function pluck(arr, keyValue, uniq=true) {
-  // this will return the values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
+function pluck(arr, keyValue, uniq=true, sorted=true) {
+  // this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
   if (!Array.isArray(arr)) return undefined;
   let values = arr.map(item => item[keyValue]);
-  return (uniq) ? [... new Set(values)] : values;
+  let uniqValues = (uniq) ? [... new Set(values)] : values;
+  return (sorted) ? uniqValues.sort() : uniqValues;
 }
 
 
@@ -188,7 +207,8 @@ module.exports = {
   fixStringType,
   arrayOfStringToDict,
   obj2ArrayOfObj,
-  reduxArrayOfObj,
+  reduxArrayOfObjByKey,
+  reduxArrayOfObjByValue,
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,

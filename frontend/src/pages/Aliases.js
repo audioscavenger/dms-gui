@@ -201,6 +201,8 @@ const Aliases = () => {
     {
       key: 'actions',
       label: 'common.actions',
+      noSort: true,
+      noFilter: true,
       render: (alias) => (
         <Button
           variant="danger"

@@ -43,7 +43,9 @@
     "newAccount": "Add New Account",
     "noAccounts": "No mailbox found. Add your first account.",
     "reindex": "Force reindex",
-    "reindexStarted": "Reindex started",
+    "resync": "Force re-sync",
+    "status": "Get INBOX status",
+    "doveadmExecuted": "doveadm executed",
     "storage": "Storage Usage",
     "title": "Mailbox Management",
     "sidebar": "Mailbox Accounts",
@@ -184,7 +186,8 @@
       "fetchAliases": "Error fetching aliases",
       "addAlias": "Error adding alias",
       "deleteAlias": "Error deleting alias",
-      "reindexAccount": "Error reindexing account"
+      "reindexAccount": "Error reindexing account",
+      "doveadm": "Error executing doveadm"
     }
   },
   "language": {

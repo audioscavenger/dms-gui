@@ -220,7 +220,7 @@ const DataTable = ({
                && ((sortOrders[column.key] === 0 ) ? '▲' : '▼') || ""
             )}
             </span>
-            <Form.Control className={(!noFilter && column?.noFilter) ? "invisible" : ""} type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
+            <Form.Control className={(!noFilter && column?.noFilter) ? "form-control-sm invisible w-0" : "form-control-sm"} type="text" placeholder={column.key} onChange={(e) => handleFilterChange(column.key, e.target.value)}
             />
             </th>
           ))}

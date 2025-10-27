@@ -115,7 +115,8 @@ const Logins = () => {
       debugLog('loginsDataAltered', loginsDataAltered);
       
       setLogins(loginsDataAltered);
-      setRolesAvailable(pluck(accountsData, 'mailbox'));   // we keep only an array of mailbox names [box1@domain.com, ..]
+      let mailboxes = (pluck(accountsData, 'mailbox', true, false));   // we keep only an array of uniq mailbox names [box1@domain.com, ..], already sorted by domain
+      setRolesAvailable(mailboxes);
       setErrorMessage(null);
       
       
@@ -443,6 +444,7 @@ const Logins = () => {
             id="roles"
             size="small"
             options={rolesAvailable}
+            groupBy={(mailbox) => mailbox.split('@')[1]}    // groupBy with an array of strings: so easy! create the group off the valuesdirectly!
             filterSelectedOptions
             
             value={login.roles}

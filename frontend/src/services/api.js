@@ -189,10 +189,9 @@ export async function deleteAccount(mailbox) {
   }
 };
 
-// export const reindexAccount = async (mailbox) => {
-export async function reindexAccount(mailbox) {
+export async function doveadm(command, mailbox, jsonDict={}) {
   try {
-    const response = await api.put(`/reindex/${mailbox}`);
+    const response = await api.put(`/doveadm/${command}/${mailbox}`, jsonDict); // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
     return response.data;
   } catch (error) {
     errorLog(error.message);

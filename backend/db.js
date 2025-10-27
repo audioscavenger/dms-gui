@@ -247,7 +247,7 @@ accounts: {
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = ?`,
-    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = ?`,
+    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = ? ORDER BY domain, mailbox`,
     mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = ?`,
     mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
     byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND domain = ?`,

@@ -145,6 +145,7 @@ function FormSettings() {
       setSubmissionSettings('success');
       setSuccessMessage('settings.settingsSaved');
       fetchSettings(); // Refresh the settings
+      
     } catch (err) {
       setSubmissionSettings('error');
       errorLog(t('api.errors.saveSettings'), err);
@@ -158,24 +159,22 @@ function FormSettings() {
     return <LoadingSpinner />;
   }
   
-  // onClick={fetchAllSettings()}
-  
+        // <div className="float-end">
+          // <Button
+            // variant="warning"
+            // size="sm"
+            // icon="arrow-repeat"
+            // title={t('common.refresh')}
+            // className="me-2"
+            // onClick={() => fetchAllSettings()}
+          // />
+        // </div>
+
   return (
     <>
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
-        <div className="float-end">
-          <Button
-            variant="warning"
-            size="sm"
-            icon="recycle"
-            title={t('common.refresh')}
-            className="me-2"
-            onClick={() => fetchAllSettings()}
-          />
-        </div>
-
         <form onSubmit={handleSubmitSettings} className="form-wrapper">
           <FormField
             type="text"

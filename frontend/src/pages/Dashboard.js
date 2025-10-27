@@ -195,7 +195,7 @@ const Dashboard = () => {
         <Button
           variant="warning"
           size="sm"
-          icon="recycle"
+          icon="arrow-repeat"
           title={t('common.refresh')}
           className="me-2"
           onClick={() => fetchAll(true)}
