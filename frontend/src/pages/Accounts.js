@@ -57,6 +57,7 @@ const Accounts = () => {
     mailbox: '',
     password: '',
     confirmPassword: '',
+    createLogin: 1,
   });
   const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
 
@@ -160,14 +161,17 @@ const Accounts = () => {
       await addAccount(
         newAccountformData.mailbox,
         newAccountformData.password,
+        newAccountformData.createLogin,
       );
       setSuccessMessage('accounts.accountCreated');
       setNewAccountFormData({
         mailbox: '',
         password: '',
         confirmPassword: '',
+        createLogin: 1,
       });
       fetchAccounts(true); // Refresh the accounts list
+      
     } catch (err) {
       errorLog(t('api.errors.addAccount'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAccount');
@@ -425,8 +429,8 @@ const Accounts = () => {
             variant="warning"
             size="sm"
             icon="stack-overflow"
-            title={t('accounts.reindex')}
-            onClick={() => handleDoveadm('reindex', account.mailbox)}
+            title={t('accounts.index')}
+            onClick={() => handleDoveadm('index', account.mailbox)}
             className="me-2"
           />
           )}
@@ -434,16 +438,16 @@ const Accounts = () => {
             variant="warning"
             size="sm"
             icon="arrow-repeat"
-            title={t('accounts.resync')}
-            onClick={() => handleDoveadm('resync', account.mailbox)}
+            title={t('accounts.forceResync')}
+            onClick={() => handleDoveadm('forceResync', account.mailbox)}
             className="me-2"
           />
           <Button
             variant="info"
             size="sm"
             icon="bar-chart-fill"
-            title={t('accounts.status')}
-            onClick={() => handleDoveadm('status', account.mailbox)}
+            title={t('accounts.mailboxStatus')}
+            onClick={() => handleDoveadm('mailboxStatus', account.mailbox)}
             className="me-2"
           />
         </div>
@@ -485,6 +489,17 @@ const Accounts = () => {
               value={newAccountformData.confirmPassword}
               onChange={handleNewAccountInputChange}
               error={newAccountFormErrors.confirmPassword}
+              required
+            />
+
+            <FormField
+              type="checkbox"
+              id="createLogin"
+              name="createLogin"
+              label="accounts.createLogin"
+              value={newAccountformData.createLogin}
+              onChange={handleNewAccountInputChange}
+              error={newAccountFormErrors.createLogin}
               required
             />
 

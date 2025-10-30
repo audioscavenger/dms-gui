@@ -30,13 +30,13 @@ const fsp = fs.promises;
 
 
 // this returns an array
-async function getRoles(username, containerName) {
+async function getRoles(email, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   try {
     
-    const roles = await dbGet(sql.logins.select.roles, containerName, username);
+    const roles = await dbGet(sql.logins.select.roles, containerName, email);
     return JSON.parse(roles);
     
   } catch (error) {
@@ -53,10 +53,10 @@ async function getRoles(username, containerName) {
 
 
 // this returns an objects
-async function getLogin(username) {
+async function getLogin(credential) {
   try {
     
-    let login = await dbGet(sql.logins.select.login, username);
+    let login = await dbGet(sql.logins.select.login, credential, credential);
     // now JSON.parse roles as it's stored stringified in the db
     login.roles = JSON.parse(login.roles);
     return login;
@@ -75,8 +75,8 @@ async function getLogin(username) {
 
 
 // this returns an array of objects
-async function getLogins(username) {
-  if (username) return getLogin(username);
+async function getLogins(credential) {
+  if (credential) return getLogin(credential);
 
   let logins = [];
   try {
@@ -96,7 +96,7 @@ async function getLogins(username) {
     }
     
     return logins;
-    // [ { username: username, email: email }, ..]
+    // [ {email: email, username: username, isActive:1, ..}, ..]
     
   } catch (error) {
     let backendError = error.message;
@@ -111,14 +111,14 @@ async function getLogins(username) {
 }
 
 
-async function addLogin(username, password, email='', isAdmin=0, isActive=1, roles=[]) {
+async function addLogin(email, username, password, isAdmin=0, isActive=1, isAccount=0, roles=[]) {
 
   try {
-    debugLog(username, password, email, isAdmin);
+    debugLog(email, username, password, email, isAdmin, isActive, isAccount, roles);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.insert.login, { username:username, salt:salt, hash:hash, email:email, isAdmin:isAdmin, isActive:isActive, roles:JSON.stringify(roles) });
-    successLog(`Saved login ${username}`);
+    dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isActive:isActive, isAccount:isAccount, roles:JSON.stringify(roles) });
+    successLog(`Saved login ${username}:${email}`);
     return { success: true };
 
   } catch (error) {
@@ -134,25 +134,25 @@ async function addLogin(username, password, email='', isAdmin=0, isActive=1, rol
 }
 
 
-async function deleteLogin(username) {
+async function deleteLogin(email) {
 
   try {
     const activeAdmins = await dbAll(sql.logins.select.isActive.admins);
-    const login =  await getLogin(username);
-    debugLog(`pulled login:`,login);
+    const login =  await getLogin(email);
+    debugLog(`pulled login:`, login);
     debugLog(`pulled ${activeAdmins.length} admins`, activeAdmins);
     
     // if login exist...
-    if (login.username) {
+    if (login) {
       
       // don't delete the last admin
       if (activeAdmins.length > 1) {
-        dbRun(sql.logins.delete.login, username);
-        successLog(`Login deleted: ${username}`);
+        dbRun(sql.logins.delete.login, email);
+        successLog(`Login deleted: ${email}`);
         
       } else errorLog("Cannot delete the last login, how will you log back in?");
       
-    } else errorLog(`Login ${username} does not exist`);
+    } else errorLog(`Login ${email} does not exist`);
     
   } catch (error) {
     let backendError = 'Error deleting login';
@@ -169,24 +169,24 @@ async function deleteLogin(username) {
 
 
 // loginUser will not throw an error an attacker can exploit
-async function loginUser(username, password) {
+async function loginUser(credential, password) {
   
   try {
-    // const isActive = await dbGet(sql.logins.select.isActive.username, username);
-    const login = await dbGet(sql.logins.select.isActive.login, username);
+    const login = dbGet(sql.logins.select.isActive.login, credential, credential);
+
     if (login.isActive) {
-      const isValid = await verifyPassword(username, password, 'logins');
+      const isValid = await verifyPassword(credential, password, 'logins');
       
       if (isValid) {
-        successLog(`User ${username} logged in successfully.`);
+        successLog(`User ${credential} logged in successfully.`);
         return login;
         
       } else {
-        warnLog(`User ${username} invalid password.`);
+        warnLog(`User ${credential} invalid password.`);
         return false;
       }
     } else {
-      warnLog(`User ${username} is inactive.`);
+      warnLog(`User ${credential} is inactive.`);
       return false;
     }
   } catch (error) {

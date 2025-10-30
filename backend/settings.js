@@ -436,6 +436,51 @@ async function pullFTS(containerName, containerInfo) {
 }
 
 
+async function pullDOVECOT(containerName) {
+  debugLog(`start`);
+  let envs = {};
+
+  try {
+    
+    const result = await execCommand(`dovecot --version`, containerName);   // 2.3.19.1 (9b53102964)
+    if (!result.exitCode) {
+      const DOVECOT_VERSION = result.stdout.split(" ")[0];
+      debugLog(`DOVECOT_VERSION:`, DOVECOT_VERSION);
+      
+      envs.DOVECOT_VERSION = DOVECOT_VERSION;
+
+    } else errorLog(result.stderr);
+    
+  } catch (error) {
+    errorLog(`execCommand failed with error:`,error);
+  }
+  return envs;
+}
+
+
+async function pullMailPlugins(containerName) {
+  debugLog(`start`);
+  let envs = {};
+
+  try {
+    
+    const result = await execCommand(`doveconf mail_plugins`, containerName);   // result.stdout =  quota fts fts_xapian zlib
+    if (!result.exitCode) {
+      // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
+      // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
+      for (const PLUGIN of result.stdout.split(/[=\s]+/)) {
+        if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+      }
+
+    } else errorLog(result.stderr);
+
+  } catch (error) {
+    errorLog(`execCommand failed with error:`,error);
+  }
+  return envs;
+}
+
+
 // async function pullDkimRspamd(envs, containerName) {
 async function pullDkimRspamd(containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
@@ -489,37 +534,34 @@ async function pullServerEnvs(containerName) {
     let containerInfo = await container.inspect();
 
     if (containerInfo.Id) {
+      
       debugLog(`containerInfo found, Id=`, containerInfo.Id);
       
       // get and conver DMS environment to dict ------------------------------------------ envs
-      dictEnvDMS = arrayOfStringToDict(containerInfo.Config?.Env, '=');
+      dictEnvDMS = await arrayOfStringToDict(containerInfo.Config?.Env, '=');
       // debugLog(`dictEnvDMS:`,dictEnvDMS);
       
       // we keep only some options not all
       dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      debugLog(`dictEnvDMSredux:`,dictEnvDMSredux);
+      debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
 
-      envs = { ...envs, ...dictEnvDMSredux };
 
       // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
-      const result = await execCommand(`doveconf mail_plugins`, containerName);   // result.stdout =  quota fts fts_xapian zlib
-        if (!result.exitCode) {
-        // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
-        // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
-        for (const PLUGIN of result.stdout.split(/[=\s]+/)) {
-          if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
-        }
-
-      } else errorLog(result.stderr);
-
+      let mail_plugins = await pullMailPlugins(containerName);
       
       // TODO: look for quotas -------------------------------------------------- quota
       
+      // look for dovecot version -------------------------------------------------- dovecot
+      let dovecot = await pullDOVECOT(containerName);
+
       // look for FTS values -------------------------------------------------- fts
-      if (envs?.DOVECOT_FTS) envs = await { ...envs, ...pullFTS(containerName, containerInfo) };
+      let fts = await pullFTS(containerName, containerInfo);
 
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      if (envs?.ENABLE_RSPAMD) envs = await { ...envs, ...pullDkimRspamd(containerName) };
+      let dkim = await pullDkimRspamd(containerName);
+      
+      // merge all ------------------------------------------------------------------ merge
+      envs = { ...envs, ...dictEnvDMSredux, ...mail_plugins, ...dovecot, ...fts, ...dkim };
 
     }
     
@@ -531,6 +573,7 @@ async function pullServerEnvs(containerName) {
     errorLog(`${backendError}`);
     throw new Error(backendError);
   }
+  
 }
 
 

@@ -38,12 +38,6 @@ sqlMatch = {
 // DB.close();
 // DB = new Database(buffer);
 
-// columns we can update for each table along with their type
-updateValidKeys = {
-  accounts: {password:'string', },
-  logins:   {password:'string', email:'string', isAdmin:'number', isActive:'number', roles:'object'},
-}
-
 // columns which require a special test before they are changed, like for instance do not disable/demote the last admin in the db...
 // isAdmin:   do not delete last admin: handled by deleteLogin()
 // isActive:  do not deactivate last admin
@@ -93,85 +87,96 @@ settings: {
 
 logins: {
       
+  keys:   {password:'string', email:'string', username:'string', isAdmin:'number', isActive:'number', isAccount:'number', roles:'object'},
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    usernames:`SELECT username from logins WHERE 1=1`,
-    username: `SELECT username from logins WHERE 1=1 AND username = ?`,
-    logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1`,
-    admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isAdmin = 1`,
-    login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND username = ?`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND username = ?`,
-    salt:     `SELECT salt from logins WHERE username = ?`,
-    hash:     `SELECT hash from logins WHERE username = ?`,
-    saltHash: `SELECT salt, hash FROM logins WHERE username = ?`,
+    login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (email = ? OR username = ?)`,
+    logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1`,
+    admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isAdmin = 1`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND email = ?`,
+    salt:     `SELECT salt from logins WHERE email = ?`,
+    hash:     `SELECT hash from logins WHERE email = ?`,
+    saltHash: `SELECT salt, hash FROM logins WHERE (email = ? OR username = ?)`,
     isActive: {
-      usernames:`SELECT username from logins WHERE 1=1 AND isActive = 1`,
-      username: `SELECT username from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
-      logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1`,
-      admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
-      login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND username = ?`,
+      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (email = ? OR username = ?)`,
+      logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
+      admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND email = ?`,
       count: {
-        usernames:`SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0`,
         admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
       },
     },
     isInactive: {
-      usernames:`SELECT username from logins WHERE 1=1 AND isActive = 0`,
-      username: `SELECT username from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
-      logins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0`,
-      admins:   `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      login:    `SELECT username, email, isAdmin, isActive, roles from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND username = ?`,
+      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (email = ? OR username = ?)`,
+      logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0`,
+      admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND email = ?`,
     },
   },
   
   insert: {
-    login:    `REPLACE INTO logins (username, salt, hash, email, isAdmin, roles) VALUES (@username, @salt, @hash, @email, @isAdmin, @roles)`,
+    login:    `REPLACE INTO logins          (email, username, salt, hash, isAdmin, roles) VALUES (@email, @username, @salt, @hash, @isAdmin, @roles)`,
+    fromDMS:  `INSERT OR IGNORE INTO logins (email, username, isAccount, roles) VALUES (@email, @username, @isAccount, @roles)`,
   },
   
   update: {
-    password: `UPDATE logins set salt=@salt, hash=@hash WHERE username = ?`,
-    email:    `UPDATE logins set email = @email WHERE username = ?`,
+    email: {
+      test: {
+        desc:   "allow to change a login's email only if isAdmin or not isAccount",
+        value:  0,
+        scope:  false,
+        test:   `SELECT COUNT(email) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND email = ?`,
+        check:  function(result) { return result.count == 1; },
+        pass:   `UPDATE logins set email = @email WHERE email = ?`,
+        fail:   "Cannot change a normal user's mailbox",
+      },
+    },
+    username: `UPDATE logins set username = @username WHERE email = ?`,
+    password: `UPDATE logins set salt=@salt, hash=@hash WHERE email = ?`,
     isAdmin: {
       test: {
+        desc:  "refuse to demote the last admin",
         value: 0,
         scope: false,
-        check: `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`,
-        eval:  function(result) { return result.count > 0; },
-        pass: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`,
+        test:  `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        check: function(result) { return result.count > 0; },
+        pass: `UPDATE logins set isAdmin = @isAdmin WHERE email = ?`,
         fail: "Cannot demote the last admin, how will you administer dms-gui?",
       },
     },
     isActive: {
       test: {
+        desc:  "refuse to deactivate the last admin",
         value: 0,
         scope: false,
-        check: `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`,
-        eval:  function(result) { return result.count > 0; },
-        pass: `UPDATE logins set isActive = @isActive WHERE username = ?`,
+        test:  `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        check: function(result) { return result.count > 0; },
+        pass: `UPDATE logins set isActive = @isActive WHERE email = ?`,
         fail: "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
     },
-    roles:    `UPDATE logins set roles = @roles WHERE username = ?`,
+    isAccount:`UPDATE logins set isAccount = @isAccount WHERE email = ?`,
+    roles:    `UPDATE logins set roles = @roles WHERE email = ?`,
   },
   
   delete: {
-    login:  `DELETE from logins WHERE 1=1 AND username = ?`,
+    login:  `DELETE from logins WHERE 1=1 AND email = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE logins (
-          username  TEXT NOT NULL UNIQUE PRIMARY KEY,
+          id        INTEGER PRIMARY KEY,
+          email     TEXT NOT NULL UNIQUE,
+          username  TEXT NOT NULL UNIQUE,
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
-          email     TEXT DEFAULT '',
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1,
+          isAccount BIT DEFAULT 0,
           roles     TEXT DEFAULT '[]'
           );
-          INSERT OR IGNORE INTO logins (username, salt, hash, email, isAdmin, isActive, roles) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', '', 1, 1, '[]');
+          INSERT OR IGNORE INTO logins (email, username, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
   
@@ -189,7 +194,7 @@ logins: {
         `ALTER TABLE logins DROP COLUMN password;`,
         `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
         `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-        `INSERT OR IGNORE INTO logins (username, salt, hash) VALUES ('admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
+        `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
       ],
     },
@@ -244,6 +249,7 @@ roles: {
 
 accounts: {
       
+  keys: {password:'string', storage:'object', domain:'string'},
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = ?`,
@@ -292,6 +298,7 @@ accounts: {
 
 aliases: {
       
+  keys: {source:'string', destination:'string', regex:'number'},
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND scope = ?`,
@@ -325,6 +332,7 @@ aliases: {
 
 domains: {
       
+  keys: {dkim:'string', keytype:'string', keysize:'string', path:'string'},
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = ?`,
@@ -660,21 +668,21 @@ async function hashPassword(password) {
 
 
 // verifyPassword works the same wherever a table has a salted hash
-async function verifyPassword(username, password, table='logins') {
+async function verifyPassword(credential, password, table='logins') {
   
   try {
-    debugLog(`for ${username}`);
-    const result = dbGet(sql[table].select.saltHash, username);
+    debugLog(`for ${credential}`);
+    const login = dbGet(sql[table].select.saltHash, credential, credential);
 
     return new Promise((resolve, reject) => {
-      if (Object.keys(result).length) {
-        if (result.salt && result.hash) {
-          crypto.scrypt(password, result.salt, 64, (err, derivedKey) => {
+      if (Object.keys(login).length) {
+        if (login.salt && login.hash) {
+          crypto.scrypt(password, login.salt, 64, (err, derivedKey) => {
             if (err) return reject(err);
-            resolve(result.hash === derivedKey.toString('hex'));
+            resolve(login.hash === derivedKey.toString('hex'));
           });
-        } else return reject(`please reset password for ${username}`);
-      } else return reject(`username ${username} not found`);
+        } else return reject(`please reset password for ${credential}`);
+      } else return reject(`username ${credential} not found`);
     });
 
   } catch (error) {
@@ -730,10 +738,10 @@ async function changePassword(table, id, password, containerName) {
 // Function to update a table in the db; id can very well be an array as well
 async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { column:value, .. }
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`${id} in ${table} with`, jsonDict);
+  debugLog(`${table} id=${id} with`, jsonDict);
 
   try {
-    if (!updateValidKeys[table]) {
+    if (!sql[table]) {
       throw new Error(`unknown table ${table}`);
     }
     
@@ -741,7 +749,8 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
       throw new Error('nothing to modify was passed');
     }
     
-    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(updateValidKeys[table]));
+    // keep only keys defined as updatable
+    let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
     if (Object.keys(validDict).length = 0) {
       throw new Error('jsonDict is invalid');
     }
@@ -750,7 +759,7 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
     for (const [key, value] of Object.entries(validDict)) {
       
       // is the value the right type...
-      if (typeof value == updateValidKeys[table][key]) {
+      if (typeof value == sql[table].keys[key]) {
         
         // password has its own function
         if (key == 'password') {
@@ -763,45 +772,57 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
         
         // other sqlite3 valid types and we can test specific scenarios
         } else {
+          debugLog(1,`sql[table].update[${key}]`,sql[table].update[key])
+          debugLog(1,`sql[table].update`,sql[table].update)
           
-          // check if there is a test for the value about to be set
-          if (sql[table].update[key]?.test) {
+          // check if the sql is defined for the key to update
+          if (sql[table].update[key]) {
             
-            // there is a test and now we check if the value should be tested
-            if (sql[table].update[key].test.value = value) {
+            // is there a test?
+            if (sql[table].update[key]?.test) {
+              debugLog(2)
+              // there is a test and now we check if the value should be tested
+              if (sql[table].update[key].test.value == value) {
+                debugLog(3)
+                // value is now tested with id in mind
+                let result = (sql[table].update[key].test.scope) ? dbGet(sql[table].update[key].test.test, containerName, id) : dbGet(sql[table].update[key].test.test, id);
+                debugLog(4)
+                // test the result in the check function
+                if (sql[table].update[key].test.check(result)) {
+                  debugLog(5)
+                  // we pass the test
+                  dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
+                  successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                  
+                } else {
+                  debugLog(6)
+                  // we do not pass the test
+                  errorLog(sql[table].update[key].test.fail);
+                  return { success: false, message: sql[table].update[key].test.fail};
+                }
               
-              // value is now tested with id in mind
-              let result = (sql[table].update[key].test.scope) ? dbGet(sql[table].update[key].test.check, containerName, id) : dbGet(sql[table].update[key].test.check, id);
-            
-              // test the result in the eval function
-              if (sql[table].update[key].test.eval(result)) {
-                
-                // we pass the test
+              // there is a test but value does not need to be tested
+              } else {
                 dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
-                
-              } else {
-                // we do not pass the test
-                errorLog(sql[table].update[key].test.fail);
               }
-            
-            // there is a test but value does not need to be tested
+              
+            // no test
             } else {
-              dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
+              dbRun(sql[table].update[key], {[key]:value}, id);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
             }
             
-          // no test
           } else {
-            dbRun(sql[table].update[key], {[key]:value}, id);
-            successLog(`Updated ${table} ${id} with ${key}=${value}`);
+            errorLog(`sql[${table}].update is missing [${key}]`);
+            return { success: false, message: `sql[${table}].update is missing [${key}]`};
           }
           
         }
         
-      } else errorLog(`typeof ${value} for ${key} is not ${updateValidKeys[table][key]}`)
+      } else errorLog(`typeof ${value} for ${key} is not ${sql[table].keys[key]}`)
     }
-    return { success: true };
+    return { success: true, message: 'Login updated successfully' };
     
   } catch (error) {
     let ErrorMsg = error.message;

@@ -102,20 +102,10 @@ export async function getLogins() {
   }
 };
 
-export async function getRoles() {
-  try {
-    const response = await api.get(`/roles`);
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
-export async function addLogin(username, password, email='', isAdmin=0, isActive=0, roles=[]) {
+export async function addLogin(email, username, password, isAdmin=0, isActive=1, isAccount=0, roles=[]) {
     // console.debug('ddebug api password, email',password, email)
   try {
-    const response = await api.post(`/logins`, { username, password, email, isAdmin, isActive, roles });
+    const response = await api.post(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -123,20 +113,10 @@ export async function addLogin(username, password, email='', isAdmin=0, isActive
   }
 };
 
-export async function deleteLogin(username) {
-  try {
-    const response = await api.delete(`/logins/${username}`);
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
-export async function updateLogin(username, jsonDict) {
+export async function updateLogin(email, jsonDict) {
   // console.debug('ddebug api jsonDict',jsonDict)
   try {
-    const response = await api.put(`/logins/${username}/update`, jsonDict); // jsonDict = {email:email, isAdmin:0, isActive:0}
+    const response = await api.put(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -144,10 +124,20 @@ export async function updateLogin(username, jsonDict) {
   }
 };
 
-export async function loginUser(username, password) {
+export async function deleteLogin(email) {
   try {
-    // console.debug('ddebug api loginUser(username, password)',username, password)
-    const response = await api.post(`/loginUser`, { username, password });
+    const response = await api.delete(`/logins/${email}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function loginUser(credential, password) {
+  try {
+    // console.debug('ddebug api loginUser(credential, password)', credential, password)
+    const response = await api.post(`/loginUser`, { credential, password });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -168,9 +158,9 @@ export async function getAccounts(refresh) {
 };
 
 // export const addAccount = async (mailbox, password) => {
-export async function addAccount(mailbox, password) {
+export async function addAccount(mailbox, password, createLogin) {
   try {
-    const response = await api.post(`/accounts`, { mailbox, password });
+    const response = await api.post(`/accounts`, { mailbox, password, createLogin });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -259,6 +249,16 @@ export async function getCount(table) {
   try {
     // const response = await api.post(`/getCount?table=${table}`);
     const response = await api.post(`/getCount/${table}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function getRoles() {
+  try {
+    const response = await api.get(`/roles`);
     return response.data;
   } catch (error) {
     errorLog(error.message);

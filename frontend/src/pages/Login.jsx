@@ -31,7 +31,7 @@ import {
 export const Login = () => {
   // const { t } = useTranslation();
 
-  const [username, setUsername] = useState("");
+  const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
   const [firstRun, setFirstRun] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -61,15 +61,15 @@ export const Login = () => {
     
     // Here you would usually send a request to your backend to authenticate the user
     // For the sake of this example, we're using a mock authentication
-    // if (username === "admin" && password === "password") {
-    // const user = await loginUser(username, password)
-    const user = await loginUser(username, password)
+    // if (credential === "admin" && password === "password") {
+    // const user = await loginUser(credential, password)
+    const user = await loginUser(credential, password)
     // console.debug('ddebug user=', user);
     if (user) {
       
       setSuccessMessage(null);
       setErrorMessage(null);
-      // (firstRun) ? await login({username}, "/settings") : await login({username});
+      // (firstRun) ? await login({credential}, "/settings") : await login({credential});
       (firstRun) ? await login(user, "/settings") : await login(user);
       
     } else {
@@ -91,11 +91,11 @@ export const Login = () => {
 
             <FormField
               type="text"
-              id="username"
-              name="username"
-              label="logins.username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="credential"
+              name="credential"
+              label="logins.credential"
+              value={credential}
+              onChange={(e) => setCredential(e.target.value)}
               required
             />
 

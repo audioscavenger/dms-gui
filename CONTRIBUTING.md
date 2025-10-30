@@ -43,21 +43,20 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] - frontend/pages: add proxy to rspamd page
 * [ ] - frontend/pages: add link to snappymail when said variable is detected
-
 * [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend/Dashboard: where do we display Health/StartedAt etc?
 * [ ] - frontend/Accounts: transform account storage values into bytes so we can sort them
 * [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
-
 * [ ] - frontend/Logins: provide a way for users to change their profile email and password
 * [ ] - frontend/Logins: why can't I change the email directly in the email field?
-
 * [ ] - frontend/backups.js: add file
 * [ ] - frontend/imports.js: add file
-
 * [ ] - frontend/Logins: also ProtectedRoute: get isAdmin isActive and roles to deny login and not display certain pages
+* [ ] - frontend/Backups: add page
+* [ ] - frontend/Imports: add page
+* [ ] - frontend/Domains: add FormDNS or page
 
 ### backend:
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
@@ -65,17 +64,29 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
 * [ ] - backend: mutate the String with data transform/validation functions as Class
 * [ ] - backend/domains: add dkim modules and exec calls
-* [ ] - backend/settings: pullServerEnvs should also look for quota?
-
-* [ ] - frontend/Backups: add page
-* [ ] - frontend/Imports: add page
-* [ ] - frontend/Domains: add FormDNS or page
-
+* [-] - backend/settings: pullServerEnvs should also look for quota? --> nope, api call dump config
+* [ ] - backend/settings: pull compress method and maybe statistics on the dashboard?
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
+* [ ] - backend/accounts: switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead
 
 
 ### history:
 
+* [ ] 1.1.? - backend/frontend: refactor all the API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
+* [ ] 1.1.15 - frontend/Logins: revamp addLogin page with isAdmin/isActive/isAccount and mailbox selection
+* [x] 1.1.14 - frontend/Logins: disable roles picking when login isAccount
+* [x] 1.1.14 - frontend/Logins: disable save button when there are no changes
+* [x] 1.1.14 - frontend/Logins: revamped changes detection and state
+* [x] 1.1.14 - frontend/Logins: refactor all the updateLogin API call to handle result.success and message instead of throwing error 500
+* [x] 1.1.14 - backend/db: allow to change a login's email only if isAdmin or not isAccount
+* [x] 1.1.14 - backend/settings: bugfix: pullServerEnvs() was missing an await
+* [x] 1.1.14 - backend/settings: added pullDOVECOT() to get dovecot version
+* [x] 1.1.14 - backend/accounts: auto-create all missing accounts in logins db upon pull/refresh/addAccount
+* [x] 1.1.14 - frontend/Logins: reflect change in email being primary
+* [x] 1.1.14 - BREAKING CHANGE: db logins.email is now the primary key and added isAccount to signify it's linked to a mailbox
+* [x] 1.1.14 - frontend/Logins: email is now mandatory as we switch to email-centric logins
+* [x] 1.1.14 - frontend/Logins: highlight roles' selections for domains the email login is matching rolesAvailable
 * [x] 1.1.13 - backend/db: presort accounts by domain and mailbox, this way the Autocomplete selector in Logins is perfect with no extra step
 * [x] 1.1.13 - frontend/Logins: back to simple sorted array of strings for options, and groupBy is handled on the fly. So much easier
 * [x] 1.1.13 - frontend/Logins: now useState of role objects because of groupBy, lost of complexity for no reason
@@ -269,7 +280,6 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.6.2 - frontend/index: all routes return actual error.message
 * [x] 1.0.6.2 - frontend/accounts: addAccount correctly refresh after adding
 * [x] 1.0.6.1 - frontend/settings show both backend and frontend versions
-
 * [x] 1.0.6 - now using node:slim for build and 24-alpine for prod
 * [x] 1.0.5.8 - massing update of all README
 * [x] 1.0.5.8 - moved .env to /app/config/.dms-gui.env where it should be
@@ -282,17 +292,14 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.5.4 - implement refresh on start
 * [x] 1.0.5.3 - DB_JSON holds Aliases
 * [x] 1.0.5.2 - Dashboard shows version next to server status
-
 * [x] 1.0.5 - DB_JSON holds Accounts
 * [x] 1.0.5 - backend: add DB_JSON=/app/config/db.json
 * [x] 1.0.5 - frontend: add favicon.png with webpack.config.js; tried everything for 30mn, I give up
-
 * [x] 1.0.4 - Implement shields.io badge
 * [x] 1.0.4 - Upload my hard-forked container to hub.docker.com
 * [x] 1.0.4 - upgrade to 24-alpine
 * [x] 1.0.4 - show node and project version at start
 * [x] 1.0.4 - find a way to get the version from package.json into /api/status
-
 * [x] 1.0.3 - Translations do not update immediately after language change (requires manual refresh)
 * [x] 1.0.3 - Fails to show accounts when QUOTA is disabled: now handles both cases
 * [x] 1.0.3 - Add non-woke code of conduct
@@ -306,7 +313,6 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
 * [ ] - docker.sock seems frowned upon, why is it? Response from @polarathene:
   > The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).
-
 * [ ] - docker.sock seems frowned upon, how do we do without it? Maybe with Caddy and DMS api calls?
 * [ ] - docker.sock could become caddy: see https://github.com/orgs/docker-mailserver/discussions/4584
 * [ ] - add fail2ban management?

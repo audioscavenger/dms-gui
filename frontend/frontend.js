@@ -13,6 +13,7 @@ const {
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
+  moveKeyToLast,
 } = require('./common');
 
 
@@ -54,6 +55,7 @@ module.exports = {
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
+  moveKeyToLast,
   debug,
   ICON,
   debugLog,

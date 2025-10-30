@@ -39,6 +39,8 @@ function fixStringType(string) {
 
 
 function arrayOfStringToDict(array=[], separator=',') {
+  // transform ["a=1", "b=2", ..] => {a:1, b:2, ..}
+  
   var dict={};
   
   array.map((item) => {
@@ -73,11 +75,11 @@ function reduxArrayOfObjByKey(array=[], keys2Keep=[]) {
   // {name: 'Mike', city: 'Warsaw', age: 18},
   // ]
 // keeping:
-  // keys2Keep = ['name', 'city']
+  // keys2Keep = ['name']
 // to:
   // data = [
-  // {name: 'John', city: 'London'},
-  // {name: 'Mike', city: 'Warsaw'},
+  // {name: 'John'},
+  // {name: 'Mike'},
   // ]
 
   const redux = array => array.map(o => keys2Keep.reduce((acc, curr) => {
@@ -109,17 +111,15 @@ function reduxArrayOfObjByValue(array=[], key, values2Keep=[]) {
 function reduxPropertiesOfObj(obj={}, keys2Keep=[]) {
 // this will reduce:
   // const person = {
-        // firstName: 'Orpheus',
-        // lastName: 'De Jong',
-        // phone: '+1 123-456-7890',
-        // email: 'fake@email.tld',
+        // firstName: 'firstName',
+        // lastName:  'lastName',
+        // email:     'fake@email.tld',
         // }
 // keeping:
-  // keys2Keep = ['firstName', 'lastName']
+  // keys2Keep = ['firstName']
 // to:
   // person = {
-  // firstName: 'Orpheus',
-  // lastName: 'De Jong',
+  // firstName: 'firstName',
   // }
 
   const allKeys = Object.keys(obj);
@@ -153,10 +153,10 @@ function mergeArrayOfObj(a, b, prop) {
 // ES6 arrow functions
 function mergeArrayOfObj(a=[], b=[], prop='name') {
   // this will merge:
-    // a = [{name: 1,value: "odd"}]
-    // b = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+    // a = [{name: 1,value: "orig"}]
+    // b = [{name: 1,value: "new"},{name: 2,value: "new"}]
   // into:
-    // output = [{name: 1,value: "wrong"},{name: 2,value: "xyz"}]
+    // output = [{name: 1,value: "new"},{name: 2,value: "new"}]
 
   const reduced = (a.length) ? a.filter(aitem => !b.find(bitem => aitem[prop] === bitem[prop])) : [];
   return reduced.concat(b);
@@ -202,6 +202,17 @@ function humanSize2ByteSize(humanBytes) {
 }
 
 
+function moveKeyToLast(obj, keyToMove) {
+  // Check if the key exists in the object
+  if (Object.prototype.hasOwnProperty.call(obj, keyToMove)) {
+    const valueToMove = obj[keyToMove]; // Store the value
+    delete obj[keyToMove]; // Delete the key
+    obj[keyToMove] = valueToMove; // Re-add the key, placing it last
+  }
+  return obj;
+}
+
+
 module.exports = {
   funcName,
   fixStringType,
@@ -215,4 +226,5 @@ module.exports = {
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
+  moveKeyToLast,
 };

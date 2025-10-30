@@ -68,6 +68,10 @@ async function getAccounts(refresh, containerName) {
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
     dbRun(sql.accounts.insert.fromDMS, accountsDb, containerName);
     
+    // now save isAccount logins in db
+    let loginsDb = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]) }; });
+    dbRun(sql.logins.insert.fromDMS, loginsDb);
+    
     return accounts;
     
   } catch (error) {
@@ -163,7 +167,7 @@ async function pullAccountsFromDMS(containerName) {
 }
 
 // Function to add a new mailbox account
-async function addAccount(mailbox, password, containerName) {
+async function addAccount(mailbox, password, createLogin=1, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
 
@@ -174,6 +178,7 @@ async function addAccount(mailbox, password, containerName) {
       
       const { salt, hash } = await hashPassword(password);
       dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash }, containerName);
+      if (createLogin) dbRun(sql.logins.insert.logins, { email:mailbox, username:mailbox, salt:salt, hash:hash, roles:[mailbox] }, containerName);
       successLog(`Account created: ${mailbox}`);
       return { success: true };
       
@@ -229,10 +234,20 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
   const doveadm = {
-    reindex: {    // https://doc.dovecot.org/main/core/man/doveadm-index.1.html
+    index: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#index
       mailbox: true,
       cmd: 'doveadm index -u {mailbox} -q \\*',
+      api: [["index", {"mailboxMask": "{box}", "allUsers": false, "user": "{mailbox}"}, "dms-gui"]],
       stdout: false,
+      messages: {
+        pass: 'Reindexing started for {mailbox}',
+      },
+    },
+    indexerList: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list
+      mailbox: true,
+      cmd: 'doveadm index -u {mailbox} -q \\*',
+      api: [["index", {"userMask": "{mailbox}"}, "dms-gui"]],
+      stdout: true,
       messages: {
         pass: 'Reindexing started for {mailbox}',
       },
@@ -276,9 +291,10 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
       // /shared/vendor/vendor.dovecot/pvt/server/admin
       // /shared/vendor/vendor.dovecot/pvt/server/comment
     },
-    status: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+    mailboxStatus: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
       mailbox: true,
       cmd: 'doveadm mailbox status -u {mailbox} {field} {box}',
+    api: [["mailboxStatus", {"field": ["{field}"], "user": "{mailbox}", "mailboxMask": ["{box}"]}, "dms-gui"]],
       defaults: {
         field: 'all',
         box: 'INBOX',
@@ -289,9 +305,10 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
       },
       // INBOX messages=5119 recent=0 uidnext=5125 uidvalidity=1759246520 unseen=703 highestmodseq=356 vsize=459768297 guid=68e18d2db8f8db68550f00008e1fe135 firstsaved=1759247564
     },
-    resync: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+    forceResync: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
       mailbox: true,
       cmd: 'doveadm force-resync -u {mailbox} --mailbox-mask {box}',
+      api: [["forceResync", {"allUsers": false, "user": "{mailbox}", "mailboxMask": "{box}"}, "dms-gui"]],
       defaults: {
         box: 'INBOX',
       },
@@ -337,6 +354,102 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
     // };
   }
 }
+
+
+async function doveadmNative(command, mailbox, jsonDict={}, containerName) {
+
+}
+
+
+async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
+
+// https://doc.dovecot.org/main/core/admin/doveadm.html
+// https://doc.dovecot.org/2.3/admin_manual/doveadm_http_api/
+// https://doc.dovecot.org/main/core/admin/doveadm.html#example-session
+// let doveadm_api_key = crypto.randomUUID();
+
+// 99-api.conf
+  // doveadm_password = doveadm_password
+  // doveadm_api_key = "c9ed3894-7c23-4e71-be7e-bb23cff5d55e"
+
+  // service doveadm {
+     // unix_listener doveadm-server {
+        // user = dovecot
+     // }
+
+    // inet_listener {
+      // port = 2425
+    // }
+
+    // inet_listener http {
+      // port = 8080
+      // # For HTTPS, uncomment the line below:
+      // # ssl = yes
+    // }
+  // }
+
+
+// API_KEY=$(echo -n c9ed3894-7c23-4e71-be7e-bb23cff5d55e|base64)
+// DOVEADM_PASS=$(echo -n doveadm:doveadm_password|base64)
+
+
+// curl -H "Authorization: Basic $DOVEADM_PASS" http://localhost:8080/doveadm/v1
+// curl -u doveadm:doveadm_password http://localhost:8080/doveadm/v1
+
+// curl -H "Authorization: X-Dovecot-API $API_KEY" http://localhost:2425/
+  // curl: (52) Empty reply from server
+
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" http://localhost:8080/doveadm/v1
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["reload",{},"dms-gui"]]' http://localhost:8080/doveadm/v1 
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["mailboxStatus", {"field": ["messages"], "mailboxMask": ["INBOX"], "user": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["doveadmResponse",[{"mailbox":"INBOX","messages":"24"}],"c01"]]
+  
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["mailboxStatus", {"field": ["all"], "mailboxMask": ["INBOX"], "user": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["doveadmResponse",[{"mailbox":"INBOX","messages":"24","recent":"24","uidnext":"25","uidvalidity":"1759246897","unseen":"24","highestmodseq":"3","vsize":"752111","guid":"6076763531fadb68571400008e1fe135","firstsaved":"1759246897"}],"dms-gui"]]
+
+// https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list  // not in 2.3
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["indexerList", {"userMask": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+
+
+// https://doc.dovecot.org/main/core/summaries/doveadm.html#force%20resync
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["forceResync", {"allUsers": false, "mailboxMask": "INBOX*", "user": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["doveadmResponse",[],"dms-gui"]]
+
+
+// https://doc.dovecot.org/main/core/summaries/doveadm.html#acl%20get       // not in 2.3
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["aclGet", {"allUsers": false, "mailbox": "INBOX", "user": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+
+// https://doc.dovecot.org/main/core/summaries/doveadm.html#auth%20test     // not in 2.3
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["authTest", {"user": "diane@domain.com", "password": "password"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+// doveadm auth test diane@domain.com "password"
+  // passdb: diane@domain.com auth failed
+// doveadm auth test diane@domain.com "M....!"
+  // passdb: diane@domain.com auth succeeded
+
+// https://doc.dovecot.org/main/core/summaries/doveadm.html#who
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["who", {"mask": "chloe@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["doveadmResponse",[{"username":"chloe@domain.com","connections":"2","service":"imap","pids":"(13846 13842)","ips":"(63.225.200.129)"}],"dms-gui"]]
+// https://doc.dovecot.org/2.3/admin_manual/doveadm_http_api/#doveadm-who
+// curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["who", {"mask": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
+  // [["doveadmResponse",[],"dms-gui"]]
+  
+  
+  
+
+// https://doc.dovecot.org/main/core/admin/doveadm.html#example-session
+// Requests that fail before the doveadm command is run returns 400/500 HTTP response codes:
+  // Code	Reason
+  // 400	Invalid request. Response body contains error message in text/plain.
+  // 401	Unauthorized (missing authentication).
+  // 403	Forbidden (authentication failed).
+  // 404	Unknown doveadm command.
+  // 500	Internal server error (see Dovecot logs for more information).
+
+}
+
 
 
 module.exports = {
