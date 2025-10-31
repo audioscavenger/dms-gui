@@ -52,12 +52,12 @@ networks:
 ## build commands: https://hub.docker.com/r/dunajdev/docker-mailserver-gui
 ## build commands: https://hub.docker.com/repositories/audioscavenger
 
-# docker container prune -f && docker image prune -f
 # alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
 # docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 # docker push audioscavenger/dms-gui --all-tags
+# docker container prune -f && docker image prune -f && docker image rm audioscavenger/dms-gui:v1.1.0
 
 
 ## upgrade commands:

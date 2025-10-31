@@ -21,7 +21,7 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 
 As long as the default admin user (_admin_ / password=_changeme_) exist, you are greeted with this message:
 
-![Login](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp)
+![Login](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp?raw=true)
 
 ### Logins Management
 
@@ -30,15 +30,15 @@ Logins are 3 types:
 * users: can manage multiple mailboxes
 * linked users: attached to a mailbox, dovecot API provides authentication
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-user.webp)
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-user.webp?raw=true)
 
 Mailbox selection list comes from DMS directly.
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-linkbox.webp)
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-linkbox.webp?raw=true)
 
 Mailbox users are automatically created, based off the scan of DMS dovecot server. The mechanic does not check if mailboxes have been deleted, it only pulls the current list and update the local db.
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-auto.webp)
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-auto.webp?raw=true)
 
 ### Accounts
 
@@ -48,13 +48,13 @@ Accounts are automatically discovered and pulled from the local database for its
 
 Creating accounts from here currently calls the DMS `setup` via `docker.sock`, but soon will rely on dovecot 2.4 API calls instead. Passwords entered are also stored in the local db.
 
-![Accounts](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp)
+![Accounts](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
 
 ### Aliases
 
 Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`file. Soon ported to an API call.
 
-![Aliases](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Aliases.webp)
+![Aliases](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Aliases.webp?raw=true)
 
 ### Settings
 
@@ -62,13 +62,13 @@ Multiple sections to save UI settings, DMS access variables, and show some inter
 
 Some environment values like FTS (Full Text Search) will enable some options on the _Accounts_ page (`reindex` for instance).
 
-![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Settings.webp)
+![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Settings.webp?raw=true)
 
 ### Dashboard
 
 A dumb dashboard, but now you can click the cards and navigate to the section selected.
 
-![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Dashboard.webp)
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Dashboard.webp?raw=true)
 
 ## Requirements
 
@@ -311,7 +311,7 @@ OAS description of all API endpoints is available at:
 
 ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true)
 <!--
-![API](/assets/dms-gui-docs.webp)
+![API](/assets/dms-gui-docs.webp?raw=true)
 -->
 
 
@@ -346,7 +346,7 @@ Result:
 ### Logging
 
 Formatted logging with colors, that actually helps!
-![Logins](/assets/dms-gui-logs.webp)
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-logs.webp?raw=true)
 
 ### Automatic Formatting
 

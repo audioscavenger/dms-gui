@@ -68,11 +68,13 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend/settings: pull compress method and maybe statistics on the dashboard?
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 * [ ] - backend/accounts: switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead
+* [ ] - backend/frontend: refactor all the API calls to handle result.success and result.message instead of throwing error 500
+* [ ] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516
 
 
 ### history:
 
-* [ ] 1.1.? - backend/frontend: refactor all the API calls to handle result.success and result.message instead of throwing error 500
+* [x] v1.2.0 - release
 * [x] 1.1.15 - backend/db: bugfix: changePassword had a reference to username
 * [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
 * [x] 1.1.15 - frontend/Logins: revamp addLogin page with isAdmin/isActive/isAccount and mailbox selection
