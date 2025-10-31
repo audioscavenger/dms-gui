@@ -73,8 +73,10 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 ### history:
 
 * [ ] 1.1.? - backend/frontend: refactor all the API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.1.15 - backend/db: bugfix: changePassword had a reference to username
 * [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
-* [ ] 1.1.15 - frontend/Logins: revamp addLogin page with isAdmin/isActive/isAccount and mailbox selection
+* [x] 1.1.15 - frontend/Logins: revamp addLogin page with isAdmin/isActive/isAccount and mailbox selection
+* [x] 1.1.15 - frontend/Logins: disable isAccount option when isAdmin and also in backend/db
 * [x] 1.1.14 - frontend/Logins: disable roles picking when login isAccount
 * [x] 1.1.14 - frontend/Logins: disable save button when there are no changes
 * [x] 1.1.14 - frontend/Logins: revamped changes detection and state

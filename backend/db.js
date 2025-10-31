@@ -122,10 +122,8 @@ logins: {
   
   update: {
     email: {
-      test: {
+      undefined: {
         desc:   "allow to change a login's email only if isAdmin or not isAccount",
-        value:  0,
-        scope:  false,
         test:   `SELECT COUNT(email) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND email = ?`,
         check:  function(result) { return result.count == 1; },
         pass:   `UPDATE logins set email = @email WHERE email = ?`,
@@ -135,28 +133,39 @@ logins: {
     username: `UPDATE logins set username = @username WHERE email = ?`,
     password: `UPDATE logins set salt=@salt, hash=@hash WHERE email = ?`,
     isAdmin: {
-      test: {
-        desc:  "refuse to demote the last admin",
-        value: 0,
-        scope: false,
-        test:  `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
-        check: function(result) { return result.count > 0; },
-        pass: `UPDATE logins set isAdmin = @isAdmin WHERE email = ?`,
-        fail: "Cannot demote the last admin, how will you administer dms-gui?",
+      0: {
+        desc:   "refuse to demote the last admin",
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        check:  function(result) { return result.count > 0; },
+        pass:   `UPDATE logins set isAdmin = @isAdmin WHERE email = ?`,
+        fail:   "Cannot demote the last admin, how will you administer dms-gui?",
+      },
+      1: {
+        desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
+        test:   `SELECT COUNT(1) count`,
+        check:  function(result) { return true; },
+        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE email = ?`,
+        fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
     },
     isActive: {
-      test: {
-        desc:  "refuse to deactivate the last admin",
-        value: 0,
-        scope: false,
-        test:  `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
-        check: function(result) { return result.count > 0; },
-        pass: `UPDATE logins set isActive = @isActive WHERE email = ?`,
-        fail: "Cannot deactivate the last admin, how will you administer dms-gui?",
+      0: {
+        desc:   "refuse to deactivate the last admin",
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        check:  function(result) { return result.count > 0; },
+        pass:   `UPDATE logins set isActive = @isActive WHERE email = ?`,
+        fail:   "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
     },
-    isAccount:`UPDATE logins set isAccount = @isAccount WHERE email = ?`,
+    isAccount: {
+      0: {
+        desc:   "refuse to be isAccount when isAdmin",
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND email = ?`,
+        check:  function(result) { return result.count == 0; },
+        pass:   `UPDATE logins set isAccount = @isAccount WHERE email = ?`,
+        fail:   "Cannot make an admin also a linked account, it's one or the other",
+      },
+    },
     roles:    `UPDATE logins set roles = @roles WHERE email = ?`,
   },
   
@@ -718,7 +727,7 @@ async function changePassword(table, id, password, containerName) {
     } else {
       debugLog(`Updating password for ${id} in ${table}...`);
       dbRun(sql.logins.update.password, { salt:salt, hash:hash }, id);
-      successLog(`Password updated for ${table}: ${username}`);
+      successLog(`Password updated for ${id} in ${table}`);
       return { success: true };
     }
     
@@ -772,42 +781,33 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
         
         // other sqlite3 valid types and we can test specific scenarios
         } else {
-          debugLog(1,`sql[table].update[${key}]`,sql[table].update[key])
-          debugLog(1,`sql[table].update`,sql[table].update)
           
           // check if the sql is defined for the key to update
           if (sql[table].update[key]) {
             
-            // is there a test?
-            if (sql[table].update[key]?.test) {
-              debugLog(2)
-              // there is a test and now we check if the value should be tested
-              if (sql[table].update[key].test.value == value) {
-                debugLog(3)
-                // value is now tested with id in mind
-                let result = (sql[table].update[key].test.scope) ? dbGet(sql[table].update[key].test.test, containerName, id) : dbGet(sql[table].update[key].test.test, id);
-                debugLog(4)
-                // test the result in the check function
-                if (sql[table].update[key].test.check(result)) {
-                  debugLog(5)
-                  // we pass the test
-                  dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
-                  successLog(`Updated ${table} ${id} with ${key}=${value}`);
-                  
-                } else {
-                  debugLog(6)
-                  // we do not pass the test
-                  errorLog(sql[table].update[key].test.fail);
-                  return { success: false, message: sql[table].update[key].test.fail};
-                }
+            // is there a test for THAT value or ANY values?
+            if (sql[table].update[key][value] || sql[table].update[key][undefined]) {
               
-              // there is a test but value does not need to be tested
-              } else {
-                dbRun(sql[table].update[key].test.pass, {[key]:value}, id);
+              // fix the value2test as we may have tests for any values
+              let value2test = (sql[table].update[key][value]) ? value : undefined;
+              
+              // there is a test for THAT value and now we check with id in mind
+              let result = (sql[table].scope) ? dbGet(sql[table].update[key][value2test].test, containerName, id) : dbGet(sql[table].update[key][value2test].test, id);
+              
+              // compare the result in the check function
+              if (sql[table].update[key][value2test].check(result)) {
+                
+                // we pass the test
+                dbRun(sql[table].update[key][value2test].pass, {[key]:value}, id);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                
+              } else {
+                // we do not pass the test
+                errorLog(sql[table].update[key][value2test].fail);
+                return { success: false, message: sql[table].update[key][value2test].fail};
               }
               
-            // no test
+            // no test, update the db with new value
             } else {
               dbRun(sql[table].update[key], {[key]:value}, id);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
@@ -858,13 +858,11 @@ module.exports = {
 // DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
 // DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
 // DB = require('better-sqlite3')(DATABASE);
+// process.on('exit', () => DB.close());
 // function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
 // function debugLog(message) {console.debug(message)}
 // function errorLog(message) {console.debug(message)}
 
-// DB = require('better-sqlite3')(DATABASE);
-// DB.pragma('journal_mode = WAL');
-// process.on('exit', () => DB.close());
 // DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 // sql=`BEGIN TRANSACTION;
           // CREATE TABLE IF NOT EXISTS logins (
@@ -912,4 +910,7 @@ module.exports = {
 // test and check:
 // DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`).get()  // { value: 2 }
 // DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`).get('diane')
+
+// DB.prepare(`SELECT COUNT(1) count`).get()
+  // { count: 1 }
 

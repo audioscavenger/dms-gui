@@ -17,23 +17,67 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
-![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp?raw=true)
-![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp?raw=true)
-<!--
-![Dashboard](/assets/dms-gui-Dashboard.webp)
-![Logins](/assets/dms-gui-Logins.webp)
-![Accounts](/assets/dms-gui-Accounts.webp)
-![Aliases](/assets/dms-gui-Aliases.webp)
-![Settings](/assets/dms-gui-Settings.webp)
--->
+### Login page
+
+As long as the default admin user (_admin_ / password=_changeme_) exist, you are greeted with this message:
+
+![Login](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp)
+
+### Logins Management
+
+Logins are 3 types:
+* admins
+* users: can manage multiple mailboxes
+* linked users: attached to a mailbox, dovecot API provides authentication
+
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-user.webp)
+
+Mailbox selection list comes from DMS directly.
+
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-linkbox.webp)
+
+Mailbox users are automatically created, based off the scan of DMS dovecot server. The mechanic does not check if mailboxes have been deleted, it only pulls the current list and update the local db.
+
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-auto.webp)
+
+### Accounts
+
+Also called "_emails_", as per the DMS setup command to create new email boxes, I prefer calling them _mailboxes_. They are _Accounts_, that can receive/store/send emails.
+
+Accounts are automatically discovered and pulled from the local database for its speed. You can refresh the data manually with a simple click.
+
+Creating accounts from here currently calls the DMS `setup` via `docker.sock`, but soon will rely on dovecot 2.4 API calls instead. Passwords entered are also stored in the local db.
+
+![Accounts](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Accounts.webp)
+
+### Aliases
+
+Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`file. Soon ported to an API call.
+
+![Aliases](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Aliases.webp)
+
+### Settings
+
+Multiple sections to save UI settings, DMS access variables, and show some internals + DMS environment values. Currently relying on `docker.sock`, and dump+parse of dovecot config files (for FTS, dkim values, . Should be replaced by dovecot 2.4 API calls easily.
+
+Some environment values like FTS (Full Text Search) will enable some options on the _Accounts_ page (`reindex` for instance).
+
+![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Settings.webp)
+
+### Dashboard
+
+A dumb dashboard, but now you can click the cards and navigate to the section selected.
+
+![Dashboard](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Dashboard.webp)
 
 ## Requirements
 
-- Node.js (v18+)
-- npm and dozens of packages
 - [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
 ## Project Structure
+
+- Node.js (v24 is embedded)
+- npm and dozens of packages
 
 The application consists of two parts:
 

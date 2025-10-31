@@ -84,7 +84,7 @@ export const Login = () => {
     <Row className="align-items-center justify-content-center vh-100">
       <Col md={6}>{' '}
 
-        <Card title="logins.title" icon="person-lock" collapsible="false">{' '}
+        <Card title="logins.welcome" icon="person-lock" collapsible="false">{' '}
           <AlertMessage type="success" message={successMessage} />
 
           <form onSubmit={handleLogin}>

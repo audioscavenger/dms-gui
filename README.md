@@ -23,16 +23,22 @@ Warning: The whole thing relies on mounting `/var/run/docker.sock` so it can run
 -->
 ### Login page
 
+As long as the default admin user (_admin_ / password=_changeme_) exist, you are greeted with this message:
+
 ![Login](/assets/dms-gui-Login.webp)
 
 ### Logins Management
 
 Logins are 3 types:
 * admins
-* users == attached to a mailbox in DMS
-* poer users = same are user + can manage more mailboxes
+* users: can manage multiple mailboxes
+* linked users: attached to a mailbox, dovecot API provides authentication
 
-![Logins](/assets/dms-gui-Logins.webp)
+![Logins](/assets/dms-gui-Logins-new-user.webp)
+
+Mailbox selection list comes from DMS directly.
+
+![Logins](/assets/dms-gui-Logins-new-linkbox.webp)
 
 Mailbox users are automatically created, based off the scan of DMS dovecot server. The mechanic does not check if mailboxes have been deleted, it only pulls the current list and update the local db.
 
@@ -70,11 +76,12 @@ A dumb dashboard, but now you can click the cards and navigate to the section se
 
 ## Requirements
 
-- Node.js (v18+)
-- npm and dozens of packages
 - [Docker-Mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) (installed and configured)
 
 ## Project Structure
+
+- Node.js (v24 is embedded)
+- npm and a dozen of modules
 
 The application consists of two parts:
 

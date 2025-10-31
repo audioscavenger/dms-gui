@@ -1,6 +1,7 @@
 import React from 'react';
 // import { useTranslation } from 'react-i18next';
-import Form from 'react-bootstrap/Form'; // Import react-bootstrap Form components
+import Form from 'react-bootstrap/Form';
+import Row from 'react-bootstrap/Row';
 
 import {
   Translate,
@@ -18,12 +19,14 @@ import {
  * @param {string} [props.placeholder] Placeholder text
  * @param {string} [props.error] Error message (translation key)
  * @param {string} [props.helpText] Help text (translation key)
- * @param {boolean} [props.translate] Whether the fields need translation
  * @param {boolean} [props.required] Whether the field is required
+ * @param {boolean} [props.isChecked] Whether the box isChecked
+ * @param {boolean} [props.translate] Whether the fields need translation
  * @param {string} [props.groupClass] Whether to replace the default className of the group
  */
 const FormField = ({
   type = 'text',
+  as = Row,
   id,
   name,
   label,
@@ -35,29 +38,46 @@ const FormField = ({
   helpText,
   groupClass="mb-3",
   required = false,
+  isChecked = false,
   translate = true,
   ...rest // Pass any other props down to Form.Control
 }) => {
   // const { t } = useTranslation();
+  const require       = required     == true ? true : false;
+  const checked       = isChecked    == true ? true : false;
 
   return (
-    <Form.Group className={groupClass} controlId={id}>
-      {label && (
+    <Form.Group className={groupClass} controlId={id} as={as}>
+      {!['checkbox', 'radio'].includes(type) && label && (
       <Form.Label className={labelColor}>
         {Translate(label, translate)}
-        {required && <span className="text-danger ms-1">*</span>}
+        {require && <span className="text-danger ms-1">*</span>}
       </Form.Label>
       )}
-      <Form.Control
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        isInvalid={!!error} // Set isInvalid based on error presence
-        required={required} // Pass required prop
-        {...rest} // Spread remaining props
-      />
+      
+      {['checkbox', 'radio'].includes(type) && (
+        <Form.Check
+          type={type}
+          name={name}
+          label={Translate(label, translate)}
+          onChange={onChange}
+          placeholder={placeholder}
+          isInvalid={!!error} // Set isInvalid based on error presence
+          checked={checked}
+          {...rest} // Spread remaining props
+        />
+        ) || (
+        <Form.Control
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          isInvalid={!!error} // Set isInvalid based on error presence
+          required={require} // Pass required prop
+          {...rest} // Spread remaining props
+        />
+      )}
       {error && (
         <Form.Control.Feedback type="invalid">
         {Translate(error, translate)}
