@@ -272,8 +272,9 @@ const Logins = () => {
         newLoginformData.username,
         newLoginformData.password,
         newLoginformData.isAdmin,
-        newLoginformData.isActive,
         newLoginformData.isAccount,
+        newLoginformData.isActive,
+        newLoginformData.roles,
         [],
       );
       if (result.success) {
@@ -361,6 +362,8 @@ const Logins = () => {
       // special cases here as well as in the backend
       // disable isAccount for admins:
       if (what == 'isAdmin' && +!login.isAdmin == 1) jsonDict.isAccount = 0;
+      // disable isAdmin for linked accounts:
+      if (what == 'isAccount' && +!login.isAccount == 1) jsonDict.isAdmin = 0;
       
       const result = await updateLogin(
         login.email,
@@ -500,7 +503,7 @@ const Logins = () => {
         selectedLogin.email,
         { password: passwordFormData.newPassword }
       );
-      if (ersult.success) {
+      if (result.success) {
         setSuccessMessage('password.passwordUpdated');
         handleClosePasswordModal(); // Close the modal
         

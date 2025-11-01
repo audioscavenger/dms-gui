@@ -40,7 +40,7 @@ async function getAccounts(refresh, containerName) {
   try {
     
     if (!refresh) {
-      accounts = await dbAll(sql.accounts.select.accounts, containerName);
+      accounts = await dbAll(sql.accounts.select.accounts, {scope:containerName});
       
       // we could read DB_Logins and it is valid
       if (accounts && accounts.length) {
@@ -66,13 +66,13 @@ async function getAccounts(refresh, containerName) {
     accounts = accounts.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
 
     // now save accounts in db
-    let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
-    const result = dbRun(sql.accounts.insert.fromDMS, accountsDb, containerName);
+    let accountsList = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage), scope:containerName }; });
+    const result = dbRun(sql.accounts.insert.fromDMS, accountsList);
     if (result.success) {
       
       // now save isAccount logins in db
-      let loginsDb = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]) }; });
-      const result2 = dbRun(sql.logins.insert.fromDMS, loginsDb);
+      let loginsList = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]), scope:containerName }; });
+      const result2 = dbRun(sql.logins.insert.fromDMS, loginsList);
       if (!result2.success) errorLog(result2.message);
       
     } else errorLog(result.message);
@@ -187,10 +187,10 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
     if (!results.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      const result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash }, containerName);
+      const result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash, scope:containerName});
       if (result.success) {
         if (createLogin) {
-          const result2 = dbRun(sql.logins.insert.logins, { email:mailbox, username:mailbox, salt:salt, hash:hash, roles:[mailbox] }, containerName);
+          const result2 = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:[mailbox], scope:containerName});
         }
         if (result2.success) {
           successLog(`Account created: ${mailbox}`);

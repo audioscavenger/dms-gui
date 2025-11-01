@@ -41,23 +41,23 @@ sqlMatch = {
 sql = {
 settings: {
 
-  scope:  false,
+  scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from settings`,
     settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui'`,
     setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui' AND name = ?`,
-    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
-    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
+    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
+    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
   },
   
   insert: {
     setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, 'dms-gui', 1)`,
-    env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, ?, 0)`,
+    env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
   },
   
   delete: {
-    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ?`,
-    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = ? AND name = ?`,
+    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
+    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
   },
   
   init:   `BEGIN TRANSACTION;
@@ -112,7 +112,7 @@ logins: {
   },
   
   insert: {
-    login:    `REPLACE INTO logins          (email, username, salt, hash, isAdmin, roles) VALUES (@email, @username, @salt, @hash, @isAdmin, @roles)`,
+    login:    `REPLACE INTO logins          (email, username, salt, hash, isAdmin, isAccount, isActive, roles) VALUES (@email, @username, @salt, @hash, @isAdmin, @isAccount, @isActive, @roles)`,
     fromDMS:  `INSERT OR IGNORE INTO logins (email, username, isAccount, roles) VALUES (@email, @username, @isAccount, @roles)`,
   },
   
@@ -138,7 +138,7 @@ logins: {
       },
       1: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
-        test:   `SELECT COUNT(isAdmin) count WHERE email = ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND email = ?`,
         check:  function(result) { return true; },
         pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE email = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
@@ -152,6 +152,12 @@ logins: {
         pass:   `UPDATE logins set isActive = @isActive WHERE email = ?`,
         fail:   "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
+      undefined: {
+        desc:   "no test",
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND email = ?`,
+        check:  function(result) { return true; },
+        pass:   `UPDATE logins set isActive = @isActive WHERE email = ?`,
+      },
     },
     isAccount: {
       0: {
@@ -160,6 +166,12 @@ logins: {
         check:  function(result) { return result.count == 0; },
         pass:   `UPDATE logins set isAccount = @isAccount WHERE email = ?`,
         fail:   "Cannot make an admin also a linked account, it's one or the other",
+      },
+      1: {
+        desc:   "not a test, just flipping login to isAccount also flips isAdmin to 0",
+        test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND email = ?`,
+        check:  function(result) { return true; },
+        pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE email = ?`,
       },
     },
     roles:    `UPDATE logins set roles = @roles WHERE email = ?`,
@@ -232,9 +244,9 @@ roles: {
       
   scope:  true,
   select: {
-    roles:    `SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`,
-    username: `SELECT username        from roles WHERE 1=1 AND scope = ? AND mailbox = ?`,
-    mailbox:  `SELECT mailbox           from roles WHERE 1=1 AND scope = ? AND username = ?`,
+    roles:    `SELECT username, mailbox from roles WHERE 1=1 AND scope = @scope`,
+    username: `SELECT username        from roles WHERE 1=1 AND scope = @scope AND mailbox = ?`,
+    mailbox:  `SELECT mailbox           from roles WHERE 1=1 AND scope = @scope AND username = ?`,
   },
   
   insert: {
@@ -243,9 +255,9 @@ roles: {
   
   delete: {
     all:       `DELETE from roles`,
-    usernames: `DELETE from roles WHERE 1=1 AND scope = ? AND username = ?`,
-    emails:    `DELETE from roles WHERE 1=1 AND scope = ? AND mailbox = ?`,
-    role:      `DELETE from roles WHERE 1=1 AND scope = ? AND username = ? AND mailbox = ?`,
+    usernames: `DELETE from roles WHERE 1=1 AND scope = @scope AND username = ?`,
+    emails:    `DELETE from roles WHERE 1=1 AND scope = @scope AND mailbox = ?`,
+    role:      `DELETE from roles WHERE 1=1 AND scope = @scope AND username = ? AND mailbox = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -265,25 +277,28 @@ accounts: {
   keys: {password:'string', storage:'object', domain:'string'},
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = ?`,
-    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = ? ORDER BY domain, mailbox`,
-    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = ?`,
-    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
-    byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = ? AND domain = ?`,
+    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = @scope`,
+    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = @scope ORDER BY domain, mailbox`,
+    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope`,
+    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ?`,
+    byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND domain = ?`,
+    salt:     `SELECT salt from accounts WHERE mailbox = ?`,
+    hash:     `SELECT hash from accounts WHERE mailbox = ?`,
+    saltHash: `SELECT salt, hash FROM accounts WHERE (mailbox = ? OR mailbox = ?)`,
   },
   
   insert: {
-    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, scope) VALUES (@mailbox, @domain, @storage, ?)`,
-    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, scope) VALUES (@mailbox, @domain, @salt, @hash, ?)`,
+    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, scope) VALUES (@mailbox, @domain, @storage, @scope)`,
+    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, scope) VALUES (@mailbox, @domain, @salt, @hash, @scope)`,
   },
   
   update: {
     password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope=? AND mailbox = ?`,
-    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = ? AND mailbox = ?`,
+    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = @scope AND mailbox = ?`,
   },
   
   delete: {
-    mailbox:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
+    mailbox:  `DELETE FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -313,20 +328,20 @@ aliases: {
   keys: {source:'string', destination:'string', regex:'number'},
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND scope = ?`,
-    aliases:  `SELECT source, destination, regex FROM aliases WHERE 1=1 AND scope = ?`,
-    bySource: `SELECT destination FROM aliases WHERE 1=1 AND scope = ? AND source = ?`,
-    byDest:   `SELECT source      FROM aliases WHERE 1=1 AND scope = ? AND destination = ?`,
-    regexes:  `SELECT source, destination FROM aliases WHERE 1=1 AND regex = 1 AND scope = ?`,
+    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND scope = @scope`,
+    aliases:  `SELECT source, destination, regex FROM aliases WHERE 1=1 AND scope = @scope`,
+    bySource: `SELECT destination FROM aliases WHERE 1=1 AND scope = @scope AND source = ?`,
+    byDest:   `SELECT source      FROM aliases WHERE 1=1 AND scope = @scope AND destination = ?`,
+    regexes:  `SELECT source, destination FROM aliases WHERE 1=1 AND regex = 1 AND scope = @scope`,
   },
   
   insert: {
-    alias:    `REPLACE INTO aliases (source, destination, regex, scope) VALUES (@source, @destination, @regex, ?)`,
+    alias:    `REPLACE INTO aliases (source, destination, regex, scope) VALUES (@source, @destination, @regex, @scope)`,
   },
   
   delete: {
-    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = ? AND source = @source`,
-    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = ? AND destination = @destination`,
+    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = @scope AND source = ?`,
+    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = @scope AND destination = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -347,15 +362,15 @@ domains: {
   keys: {dkim:'string', keytype:'string', keysize:'string', path:'string'},
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = ?`,
-    domains:  `SELECT * FROM domains WHERE 1=1 AND scope = ?`,
-    domain:   `SELECT * FROM domains WHERE 1=1 AND scope = ? AND domain = ?`,
-    dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND scope = ?`,
-    dkim:     `SELECT dkim FROM domains WHERE 1=1 AND scope = ? AND domain = ?`,
+    count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = @scope`,
+    domains:  `SELECT * FROM domains WHERE 1=1 AND scope = @scope`,
+    domain:   `SELECT * FROM domains WHERE 1=1 AND scope = @scope AND domain = ?`,
+    dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND scope = @scope`,
+    dkim:     `SELECT dkim FROM domains WHERE 1=1 AND scope = @scope AND domain = ?`,
   },
   
   insert: {
-    domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path, scope) VALUES (@domain, @dkim, @keytype, @keysize, @path, ?)`,
+    domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path, scope) VALUES (@domain, @dkim, @keytype, @keysize, @path, @scope)`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -458,7 +473,7 @@ function dbRun(sql, params=[], ...anonParams) {
     } else {
       if (anonParams.length) {
         debugLog(`DB.prepare(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
-        DB.prepare(sql).run(anonParams, params);
+        DB.prepare(sql).run(params,anonParams);
         debugLog(`DB.prepare success`);
         return {success: true}
         
@@ -514,18 +529,22 @@ function dbCount(table, containerName) {
   }
 }
 
-function dbGet(sql, ...anonParams) {
+function dbGet(sql, params=[], ...anonParams) {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=", sql);
   }
   
   try {
-    debugLog(`DB.prepare(${sql}).get(${JSON.stringify(anonParams)})`);
-    const result = DB.prepare(sql).get(anonParams);
-    debugLog(`success:`, JSON.stringify(result));
-    return (result) ? result : {};
-    // result = { name: 'node', value: 'v24' } or { value: 'v24' } orundefined
+    if (anonParams.length) {
+      debugLog(`DB.prepare(${sql}).get(${anonParams}, ${JSON.stringify(params)})`);
+      return DB.prepare(sql).get(params, anonParams);
+      
+    } else {
+      debugLog(`DB.prepare(${sql}).get(${JSON.stringify(params)})`);
+      return DB.prepare(sql).get(params);
+    }
+    // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
 
   } catch (err) {
     errorLog(`${err.code}: ${err.message}`);
@@ -534,17 +553,21 @@ function dbGet(sql, ...anonParams) {
   }
 }
 
-function dbAll(sql, ...anonParams) {
+function dbAll(sql, params=[], ...anonParams) {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
   try {
-    debugLog(`DB.prepare(${sql}).all(${JSON.stringify(anonParams)})`);
-    const result = DB.prepare(sql).all(anonParams);
-    debugLog(`success:`, JSON.stringify(result));
-    return (result) ? result : [];
+    if (anonParams.length) {
+      debugLog(`DB.prepare(${sql}).all(${anonParams}, ${JSON.stringify(params)})`);
+      return DB.prepare(sql).all(params, anonParams);
+      
+    } else {
+      debugLog(`DB.prepare(${sql}).all(${JSON.stringify(params)})`);
+      return DB.prepare(sql).all(params);
+    }
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
   } catch (err) {
@@ -594,7 +617,7 @@ function dbUpdate() {
   let db_version;
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      db_version = dbGet(sql.settings.select.env, 'dms-gui', `DB_VERSION_${table}`);
+      db_version = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
       db_version = (db_version) ? db_version.value : undefined;
       debugLog(`DB_VERSION_${table}=`, db_version);
       
@@ -724,12 +747,12 @@ async function changePassword(table, id, password, containerName) {
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
-      debugLog(`Updating password for ${id} in ${containerName}...`);
+      debugLog(`Updating password for ${id} in ${containerName}...`, containerName);
       const results = await execSetup(`email update ${id} ${password}`);
       if (!results.exitCode) {
         
         debugLog(`Updating password for ${id} in ${table}...`);
-        const result = dbRun(sql[table].update.password, { salt:salt, hash:hash }, containerName, id);
+        const result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
         successLog(`Password updated for ${table}: ${mailbox}`);
         return { success: true, message: `Password updated for ${table}: ${mailbox}` };
         
@@ -741,7 +764,7 @@ async function changePassword(table, id, password, containerName) {
       
     } else {
       debugLog(`Updating password for ${id} in ${table}...`);
-      const result = dbRun(sql.logins.update.password, { salt:salt, hash:hash }, id);
+      const result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);
       if (result.success) {
         successLog(`Password updated for ${id} in ${table}`);
         return { success: true, message: `Password updated for ${id} in ${table}` };
@@ -763,9 +786,9 @@ async function changePassword(table, id, password, containerName) {
 
 
 // Function to update a table in the db; id can very well be an array as well
-async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { column:value, .. }
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`${table} id=${id} with`, jsonDict);
+async function updateDB(table, id, jsonDict, scope) {  // jsonDict = { column:value, .. }
+  scope = (scope) ? scope : DMS_CONTAINER;
+  debugLog(`${table} id=${id} for scope=${scope} with`, jsonDict);
 
   try {
     if (!sql[table]) {
@@ -790,7 +813,7 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
         
         // password has its own function
         if (key == 'password') {
-          return changePassword(table, id, value, containerName);
+          return changePassword(table, id, value, scope);
           
         // objects must be saved as JSON
         } else if (typeof value == 'object') {
@@ -804,20 +827,24 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
           // check if the sql is defined for the key to update
           if (sql[table].update[key]) {
             
+            // add named scope to the scopedValues, even if not used in the query it won't fail
+            // let scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
+            let scopedValues = {[key]:value, scope:scope};    // always add scope, why care? it's failproof
+            
             // is there a test for THAT value or ANY values?
             if (sql[table].update[key][value] || sql[table].update[key][undefined]) {
               
-              // fix the value2test as we may have tests for any values
+              // fix the value2test and scope as we may have tests for any values
               let value2test = (sql[table].update[key][value]) ? value : undefined;
               
               // there is a test for THAT value and now we check with id in mind
-              const testResult = (sql[table].scope) ? dbGet(sql[table].update[key][value2test].test, containerName, id) : dbGet(sql[table].update[key][value2test].test, id);
+              const testResult = dbGet(sql[table].update[key][value2test].test, scopedValues, id);
               
               // compare the result in the check function
               if (sql[table].update[key][value2test].check(testResult)) {
                 
                 // we pass the test
-                const result = dbRun(sql[table].update[key][value2test].pass, {[key]:value}, id);
+                const result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
                 return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
                 
@@ -829,7 +856,7 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
               
             // no test, update the db with new value
             } else {
-              const result = dbRun(sql[table].update[key], {[key]:value}, id);
+              const result = dbRun(sql[table].update[key], scopedValues, id);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
               return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
             }
@@ -858,45 +885,60 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
 }
 
 
-async function deleteEntry(table, id, key, containerName) {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+async function deleteEntry(table, id, key, scope) {
+  scope = (scope) ? scope : DMS_CONTAINER;
+  debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
 
   try {
     
-    // check if delete should be tested
-    if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
+    // check if the sql is defined for the key to delete
+    if (sql[table].delete[key]) {
       
-      // fix the value2test as we may have tests for any values
-      let value2test = (sql[table].delete[key][id]) ? value : undefined;
+      // add named scope to the scopedValues, even if not used in the query it won't fail
+      // let scopedValues = (sql[table].scope) ? {scope:scope} : {};
+      let scopedValues = {scope:scope};    // always add scope, why care? it's failproof
       
-      // there is a test for THAT value and now we check with id in mind
-      const testResult = (sql[table].scope) ? dbGet(sql[table].delete[key][value2test].test, {key:id}, containerName) : dbGet(sql[table].delete[key][value2test].test, id);
-      
-      // compare the result in the check function
-      if (sql[table].delete[key][value2test].check(testResult)) {
+      // check if delete should be tested
+      if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
         
-        // we pass the test
-        const result = dbRun(sql[table].delete[key][value2test].pass, id);
+        // fix the value2test as we may have tests for any values
+        let value2test = (sql[table].delete[key][id]) ? value : undefined;
+        debugLog('value2test',value2test)
+        
+        // there is a test for THAT value and now we check with id in mind
+        const testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
+        debugLog('testResult',testResult)
+        
+        // compare the result in the check function
+        if (sql[table].delete[key][value2test].check(testResult)) {
+          
+          // we pass the test
+          const result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
+          if (result.success) {
+            successLog(`Entry deleted: ${id}`);
+            return {success: true, message: `Entry deleted: ${id}`};
+            
+          } else return result;
+        
+        } else {
+          // we do not pass the test
+          errorLog(sql[table].delete[key][value2test].fail);
+          return { success: false, message: sql[table].delete[key][value2test].fail};
+        }
+        
+      } else {
+        // no test
+        const result = dbRun(sql[table].delete[key], scopedValues, id);
         if (result.success) {
           successLog(`Entry deleted: ${id}`);
           return {success: true, message: `Entry deleted: ${id}`};
           
         } else return result;
-      
-      } else {
-        // we do not pass the test
-        errorLog(sql[table].delete[key][value2test].fail);
-        return { success: false, message: sql[table].delete[key][value2test].fail};
       }
       
     } else {
-      // no test
-      const result = dbRun(sql[table].delete[key][value2test].pass, id);
-      if (result.success) {
-        successLog(`Entry deleted: ${id}`);
-        return {success: true, message: `Entry deleted: ${id}`};
-        
-      } else return result;
+      errorLog(`sql[${table}].delete is missing [${key}]`);
+      return { success: false, message: `sql[${table}].delete is missing [${key}]`};
     }
     
   } catch (error) {
@@ -976,14 +1018,14 @@ module.exports = {
 // sql = { logins: { update: { isAdmin: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`, } } }
 // dbRun(sql.logins.update.isAdmin, {isAdmin:value}, username) // works
 
-// dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@doctusit.com'},{username:'user2',mailbox:'admin@doctusit.com'}], containerName )
-// DB.prepare(`SELECT username, mailbox from roles WHERE 1=1 AND scope = ?`).all(containerName)
+// dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@doctusit.com'},{username:'user2',mailbox:'admin@doctusit.com'}], containerName)
+// DB.prepare(`SELECT username, mailbox from roles WHERE 1=1 AND scope = @scope`).all(containerName)
 
-// DB.prepare(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = ?`).all(containerName)
+// DB.prepare(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = @scope`).all({scope:containerName})
   // { username: 'user2', mailbox: 'ops@doctusit.com' },
   // { username: 'user2', mailbox: 'admin@doctusit.com' }
 
-// DB.prepare(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = ?`).all(containerName)
+// DB.prepare(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = @scope`).all({scope:containerName})
 
 // test and check:
 // DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`).get()  // { value: 2 }

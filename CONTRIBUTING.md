@@ -20,6 +20,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore
+* [ ] - frontend/Logins: saving email modification produces NotFoundError: Node.insertBefore: Child to insert before is not a child of this node
 
 ## TODO:
 
@@ -73,10 +74,12 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
-* [x] 1.2.1 - backend/db: refactor all deleteSmth into deleteEntry
-* [x] 1.2.1 - backend/frontend: refactor all the execSetup API calls to handle result.success and result.message instead of throwing error 500
-* [x] 1.2.1 - backend/frontend: refactor all the execCommand API calls to handle result.success and result.message instead of throwing error 500
-* [x] 1.2.1 - backend/frontend: refactor all the dbRun API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.2.1 - chore: refactoring and bugfixes, all seems to work
+* [x] 1.2.1 - backend/db: refactor ALL scoped queries by always adding scopedValues to queries, so much simpler and failproof
+* [x] 1.2.1 - backend/db: refactor ALL deleteSmth into deleteEntry
+* [x] 1.2.1 - backend/frontend: refactor ALL the execSetup API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.2.1 - backend/frontend: refactor ALL the execCommand API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.2.1 - backend/frontend: refactor ALL the dbRun API calls to handle result.success and result.message instead of throwing error 500
 * [x] v1.2.0 - release
 * [x] 1.1.15 - backend/db: bugfix: changePassword had a reference to username
 * [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
@@ -85,11 +88,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.1.14 - frontend/Logins: disable roles picking when login isAccount
 * [x] 1.1.14 - frontend/Logins: disable save button when there are no changes
 * [x] 1.1.14 - frontend/Logins: revamped changes detection and state
-* [x] 1.1.14 - frontend/Logins: refactor all the updateLogin API call to handle result.success and message instead of throwing error 500
+* [x] 1.1.14 - frontend/Logins: refactor ALL the updateLogin API call to handle result.success and message instead of throwing error 500
 * [x] 1.1.14 - backend/db: allow to change a login's email only if isAdmin or not isAccount
 * [x] 1.1.14 - backend/settings: bugfix: pullServerEnvs() was missing an await
 * [x] 1.1.14 - backend/settings: added pullDOVECOT() to get dovecot version
-* [x] 1.1.14 - backend/accounts: auto-create all missing accounts in logins db upon pull/refresh/addAccount
+* [x] 1.1.14 - backend/accounts: auto-create ALL missing accounts in logins db upon pull/refresh/addAccount
 * [x] 1.1.14 - frontend/Logins: reflect change in email being primary
 * [x] 1.1.14 - BREAKING CHANGE: db logins.email is now the primary key and added isAccount to signify it's linked to a mailbox
 * [x] 1.1.14 - frontend/Logins: email is now mandatory as we switch to email-centric logins
@@ -317,6 +320,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ## DECISIONS
 
+* [ ] - backend: do we really want scoped queries per container? multiple DMS, really? if so, logins too should be scoped
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
 * [ ] - docker.sock seems frowned upon, why is it? Response from @polarathene:
   > The main concern is when giving write access to that API, you allow any compromised container with access to it to become root on the host (assuming rootful), which is obviously dangerous. This is less of a concern in more established projects where it may be used selectively out of trust, but smaller community projects it's a bigger ask for someone to trust the developer (the developer doesn't have to be malicious either, but is more likely at risk of being compromised themselves).

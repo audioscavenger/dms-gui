@@ -36,7 +36,7 @@ async function getRoles(email, containerName) {
 
   try {
     
-    const roles = await dbGet(sql.logins.select.roles, containerName, email);
+    const roles = await dbGet(sql.logins.select.roles, {scope:containerName}, email);
     return JSON.parse(roles);
     
   } catch (error) {
@@ -111,13 +111,13 @@ async function getLogins(credential) {
 }
 
 
-async function addLogin(email, username, password, isAdmin=0, isActive=1, isAccount=0, roles=[]) {
+async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
 
   try {
     debugLog(email, username, password, email, isAdmin, isActive, isAccount, roles);
     
     const { salt, hash } = await hashPassword(password);
-    const result = dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isActive:isActive, isAccount:isAccount, roles:JSON.stringify(roles) });
+    const result = dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, roles:JSON.stringify(roles) });
     if (result.success) {
       successLog(`Saved login ${username}:${email}`);
       return { success: true, message: `Saved login ${username}:${email}` };
@@ -181,7 +181,7 @@ async function getRolesFromRoles(containerName) {
   debugLog(`start`);
   try {
     
-    const roles = await dbAll(sql.roles.select.roles, containerName);
+    const roles = await dbAll(sql.roles.select.roles, {scope:containerName});
     debugLog(`pulled ${roles.length} roles`);
     
     // we could read DB_Logins and it is valid

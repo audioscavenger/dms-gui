@@ -38,7 +38,7 @@ async function getAliases(refresh, containerName) {
   try {
     
       if (!refresh) {
-      aliases = await dbAll(sql.aliases.select.aliases, containerName);
+      aliases = await dbAll(sql.aliases.select.aliases, {scope:containerName});
       
       // we could read DB_Logins and it is valid
       if (aliases && aliases.length) {
@@ -59,21 +59,21 @@ async function getAliases(refresh, containerName) {
     
     infoLog(`got ${aliases.length} aliases from pullAliasesFromDMS(${containerName})`);
 
-    // now add the alias type 0
-    aliases = aliases.map(alias => { return { ...alias, regex: 0 }; });
+    // now add the alias type and scope
+    aliases = aliases.map(alias => { return { ...alias, regex: 0, scope:containerName }; });
 
     // regex aliases: -------------------------------
     var regexes = await pullPostfixRegexFromDMS(containerName);
     infoLog(`got ${regexes.length} regexes from pullPostfixRegexFromDMS(${containerName})`);
 
-    // now add the alias type 0
-    regexes = regexes.map(alias => { return { ...alias, regex: 1 }; });
+    // now add the alias type
+    regexes = regexes.map(alias => { return { ...alias, regex: 1, scope:containerName }; });
     
     // now merge aliases and regexes ---------------
     aliases = [ ...aliases, ...regexes ];
     
     // now save aliases in db ----------------------
-    const result = dbRun(sql.aliases.insert.alias, aliases, containerName);
+    const result = dbRun(sql.aliases.insert.alias, aliases);
     if (!result.success) {
       errorLog(result.message);
     }
@@ -233,7 +233,7 @@ async function addAlias(source, destination, containerName) {
       const results = await execSetup(`alias add ${source} ${destination}`, containerName);
       if (!results.exitCode) {
         
-        const result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0}, containerName);
+        const result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
         if (result.success) {
           successLog(`Alias created: ${source} -> ${destination}`);
           return { success: true, message: `Alias created: ${source} -> ${destination}` };
@@ -257,7 +257,7 @@ async function addAlias(source, destination, containerName) {
         const results2 = await execCommand(`postfix reload`, containerName);
         if (!results2.exitCode) {
           
-          const result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1 }, containerName);
+          const result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
           if (result.success) {
             successLog(`Alias regex created: ${source} -> ${destination}`);
             return { success: true, message: `Alias regex created: ${source} -> ${destination}` };

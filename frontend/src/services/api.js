@@ -102,7 +102,7 @@ export async function getLogins() {
   }
 };
 
-export async function addLogin(email, username, password, isAdmin=0, isActive=1, isAccount=0, roles=[]) {
+export async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
     // console.debug('ddebug api password, email',password, email)
   try {
     const response = await api.post(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });

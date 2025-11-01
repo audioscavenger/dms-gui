@@ -91,8 +91,9 @@ async function saveSettings(jsonArrayOfObjects) {
     
     const result = dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
     if (result.success) {
-      global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-      successLog(`Saved ${jsonArrayOfObjects.length} settings in db`);
+      const containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
+      global.DMS_CONTAINER = containerName;
+      successLog(`Saved ${jsonArrayOfObjects.length} settings in db + containerName=${containerName}`);
       return { success: true };
       
     } else return result;
@@ -511,7 +512,7 @@ async function pullDkimRspamd(containerName) {
             keysize = split[1];
           }
           if (item?.selector) {
-            const results = dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
+            const results = dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH),scope:containerName});
           }
         }
       }
@@ -588,7 +589,7 @@ async function getServerEnv(name, containerName) {
   
   try {
 
-    const env = await dbGet(sql.settings.select.env, containerName, name);
+    const env = await dbGet(sql.settings.select.env, {scope:containerName}, name);
     return env?.value;
     
   } catch (error) {
@@ -612,7 +613,7 @@ async function getServerEnvs(refresh, containerName) {
   if (!refresh) {
     try {
       
-      const envs = await dbAll(sql.settings.select.envs, containerName);
+      const envs = await dbAll(sql.settings.select.envs, {scope:containerName});
       debugLog(`envs: envs (${typeof envs})`);
       
       // we could read DB_Logins and it is valid
@@ -652,12 +653,14 @@ async function getServerEnvs(refresh, containerName) {
 }
 
 
-async function saveServerEnvs(jsonArrayOfObjects, containerName) {
-  
+async function saveServerEnvs(jsonArrayOfObjects, containerName) {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+
   try {
-    const result = dbRun(sql.settings.delete.envs, containerName);
+    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, scope:containerName }; });
+    const result = dbRun(sql.settings.delete.envs, {scope:containerName});
     if (result.success) {
-      return dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+      return dbRun(sql.settings.insert.env, jsonArrayOfObjectsScoped); // jsonArrayOfObjectsScoped = [{name:name, value:value, scope:scope}, ..]
       
     } else return result;
 
@@ -687,10 +690,12 @@ async function getServerInfos() {
 }
 
 
-async function getDomain(name) {
+async function getDomain(name, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+
   try {
     
-    const domain = await dbGet(sql.settings.select.domain, name);
+    const domain = await dbGet(sql.settings.select.domain, {scope:containerName}, name);
     return domain;
     
   } catch (error) {
@@ -706,12 +711,13 @@ async function getDomain(name) {
 }
 
 
-async function getDomains(name) {
-  if (name) return getDomain(name);
+async function getDomains(name, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  if (name) return getDomain(name, containerName);
   
   try {
     
-    const domains = await dbAll(sql.domains.select.domains);
+    const domains = await dbAll(sql.domains.select.domains, {scope:containerName});
     debugLog(`domains: domains (${typeof domains})`);
     
     // we could read DB_Logins and it is valid

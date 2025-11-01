@@ -418,7 +418,7 @@ app.put('/api/accounts/:mailbox/update', async (req, res) => {
     }
 
     // await updateAccount(mailbox, req.body);
-    const result = await updateDB('accounts', [mailbox, containerName], req.body);
+    const result = await updateDB('accounts', mailbox, req.body, containerName);
     res.json(result);
     
   } catch (error) {
@@ -735,12 +735,12 @@ app.get('/api/logins', async (req, res) => {
  */
 app.post('/api/logins', async (req, res) => {
   try {
-    const { email, username, password, isAdmin, isActive, isAccount, roles } = req.body;
+    const { email, username, password, isAdmin, isAccount, isActive, roles } = req.body;
     if (!email)     return res.status(400).json({ error: 'email is missing' });
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(email, username, password, isAdmin, isActive, isAccount, roles);
+    const result = await addLogin(email, username, password, isAdmin, isAccount, isActive, roles);
     res.status(201).json(result);
     
   } catch (error) {
@@ -838,7 +838,7 @@ app.delete('/api/logins/:email', async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'email is required' });
     }
-    const result = await deleteEntry('logins', email, 'login');
+    const result = await deleteEntry('logins', email, 'email');
     res.json(result);
     
   } catch (error) {
