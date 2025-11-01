@@ -117,49 +117,18 @@ async function addLogin(email, username, password, isAdmin=0, isActive=1, isAcco
     debugLog(email, username, password, email, isAdmin, isActive, isAccount, roles);
     
     const { salt, hash } = await hashPassword(password);
-    dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isActive:isActive, isAccount:isAccount, roles:JSON.stringify(roles) });
-    successLog(`Saved login ${username}:${email}`);
-    return { success: true };
+    const result = dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isActive:isActive, isAccount:isAccount, roles:JSON.stringify(roles) });
+    if (result.success) {
+      successLog(`Saved login ${username}:${email}`);
+      return { success: true, message: `Saved login ${username}:${email}` };
+      
+    } else return result;
 
   } catch (error) {
     let backendError = `${error.message}`;
     errorLog(`${backendError}`);
     throw new Error(backendError);
     // TODO: we should return smth to the index API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-}
-
-
-async function deleteLogin(email) {
-
-  try {
-    const activeAdmins = await dbAll(sql.logins.select.isActive.admins);
-    const login =  await getLogin(email);
-    debugLog(`pulled login:`, login);
-    debugLog(`pulled ${activeAdmins.length} admins`, activeAdmins);
-    
-    // if login exist...
-    if (login) {
-      
-      // don't delete the last admin
-      if (activeAdmins.length > 1) {
-        dbRun(sql.logins.delete.login, email);
-        successLog(`Login deleted: ${email}`);
-        
-      } else errorLog("Cannot delete the last login, how will you log back in?");
-      
-    } else errorLog(`Login ${email} does not exist`);
-    
-  } catch (error) {
-    let backendError = 'Error deleting login';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
-    // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
       // error: error.message,
@@ -243,7 +212,6 @@ module.exports = {
   getLogin,
   getLogins,
   addLogin,
-  deleteLogin,
   loginUser,
   getRoles,
 };

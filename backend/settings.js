@@ -89,10 +89,13 @@ async function getSettings(name) {
 async function saveSettings(jsonArrayOfObjects) {
   try {
     
-    dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
-    global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-    successLog(`Saved ${jsonArrayOfObjects.length} settings in db`);
-    return { success: true };
+    const result = dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    if (result.success) {
+      global.DMS_CONTAINER = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
+      successLog(`Saved ${jsonArrayOfObjects.length} settings in db`);
+      return { success: true };
+      
+    } else return result;
 
   } catch (error) {
     let backendError = `${error.message}`;
@@ -414,10 +417,10 @@ async function pullFTS(containerName, containerInfo) {
 
     // if we found fts override plugin, let's load it
     if (ftsMount) {
-      const result = await execCommand(`cat ${ftsMount}`, containerName);
-      if (!result.exitCode) {
-        debugLog(`dovecot file content:`,result.stdout);
-        const ftsConfig = await readDovecotConfFile(result.stdout);
+      const results = await execCommand(`cat ${ftsMount}`, containerName);
+      if (!results.exitCode) {
+        debugLog(`dovecot file content:`, results.stdout);
+        const ftsConfig = await readDovecotConfFile(results.stdout);
         debugLog(`dovecot json:`, ftsConfig);
         
         if (ftsConfig?.plugin?.fts) {
@@ -425,7 +428,7 @@ async function pullFTS(containerName, containerInfo) {
           envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
 
         }
-      } else errorLog(result.stderr);
+      } else errorLog(results.stderr);
     
     }
     
@@ -442,14 +445,14 @@ async function pullDOVECOT(containerName) {
 
   try {
     
-    const result = await execCommand(`dovecot --version`, containerName);   // 2.3.19.1 (9b53102964)
-    if (!result.exitCode) {
-      const DOVECOT_VERSION = result.stdout.split(" ")[0];
+    const results = await execCommand(`dovecot --version`, containerName);   // 2.3.19.1 (9b53102964)
+    if (!results.exitCode) {
+      const DOVECOT_VERSION = results.stdout.split(" ")[0];
       debugLog(`DOVECOT_VERSION:`, DOVECOT_VERSION);
       
       envs.DOVECOT_VERSION = DOVECOT_VERSION;
 
-    } else errorLog(result.stderr);
+    } else errorLog(results.stderr);
     
   } catch (error) {
     errorLog(`execCommand failed with error:`,error);
@@ -464,15 +467,15 @@ async function pullMailPlugins(containerName) {
 
   try {
     
-    const result = await execCommand(`doveconf mail_plugins`, containerName);   // result.stdout =  quota fts fts_xapian zlib
-    if (!result.exitCode) {
+    const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout =  quota fts fts_xapian zlib
+    if (!results.exitCode) {
       // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
       // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
-      for (const PLUGIN of result.stdout.split(/[=\s]+/)) {
+      for (const PLUGIN of results.stdout.split(/[=\s]+/)) {
         if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
       }
 
-    } else errorLog(result.stderr);
+    } else errorLog(results.stderr);
 
   } catch (error) {
     errorLog(`execCommand failed with error:`,error);
@@ -489,10 +492,10 @@ async function pullDkimRspamd(containerName) {
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
   try {
-    const result = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
-    if (!result.exitCode) {
-      debugLog(`dkim file content:`, result.stdout);
-      const dkimConfig = await readDkimFile(result.stdout);
+    const results = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
+    if (!results.exitCode) {
+      debugLog(`dkim file content:`, results.stdout);
+      const dkimConfig = await readDkimFile(results.stdout);
       debugLog(`dkim json:`, dkimConfig);
       
       envs.DKIM_ENABLED   = dkimConfig?.enabled;
@@ -507,7 +510,9 @@ async function pullDkimRspamd(containerName) {
             keytype = split[0];
             keysize = split[1];
           }
-          (item?.selector) && dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
+          if (item?.selector) {
+            const results = dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH)}, containerName);
+          }
         }
       }
 
@@ -650,9 +655,11 @@ async function getServerEnvs(refresh, containerName) {
 async function saveServerEnvs(jsonArrayOfObjects, containerName) {
   
   try {
-    dbRun(sql.settings.delete.envs, containerName);
-    dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]
-    return { success: true };
+    const result = dbRun(sql.settings.delete.envs, containerName);
+    if (result.success) {
+      return dbRun(sql.settings.insert.env, jsonArrayOfObjects, containerName); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+      
+    } else return result;
 
   } catch (error) {
     let backendError = `${error.message}`;

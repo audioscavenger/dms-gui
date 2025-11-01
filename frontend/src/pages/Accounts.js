@@ -158,19 +158,22 @@ const Accounts = () => {
     }
 
     try {
-      await addAccount(
+      const result = await addAccount(
         newAccountformData.mailbox,
         newAccountformData.password,
         newAccountformData.createLogin,
       );
-      setSuccessMessage('accounts.accountCreated');
-      setNewAccountFormData({
-        mailbox: '',
-        password: '',
-        confirmPassword: '',
-        createLogin: 1,
-      });
-      fetchAccounts(true); // Refresh the accounts list
+      if (result.success) {
+        setNewAccountFormData({
+          mailbox: '',
+          password: '',
+          confirmPassword: '',
+          createLogin: 1,
+        });
+        fetchAccounts(true); // Refresh the accounts list
+        setSuccessMessage('accounts.accountCreated');
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       errorLog(t('api.errors.addAccount'), err);
@@ -182,9 +185,13 @@ const Accounts = () => {
     setErrorMessage(null);
     if (window.confirm(t('accounts.confirmDelete', { mailbox }))) {
       try {
-        await deleteAccount(mailbox);
-        setSuccessMessage('accounts.accountDeleted');
-        fetchAccounts(true); // Refresh the accounts list
+        const result = await deleteAccount(mailbox);
+        if (result.success) {
+          fetchAccounts(true); // Refresh the accounts list
+          setSuccessMessage('accounts.accountDeleted');
+          
+        } else setErrorMessage(result.message);
+        
       } catch (err) {
         errorLog(t('api.errors.deleteAccount'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAccount');
@@ -194,12 +201,16 @@ const Accounts = () => {
 
   const handleDoveadm = async (command, mailbox) => {
     setErrorMessage(null);
+    
     try {
       const result = await doveadm(command, mailbox);
       debugLog('result',result);
+      if (result.success) {
+        // setSuccessMessage('accounts.doveadmExecuted');
+        setSuccessMessage(result.message);
       
-      // setSuccessMessage('accounts.doveadmExecuted');
-      setSuccessMessage(result);
+      } else setErrorMessage(result.message);
+      
     } catch (err) {
       errorLog(t('api.errors.doveadm'), err);
       (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.doveadm');
@@ -271,12 +282,16 @@ const Accounts = () => {
     }
 
     try {
-      await updateAccount(
+      const result = await updateAccount(
         selectedAccount.mailbox,
         { password: passwordFormData.newPassword }
       );
-      setSuccessMessage('accounts.passwordUpdated');
-      handleClosePasswordModal(); // Close the modal
+      if (result.success) {
+        setSuccessMessage('accounts.passwordUpdated');
+        handleClosePasswordModal(); // Close the modal
+        
+      } else setErrorMessage(result.message);
+      
     } catch (err) {
       errorLog(t('api.errors.changePassword'), err);
       setErrorMessage('api.errors.changePassword');

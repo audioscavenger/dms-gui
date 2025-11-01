@@ -11,12 +11,12 @@ const {
   dbInit,
   updateDB,
   dbCount,
+  deleteEntry,
 } = require('./db');
 
 const {
   getLogins,
   addLogin,
-  deleteLogin,
   loginUser,
   getRoles,
 } = require('./logins');
@@ -151,13 +151,12 @@ app.get('/api/infos', async (req, res) => {
   }
 });
 
-// Endpoint for retrieving settings
 /**
  * @swagger
  * /api/env:
  *   get:
- *     summary: Get DMS env value
- *     description: Retrieve a single env value
+ *     summary: Get a single value
+ *     description: Retrieve a single env value from DMS
  *     parameters:
  *       - in: query
  *         name: name
@@ -188,7 +187,7 @@ app.get('/api/env', async (req, res) => {
  * /api/envs:
  *   get:
  *     summary: Get server envs
- *     description: Retrieve the envs of the docker-mailserver
+ *     description: Retrieve all the DMS envs we parsed
  *     parameters:
  *       - in: query
  *         name: refresh
@@ -288,7 +287,7 @@ app.post('/api/accounts', async (req, res) => {
       return res.status(400).json({ error: 'Mailbox and password are required' });
     }
     const result = await addAccount(mailbox, password, createLogin);
-    res.status(201).json({ message: 'Account created successfully', mailbox });
+    res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
@@ -332,7 +331,7 @@ app.put('/api/doveadm/:command/:mailbox', async (req, res) => {
       return res.status(400).json({ error: 'Command and Mailbox are required' });
     }
     const result = await doveadm(command, mailbox, req.body);
-    res.status(200).json(result?.result);
+    res.json(result);
     
   } catch (error) {
     errorLog(`PUT /api/doveadm/:command/:mailbox: ${error.message}`);
@@ -369,8 +368,8 @@ app.delete('/api/accounts/:mailbox', async (req, res) => {
     if (!mailbox) {
       return res.status(400).json({ error: 'Mailbox is required' });
     }
-    await deleteAccount(mailbox);
-    res.json({ message: 'Account deleted successfully', mailbox });
+    const result = await deleteAccount(mailbox);
+    res.json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
@@ -419,8 +418,8 @@ app.put('/api/accounts/:mailbox/update', async (req, res) => {
     }
 
     // await updateAccount(mailbox, req.body);
-    await updateDB('accounts', [mailbox, containerName], req.body);
-    res.json({ message: 'Account updated successfully', mailbox });
+    const result = await updateDB('accounts', [mailbox, containerName], req.body);
+    res.json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
@@ -501,8 +500,8 @@ app.post('/api/aliases', async (req, res) => {
         .status(400)
         .json({ error: 'Source and destination are required' });
     }
-    await addAlias(source, destination);
-    res.status(201).json({ message: 'Alias created successfully', source, destination });
+    const result = await addAlias(source, destination);
+    res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
@@ -549,12 +548,11 @@ app.delete('/api/aliases', async (req, res) => {
         .json({ error: 'Source and destination are required' });
     }
     
-    await deleteAlias(source, destination);
-    res.json({ message: 'Alias deleted successfully', source, destination });
+    const result = await deleteAlias(source, destination);
+    res.json(result);
     
   } catch (error) {
     errorLog(`DELETE /api/aliases: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to delete alias' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -625,7 +623,8 @@ app.get('/api/settings', async (req, res) => {
 app.post('/api/settings', async (req, res) => {
   try {
     const result = await saveSettings(req.body);     // [{name:name, value:value}, ..]
-    res.status(201).json({ message: 'Settings saved successfully' });
+    res.status(201).json(result);
+    
   } catch (error) {
     errorLog(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
@@ -742,7 +741,7 @@ app.post('/api/logins', async (req, res) => {
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
     const result = await addLogin(email, username, password, isAdmin, isActive, isAccount, roles);
-    res.status(201).json({ message: 'Login created successfully' });
+    res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index POST /api/logins: ${error.message}`);
@@ -801,7 +800,6 @@ app.put('/api/logins/:email/update', async (req, res) => {
     }
 
     const result = await updateDB('logins', email, req.body);
-    debugLog('ddebug result',result)
     res.json(result);
     
   } catch (error) {
@@ -840,8 +838,9 @@ app.delete('/api/logins/:email', async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'email is required' });
     }
-    await deleteLogin(email);
-    res.json({ message: 'Login deleted successfully', email });
+    const result = await deleteEntry('logins', email, 'login');
+    res.json(result);
+    
   } catch (error) {
     errorLog(`index /api/login: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete login' });
@@ -850,13 +849,13 @@ app.delete('/api/logins/:email', async (req, res) => {
 });
 
 
-// Endpoint to log in a user; API calls would use maybe a different method
+// Endpoint to log in a user
 /**
  * @swagger
  * /api/loginUser:
  *   post:
- *     summary: save Admin credentials
- *     description: save Admin credentials
+ *     summary: check credentials
+ *     description: check credentials to log a user in
  *     requestBody:
  *       required: true
  *       content:
@@ -871,12 +870,12 @@ app.delete('/api/logins/:email', async (req, res) => {
  *                 type: string
  *                 description: Password
  *     responses:
- *       201:
- *         description: Admin credentials saved successfully
+ *       200:
+ *         description: credentials valid
  *       400:
  *         description: Something is missing
  *       500:
- *         description: Unable to save Admin credentials
+ *         description: Unable to validate credentials
  */
 app.post('/api/loginUser', async (req, res) => {
   try {
@@ -885,7 +884,8 @@ app.post('/api/loginUser', async (req, res) => {
     if (!password)    return res.status(400).json({ error: 'password is missing' });
 
     const result = await loginUser(credential, password);
-    res.status(201).json(result);
+    res.json(result);
+    
   } catch (error) {
     errorLog(`index POST /api/loginUser: ${error.message}`);
     res.status(500).json({ error: error.message });
@@ -917,10 +917,10 @@ app.get('/api/domains', async (req, res) => {
   try {
     const name = ('name' in req.query) ? req.query.name : '';
     const domains = await getDomains(name);
-    res.json(settings);
+    res.json(domains);
   } catch (error) {
     errorLog(`index GET /api/settings: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to retrieve settings' });
+    // res.status(500).json({ error: 'Unable to retrieve domains' });
     res.status(500).json({ error: error.message });
   }
 });

@@ -134,17 +134,15 @@ function FormSettings() {
     }
 
     try {
-      // await saveSettings(
-        // settings.containerName,
-        // settings.setupPath,
-        // settings.dnsProvider,
-      // );
-      await saveSettings(
+      const result = await saveSettings(
         settings,
       );
-      setSubmissionSettings('success');
-      setSuccessMessage('settings.settingsSaved');
-      fetchSettings(); // Refresh the settings
+      if (result.success) {
+        setSubmissionSettings('success');
+        setSuccessMessage('settings.settingsSaved');
+        fetchSettings(); // Refresh the settings
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       setSubmissionSettings('error');

@@ -29,7 +29,6 @@ import {
   deleteLogin,
   updateLogin,
   getAccounts,
-  getRoles,
 } from '../services/api';
 
 import {
@@ -114,7 +113,6 @@ const Logins = () => {
       const [loginsData, accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getLogins(),
         getAccounts(),
-        // getRoles(),
       ]);
 
       // Prepare account options for the select field
@@ -269,7 +267,7 @@ const Logins = () => {
     }
 
     try {
-      await addLogin(
+      const result = await addLogin(
         newLoginformData.email,
         newLoginformData.username,
         newLoginformData.password,
@@ -278,18 +276,21 @@ const Logins = () => {
         newLoginformData.isAccount,
         [],
       );
-      setSuccessMessage('logins.loginCreated');
-      setNewLoginFormData({
-        email: '',
-        username: '',
-        password: '',
-        confirmPassword: '',
-        isAdmin: 0,
-        isAccount: 0,
-        isActive: 1,
-        roles: [],
-      });
-      fetchLogins(); // Refresh the logins list
+      if (result.success) {
+        setSuccessMessage('logins.loginCreated');
+        setNewLoginFormData({
+          email: '',
+          username: '',
+          password: '',
+          confirmPassword: '',
+          isAdmin: 0,
+          isAccount: 0,
+          isActive: 1,
+          roles: [],
+        });
+        fetchLogins(); // Refresh the logins list
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       errorLog(t('api.errors.addLogin'), err);
@@ -334,9 +335,12 @@ const Logins = () => {
 
     if (window.confirm(t('logins.confirmDelete', { username:login.email }))) {
       try {
-        await deleteLogin(login.email);
-        setSuccessMessage('logins.loginDeleted');
-        fetchLogins(); // Refresh the logins list
+        const result = await deleteLogin(login.email);
+        if (result.success) {
+          setSuccessMessage('logins.loginDeleted');
+          fetchLogins(); // Refresh the logins list
+          
+        } else setErrorMessage(result.message);
         
       } catch (err) {
         errorLog(t('api.errors.deleteLogin'), err);
@@ -396,27 +400,30 @@ const Logins = () => {
 
     // send only the editedData from id: {email:newEmail, username:newValue, roles:[whatever]}
     // ATTENTION the key field=email must come last or else subsequent db updates will fail!
-      await updateLogin(
+      const result = await updateLogin(
         login.email,
         moveKeyToLast(editedData[login.id], 'email')
       );
-      // TODO: handle individual change failure
-      
-      // apply actual logins data with the changes
-      // reflect changes in the table instead of fetching all again
-      setLogins(prevLogins =>
-        prevLogins.map(item =>
-          item.id === login.id                          // for that login...
-            ? { ...item, ...editedData[login.id] }      // merge current state with editedData
-            : item                                      // and keep other items as they are
-        )
-      );
-      
-      // reset editedData without that id
-      const { [login.id]:{}, ...editedDataReset } = editedData;
-      setEditedData(editedDataReset);
+      if (result.success) {
+        // TODO: handle individual change failure
+        
+        // apply actual logins data with the changes
+        // reflect changes in the table instead of fetching all again
+        setLogins(prevLogins =>
+          prevLogins.map(item =>
+            item.id === login.id                          // for that login...
+              ? { ...item, ...editedData[login.id] }      // merge current state with editedData
+              : item                                      // and keep other items as they are
+          )
+        );
+        
+        // reset editedData without that id
+        const { [login.id]:{}, ...editedDataReset } = editedData;
+        setEditedData(editedDataReset);
 
-      setSuccessMessage(t('logins.saved', {username:login.email}));
+        setSuccessMessage(t('logins.saved', {username:login.email}));
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       errorLog(t('api.errors.updateLogin'), err);
@@ -489,12 +496,15 @@ const Logins = () => {
     }
 
     try {
-      await updateLogin(
+      const result = await updateLogin(
         selectedLogin.email,
         { password: passwordFormData.newPassword }
       );
-      setSuccessMessage('password.passwordUpdated');
-      handleClosePasswordModal(); // Close the modal
+      if (ersult.success) {
+        setSuccessMessage('password.passwordUpdated');
+        handleClosePasswordModal(); // Close the modal
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       errorLog(t('api.errors.changePassword'), err);

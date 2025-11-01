@@ -38,10 +38,6 @@ sqlMatch = {
 // DB.close();
 // DB = new Database(buffer);
 
-// columns which require a special test before they are changed, like for instance do not disable/demote the last admin in the db...
-// isAdmin:   do not delete last admin: handled by deleteLogin()
-// isActive:  do not deactivate last admin
-
 sql = {
 settings: {
 
@@ -142,7 +138,7 @@ logins: {
       },
       1: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
-        test:   `SELECT COUNT(1) count`,
+        test:   `SELECT COUNT(isAdmin) count WHERE email = ?`,
         check:  function(result) { return true; },
         pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE email = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
@@ -170,7 +166,15 @@ logins: {
   },
   
   delete: {
-    login:  `DELETE from logins WHERE 1=1 AND email = ?`,
+    email: {
+      undefined: {
+        desc:   "refuse to delete last admin",
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND email IS NOT ?`,
+        check:  function(result) { return result.count > 0; },
+        pass:   `DELETE from logins WHERE 1=1 AND email = ?`,
+        fail:   "Cannot delete the last admin, how will you administer dms-gui?",
+      },
+    },
   },
   
   init:  `BEGIN TRANSACTION;
@@ -279,8 +283,7 @@ accounts: {
   },
   
   delete: {
-    account:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
-    accounts: `DELETE FROM accounts WHERE 1=1 AND scope = ? `,
+    mailbox:  `DELETE FROM accounts WHERE 1=1 AND scope = ? AND mailbox = ?`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -322,8 +325,8 @@ aliases: {
   },
   
   delete: {
-    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = ? AND source = ?`,
-    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = ? AND destination = ?`,
+    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = ? AND source = @source`,
+    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = ? AND destination = @destination`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -427,6 +430,7 @@ function dbRun(sql, params=[], ...anonParams) {
       debugLog(`DB.exec(${sql})`);
       DB.exec(sql);
       debugLog(`DB.exec success`);
+      return {success: true}
 
     // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
     } else if (Array.isArray(params) && params.length) {
@@ -438,6 +442,8 @@ function dbRun(sql, params=[], ...anonParams) {
         });
         insertMany(params);
         debugLog(`DB.transaction success`);
+        return {success: true}
+        
       } else {
         debugLog(`DB.transaction(${sql}).run(${JSON.stringify(params)})`);
         const insertMany = DB.transaction((params) => {
@@ -445,6 +451,7 @@ function dbRun(sql, params=[], ...anonParams) {
         });
         insertMany(params);
         debugLog(`DB.transaction success`);
+        return {success: true}
       }
       
     // single statement https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
@@ -453,10 +460,13 @@ function dbRun(sql, params=[], ...anonParams) {
         debugLog(`DB.prepare(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
         DB.prepare(sql).run(anonParams, params);
         debugLog(`DB.prepare success`);
+        return {success: true}
+        
       } else {
         debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
         DB.prepare(sql).run(params);
         debugLog(`DB.prepare success`);
+        return {success: true}
       }
     }
     // result = { changes: 0, lastInsertRowid: 0 }
@@ -464,6 +474,7 @@ function dbRun(sql, params=[], ...anonParams) {
   } catch (err) {
     debugLog(`${err.code}: ${err.message}`);
     dbOpen()
+    return {success: false, message: err.message}
     throw err;
   }
 }
@@ -714,21 +725,28 @@ async function changePassword(table, id, password, containerName) {
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
       debugLog(`Updating password for ${id} in ${containerName}...`);
-      const result = await execSetup(`email update ${id} ${password}`);
-      if (!result.exitCode) {
+      const results = await execSetup(`email update ${id} ${password}`);
+      if (!results.exitCode) {
         
         debugLog(`Updating password for ${id} in ${table}...`);
-        dbRun(sql[table].update.password, { salt:salt, hash:hash }, containerName, id);
+        const result = dbRun(sql[table].update.password, { salt:salt, hash:hash }, containerName, id);
         successLog(`Password updated for ${table}: ${mailbox}`);
-        return { success: true };
+        return { success: true, message: `Password updated for ${table}: ${mailbox}` };
         
-      } else errorLog(result.stderr);
+      } else {
+        let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+        errorLog(ErrorMsg);
+        return { success: false, message: ErrorMsg };
+      }
       
     } else {
       debugLog(`Updating password for ${id} in ${table}...`);
-      dbRun(sql.logins.update.password, { salt:salt, hash:hash }, id);
-      successLog(`Password updated for ${id} in ${table}`);
-      return { success: true };
+      const result = dbRun(sql.logins.update.password, { salt:salt, hash:hash }, id);
+      if (result.success) {
+        successLog(`Password updated for ${id} in ${table}`);
+        return { success: true, message: `Password updated for ${id} in ${table}` };
+        
+      } else return result;
     }
     
   } catch (error) {
@@ -772,12 +790,13 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
         
         // password has its own function
         if (key == 'password') {
-          changePassword(table, id, value, containerName);
+          return changePassword(table, id, value, containerName);
           
         // objects must be saved as JSON
         } else if (typeof value == 'object') {
-          dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
-          successLog(`Updated ${table} ${id} with ${key}=`, value);
+          const result = dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
+          successLog(`Updated ${table} ${id} with ${key}=${value}`);
+          return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
         
         // other sqlite3 valid types and we can test specific scenarios
         } else {
@@ -792,14 +811,15 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
               let value2test = (sql[table].update[key][value]) ? value : undefined;
               
               // there is a test for THAT value and now we check with id in mind
-              let result = (sql[table].scope) ? dbGet(sql[table].update[key][value2test].test, containerName, id) : dbGet(sql[table].update[key][value2test].test, id);
+              const testResult = (sql[table].scope) ? dbGet(sql[table].update[key][value2test].test, containerName, id) : dbGet(sql[table].update[key][value2test].test, id);
               
               // compare the result in the check function
-              if (sql[table].update[key][value2test].check(result)) {
+              if (sql[table].update[key][value2test].check(testResult)) {
                 
                 // we pass the test
-                dbRun(sql[table].update[key][value2test].pass, {[key]:value}, id);
+                const result = dbRun(sql[table].update[key][value2test].pass, {[key]:value}, id);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
                 
               } else {
                 // we do not pass the test
@@ -809,8 +829,9 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
               
             // no test, update the db with new value
             } else {
-              dbRun(sql[table].update[key], {[key]:value}, id);
+              const result = dbRun(sql[table].update[key], {[key]:value}, id);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
+              return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
             }
             
           } else {
@@ -836,6 +857,62 @@ async function updateDB(table, id, jsonDict, containerName) {  // jsonDict = { c
   }
 }
 
+
+async function deleteEntry(table, id, key, containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+
+  try {
+    
+    // check if delete should be tested
+    if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
+      
+      // fix the value2test as we may have tests for any values
+      let value2test = (sql[table].delete[key][id]) ? value : undefined;
+      
+      // there is a test for THAT value and now we check with id in mind
+      const testResult = (sql[table].scope) ? dbGet(sql[table].delete[key][value2test].test, {key:id}, containerName) : dbGet(sql[table].delete[key][value2test].test, id);
+      
+      // compare the result in the check function
+      if (sql[table].delete[key][value2test].check(testResult)) {
+        
+        // we pass the test
+        const result = dbRun(sql[table].delete[key][value2test].pass, id);
+        if (result.success) {
+          successLog(`Entry deleted: ${id}`);
+          return {success: true, message: `Entry deleted: ${id}`};
+          
+        } else return result;
+      
+      } else {
+        // we do not pass the test
+        errorLog(sql[table].delete[key][value2test].fail);
+        return { success: false, message: sql[table].delete[key][value2test].fail};
+      }
+      
+    } else {
+      // no test
+      const result = dbRun(sql[table].delete[key][value2test].pass, id);
+      if (result.success) {
+        successLog(`Entry deleted: ${id}`);
+        return {success: true, message: `Entry deleted: ${id}`};
+        
+      } else return result;
+    }
+    
+  } catch (error) {
+    let ErrorMsg = error.message;
+    errorLog(ErrorMsg);
+    throw new Error(ErrorMsg);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+
 module.exports = {
   DB,
   sql,
@@ -850,6 +927,7 @@ module.exports = {
   verifyPassword,
   changePassword,
   updateDB,
+  deleteEntry,
 };
 
 

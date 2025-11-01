@@ -68,12 +68,15 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend/settings: pull compress method and maybe statistics on the dashboard?
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 * [ ] - backend/accounts: switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead
-* [ ] - backend/frontend: refactor all the API calls to handle result.success and result.message instead of throwing error 500
 * [ ] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516
 
 
 ### history:
 
+* [x] 1.2.1 - backend/db: refactor all deleteSmth into deleteEntry
+* [x] 1.2.1 - backend/frontend: refactor all the execSetup API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.2.1 - backend/frontend: refactor all the execCommand API calls to handle result.success and result.message instead of throwing error 500
+* [x] 1.2.1 - backend/frontend: refactor all the dbRun API calls to handle result.success and result.message instead of throwing error 500
 * [x] v1.2.0 - release
 * [x] 1.1.15 - backend/db: bugfix: changePassword had a reference to username
 * [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
@@ -122,7 +125,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.1.7 - frontend/DataTable: bugfix: fixed arrows not flipping on first click by removing !(column.key in sortOrders)
 * [x] 1.1.7 - frontend/DataTable: bugfix: hide sort arrows for rendered columns with no data
 * [x] 1.1.7 - frontend/Accounts: fixed storage object not showing anymore: split account.insert into 2 queries so storage data is not deleted
-* [x] 1.1.7 - frontend/DataTable: now wraps text inside <p> to get row color and avoid coloring buttons inside a td
+* [x] 1.1.7 - frontend/DataTable: now wraps text inside P tag to get row color and avoid coloring buttons inside a td
 * [x] 1.1.6 - frontend/Logins: all seems to work, and isAdmin isActive flip switches too
 * [x] 1.1.6 - frontend: changePasswordLogin and changePasswordAccount have become updateLogin and updateAccount
 * [x] 1.1.6 - backend/logins: prevent deleting the last admin in db

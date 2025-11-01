@@ -24,6 +24,7 @@ const {
   dbAll,
   dbGet,
   hashPassword,
+  deleteEntry,
 } = require('./db');
 
 const fs = require("fs");
@@ -66,11 +67,15 @@ async function getAccounts(refresh, containerName) {
 
     // now save accounts in db
     let accountsDb = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage) }; });
-    dbRun(sql.accounts.insert.fromDMS, accountsDb, containerName);
-    
-    // now save isAccount logins in db
-    let loginsDb = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]) }; });
-    dbRun(sql.logins.insert.fromDMS, loginsDb);
+    const result = dbRun(sql.accounts.insert.fromDMS, accountsDb, containerName);
+    if (result.success) {
+      
+      // now save isAccount logins in db
+      let loginsDb = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]) }; });
+      const result2 = dbRun(sql.logins.insert.fromDMS, loginsDb);
+      if (!result2.success) errorLog(result2.message);
+      
+    } else errorLog(result.message);
     
     return accounts;
     
@@ -94,8 +99,8 @@ async function pullAccountsFromDMS(containerName) {
   
   try {
     debugLog(`execSetup(${command})`);
-    const result = await execSetup(command, containerName);
-    if (!result.exitCode) {
+    const results = await execSetup(command, containerName);
+    if (!results.exitCode) {
     
       // Parse multiline output with regex to extract email and size information
       // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
@@ -105,7 +110,7 @@ async function pullAccountsFromDMS(containerName) {
       const accountLineRegexQuotaOFF = /(\*\s+)(\S+)@(\S+\S+)/;
 
       // Process each line individually
-      const lines = result.stdout.split('\n').filter((line) => line.trim().length > 0);
+      const lines = results.stdout.split('\n').filter((line) => line.trim().length > 0);
       // debugLog(`email list RAW response:`, lines);
 
       for (let i = 0; i < lines.length; i++) {
@@ -153,7 +158,12 @@ async function pullAccountsFromDMS(containerName) {
           }
         }
       }
-    } else errorLog(result.stderr);
+      
+    } else {
+      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      errorLog(ErrorMsg);
+      return { success: false, message: ErrorMsg };
+    }
 
     debugLog(`Found ${accounts.length} accounts`, accounts);
     return accounts;
@@ -173,16 +183,27 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
 
   try {
     debugLog(`Adding new mailbox account: ${mailbox}`);
-    const result = await execSetup(`email add ${mailbox} ${password}`);
-    if (!result.exitCode) {
+    const results = await execSetup(`email add ${mailbox} ${password}`);
+    if (!results.exitCode) {
       
       const { salt, hash } = await hashPassword(password);
-      dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash }, containerName);
-      if (createLogin) dbRun(sql.logins.insert.logins, { email:mailbox, username:mailbox, salt:salt, hash:hash, roles:[mailbox] }, containerName);
-      successLog(`Account created: ${mailbox}`);
-      return { success: true };
+      const result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash }, containerName);
+      if (result.success) {
+        if (createLogin) {
+          const result2 = dbRun(sql.logins.insert.logins, { email:mailbox, username:mailbox, salt:salt, hash:hash, roles:[mailbox] }, containerName);
+        }
+        if (result2.success) {
+          successLog(`Account created: ${mailbox}`);
+          return { success: true };
+          
+        } else return result2;
+        
+      } else return result;
       
-    } else errorLog(result.stderr);
+    } else {
+      errorLog(results.stderr);
+      return { success: false, message: results.stderr};
+    }
     
   } catch (error) {
     let backendError = 'Error adding account';
@@ -205,14 +226,21 @@ async function deleteAccount(mailbox, containerName) {
 
   try {
     debugLog(`Deleting mailbox account: ${mailbox}`);
-    const result = await execSetup(`email del ${mailbox}`);
-    if (!result.exitCode) {
+    const results = await execSetup(`email del ${mailbox}`);
+    if (!results.exitCode) {
       
-      dbRun(sql.accounts.delete.account, containerName, mailbox);
-      successLog(`Account deleted: ${mailbox}`);
-      return { success: true };
+      const result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
+      if (result.success) {
+        successLog(`Account deleted: ${mailbox}`);
+        return { success: true, message: `Account deleted: ${mailbox}` };
+        
+      } else return result;
       
-    } else errorLog(result.stderr);
+    } else {
+      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      errorLog(ErrorMsg);
+      return { success: false, message: ErrorMsg };
+    }
     
   } catch (error) {
     let backendError = 'Error deleting account';
@@ -335,13 +363,16 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
       }
     }
     
-    const result = await execCommand(formattedCommand);
-    if (!result.exitCode) {
+    const results = await execCommand(formattedCommand);
+    if (!results.exitCode) {
       
-      successLog(formattedPass, result.stdout);
-      return { success: true, result: result.stdout };
+      successLog(formattedPass, results.stdout);
+      return { success: true, message: result.stdout };
       
-    } else errorLog(result.stderr);
+    } else {
+      errorLog(result.stderr);
+      return { success: false, message: results.sterr };
+    }
     
   } catch (error) {
     let backendError = `${error.message}`;

@@ -13,10 +13,10 @@ const {
 } = require('../../frontend');
 
 import {
+  getAccounts,
   getAliases,
   addAlias,
   deleteAlias,
-  getAccounts,
 } from '../services/api';
 
 import {
@@ -165,14 +165,16 @@ const Aliases = () => {
     }
 
     try {
-      await addAlias(formData.source.trim(), formData.destination.trim());
-      setSuccessMessage('aliases.aliasCreated');
-      setFormData({
-        source: '',
-        destination: '',
-      });
-      debugLog('call fetchAliases(true)');
-      fetchAliases(true); // Refresh the aliases list
+      const result = await addAlias(formData.source.trim(), formData.destination.trim());
+      if (result.success) {
+        setFormData({
+          source: '',
+          destination: '',
+        });
+        fetchAliases(true); // Refresh the aliases list
+        setSuccessMessage('aliases.aliasCreated');
+        
+      } else setErrorMessage(result.message);
       
     } catch (err) {
       errorLog(t('api.errors.addAlias'), err);
@@ -182,11 +184,17 @@ const Aliases = () => {
 
   const handleDelete = async (source, destination) => {
     if (window.confirm(t('aliases.confirmDelete', { source }))) {
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      
       try {
-        await deleteAlias(source, destination);
-        setSuccessMessage('aliases.aliasDeleted');
-        debugLog('call fetchAliases(true)');
-        fetchAliases(true); // Refresh the aliases list
+        const result = await deleteAlias(source, destination);
+        if (result.success) {
+          fetchAliases(true); // Refresh the aliases list
+          setSuccessMessage('aliases.aliasDeleted');
+          
+        } else setErrorMessage(result.message);
+        
       } catch (err) {
         errorLog(t('api.errors.deleteAlias'), err);
         (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAlias');
