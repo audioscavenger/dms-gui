@@ -50,7 +50,7 @@ async function getAccounts(refresh, containerName) {
         accounts = accounts.map(account => { return { ...account, storage: JSON.parse(account.storage) }; });
         
       } else {
-        warnLog(`db seems empty:`, accounts);
+        warnLog(`db accounts seems empty:`, accounts);
       }
       
       return accounts;

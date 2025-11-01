@@ -14,7 +14,7 @@ const {
 import {
   getAccounts,
   getSettings,
-  getServerEnv,
+  getServerEnvs,
   addAccount,
   deleteAccount,
   updateAccount,
@@ -89,8 +89,8 @@ const Accounts = () => {
       setLoading(true);
       const [accountsData, dnsProviderData, DOVECOT_FTSdata] = await Promise.all([
         getAccounts(refresh),
-        getSettings('dnsProvider'),
-        getServerEnv('DOVECOT_FTS'),
+        getSettings(undefined, 'dnsProvider'),
+        getServerEnvs(refresh, undefined, 'DOVECOT_FTS'),
       ]);
       setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
       setDnsProvider(dnsProviderData);

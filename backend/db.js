@@ -45,15 +45,15 @@ settings: {
 
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count from settings`,
-    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui'`,
-    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = 'dms-gui' AND name = ?`,
+    count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${isMutable}`,
+    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = @scope`,
+    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = @scope AND name = ?`,
     envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
     env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
   },
   
   insert: {
-    setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, 'dms-gui', 1)`,
+    setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)`,
     env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
   },
   
@@ -64,12 +64,17 @@ settings: {
   
   init:   `BEGIN TRANSACTION;
           CREATE  TABLE settings (
-          name    TEXT NOT NULL UNIQUE PRIMARY KEY,
+          id      INTEGER PRIMARY KEY,
+          name    TEXT NOT NULL,
           value   TEXT NOT NULL,
           scope   TEXT NOT NULL,
-          isMutable BIT DEFAULT ${isImmutable}
+          isMutable BIT DEFAULT ${isImmutable},
+          UNIQUE (name, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${DMS_CONTAINER}', 'dms-gui', ${isMutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${DMS_SETUP_SCRIPT}', '${DMS_CONTAINER}', ${isMutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DMS_CONFIG_PATH', '${DMS_CONFIG_PATH}', '${DMS_CONTAINER}', ${isMutable});
           COMMIT;`,
   
   patch: [
@@ -77,7 +82,15 @@ settings: {
       patches: [
         `ALTER TABLE settings ADD scope TEXT DEFAULT '${DMS_CONTAINER}'`,
         `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
-        `REPLACE INTO settings (name, value, scope, isMutable)  VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.2.4',
+      patches: [
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${DMS_CONTAINER}', '${DMS_CONTAINER}', ${isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${DMS_SETUP_SCRIPT}', '${DMS_CONTAINER}', ${isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DMS_CONFIG_PATH', '${DMS_CONFIG_PATH}', '${DMS_CONTAINER}', ${isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${isImmutable})`,
       ],
     },
   ],
@@ -305,12 +318,14 @@ accounts: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE accounts (
-          mailbox   TEXT NOT NULL UNIQUE PRIMARY KEY,
+          id        INTEGER PRIMARY KEY,
+          mailbox   TEXT NOT NULL,
           domain    TEXT DEFAULT '',
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
           storage   TEXT DEFAULT '{}',
-          scope     TEXT NOT NULL
+          scope     TEXT NOT NULL,
+          UNIQUE (mailbox, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
@@ -349,10 +364,11 @@ aliases: {
   init:  `BEGIN TRANSACTION;
           CREATE TABLE aliases (
           id          INTEGER PRIMARY KEY,
-          source      TEXT NOT NULL UNIQUE,
+          source      TEXT NOT NULL,
           destination TEXT NOT NULL,
           regex       BIT DEFAULT 0,
-          scope       NOT NULL
+          scope       NOT NULL,
+          UNIQUE (source, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           COMMIT;`,
@@ -377,7 +393,8 @@ domains: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE domains (
-          domain    TEXT NOT NULL UNIQUE PRIMARY KEY,
+          id        INTEGER PRIMARY KEY,
+          domain    TEXT NOT NULL UNIQUE,
           dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
           keytype   TEXT DEFAULT 'rsa',
           keysize   TEXT DEFAULT '2048',
@@ -442,18 +459,18 @@ function dbRun(sql, params=[], ...anonParams) {
   
   try {
     
-    // transaction  https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#execstring---this
+    // exec https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#execstring---this
     if (sql.match(/BEGIN TRANSACTION/i)) {
       debugLog(`DB.exec(${sql})`);
       DB.exec(sql);
       debugLog(`DB.exec success`);
       return {success: true}
 
-    // multiple inserts https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
+    // multiple inserts at once: DB.transaction https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
     } else if (Array.isArray(params) && params.length) {
       
       if (anonParams.length) {
-        debugLog(`DB.transaction(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
+        debugLog(`DB.transaction("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
         const insertMany = DB.transaction((params) => {
           for (const param of params) DB.prepare(sql).run(anonParams, param);
         });
@@ -462,7 +479,7 @@ function dbRun(sql, params=[], ...anonParams) {
         return {success: true}
         
       } else {
-        debugLog(`DB.transaction(${sql}).run(${JSON.stringify(params)})`);
+        debugLog(`DB.transaction("${sql}").run(${JSON.stringify(params)})`);
         const insertMany = DB.transaction((params) => {
           for (const param of params) DB.prepare(sql).run(param);
         });
@@ -471,16 +488,16 @@ function dbRun(sql, params=[], ...anonParams) {
         return {success: true}
       }
       
-    // single statement https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
+    // single statement: DB.prepare https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
       if (anonParams.length) {
-        debugLog(`DB.prepare(${sql}).run(${anonParams}, ${JSON.stringify(params)})`);
+        debugLog(`DB.prepare("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
         DB.prepare(sql).run(params,anonParams);
         debugLog(`DB.prepare success`);
         return {success: true}
         
       } else {
-        debugLog(`DB.prepare(${sql}).run(${JSON.stringify(params)})`);
+        debugLog(`DB.prepare("${sql}").run(${JSON.stringify(params)})`);
         DB.prepare(sql).run(params);
         debugLog(`DB.prepare success`);
         return {success: true}
@@ -517,8 +534,9 @@ function dbCount(table, containerName) {
   
   try {
     
+    debugLog(`DB.prepare("${sql[table].select.count}").get({scope:${containerName}})`);
     const result = DB.prepare(sql[table].select.count).get({scope:containerName});
-    debugLog(`success:`, result);
+    infoLog(`success:`, result);
     
     return result.count;
 
@@ -537,11 +555,11 @@ function dbGet(sql, params=[], ...anonParams) {
   
   try {
     if (anonParams.length) {
-      debugLog(`DB.prepare(${sql}).get(${anonParams}, ${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").get(${anonParams}, ${JSON.stringify(params)})`);
       return DB.prepare(sql).get(params, anonParams);
       
     } else {
-      debugLog(`DB.prepare(${sql}).get(${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)})`);
       return DB.prepare(sql).get(params);
     }
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
@@ -561,11 +579,11 @@ function dbAll(sql, params=[], ...anonParams) {
   
   try {
     if (anonParams.length) {
-      debugLog(`DB.prepare(${sql}).all(${anonParams}, ${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").all(${anonParams}, ${JSON.stringify(params)})`);
       return DB.prepare(sql).all(params, anonParams);
       
     } else {
-      debugLog(`DB.prepare(${sql}).all(${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").all(${JSON.stringify(params)})`);
       return DB.prepare(sql).all(params);
     }
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
@@ -984,6 +1002,8 @@ module.exports = {
 // function debugLog(message) {console.debug(message)}
 // function errorLog(message) {console.debug(message)}
 
+
+
 // DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 // sql=`BEGIN TRANSACTION;
           // CREATE TABLE IF NOT EXISTS logins (
@@ -1034,4 +1054,28 @@ module.exports = {
 
 // DB.prepare(`SELECT COUNT(1) count`).get()
   // { count: 1 }
+
+
+// bug: leads to duplicate rows since we enabled PRIMARY key=id:
+// DB.transaction("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run([{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"containerName","value":"dms","scope":"dms"}])
+// DB.prepare("SELECT name, value from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
+// DB.prepare("SELECT * from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
+  // [
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'containerName', value: 'dms' },
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'containerName', value: 'dms' },
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'setupPath', value: '/usr/local/bin/setup' },
+    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+    // { name: 'containerName', value: 'dms' }
+  // ]
+
 

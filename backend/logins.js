@@ -92,7 +92,7 @@ async function getLogins(credential) {
       logins = logins.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
       
     } else {
-      warnLog(`logins in db seems empty:`, logins);
+      warnLog(`db logins seems empty:`, logins);
     }
     
     return logins;
@@ -189,7 +189,7 @@ async function getRolesFromRoles(containerName) {
       infoLog(`Found ${roles.length} entries in roles`);
       
     } else {
-      warnLog(`roles in db seems empty:`, roles);
+      warnLog(`db roles seems empty:`, roles);
     }
     
     return roles;

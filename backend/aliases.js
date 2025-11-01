@@ -48,7 +48,7 @@ async function getAliases(refresh, containerName) {
         // [ { source: 'a@b.com', destination:'b@b.com', regex: 0 }, .. ]
         
       } else {
-        warnLog(`db seems empty:`, aliases);
+        warnLog(`db aliases seems empty:`, aliases);
         return [];
       }
     }

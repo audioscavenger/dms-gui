@@ -25,9 +25,11 @@ const api = axios.create({
 
 // Server status API
 // export const getServerStatus = async () => {
-export async function getServerStatus() {
+export async function getServerStatus(containerName) {
+  const params = {};
+  if (containerName !== undefined) params.containerName = containerName;
   try {
-    const response = await api.get(`/status`);
+    const response = await api.get(`/status`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -36,11 +38,9 @@ export async function getServerStatus() {
 };
 
 // Server infos API
-// export const getServerStatus = async () => {
-export async function getServerInfos(refresh) {
-  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
+export async function getServerInfos() {
   try {
-    const response = await api.get(`/infos${query}`);
+    const response = await api.get(`/infos`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -48,9 +48,13 @@ export async function getServerInfos(refresh) {
   }
 };
 
-export async function getServerEnv(name) {
+export async function getServerEnvs(refresh, containerName, name) {
+  const params = {};
+  if (refresh !== undefined) params.refresh = refresh;
+  if (containerName !== undefined) params.containerName = containerName;
+  if (name !== undefined) params.name = name;
   try {
-    const response = await api.get(`/env?name=${name}`);
+    const response = await api.get(`/envs`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -58,10 +62,12 @@ export async function getServerEnv(name) {
   }
 };
 
-export async function getServerEnvs(refresh) {
-  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
+export async function getSettings(containerName, name) {
+  const params = {};
+  if (containerName !== undefined) params.containerName = containerName;
+  if (name !== undefined) params.name = name;
   try {
-    const response = await api.get(`/envs${query}`);
+    const response = await api.get(`/settings`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -69,22 +75,9 @@ export async function getServerEnvs(refresh) {
   }
 };
 
-// export const getSettings = async () => {
-export async function getSettings(name='') {
+export async function saveSettings(containerName, jsonArrayOfObjects) {
   try {
-    const response = await api.get(`/settings?name=${name}`);
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
-// export const saveSettings = async (containerName, setupPath, dnsProvider) => {
-// export async function saveSettings(containerName, setupPath, dnsProvider) {
-export async function saveSettings(jsonArrayOfObjects) {
-  try {
-    const response = await api.post(`/settings`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -103,7 +96,6 @@ export async function getLogins() {
 };
 
 export async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
-    // console.debug('ddebug api password, email',password, email)
   try {
     const response = await api.post(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
     return response.data;
@@ -114,7 +106,6 @@ export async function addLogin(email, username, password, isAdmin=0, isAccount=0
 };
 
 export async function updateLogin(email, jsonDict) {
-  // console.debug('ddebug api jsonDict',jsonDict)
   try {
     const response = await api.put(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0}
     return response.data;
@@ -136,7 +127,6 @@ export async function deleteLogin(email) {
 
 export async function loginUser(credential, password) {
   try {
-    // console.debug('ddebug api loginUser(credential, password)', credential, password)
     const response = await api.post(`/loginUser`, { credential, password });
     return response.data;
   } catch (error) {
@@ -145,11 +135,11 @@ export async function loginUser(credential, password) {
   }
 };
 
-// export const getAccounts = async (refresh) => {
 export async function getAccounts(refresh) {
-  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
+  const params = {};
+  if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/accounts${query}`);
+    const response = await api.get(`/accounts`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -201,9 +191,10 @@ export async function updateAccount(mailbox, jsonDict) {
 
 // export const getAliases = async (refresh) => {
 export async function getAliases(refresh) {
-  const query = (refresh === undefined) ? '' : `?refresh=${refresh}`;
+  const params = {};
+  if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/aliases${query}`);
+    const response = await api.get(`/aliases`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -236,8 +227,10 @@ export async function deleteAlias(source, destination) {
 };
 
 export async function getDomains(name) {
+  const params = {};
+  if (name !== undefined) params.name = name;
   try {
-    const response = await api.post(`/getDomains?name=${name}`);
+    const response = await api.post(`/getDomains`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -247,7 +240,6 @@ export async function getDomains(name) {
 
 export async function getCount(table) {
   try {
-    // const response = await api.post(`/getCount?table=${table}`);
     const response = await api.post(`/getCount/${table}`);
     return response.data;
   } catch (error) {

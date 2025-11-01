@@ -58,7 +58,7 @@ function FormSettings() {
   };
 
   const fetchSettings = async () => {
-    debugLog(`fetchSettings call getSettings`);
+    debugLog(`fetchSettings call getSettings()`);
 
     try {
       const [settingsData] = await Promise.all([
@@ -135,6 +135,7 @@ function FormSettings() {
 
     try {
       const result = await saveSettings(
+        getValueFromArrayOfObj(settings, 'containerName'),
         settings,
       );
       if (result.success) {

@@ -109,7 +109,8 @@ app.set('query parser', function (str) {
  */
 app.get('/api/status', async (req, res) => {
   try {
-    const status = await getServerStatus();
+    const containerName = ('containerName' in req.query) ? req.query.containerName : DMS_CONTAINER;
+    const status = await getServerStatus(containerName);
     res.json(status);
   } catch (error) {
     errorLog(`index /api/status: ${error.message}`);
@@ -140,9 +141,7 @@ app.get('/api/status', async (req, res) => {
  */
 app.get('/api/infos', async (req, res) => {
   try {
-    const refresh = ('refresh' in req.query) ? req.query.refresh : true;
-    debugLog(`/api/infos?refresh=${req.query.refresh} -> ${refresh}`);
-    const infos = await getServerInfos(refresh);
+    const infos = await getServerInfos();
     res.json(infos);
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
@@ -153,46 +152,29 @@ app.get('/api/infos', async (req, res) => {
 
 /**
  * @swagger
- * /api/env:
- *   get:
- *     summary: Get a single value
- *     description: Retrieve a single env value from DMS
- *     parameters:
- *       - in: query
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: pull env value from the db
- *     responses:
- *       200:
- *         description: env value when found
- *       500:
- *         description: Unable to retrieve env value
- */
-app.get('/api/env', async (req, res) => {
-  try {
-    const name = ('name' in req.query) ? req.query.name : '';
-    const value = await getServerEnv(name);
-    res.json(value);
-  } catch (error) {
-    errorLog(`index GET /api/env: ${error.message}`);
-    // res.status(500).json({ error: 'Unable to retrieve value' });
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * @swagger
  * /api/envs:
  *   get:
  *     summary: Get server envs
- *     description: Retrieve all the DMS envs we parsed
+ *     description: Retrieve all the DMS envs we parsed or just one
  *     parameters:
  *       - in: query
  *         name: refresh
  *         required: false
  *         default: false
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
+ *       - in: query
+ *         name: containerName
+ *         required: false
+ *         default: DMS_CONTAINER
+ *         schema:
+ *           type: boolean
+ *         description: pull data from DMS instead of local database
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         default: undefined
  *         schema:
  *           type: boolean
  *         description: pull data from DMS instead of local database
@@ -204,9 +186,10 @@ app.get('/api/env', async (req, res) => {
  */
 app.get('/api/envs', async (req, res) => {
   try {
-    const refresh = ('refresh' in req.query) ? req.query.refresh : true;
-    debugLog(`/api/envs?refresh=${req.query.refresh} -> ${refresh}`);
-    const envs = await getServerEnvs(refresh);
+    const refresh = ('refresh' in req.query) ? req.query.refresh : false;
+    const containerName = ('containerName' in req.query) ? req.query.containerName : DMS_CONTAINER;
+    const name = ('name' in req.query) ? req.query.name : undefined;
+    const envs = await getServerEnvs(refresh, containerName, name);
     res.json(envs);
   } catch (error) {
     errorLog(`index /api/envs: ${error.message}`);
@@ -513,7 +496,7 @@ app.post('/api/aliases', async (req, res) => {
 // Endpoint for deleting an alias
 /**
  * @swagger
- * /api/aliases/{source}/{destination}:
+ * /api/aliases:
  *   delete:
  *     summary: Delete an alias
  *     description: Delete an email alias from the docker-mailserver
@@ -540,7 +523,6 @@ app.post('/api/aliases', async (req, res) => {
  */
 app.delete('/api/aliases', async (req, res) => {
   try {
-    // const { source, destination } = req.params;
     const { source, destination } = req.body;
     if (!source || !destination) {
       return res
@@ -563,26 +545,35 @@ app.delete('/api/aliases', async (req, res) => {
  * /api/settings:
  *   get:
  *     summary: Get settings
- *     description: Retrieve all settings
+ *     description: Retrieve all or 1 settings
  *     parameters:
+ *       - in: query
+ *         name: containerName
+ *         required: false
+ *         default: DMS_CONTAINER
+ *         schema:
+ *           type: string
+ *         description: pull all settings from the db with that scope
  *       - in: query
  *         name: name
  *         required: false
- *         default: ''
+ *         default: undefined
  *         schema:
  *           type: string
- *         description: pull settings from the db
+ *         description: pull 1 setting from the db
  *     responses:
  *       200:
- *         description: all settings even if empty
+ *         description: all or 1 settings even if empty
  *       500:
  *         description: Unable to retrieve settings
  */
 app.get('/api/settings', async (req, res) => {
   try {
-    const name = ('name' in req.query) ? req.query.name : '';
-    const settings = await getSettings(name);
+    const containerName = ('containerName' in req.query) ? req.query.containerName : DMS_CONTAINER;
+    const name = ('name' in req.query) ? req.query.name : undefined;
+    const settings = await getSettings(containerName, name);
     res.json(settings);
+    
   } catch (error) {
     errorLog(`GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
@@ -597,6 +588,13 @@ app.get('/api/settings', async (req, res) => {
  *   post:
  *     summary: save settings
  *     description: save settings
+ *     parameters:
+ *       - in: path
+ *         name: containerName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: scope to update in settings table
  *     requestBody:
  *       required: true
  *       content:
@@ -620,9 +618,13 @@ app.get('/api/settings', async (req, res) => {
  *       500:
  *         description: Unable to save settings
  */
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings/:containerName', async (req, res) => {
   try {
-    const result = await saveSettings(req.body);     // [{name:name, value:value}, ..]
+    const { containerName } = req.params;
+    if (!containerName) {
+      return res.status(400).json({ error: 'containerName is required' });
+    }
+    const result = await saveSettings(containerName, req.body);     // req.body = [{name:name, value:value}, ..]
     res.status(201).json(result);
     
   } catch (error) {
@@ -949,7 +951,6 @@ app.get('/api/domains', async (req, res) => {
  */
 app.post('/api/getCount/:table', async (req, res) => {
   try {
-    // const table = ('table' in req.query) ? req.query.table : '';
     const { table } = req.params;
     if (!table) {
       return res.status(400).json({ error: 'table is required' });
@@ -969,6 +970,7 @@ app.listen(PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
   await dbInit();
-  // currently we only set that up as default from here, and from saveSettings
-  global.DMS_CONTAINER = await getSettings('containerName');
+  
+  // currently we only preset DMS_CONTAINER globally, the rest of the critical environment is preset during dbInit
+  global.DMS_CONTAINER = await getSettings('dms-gui', 'containerName');
 });

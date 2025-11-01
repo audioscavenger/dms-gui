@@ -19,15 +19,15 @@ DB_Logins     = DMSGUI_CONFIG_PATH + '/db.logins.json';
 DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
 
 // Docker container name for docker-mailserver
-DMS_CONTAINER = (typeof DMS_CONTAINER) ? process.env.DMS_CONTAINER : DMS_CONTAINER;
+DMS_CONTAINER = (typeof DMS_CONTAINER) ? (process.env.DMS_CONTAINER || 'dms') : DMS_CONTAINER;
 containers = (typeof containers) ? {} : containers;
 
 // doveadm API
 DMS_DOVEADM_PORT=8080
 
-DMS_SETUP_SCRIPT  = process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup';
-DMS_CONFIG_PATH = process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver';
-DKIM_SELECTOR_DEFAULT = 'mail';
+DMS_SETUP_SCRIPT = (typeof DMS_SETUP_SCRIPT) ? (process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup') : DMS_SETUP_SCRIPT;
+DMS_CONFIG_PATH = (typeof DMS_CONFIG_PATH) ? (process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver') : DMS_CONFIG_PATH;
+DKIM_SELECTOR_DEFAULT = 'mail';   // that's hardcoded in DMS
 
 DKIM_KEYTYPES = ['rsa','ed25519'];
 DKIM_KEYSIZES = ['1024','2048'];

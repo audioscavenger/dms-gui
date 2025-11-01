@@ -34,10 +34,12 @@ const {
 const path = require('node:path');
 
 // returns a string
-async function getSetting(name) {
+async function getSetting(containerName, name) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+
   try {
     
-    const setting = await dbGet(sql.settings.select.setting, name);
+    const setting = await dbGet(sql.settings.select.setting, {scope:containerName}, name);
     return setting?.value;
     
   } catch (error) {
@@ -54,20 +56,23 @@ async function getSetting(name) {
 
 
 // this returns an array of objects
-async function getSettings(name) {
-  if (name) return getSetting(name);
+async function getSettings(containerName, name) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  if (name) return getSetting(containerName, name);
   
   try {
     
-    const settings = await dbAll(sql.settings.select.settings);
-    debugLog(`settings: settings (${typeof settings})`);
+  warnLog('ddebug 2 containerName',containerName, typeof containerName)
+  warnLog('ddebug 2 name',name, typeof name)
+    const settings = await dbAll(sql.settings.select.settings, {scope:containerName});
     
     // we could read DB_Logins and it is valid
     if (settings && settings.length) {
       infoLog(`Found ${settings.length} entries in settings`);
+      warnLog('ddebug settings',settings)
     
     } else {
-      warnLog(`db seems empty:`, settings);
+      warnLog(`db settings seems empty:`, settings);
     }
     
     return settings;
@@ -86,16 +91,30 @@ async function getSettings(name) {
 }
 
 
-async function saveSettings(jsonArrayOfObjects) {
+async function saveSettings(containerName, jsonArrayOfObjects) { // jsonArrayOfObjects = [{name:name, value:value}, ..]
+  warnLog('containerName',containerName)
+  warnLog('jsonArrayOfObjects',jsonArrayOfObjects)
   try {
     
-    const result = dbRun(sql.settings.insert.setting, jsonArrayOfObjects); // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    // extract containerName from the settings passed
+    const containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
+    warnLog('containerName extracted=',containerName)
+    global.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
+    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return { ...setting, scope:containerName }; });
+    
+    // first we start with the (new?) DMS name
+    let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});
     if (result.success) {
-      const containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-      global.DMS_CONTAINER = containerName;
-      successLog(`Saved ${jsonArrayOfObjects.length} settings in db + containerName=${containerName}`);
-      return { success: true };
-      
+    
+      // then we pass the rest of the values, scoped for the (new?) DMS name
+      // we should remove containerName from the (self) scoped settings to save, but we don't really care since we are not pulling it ever again
+      result = dbRun(sql.settings.insert.setting, jsonArrayOfObjectsScoped); // jsonArrayOfObjects = [{name:name, value:value, scope:scope}, ..]
+      if (result.success) {
+        successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
+        return { success: true };
+        
+      } else return result;
+    
     } else return result;
 
   } catch (error) {
@@ -583,7 +602,7 @@ async function pullServerEnvs(containerName) {
 }
 
 
-async function getServerEnv(name, containerName) {
+async function getServerEnv(containerName, name) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`name=${name} for ${containerName}`);
   
@@ -605,12 +624,15 @@ async function getServerEnv(name, containerName) {
 }
 
 
-async function getServerEnvs(refresh, containerName) {
+async function getServerEnvs(refresh, containerName, name) {
   refresh = (refresh === undefined) ? true : refresh;
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`refresh=${refresh} for ${containerName}`);
   
   if (!refresh) {
+    if (name) return getServerEnv(containerName, name);
+    
+    debugLog(`refresh=${refresh} for ${containerName}`);
+    
     try {
       
       const envs = await dbAll(sql.settings.select.envs, {scope:containerName});
@@ -623,7 +645,7 @@ async function getServerEnvs(refresh, containerName) {
         // [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ]
         
       } else {
-        warnLog(`envs in db seems empty:`, JSON.stringify(envs));
+        warnLog(`db settings[env] seems empty:`, JSON.stringify(envs));
         return [];
       }
       
@@ -639,12 +661,13 @@ async function getServerEnvs(refresh, containerName) {
     }
   }
   
+  debugLog(`will pullServerEnvs for ${containerName}`);
   pulledEnv = await pullServerEnvs(containerName);
   infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
     saveServerEnvs(pulledEnv, containerName);
-    return pulledEnv;
+    return (name) ? getServerEnv(containerName, name) : pulledEnv;
     
   // unknown error
   } else {
@@ -727,7 +750,7 @@ async function getDomains(name, containerName) {
       // [ { name: 'containerName', value: 'dms' }, .. ]
       
     } else {
-      warnLog(`domains in db seems empty:`, domains);
+      warnLog(`db domains seems empty:`, domains);
       return [];
     }
     

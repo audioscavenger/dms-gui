@@ -74,6 +74,10 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.2.4 - bugfixes
+* [x] 1.2.4 - BREAKING CHANGE: all db tables except domains now had id autoincrement as primary key
+* [x] 1.2.4 - frontend.js: bugfix in warnLog
+* [x] 1.2.4 - backend: properly initialize critical values like DMS_CONTAINER and such
 * [x] v1.2.3 - release
 * [x] 1.2.2 - backend: more bugfixes
 * [x] 1.2.2 - frontend/Accounts: addAccount: enable create login by default

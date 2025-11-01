@@ -93,7 +93,7 @@ const Dashboard = () => {
       // setLoading(true);
       setStatusLoading(true);
 
-      const statusData = await getServerStatus(true);
+      const statusData = await getServerStatus(undefined);
 
       setServerStatus(statusData);
       setErrorMessage(null);
