@@ -74,6 +74,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] v1.2.3 - release
 * [x] 1.2.2 - backend: more bugfixes
 * [x] 1.2.2 - frontend/Accounts: addAccount: enable create login by default
 * [x] 1.2.2 - backend/db: bugfix in count queries
@@ -83,7 +84,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.2.1 - backend/frontend: refactor ALL the execSetup API calls to handle result.success and result.message instead of throwing error 500
 * [x] 1.2.1 - backend/frontend: refactor ALL the execCommand API calls to handle result.success and result.message instead of throwing error 500
 * [x] 1.2.1 - backend/frontend: refactor ALL the dbRun API calls to handle result.success and result.message instead of throwing error 500
-* [x] v1.2.0 - release
+* [x] v1.2.0 - release cancelled
 * [x] 1.1.15 - backend/db: bugfix: changePassword had a reference to username
 * [x] 1.1.15 - frontend/Accounts: add checkbox to not create a login for that new account
 * [x] 1.1.15 - frontend/Logins: revamp addLogin page with isAdmin/isActive/isAccount and mailbox selection
