@@ -183,7 +183,7 @@ const Accounts = () => {
 
   const handleDelete = async (mailbox) => {
     setErrorMessage(null);
-    if (window.confirm(t('accounts.confirmDelete', { mailbox }))) {
+    if (window.confirm(t('accounts.confirmDelete', { mailbox:mailbox }))) {
       try {
         const result = await deleteAccount(mailbox);
         if (result.success) {
@@ -287,7 +287,7 @@ const Accounts = () => {
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
-        setSuccessMessage('accounts.passwordUpdated');
+        setSuccessMessage(t('password.passwordUpdated', {username:selectedAccount.mailbox}));
         handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result.message);
@@ -515,7 +515,7 @@ const Accounts = () => {
               value={newAccountformData.createLogin}
               onChange={handleNewAccountInputChange}
               error={newAccountFormErrors.createLogin}
-              required
+              isChecked={newAccountformData.createLogin}
             />
 
             <Button

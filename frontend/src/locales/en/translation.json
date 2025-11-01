@@ -173,7 +173,7 @@
     "password": "Password",
     "passwordLength": "Password must be at least 8 characters",
     "passwordRequired": "Password is required",
-    "passwordUpdated": "Password updated successfully!",
+    "passwordUpdated": "Password updated for {{username}}",
     "passwordsNotMatch": "Passwords do not match"
   },
   "api": {

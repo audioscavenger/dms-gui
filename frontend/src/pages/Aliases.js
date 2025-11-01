@@ -183,7 +183,7 @@ const Aliases = () => {
   };
 
   const handleDelete = async (source, destination) => {
-    if (window.confirm(t('aliases.confirmDelete', { source }))) {
+    if (window.confirm(t('aliases.confirmDelete', { source:source }))) {
       setErrorMessage(null);
       setSuccessMessage(null);
       

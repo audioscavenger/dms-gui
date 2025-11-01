@@ -6,6 +6,8 @@ const {
   errorLog,
   successLog,
   reduxPropertiesOfObj,
+  execSetup,
+  execCommand,
 } = require('./backend');
 
 const crypto = require('node:crypto');
@@ -293,7 +295,7 @@ accounts: {
   },
   
   update: {
-    password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope=? AND mailbox = ?`,
+    password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope = @scope AND mailbox = ?`,
     storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = @scope AND mailbox = ?`,
   },
   
@@ -514,10 +516,8 @@ function dbCount(table, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   
   try {
-    let scope = (sql[table]?.scope) ? containerName : [];
     
-    debugLog(`DB.prepare(sql[${table}].select.count).get(${scope})`);
-    const result = DB.prepare(sql[table].select.count).get(scope);
+    const result = DB.prepare(sql[table].select.count).get({scope:containerName});
     debugLog(`success:`, result);
     
     return result.count;
@@ -740,21 +740,21 @@ async function verifyPassword(credential, password, table='logins') {
 // Function to update a password in a table
 async function changePassword(table, id, password, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  debugLog(`for ${id} in ${table} for ${containerName}`);
 
   try {
     const { salt, hash } = await hashPassword(password);
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
-      debugLog(`Updating password for ${id} in ${containerName}...`, containerName);
-      const results = await execSetup(`email update ${id} ${password}`);
+      debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
+      const results = await execSetup(`email update ${id} password`);
       if (!results.exitCode) {
         
-        debugLog(`Updating password for ${id} in ${table}...`);
+        debugLog(`Updating password for ${id} in ${table} with scope=${containerName}...`);
         const result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
-        successLog(`Password updated for ${table}: ${mailbox}`);
-        return { success: true, message: `Password updated for ${table}: ${mailbox}` };
+        successLog(`Password updated for ${table}: ${id}`);
+        return { success: true, message: `Password updated for ${id} in ${table}`};
         
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
@@ -788,7 +788,7 @@ async function changePassword(table, id, password, containerName) {
 // Function to update a table in the db; id can very well be an array as well
 async function updateDB(table, id, jsonDict, scope) {  // jsonDict = { column:value, .. }
   scope = (scope) ? scope : DMS_CONTAINER;
-  debugLog(`${table} id=${id} for scope=${scope} with`, jsonDict);
+  debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
   try {
     if (!sql[table]) {
@@ -802,7 +802,8 @@ async function updateDB(table, id, jsonDict, scope) {  // jsonDict = { column:va
     // keep only keys defined as updatable
     let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
     if (Object.keys(validDict).length = 0) {
-      throw new Error('jsonDict is invalid');
+      errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)}`); // only dump stuff in container log
+      throw new Error(`jsonDict is invalid`);
     }
     
     // for each new value to update...

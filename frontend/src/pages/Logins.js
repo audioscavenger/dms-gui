@@ -504,7 +504,7 @@ const Logins = () => {
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
-        setSuccessMessage('password.passwordUpdated');
+        setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.username}));
         handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result.message);

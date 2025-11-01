@@ -74,6 +74,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.2.2 - backend: more bugfixes
+* [x] 1.2.2 - frontend/Accounts: addAccount: enable create login by default
+* [x] 1.2.2 - backend/db: bugfix in count queries
 * [x] 1.2.1 - chore: refactoring and bugfixes, all seems to work
 * [x] 1.2.1 - backend/db: refactor ALL scoped queries by always adding scopedValues to queries, so much simpler and failproof
 * [x] 1.2.1 - backend/db: refactor ALL deleteSmth into deleteEntry

@@ -179,7 +179,6 @@ async function pullAccountsFromDMS(containerName) {
 // Function to add a new mailbox account
 async function addAccount(mailbox, password, createLogin=1, containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`(refresh=${refresh} for ${containerName}`);
 
   try {
     debugLog(`Adding new mailbox account: ${mailbox}`);
@@ -191,25 +190,26 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
       if (result.success) {
         if (createLogin) {
           const result2 = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:[mailbox], scope:containerName});
-        }
-        if (result2.success) {
-          successLog(`Account created: ${mailbox}`);
-          return { success: true };
-          
-        } else return result2;
+          if (result2.success) {
+            successLog(`Account created: ${mailbox}`);
+            return { success: true };
+            
+          } else return result2;
+        
+        } else return result;
         
       } else return result;
       
     } else {
-      errorLog(results.stderr);
-      return { success: false, message: results.stderr};
+      let ErrorMsg = await formatDMSError(backendError, results.stderr);
+      errorLog(ErrorMsg);
+      return { success: false, message: ErrorMsg};
     }
     
   } catch (error) {
-    let backendError = 'Error adding account';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -367,10 +367,10 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
     if (!results.exitCode) {
       
       successLog(formattedPass, results.stdout);
-      return { success: true, message: result.stdout };
+      return { success: true, message: results.stdout };
       
     } else {
-      errorLog(result.stderr);
+      errorLog(results.stderr);
       return { success: false, message: results.sterr };
     }
     

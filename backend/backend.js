@@ -104,56 +104,57 @@ async function execInContainer(command, containerName) {
   // Get container instance
   const container = getContainer(containerName);
 
-    // Ensure the container is running before attempting to exec
-    const containerInfo = await container.inspect();
-    if (!containerInfo.State.Running) {
-        throw new Error(`Container ${containerId} is not running.`);
-    }
+  // Ensure the container is running before attempting to exec
+  const containerInfo = await container.inspect();
+  if (!containerInfo.State.Running) {
+    throw new Error(`Container ${containerId} is not running.`);
+  }
 
-    const execOptions = {
-        Cmd: ['sh', '-c', command],
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: false, // Must be false to properly capture streams
+  const execOptions = {
+    Cmd: ['sh', '-c', command],
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Must be false to properly capture streams
+  };
+
+  try {
+    const exec = await container.exec(execOptions);
+
+    const stream = await exec.start();
+
+    // Collect the streams output
+    const stdoutBuffer = [];
+    const stderrBuffer = [];
+    let exitCode;
+
+    const processExit = new Promise((resolve, reject) => {
+      docker.modem.demuxStream(stream, {
+        write: chunk => stdoutBuffer.push(chunk),
+      }, {
+        write: chunk => stderrBuffer.push(chunk),
+      });
+
+      stream.on('end', async () => {
+        const execInfo = await exec.inspect();
+        exitCode = execInfo.ExitCode;
+        resolve();
+      });
+
+      stream.on('error', reject);
+    });
+
+    await processExit;
+
+    if (exitCode == 0) {successLog(command);} else {warnLog(command);}
+    return {
+      exitCode,
+      stdout: Buffer.concat(stdoutBuffer).toString('utf8'),
+      stderr: Buffer.concat(stderrBuffer).toString('utf8'),
     };
-
-    try {
-        const exec = await container.exec(execOptions);
-
-        const stream = await exec.start();
-
-        // Collect the streams output
-        const stdoutBuffer = [];
-        const stderrBuffer = [];
-        let exitCode;
-
-        const processExit = new Promise((resolve, reject) => {
-            docker.modem.demuxStream(stream, {
-                write: chunk => stdoutBuffer.push(chunk),
-            }, {
-                write: chunk => stderrBuffer.push(chunk),
-            });
-
-            stream.on('end', async () => {
-                const execInfo = await exec.inspect();
-                exitCode = execInfo.ExitCode;
-                resolve();
-            });
-
-            stream.on('error', reject);
-        });
-
-        await processExit;
-
-        return {
-            exitCode,
-            stdout: Buffer.concat(stdoutBuffer).toString('utf8'),
-            stderr: Buffer.concat(stderrBuffer).toString('utf8'),
-        };
-    } catch (error) {
-        console.error('Error during exec:', error);
-        throw error;
-    }
+  } catch (error) {
+    console.error('Error during exec:', error);
+    throw error;
+  }
 }
 
 

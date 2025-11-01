@@ -418,7 +418,7 @@ app.put('/api/accounts/:mailbox/update', async (req, res) => {
     }
 
     // await updateAccount(mailbox, req.body);
-    const result = await updateDB('accounts', mailbox, req.body, containerName);
+    const result = await updateDB('accounts', mailbox, req.body);
     res.json(result);
     
   } catch (error) {
