@@ -174,6 +174,7 @@ const Dashboard = () => {
   const getStatusColor = () => {
     if (status.status.status === 'running') return 'success';
     if (status.status.status === 'stopped') return 'danger';
+    if (status.status.status === 'missing') return 'danger';
     if (status.status.status === 'loading') return 'secondary';
     return 'warning';
   };
@@ -181,6 +182,7 @@ const Dashboard = () => {
   const getStatusText = () => {
     if (status.status.status === 'running') return 'dashboard.status.running';
     if (status.status.status === 'stopped') return 'dashboard.status.stopped';
+    if (status.status.status === 'missing') return 'dashboard.status.stopped';
     if (status.status.status === 'loading') return 'dashboard.status.unknown';
     return 'dashboard.status.unknown';
   };
@@ -226,7 +228,7 @@ const Dashboard = () => {
             icon="cpu"
             iconColor={isStatusLoading ? "secondary" : "primary"}
             isLoading={isStatusLoading}
-            value={(Number(status.resources.cpuUsage) * 100).toFixed(2)+'%'}
+            value={Number(status.resources.cpuUsage).toFixed(2)+'%'}
           />
         </Col>
         <Col md={3} className="mb-3">
@@ -235,7 +237,7 @@ const Dashboard = () => {
             icon="memory"
             iconColor={isStatusLoading ? "secondary" : "info"}
             isLoading={isStatusLoading}
-            value={byteSize2HumanSize(status.resources.memoryUsage)}
+            value={Number(status.resources.memoryUsage).toFixed(2)+'%'}
           />
         </Col>
         <Col md={3} className="mb-3">

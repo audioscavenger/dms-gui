@@ -22,6 +22,7 @@ const {
   regexColors,
   regexPrintOnly,
   getContainer,
+  processTopData,
 } = require('./backend');
 
 const {
@@ -137,8 +138,107 @@ async function saveSettings(containerName, jsonArrayOfObjects) {
 }
 
 
-// Function to get server status
+// Function to get server status from DMS
 async function getServerStatus(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
+  var DBdict = {};
+  var status = {
+    status: {
+      status: 'missing',
+      StartedAt: '',
+      FinishedAt: '',
+      Health: '',
+    },
+    resources: {
+      cpuUsage: 'N/A',
+      memoryUsage: 'N/A',
+      diskUsage: 'N/A',
+    },
+  };
+
+  // TODO: we should simply process the result of uptime here with load averages for last 1, 5 and 15mn
+  // cpu_Usage    = "uptime"  // 02:04:57 up 35 days, 22:41,  0 user,  load average: 0.02, 0.01, 0.00
+
+  top_cmd      = "top -bn1"
+  cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
+  memory_Used  = "free -m | awk '/Mem/ {print $3}'"
+  memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
+
+  // TODO: we should simply process the result of top below, as it contains all we need:
+  // top - 02:02:32 up 35 days, 22:39,  0 user,  load average: 0.00, 0.01, 0.00
+  // Tasks:  35 total,   1 running,  34 sleeping,   0 stopped,   0 zombie
+  // %Cpu(s):  0.0 us,100.0 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+  // MiB Mem :   4413.7 total,    410.5 free,   1269.0 used,   3088.8 buff/cache
+  // MiB Swap:   2304.0 total,   2201.0 free,    103.0 used.   3144.7 avail Mem
+
+      // PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+     // 1946 _mta-sts  20   0  335112  34004  12288 S   6.2   0.8   0:08.83 mta-sts-daemon
+        // 1 root      20   0    2332   1024   1024 S   0.0   0.0   0:00.04 dumb-init
+        // 7 root      20   0   37260  31280  10240 S   0.0   0.7   0:01.39 supervisord
+       // 49 root      20   0    2896   1536   1536 S   0.0   0.0   0:00.55 tail
+     // 1899 root      20   0   24716  18048   9088 S   0.0   0.4   0:00.52 python3
+
+  try {
+    
+    const [result_cpu, result_mem] = await Promise.all([
+      execCommand(cpu_Usage, containerName),
+      execCommand(memory_Usage, containerName),
+    ]);
+    
+    let result_top = await execCommand(top_cmd, containerName);
+    let topJson = await processTopData(result_top.stdout)
+    debugLog('processTopData', topJson);
+    
+    // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
+    // {
+      // top: {
+        // time: '04:16:04',
+        // up_days: '36',
+        // load_average: [ '0.08', '0.07', '0.02' ]
+      // },
+      // tasks: {
+        // total: '31',
+        // running: '1',
+        // sleeping: '30',
+        // stopped: '0',
+        // zombie: '0'
+      // },
+      // mem: {
+        // total: '4413.7',
+        // used: '1305.2',
+        // free: '272.5',
+        // buff_cache: '3134.2'
+      // },
+    // }
+    
+    if (!result_cpu.returncode) {
+      status.status.status = "running";
+      status.resources.cpuUsage = result_cpu.stdout;
+      status.resources.memoryUsage = result_mem.stdout;
+      
+    } else {
+      status.status.status = "stopped";
+    }
+
+    return status;
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+// Function to get server status from a docker container - deprecated
+async function getServerStatusFromDocker(containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 

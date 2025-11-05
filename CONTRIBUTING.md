@@ -77,7 +77,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] 1.2.?  - frontend: it becomes clear that we need a profile page and a way to keep current env values like DMS_CONTAINER, lang, etc
 
-* [ ] 1.2.6 - backend: add Bearer token read from Authorization header in user-patches-api.py, instead of the body
+* [x] 1.2.6 - backend/settings: rewrite getServerStatus() for API and integrate top_parser.js
+* [x] 1.2.6 - backend: added Bearer token read from Authorization header in user-patches-api.py, instead of the body
 * [x] 1.2.5 - backend: added execInContainerAPI() and sendJsonToApi() and all seems to work escept 
 * [x] 1.2.5 - backend/settings: initAPI() now creates both the user-patches-api.sh and user-patches-api.py, only when DMS_API_KEY exist and loaded
 * [x] 1.2.5 - frontend/FormField: now embedds InputGroup and children

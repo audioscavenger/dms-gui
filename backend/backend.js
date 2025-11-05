@@ -20,6 +20,9 @@ const {
   humanSize2ByteSize,
   moveKeyToLast,
 } = require('./common');
+const {
+  processTopData,
+} = require('./top_parser');
 
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
@@ -99,11 +102,16 @@ async function execCommand(command, containerName) {
   debugLog(`Executing system command: ${command}`);
   // return execInContainer(command, containerName);
   const result = await execInContainerAPI(command, containerName);
-  debugLog('ddebug result', result)
+  // debugLog('ddebug result', result)
   return result;
 }
 
 
+/**
+ * Executes a command in the docker-mailserver container through docker.sock
+ * @param {string} command Command to execute
+ * @return {Promise<string>} stdout from the command
+ */
 async function execInContainer(command, containerName) {
   // Get container instance
   const container = getContainer(containerName);
@@ -163,14 +171,14 @@ async function execInContainer(command, containerName) {
 
 
 /**
- * Executes a command in the docker-mailserver container through an API
+ * Executes a command in the docker-mailserver container through an http API
  * @param {string} command Command to execute
  * @return {Promise<string>} stdout from the command
  */
 async function execInContainerAPI(command, containerName) {
   
+    // api_key: DMS_API_KEY,  // moved to the Authorization header
   const jsonData = {
-    api_key: DMS_API_KEY,
     command: command,
     timeout: 1,
   };
@@ -210,27 +218,26 @@ async function execInContainerAPI(command, containerName) {
  * @return {Promise<string>} stdout from the fetch
  */
 async function sendJsonToApi(apiUrl, jsonData) {
-  debugLog('ddebug apiUrl',apiUrl)
-  debugLog('ddebug jsonData',jsonData)
+  // debugLog('ddebug apiUrl',apiUrl)
+  // debugLog('ddebug jsonData',jsonData)
   
   try {
     const response = await fetch(apiUrl, {
       method: 'POST', // or 'PUT'
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DMS_API_KEY}`
+        'Authorization': DMS_API_KEY
       },
       body: JSON.stringify(jsonData), // Convert JavaScript object to JSON string
     });
 
-    debugLog('ddebug response', response)
-    await debugLog('ddebug response', response.body)
+    // debugLog('ddebug response', response)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const responseData = await response.json(); // Parse the JSON response
-    debugLog('API response:', responseData);
+    // debugLog('API response:', responseData);
     return responseData;
     
   } catch (error) {
@@ -495,4 +502,5 @@ module.exports = {
   writeJson,
   writeFile,
   getContainer,
+  processTopData,
 };

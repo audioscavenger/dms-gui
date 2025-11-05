@@ -54,9 +54,9 @@ isMutable = 1;
 isImmutable = 0;
 
 
-
-userPatchesAPI = {
+/*
   sh: {
+    desc: 'python API server launcher - cancelled'
     path: DMSGUI_CONFIG_PATH + '/user-patches-api.sh',
     content:
 `# this script is executed on startup
@@ -64,7 +64,10 @@ userPatchesAPI = {
 nohup /usr/bin/python3 $(dirname $0)/user-patches-api.py &
 `,
   },
+*/
+userPatchesAPI = {
   py: {
+    desc: 'python API server - mount this to /tmp/docker-mailserver/user-patches-api.py',
     path: DMSGUI_CONFIG_PATH + '/user-patches-api.py',
     content:
 `#!/usr/bin/python3
@@ -88,7 +91,8 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
 
   def do_POST(self):
     # 1. Get the content length from the headers
-    content_length = int(self.headers.get('Content-Length', 0))
+    content_bearer  = self.headers.get('Authorization', 'missing')
+    content_length  = int(self.headers.get('Content-Length', 0))
 
     # 2. Read the raw POST data from the request body
     post_data = self.rfile.read(content_length)
@@ -96,17 +100,18 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
     # 3. Attempt to parse the data as JSON
     try:
       json_data = json.loads(post_data.decode('utf-8'))
-      print(f"Received JSON data: {json_data}")
+      print(f"[dms-gui] API: Received JSON data: {json_data}")
       
-      api_key = json_data.get('api_key')
+      # api_key = json_data.get('api_key')
       command = json_data.get('command')
       timeout = json_data.get('timeout', timeout_default)
       
-      print(f"[dms-gui] API: Received API Key: {api_key}")
-      print(f"[dms-gui] API: Received command: {command}")
-      print(f"[dms-gui] API: Received timeout: {timeout}")
+      # print(f"[dms-gui] API: Received API Key: {api_key}")
+      # print(f"[dms-gui] API: Received command: {command}")
+      # print(f"[dms-gui] API: Received timeout: {timeout}")
     
-      if api_key == DMS_API_KEY:
+      # if api_key == DMS_API_KEY:
+      if content_bearer == DMS_API_KEY:
         if not command:
           response_message = {"status": "error", "error": "no command was passed"}
           print(response_message['error'])
@@ -167,8 +172,23 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
 
 
 with socketserver.TCPServer((DMS_API_HOST, DMS_API_PORT), APIHandler) as httpd:
-  print(f"Serving at port {DMS_API_HOST}:{DMS_API_PORT}")
+  print(f"[dms-gui] API: Serving at port {DMS_API_HOST}:{DMS_API_PORT}")
   httpd.serve_forever()
+`,
+  },
+  cron: {
+    desc: 'https://github.com/orgs/docker-mailserver/discussions/2908 - mount this to /etc/supervisor/conf.d/user-patches-api.conf',
+    path: DMSGUI_CONFIG_PATH + '/user-patches-api.conf',
+    content:
+`
+[program:user-patches-api]
+startsecs=0
+stopwaitsecs=55
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/%(program_name)s.log
+stderr_logfile=/var/log/supervisor/%(program_name)s.log
+command=/usr/bin/python3 /tmp/docker-mailserver/user-patches-api.py
 `,
   },
 }
@@ -186,7 +206,7 @@ with socketserver.TCPServer((DMS_API_HOST, DMS_API_PORT), APIHandler) as httpd:
 // autorestart=true
 // stdout_logfile=/var/log/supervisor/%(program_name)s.log
 // stderr_logfile=/var/log/supervisor/%(program_name)s.log
-// command=/usr/bin/python3 /path/to/user-server-cli.py
+// command=/usr/bin/python3 /tmp/docker-mailserver/user-patches-api.py
 
 
 
