@@ -77,6 +77,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] 1.2.?  - frontend: it becomes clear that we need a profile page and a way to keep current env values like DMS_CONTAINER, lang, etc
 
+* [x] 1.2.8 - backend/settings: pullServerEnvs() now rely on API and pullDoveConf()
 * [x] 1.2.7 - backend/settings: disk usage is total of all mailboxes in MB
 * [x] 1.2.7 - backend/settings: getServerStatus is now based off top command + top_parser.js
 * [x] 1.2.7 - README: updated paths, ports, environment and columes requirements for the new DMS API access

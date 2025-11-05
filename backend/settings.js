@@ -386,7 +386,8 @@ async function readDovecotConfFile(stdout) {
   // TODO: not capture trailing spaces in a set of words /[\s+]?=[\s+]?([\S\s]+)[\s+]?$/
   const regexConfComments = /^(\s+)?#(.*?)$/;
   // " mail_plugins = $mail_plugins fts fts_xapian ".replace(/(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/, "'$2': '$5',") -> "'mail_plugins': '$mail_plugins fts fts_xapian ',"
-  const regexConfDeclare = /(\s+)?(\S+)(\s+)?=(\s+)?([\S\s]+)(\s+)?$/;
+  // const regexConfDeclare = /(\s+)?(\S+)(\s+)?[=:](\s+)?\"?([\S\s]+)\"?(\s+)?$/;
+  const regexConfDeclare = /(\s+)?(\S+)[\s]*[=:][\s]*[\"]?([\S\s]+)[\"]?[\s]*$/;      // $3 is greedy and will capture the last quote
   // " ssss indexer-worker { ".replace(/(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/, "'$2': $5") -> " 'ssss': {"
   const regexConfObjOpen = /(\s+)?([\S]+)?([\s\S\-]*)?[\-]?([\S]+)?([\[\{])(\s+)?$/;
   const regexConfObjClose = /(\s+)?([\]\}])(\s+)?$/;
@@ -398,7 +399,8 @@ async function readDovecotConfFile(stdout) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].replace(regexEmpty, '')
                          .replace(regexConfComments, '')
-                         .replace(regexConfDeclare, '"$2": "$5",')
+                         .replace(regexConfDeclare, '"$2": "$3",')
+                         .replace(/[\"]+/g, '"')
                          .replace(regexConfObjOpen, '"$2": $5')
                          .replace(regexConfObjClose, '$2,')
                          .trim();
@@ -542,8 +544,46 @@ async function readDkimFile(stdout) {
 }
 
 
-// async function pullFTS(envs, containerName, containerInfo) {
-async function pullFTS(containerName, containerInfo) {
+// pulls entire doveconf and parse what we need
+async function pullDoveConf(containerName) {
+// TODO: add quotas
+// "quota_max_mail_size": "314M",
+// "quota_rule": "*:storage=5242M",
+
+  debugLog(`start`);
+  let envs = {};
+
+  try {
+    
+    const results = await execCommand(`doveconf`, containerName);
+    if (!results.returncode) {
+      const doveconf = await readDovecotConfFile(results.stdout);
+      // debugLog(`doveconf:`, doveconf);   // super large output, beware
+      
+      if (doveconf?.plugin?.fts) {
+        envs.DOVECOT_FTS_PLUGIN = doveconf.plugin.fts;
+        envs.DOVECOT_FTS_AUTOINDEX = doveconf.plugin.fts_autoindex;
+      }
+
+      if (doveconf?.mail_plugins) {
+        // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
+        // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN, DOVECOT_ZLIB etc
+        for (const PLUGIN of doveconf.mail_plugins) {
+          envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+        }
+      }
+
+    } else errorLog(results.stderr);
+    
+  } catch (error) {
+    errorLog(`execCommand failed with error:`,error);
+  }
+  return envs;
+}
+
+
+// pulls FTS info from detecting fts named mounts in docker - deprecated
+async function pullFTSFromDocker(containerName, containerInfo) {
   let ftsMount = '';
   let envs = {};
 
@@ -603,13 +643,14 @@ async function pullDOVECOT(containerName) {
 }
 
 
-async function pullMailPlugins(containerName) {
+// deprecated
+async function pullMailPluginsOLD(containerName) {
   debugLog(`start`);
   let envs = {};
 
   try {
     
-    const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout =  quota fts fts_xapian zlib
+    const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
     if (!results.returncode) {
       // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
       // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
@@ -658,7 +699,7 @@ async function pullDkimRspamd(containerName) {
         }
       }
 
-    } else errorLog(result.stderr);
+    } else warnLog(result.stderr);  // dkim is optional, not an error if absent
 
 
   } catch (error) {
@@ -668,8 +709,60 @@ async function pullDkimRspamd(containerName) {
 }
 
 
-// Function to pull server environment
+// Function to pull server environment from API
 async function pullServerEnvs(containerName) {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`for ${containerName}`);
+
+  var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
+  try {
+    
+    // Get container instance
+    const result_env = await execCommand(`env`, containerName);
+    if (!result_env.returncode) {
+
+      // get and conver DMS environment to dict ------------------------------------------ envs
+      debugLog(`result_env.stdout`, result_env.stdout);
+      const dictEnvDMS = arrayOfStringToDict(result_env.stdout, '=');
+      // debugLog(`dictEnvDMS`, dictEnvDMS);
+      
+      // we keep only some options not all
+      dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+      debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
+
+
+      // look for dovecot version -------------------------------------------------- dovecot version
+      const dovecot = await pullDOVECOT(containerName);
+
+      // look for doveconf mail_plugins fts etc -------------------------------------------------- doveconf
+      const doveconf = await pullDoveConf(containerName);
+      
+      // TODO: look for quotas -------------------------------------------------- quota
+      
+      // pull dkim conf ------------------------------------------------------------------ dkim rspamd
+      const dkim = await pullDkimRspamd(containerName);
+      
+      // merge all ------------------------------------------------------------------ merge
+      envs = { ...envs, ...dictEnvDMSredux, ...dovecot, ...doveconf, ...dkim };
+      debugLog(`Server pull envs result:`, envs);
+      
+    } else {
+      warnLog(`DMS or API seems down`);
+    }
+    
+    return obj2ArrayOfObj(envs, true);
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+  }
+  
+}
+
+
+// Function to pull server environment - deprecated
+async function pullServerEnvsFromDocker(containerName) {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
@@ -702,7 +795,7 @@ async function pullServerEnvs(containerName) {
       let dovecot = await pullDOVECOT(containerName);
 
       // look for FTS values -------------------------------------------------- fts
-      let fts = await pullFTS(containerName, containerInfo);
+      let fts = await pullFTSFromDocker(containerName, containerInfo);
 
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
       let dkim = await pullDkimRspamd(containerName);

@@ -103,7 +103,7 @@ async function pullAliasesFromDMS(containerName) {
   try {
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, containerName);
-    debugLog('ddebug results',results)
+    // debugLog('ddebug results',results)
     if (!results.returncode) {
       aliases = await parseAliasesFromDMS(results.stdout);
       

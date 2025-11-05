@@ -43,6 +43,10 @@ function arrayOfStringToDict(array=[], separator=',') {
   
   var dict={};
   
+  if (typeof array == "string") {
+    array = array.split(/\r?\n/);
+  }
+  
   array.map((item) => {
     let split = item.split(separator);
     if (split.length == 2) {
