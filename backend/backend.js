@@ -14,6 +14,7 @@ const {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  getValuesFromArrayOfObj,
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
@@ -96,7 +97,10 @@ async function execCommand(command, containerName) {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
-  return execInContainer(command, containerName);
+  // return execInContainer(command, containerName);
+  const result = await execInContainerAPI(command, containerName);
+  debugLog('ddebug result', result)
+  return result;
 }
 
 
@@ -125,7 +129,7 @@ async function execInContainer(command, containerName) {
     // Collect the streams output
     const stdoutBuffer = [];
     const stderrBuffer = [];
-    let exitCode;
+    let returncode;
 
     const processExit = new Promise((resolve, reject) => {
       docker.modem.demuxStream(stream, {
@@ -136,7 +140,7 @@ async function execInContainer(command, containerName) {
 
       stream.on('end', async () => {
         const execInfo = await exec.inspect();
-        exitCode = execInfo.ExitCode;
+        returncode = execInfo.ExitCode;
         resolve();
       });
 
@@ -145,9 +149,9 @@ async function execInContainer(command, containerName) {
 
     await processExit;
 
-    if (exitCode == 0) {successLog(command);} else {warnLog(command);}
+    if (returncode == 0) {successLog(command);} else {warnLog(command);}
     return {
-      exitCode,
+      returncode: returncode,
       stdout: Buffer.concat(stdoutBuffer).toString('utf8'),
       stderr: Buffer.concat(stderrBuffer).toString('utf8'),
     };
@@ -158,29 +162,145 @@ async function execInContainer(command, containerName) {
 }
 
 
-/* (async () => {
-    try {
-        // Command that should fail (e.g., trying to access a non-existent file)
-        console.log("Executing failing command...");
-        const failingResult = await execInContainer(['cat', 'non_existent_file.txt'], containerName);
-        console.log('--- Failing Command Result ---');
-        console.log('Exit Code:', failingResult.exitCode);
-        console.log('STDOUT:', failingResult.stdout);
-        console.log('STDERR:', failingResult.stderr);
+/**
+ * Executes a command in the docker-mailserver container through an API
+ * @param {string} command Command to execute
+ * @return {Promise<string>} stdout from the command
+ */
+async function execInContainerAPI(command, containerName) {
+  
+  const jsonData = {
+    api_key: DMS_API_KEY,
+    command: command,
+    timeout: 1,
+  };
 
-        // Command that should succeed
-        console.log("\nExecuting successful command...");
-        const successResult = await execInContainer(['echo', 'Hello from inside'], containerName);
-        console.log('--- Successful Command Result ---');
-        console.log('Exit Code:', successResult.exitCode);
-        console.log('STDOUT:', successResult.stdout);
-        console.log('STDERR:', successResult.stderr);
-
-    } catch (err) {
-        console.error("An error occurred:", err.message);
+  try {
+    debugLog(`http://${containerName}:${DMS_API_PORT}`)
+    const response = await sendJsonToApi(`http://${containerName}:${DMS_API_PORT}`, jsonData)
+    
+    if ('error' in response) {
+      errorLog('response:', response);
+      return {
+        returncode: 99,
+        stderr: response.error.toString('utf8'),
+      };
+      
+    } else {
+      successLog('response:', response);
+      return {
+        returncode: response.returncode,
+        stdout: response.stdout.toString('utf8'),
+        stderr: response.stderr.toString('utf8'),
+      };
     }
-})();
-*/
+  } catch (error) {
+    errorLog('error:', error.message);
+    return {
+      returncode: 99,
+      stderr: error.message,
+    };
+  }
+}
+
+
+/**
+ * Generic API function post
+ * @param {string} apiUrl API url like http://whatever:8888
+ * @return {Promise<string>} stdout from the fetch
+ */
+async function sendJsonToApi(apiUrl, jsonData) {
+  debugLog('ddebug apiUrl',apiUrl)
+  debugLog('ddebug jsonData',jsonData)
+  
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST', // or 'PUT'
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DMS_API_KEY}`
+      },
+      body: JSON.stringify(jsonData), // Convert JavaScript object to JSON string
+    });
+
+    debugLog('ddebug response', response)
+    await debugLog('ddebug response', response.body)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json(); // Parse the JSON response
+    debugLog('API response:', responseData);
+    return responseData;
+    
+  } catch (error) {
+    errorLog('Error sending JSON to API:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * Generic API function get
+ * @param {string} apiUrl API url like http://whatever:8888
+ * @return {Promise<string>} stdout from the fetch
+ */
+async function getJsonFromApi(apiUrl) {
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json', // Indicate that you expect JSON
+        // Add any other necessary headers
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const jsonData = await response.json(); // Parse the JSON response
+    debugLog('Received JSON data:', jsonData);
+    return jsonData;
+    
+  } catch (error) {
+    errorLog('Error fetching JSON from API:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * // https://github.com/orgs/docker-mailserver/discussions/2908#discussioncomment-14867771
+ * Executes a command in the docker-mailserver container through a named pipe
+ * @param {string} command Command to execute
+ * @return {Promise<string>} stdout from the command
+ */
+// async function execInContainerPipe(command, containerName) {
+  // import { fetch, Agent } from 'undici'
+  
+  // const url = "http://localhost/setup";
+  // const cli_args = ["email", "add", "jane.doe@example.test", "secret password"];
+
+  // const uds = new Agent({ connect: { socketPath: '/var/run/dms-api/api.sock' } })
+  // const fetch_config = {
+    // dispatcher: uds,
+    // method: "POST",
+    // headers: {
+      // "Content-Type": "application/json",
+    // },
+    // body: JSON.stringify(cli_args),
+  // };
+
+  // try {
+    // const response = await fetch(url, fetch_config);
+    // const cli_output = await response.text();
+    // console.log(cli_output);
+  // } finally {
+    // await uds.close()
+  // }
+  
+// }
 
 
 /**
@@ -241,49 +361,64 @@ async function execInContainerOLD(command, containerName) {
 async function readJson(jsonFile) {
   var json = {};
 
-  debugLog(`readJson: start trying to read ${jsonFile}`);
+  debugLog(`start to read ${jsonFile}`);
   try {
-    debugLog(`readJson: now checking if exist ${jsonFile}`);
+    debugLog(`checking if exist ${jsonFile}`);
     
     if (fs.existsSync(jsonFile)) {
-      debugLog(`readJson: now trying to read ${jsonFile}`);
+      debugLog(`reading ${jsonFile}`);
       
       const data = await fsp.readFile(jsonFile, "utf8");
       json = JSON.parse(Buffer.from(data));
-      debugLog(`readJson: got json from ${jsonFile}`);
+      successLog(`json from ${jsonFile}`);
+      debugLog(`json from ${jsonFile}`, json);
       
     } else {
-      debugLog(`readJson: empty ${jsonFile}`);
+      warnLog(`empty ${jsonFile}`);
     }
+    
   } catch (error) {
-    errorLog(`readJson: ${jsonFile} read error:`, error);
-    throw new Error('readJson Error reading '+jsonFile);
+    errorLog(`${jsonFile} read error:`, error.message);
+    throw new Error(error.message);
   }
   return json;
 }
 
 
 
-async function writeJson(DB_JSON, DBdict) {
-  // await mutex.runExclusive(async () => {
-    
-    if (DBdict.constructor == Object) {
-      try {
+async function writeJson(jsonFile, DBdict) {
+  
+  if (DBdict.constructor == Object) {
+    try {
 
-        // fs.writeFileSync(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
-        await fsp.writeFile(DB_JSON, JSON.stringify(DBdict, null, 2), 'utf8');
-        infoLog(`writeJson: Wrote DBdict into ${DB_JSON}`);
+      await writeFile(jsonFile, JSON.stringify(DBdict, null, 2));
+      successLog(`DBdict into ${jsonFile}`);
 
-        
-      } catch (error) {
-        errorLog(`writeJson: ${DB_JSON} write error:`, error);
-        throw new Error('Error writting DB_JSON');
-      }
-    } else {
-      errorLog(`writeJson: DBdict not an Object:`, DBdict);
-      throw new Error('writeJson Error: DBdict not an Object');
+      
+    } catch (error) {
+      errorLog(`${jsonFile} write error:`, error.message);
+      throw new Error(error.message);
     }
-  // });
+  } else {
+    errorLog(`DBdict not an Object:`, DBdict);
+    throw new Error('DBdict not an Object');
+  }
+}
+
+
+async function writeFile(file, content) {
+  
+  try {
+
+    // fs.writeFileSync(file, content, 'utf8');
+    await fsp.writeFile(file, content, 'utf8');
+    successLog(`${file}`);
+
+    
+  } catch (error) {
+    errorLog(`${file} write error:`, error.message);
+    throw new Error(error.message);
+  }
 }
 
 
@@ -339,6 +474,7 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  getValuesFromArrayOfObj,
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,
@@ -357,5 +493,6 @@ module.exports = {
   execCommand,
   readJson,
   writeJson,
+  writeFile,
   getContainer,
 };

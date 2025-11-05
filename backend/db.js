@@ -50,6 +50,7 @@ settings: {
     setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = @scope AND name = ?`,
     envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
     env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
+    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${isMutable} AND name = 'containerName'`,
   },
   
   insert: {
@@ -71,7 +72,7 @@ settings: {
           isMutable BIT DEFAULT ${isImmutable},
           UNIQUE (name, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', 0);
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${DMS_CONTAINER}', 'dms-gui', ${isMutable});
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${DMS_SETUP_SCRIPT}', '${DMS_CONTAINER}', ${isMutable});
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DMS_CONFIG_PATH', '${DMS_CONFIG_PATH}', '${DMS_CONTAINER}', ${isMutable});
@@ -767,7 +768,7 @@ async function changePassword(table, id, password, containerName) {
     if (table == 'accounts') {
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
       const results = await execSetup(`email update ${id} password`);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         
         debugLog(`Updating password for ${id} in ${table} with scope=${containerName}...`);
         const result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
@@ -971,7 +972,6 @@ async function deleteEntry(table, id, key, scope) {
     // };
   }
 }
-
 
 
 module.exports = {

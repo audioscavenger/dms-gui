@@ -82,6 +82,7 @@ function reduxArrayOfObjByKey(array=[], keys2Keep=[]) {
   // {name: 'Mike'},
   // ]
 
+  if (typeof keys2Keep == "string") keys2Keep = [keys2Keep];
   const redux = array => array.map(o => keys2Keep.reduce((acc, curr) => {
     acc[curr] = o[curr];
     return acc;
@@ -104,6 +105,7 @@ function reduxArrayOfObjByValue(array=[], key, values2Keep=[]) {
   // {name: 'John', city: 'London', age: 42},
   // ]
 
+  if (typeof values2Keep == "string") values2Keep = [values2Keep];
   return array.filter(item => values2Keep.includes(item[key]));
   
 }
@@ -122,6 +124,7 @@ function reduxPropertiesOfObj(obj={}, keys2Keep=[]) {
   // firstName: 'firstName',
   // }
 
+  if (typeof keys2Keep == "string") keys2Keep = [keys2Keep];
   const allKeys = Object.keys(obj);
   return allKept = allKeys.reduce((next, key) => {
     if (keys2Keep.includes(key)) {
@@ -153,25 +156,36 @@ function mergeArrayOfObj(a, b, prop) {
 // ES6 arrow functions
 function mergeArrayOfObj(a=[], b=[], prop='name') {
   // this will merge:
-    // a = [{name: 1,value: "orig"}]
-    // b = [{name: 1,value: "new"},{name: 2,value: "new"}]
+    // a =      [{name: 1,value: "orig"}]
+    // b =      [{name: 1,value: "new"}, {name: 2,value: "new"}]
   // into:
-    // output = [{name: 1,value: "new"},{name: 2,value: "new"}]
-
+    // output = [{name: 1,value: "new"}, {name: 2,value: "new"}]
+  if (!Array.isArray(a)) a = [a];
+  if (!Array.isArray(b)) b = [b];
   const reduced = (a.length) ? a.filter(aitem => !b.find(bitem => aitem[prop] === bitem[prop])) : [];
   return reduced.concat(b);
 }
 
-
+// this will return the FIRST value from an array of objects like arr = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => "value1"
 function getValueFromArrayOfObj(arr, propValue, keyName='name', keyValue='value') {
-  // this will return the value from an array of objects like arr = [ {name: prop1, value: value1}, {name: prop2, value: value2}, .. ] -> propValue = prop1 => "value1"
   if (!Array.isArray(arr)) return undefined;
   return (arr.find(item => item[keyName] == propValue)) ? arr.find(item => item[keyName] == propValue)[keyValue] : undefined;
 }
 
 
+// this will return the FIRST value from an array of objects like arr = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => ["value1"]
+function getValuesFromArrayOfObj(arr, propValue, keyName='name', keyValue='value') {
+  if (!Array.isArray(arr)) return undefined;
+  let output = [];
+  for (const item of arr.filter(item => item[keyName] == propValue)) {
+    output.push(item[keyValue]);
+  }
+  return output;
+}
+
+
+// this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
 function pluck(arr, keyValue, uniq=true, sorted=true) {
-  // this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
   if (!Array.isArray(arr)) return undefined;
   let values = arr.map(item => item[keyValue]);
   let uniqValues = (uniq) ? [... new Set(values)] : values;
@@ -223,6 +237,7 @@ module.exports = {
   reduxPropertiesOfObj,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
+  getValuesFromArrayOfObj,
   pluck,
   byteSize2HumanSize,
   humanSize2ByteSize,

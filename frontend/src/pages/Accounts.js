@@ -92,7 +92,7 @@ const Accounts = () => {
         getSettings(undefined, 'dnsProvider'),
         getServerEnvs(refresh, undefined, 'DOVECOT_FTS'),
       ]);
-      setAccounts(accountsData);        console.debug('ddebug accountsData',accountsData)
+      setAccounts(accountsData);
       setDnsProvider(dnsProviderData);
       setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);

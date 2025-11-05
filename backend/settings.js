@@ -1,3 +1,6 @@
+const fs = require("fs");
+const fsp = fs.promises;
+
 require('./env.js');
 const {
   docker,
@@ -15,8 +18,7 @@ const {
   humanSize2ByteSize,
   execSetup,
   execCommand,
-  readJson,
-  writeJson,
+  writeFile,
   regexColors,
   regexPrintOnly,
   getContainer,
@@ -62,8 +64,6 @@ async function getSettings(containerName, name) {
   
   try {
     
-  warnLog('ddebug 2 containerName',containerName, typeof containerName)
-  warnLog('ddebug 2 name',name, typeof name)
     const settings = await dbAll(sql.settings.select.settings, {scope:containerName});
     
     // we could read DB_Logins and it is valid
@@ -91,20 +91,27 @@ async function getSettings(containerName, name) {
 }
 
 
-async function saveSettings(containerName, jsonArrayOfObjects) { // jsonArrayOfObjects = [{name:name, value:value}, ..]
-  warnLog('containerName',containerName)
-  warnLog('jsonArrayOfObjects',jsonArrayOfObjects)
+// jsonArrayOfObjects = [{name:name, value:value}, ..]
+async function saveSettings(containerName, jsonArrayOfObjects) {
+  
   try {
     
     // extract containerName from the settings passed
-    const containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-    warnLog('containerName extracted=',containerName)
-    global.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
+    let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'DMS_API_KEY');
+    warnLog('DMS_API_KEY extracted=', dms_api_key)
+    if (dms_api_key) global.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch DMS_API_KEY
+    
+    // // extract containerName from the settings passed
+    // containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
+    // warnLog('containerName extracted=', containerName)
+    // global.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
+    
+    // scope all settings for that DMS container
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return { ...setting, scope:containerName }; });
     
-    // first we start with the (new?) DMS name
+    // first we start with the (new?) global DMS name; the new DMS_API_KEY is saved by initAPI itself
     let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});
-    if (result.success) {
+    if (result.success && jsonArrayOfObjectsScoped.length) {
     
       // then we pass the rest of the values, scoped for the (new?) DMS name
       // we should remove containerName from the (self) scoped settings to save, but we don't really care since we are not pulling it ever again
@@ -438,7 +445,7 @@ async function pullFTS(containerName, containerInfo) {
     // if we found fts override plugin, let's load it
     if (ftsMount) {
       const results = await execCommand(`cat ${ftsMount}`, containerName);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         debugLog(`dovecot file content:`, results.stdout);
         const ftsConfig = await readDovecotConfFile(results.stdout);
         debugLog(`dovecot json:`, ftsConfig);
@@ -466,7 +473,7 @@ async function pullDOVECOT(containerName) {
   try {
     
     const results = await execCommand(`dovecot --version`, containerName);   // 2.3.19.1 (9b53102964)
-    if (!results.exitCode) {
+    if (!results.returncode) {
       const DOVECOT_VERSION = results.stdout.split(" ")[0];
       debugLog(`DOVECOT_VERSION:`, DOVECOT_VERSION);
       
@@ -488,7 +495,7 @@ async function pullMailPlugins(containerName) {
   try {
     
     const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout =  quota fts fts_xapian zlib
-    if (!results.exitCode) {
+    if (!results.returncode) {
       // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
       // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
       for (const PLUGIN of results.stdout.split(/[=\s]+/)) {
@@ -513,7 +520,7 @@ async function pullDkimRspamd(containerName) {
   let envs = {};
   try {
     const results = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
-    if (!results.exitCode) {
+    if (!results.returncode) {
       debugLog(`dkim file content:`, results.stdout);
       const dkimConfig = await readDkimFile(results.stdout);
       debugLog(`dkim json:`, dkimConfig);
@@ -767,6 +774,89 @@ async function getDomains(name, containerName) {
 }
 
 
+// initialize DMS_API_KEY if not passed from env, 
+//  or if env value <> from what's in db, 
+//  or simply when it's called to regenerate it
+// Env/passed value takes precedence always
+async function initAPI(dms_api_key_param) {
+  
+  let result;
+  try {
+    
+    // shortcut: environment always takes precedence over everything else
+    dms_api_key_passed = (process.env.DMS_API_KEY) ? process.env.DMS_API_KEY : dms_api_key_param;
+    
+    // get it from db
+    let dms_api_key = await getSetting('dms-gui', 'DMS_API_KEY');
+
+    // environment AND passed key are undefined, make it equal to what's in the db, even if undefined
+    if (!dms_api_key_passed) dms_api_key_passed = dms_api_key;
+    
+    // passed key is defined
+    if (dms_api_key_passed) {
+      
+      // globalize it if defined in db AND passed key or environment are the same
+      if (dms_api_key && dms_api_key == dms_api_key_passed) {
+        
+        // load it and return
+        debugLog(`Loading DMS_API_KEY=`, dms_api_key);
+        global.DMS_API_KEY = dms_api_key;
+        result = await createAPIfiles();
+        return {success: true, message: dms_api_key};
+      }
+    
+      // passed key is defined but different from db, or it's from env
+      // save it
+      debugLog(`Saving new DMS_API_KEY=`, dms_api_key);
+      result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key, scope:'dms-gui'});
+      if (result.success) {
+        
+        // load it and return
+        global.DMS_API_KEY = dms_api_key;
+        result = await createAPIfiles();
+        return {success: true, message: dms_api_key};
+        
+      } else throw new Error(result.message);
+      
+    }
+    
+    // passed key, env and db are all undefined
+    // OR dms_api_key_passed is defined AND env is undefined
+    // generate it
+    dms_api_key = (dms_api_key_passed) ? dms_api_key_passed : crypto.randomUUID();
+      
+    // save it
+    debugLog(`Saving new DMS_API_KEY=`, dms_api_key);
+    result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key, scope:'dms-gui'});
+    if (result.success) {
+      
+      // load it and return
+      global.DMS_API_KEY = dms_api_key;
+      result = await createAPIfiles();
+      return {success: true, message: dms_api_key};
+      
+    } else throw new Error(result.message);
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(`${backendError}`);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+}
+
+
+async function createAPIfiles() {
+  for (const file of Object.values(userPatchesAPI)) {
+    // writeFile(file.path, file.content.replace(/{DMS_API_KEY}/, DMS_API_KEY));
+    writeFile(file.path, file.content);
+  }
+}
+
 
 module.exports = {
   getServerStatus,
@@ -777,4 +867,5 @@ module.exports = {
   getSetting,
   getSettings,
   saveSettings,
+  initAPI,
 };

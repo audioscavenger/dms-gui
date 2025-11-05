@@ -2,6 +2,7 @@ import React from 'react';
 // import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
+import InputGroup from 'react-bootstrap/InputGroup';
 
 import {
   Translate,
@@ -23,6 +24,7 @@ import {
  * @param {boolean} [props.isChecked] Whether the box isChecked
  * @param {boolean} [props.translate] Whether the fields need translation
  * @param {string} [props.groupClass] Whether to replace the default className of the group
+ * @param {React.ReactNode} props.children children of Group like extra buttons etc
  */
 const FormField = ({
   type = 'text',
@@ -40,6 +42,7 @@ const FormField = ({
   required = false,
   isChecked = false,
   translate = true,
+  children,
   ...rest // Pass any other props down to Form.Control
 }) => {
   // const { t } = useTranslation();
@@ -55,29 +58,32 @@ const FormField = ({
       </Form.Label>
       )}
       
-      {['checkbox', 'radio'].includes(type) && (
-        <Form.Check
-          type={type}
-          name={name}
-          label={Translate(label, translate)}
-          onChange={onChange}
-          placeholder={placeholder}
-          isInvalid={!!error} // Set isInvalid based on error presence
-          checked={checked}
-          {...rest} // Spread remaining props
-        />
-        ) || (
-        <Form.Control
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          isInvalid={!!error} // Set isInvalid based on error presence
-          required={require} // Pass required prop
-          {...rest} // Spread remaining props
-        />
-      )}
+      <InputGroup>
+        {['checkbox', 'radio'].includes(type) && (
+          <Form.Check
+            type={type}
+            name={name}
+            label={Translate(label, translate)}
+            onChange={onChange}
+            placeholder={placeholder}
+            isInvalid={!!error} // Set isInvalid based on error presence
+            checked={checked}
+            {...rest} // Spread remaining props
+          />
+          ) || (
+          <Form.Control
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            isInvalid={!!error} // Set isInvalid based on error presence
+            required={require} // Pass required prop
+            {...rest} // Spread remaining props
+          />
+        )}
+        {children}
+      </InputGroup>
       {error && (
         <Form.Control.Feedback type="invalid">
         {Translate(error, translate)}

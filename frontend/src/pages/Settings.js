@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
 
 const {
@@ -14,22 +14,18 @@ import {
   Accordion,
   Button,
   Card,
-  DataTable,
   LoadingSpinner,
   Translate,
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-// import FormLogins     from './FormLogins';   // deprecated
-import FormSettings   from './FormSettings';
-import ServerInfos    from './ServerInfos';
+import FormContainerAdd     from './FormContainerAdd';
+import ServerInfos      from './ServerInfos';
 
-import Row from 'react-bootstrap/Row'; // Import Row
-import Col from 'react-bootstrap/Col'; // Import Col
 
 const Settings = () => {
   // const passwordFormRef = useRef(null);
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
 
   const [errorMessage, setErrorMessage] = useState(null);
@@ -63,14 +59,14 @@ const Settings = () => {
 
   // https://icons.getbootstrap.com/
   const settingTabs = [
-  // { id: 1, title: "settings.titleLogin",        icon: "person-fill-gear",     content: FormLogins() },   // deprecated
-  { id: 1, title: "settings.titleSettings",     icon: "gear-fill",            content: FormSettings() },
-  { id: 2, title: "settings.serverInfosTitle",  icon: "gear-wide-connected",  content: ServerInfos() },
+    { id: 1, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:'dms'}) },
+    { id: 2, title: "settings.titleContainerAdd", icon: "house-add",  content: FormContainerAdd(),  },
+    { id: 3, title: "settings.titleContainers",   icon: "houses-fill",content: <></>,                  },
   ];
 
-  // to handle data coming from the child form: <FormSettings onInfosSubmit={handleInfosReceived} />
+  // to handle data coming from the child form: <FormContainerAdd onInfosSubmit={handleInfosReceived} />
   return (
-    <div>
+    <>
       <h2 className="mb-4">{Translate('settings.title')}</h2>
 
       <Accordion tabs={settingTabs}>
@@ -94,7 +90,7 @@ const Settings = () => {
           />
         </Card.Text>{' '}
       </Card>
-    </div>
+    </>
   );
 };
 

@@ -103,7 +103,8 @@ async function pullAliasesFromDMS(containerName) {
   try {
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, containerName);
-    if (!results.exitCode) {
+    debugLog('ddebug results',results)
+    if (!results.returncode) {
       aliases = await parseAliasesFromDMS(results.stdout);
       
     } else {
@@ -168,7 +169,7 @@ async function pullPostfixRegexFromDMS(containerName) {
   try {
     debugLog(`execSetup(${command})`);
     const results = await execCommand(command, containerName);
-    if (!results.exitCode) {
+    if (!results.returncode) {
       
       regexes = await parsePostfixRegexFromDMS(results.stdout);
       
@@ -231,7 +232,7 @@ async function addAlias(source, destination, containerName) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
     
       const results = await execSetup(`alias add ${source} ${destination}`, containerName);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         
         const result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
         if (result.success) {
@@ -251,11 +252,11 @@ async function addAlias(source, destination, containerName) {
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
       const results = await execCommand(`echo '${source} ${destination}' >>${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         
         // reload postfix
         const results2 = await execCommand(`postfix reload`, containerName);
-        if (!results2.exitCode) {
+        if (!results2.returncode) {
           
           const result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
           if (result.success) {
@@ -300,7 +301,7 @@ async function deleteAlias(source, destination, containerName) {
       debugLog(`Deleting alias: ${source}`);
       
       const results = await execSetup(`alias del ${source} ${destination}`, containerName);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         const result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
           successLog(`Alias deleted: ${source}`);
@@ -319,11 +320,11 @@ async function deleteAlias(source, destination, containerName) {
       debugLog(`Deleting alias regex: ${source}`);
       
       const results = await execCommand(`grep -Fv "${source} ${destination}" ${DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
-      if (!results.exitCode) {
+      if (!results.returncode) {
         
         // reload postfix
         const results2 = await execCommand(`postfix reload`, containerName);
-        if (!results2.exitCode) {
+        if (!results2.returncode) {
           
           const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);
           if (result.success) {

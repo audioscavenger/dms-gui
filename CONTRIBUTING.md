@@ -70,12 +70,22 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 * [ ] - backend/accounts: switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead
 * [ ] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516
+* [ ] - backend: explore python API idea as seen here https://github.com/Mailu/Mailu/blob/master/core/dovecot/start.py
 
 
 ### history:
 
+* [ ] 1.2.?  - frontend: it becomes clear that we need a profile page and a way to keep current env values like DMS_CONTAINER, lang, etc
+
+* [ ] 1.2.6 - backend: add Bearer token read from Authorization header in user-patches-api.py, instead of the body
+* [x] 1.2.5 - backend: added execInContainerAPI() and sendJsonToApi() and all seems to work escept 
+* [x] 1.2.5 - backend/settings: initAPI() now creates both the user-patches-api.sh and user-patches-api.py, only when DMS_API_KEY exist and loaded
+* [x] 1.2.5 - frontend/FormField: now embedds InputGroup and children
+* [x] 1.2.5 - frontend/Settings: added DMS selector
+* [x] 1.2.5 - frontend/Settings: added DMS_API_KEY field
+* [x] 1.2.5 - backend/db: added initAPI() to generate new DMS_API_KEY and store it
 * [x] 1.2.4 - bugfixes
-* [x] 1.2.4 - BREAKING CHANGE: all db tables except domains now had id autoincrement as primary key
+* [x] 1.2.4 - BREAKING CHANGE: all db tables except domains now has id autoincrement as primary key
 * [x] 1.2.4 - frontend.js: bugfix in warnLog
 * [x] 1.2.4 - backend: properly initialize critical values like DMS_CONTAINER and such
 * [x] v1.2.3 - release
@@ -227,7 +237,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.12 - frontend/Sidebar: .leftsidebar inline-flex is the solution for collapse but then impossible to place the button properly
 * [x] 1.0.12 - frontend/Aliases: add LeftSidebar collapse button
 * [x] 1.0.12 - frontend/Aliases: renamed Sidebar to LeftSidebar
-* [x] 1.0.11 - frontend/CardFormSettings: pops an error saying A component is changing an uncontrolled input to be controlled: fixed by testing data properly when isLoading
+* [x] 1.0.11 - frontend/CardFormContainerAdd: pops an error saying A component is changing an uncontrolled input to be controlled: fixed by testing data properly when isLoading
 * [x] 1.0.11 - backend/getSmth: bugfix yet again when db is empty or missing data: no refresh would ever take place
 * [x] 1.0.11 - frontend/Accounts: add refresh icon to Accordion
 * [x] 1.0.10 - BUG: since sorting and filtering is added, change highlighting does not happen anymore

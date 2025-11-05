@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import InputGroup from 'react-bootstrap/InputGroup';
 
 const {
   debugLog,
@@ -14,6 +15,7 @@ const {
 import {
   getSettings,
   saveSettings,
+  initAPI,
 } from '../services/api';
 
 import { 
@@ -21,12 +23,13 @@ import {
   Button,
   FormField,
   LoadingSpinner,
+  Translate,
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 // This is how to pass back onInfosSubmit to the parent page
-// const FormSettings = ({ onInfosSubmit }) => {
-function FormSettings() {
+// const FormContainerAdd = ({ onInfosSubmit }) => {
+function FormContainerAdd() {
   const { t } = useTranslation();
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
@@ -47,6 +50,8 @@ function FormSettings() {
 
   const fetchAllSettings = async () => {
     setLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     // const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
     await fetchSettings();  // [ {name:name, value: value}, ..]
@@ -82,13 +87,35 @@ function FormSettings() {
   };
 
 
+  const handleDMS_API_KEYregen = async (e) => {
+    // e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      
+      const result = await initAPI();
+      debugLog('ddebug settings',settings)
+      debugLog('ddebug result',result)
+
+      if (result.success) {
+        setSettings(mergeArrayOfObj(settings, [{name: 'DMS_API_KEY', value: result.message}], 'name'));
+        setSuccessMessage(Translate(t('settings.DMS_API_KEYregened', {DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY')})));
+        
+      } else setErrorMessage(result.message);
+      
+    } catch (err) {
+      errorLog(t('api.errors.DMS_API_KEYregen'), err);
+      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.DMS_API_KEYregen');
+    }
+  };
+
 
   const handleChangeSettings = (e) => {
     const { name, value } = e.target;
-    // setSettings({
-      // ...settings,
-      // [name]: value,
-    // });
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     // merge array of settings objects by their name
     debugLog(`handleChangeSettings mergeArrayOfObj settings`,settings);
     debugLog(`handleChangeSettings mergeArrayOfObj [{name: name, value:value}]`, [{name: name, value:value}]);
@@ -103,7 +130,7 @@ function FormSettings() {
     }
   };
 
-  const validateFormSettings = () => {
+  const validateFormContainerAdd = () => {
     const errors = {};
 
     // if (settings.containerName.length == 0) {
@@ -129,7 +156,7 @@ function FormSettings() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!validateFormSettings()) {
+    if (!validateFormContainerAdd()) {
       return;
     }
 
@@ -201,6 +228,37 @@ function FormSettings() {
             required
           />
         
+            <FormField
+              type="text"
+              id="DMS_API_KEY"
+              name="DMS_API_KEY"
+              label="settings.DMS_API_KEY"
+              value={getValueFromArrayOfObj(settings, 'DMS_API_KEY')}
+              onChange={handleChangeSettings}
+              placeholder="DMS_API_KEY"
+              error={formErrors.DMS_API_KEY}
+              helpText="settings.DMS_API_KEYHelp"
+            >
+            <Button
+              variant="warning"
+              icon="arrow-repeat"
+              title={t('settings.DMS_API_KEYregen')}
+              onClick={() => handleDMS_API_KEYregen()}
+            />
+            <Button
+              variant="outline-secondary"
+              icon="question-circle"
+              title={t('common.copy')}
+              onClick={() => {setSuccessMessage(t('settings.DMS_API_KEYregened', {DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY')}))}}
+            />
+            <Button
+              variant="outline-secondary"
+              icon="clipboard-plus"
+              title={t('common.copy')}
+              onClick={() => {navigator.clipboard.writeText(getValueFromArrayOfObj(settings, 'DMS_API_KEY'))}}
+            />
+            </FormField>
+        
           <FormField
             type="text"
             id="dnsProvider"
@@ -220,5 +278,5 @@ function FormSettings() {
 
 }
 
-export default FormSettings;
+export default FormContainerAdd;
 

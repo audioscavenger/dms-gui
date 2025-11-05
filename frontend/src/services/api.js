@@ -258,5 +258,18 @@ export async function getRoles() {
   }
 };
 
+// initAPI to define or generate a new DMS_API_KEY
+export async function initAPI(dms_api_key) {
+  const params = {};
+  if (dms_api_key !== undefined) params.dms_api_key = dms_api_key;
+  try {
+    const response = await api.post(`/initAPI`, {params});
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
 
 export default api;

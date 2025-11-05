@@ -16,7 +16,7 @@ import { Trans } from 'react-i18next';
 
 // };
 function Translate(string, translate=true) {
-  const i18nHtmlComponents = { strong: <strong />, i: <i />, br: <br />, a: <a />, };   // html tags authorized in translation.js
+  const i18nHtmlComponents = { strong: <strong />, i: <i />, br: <br />, a: <a />, pre: <pre />, };   // html tags authorized in translation.js
   return (translate && string) ? <Trans i18nKey={string} components={i18nHtmlComponents} /> : (string ? string : "");
 
 };

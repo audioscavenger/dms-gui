@@ -100,7 +100,7 @@ async function pullAccountsFromDMS(containerName) {
   try {
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, containerName);
-    if (!results.exitCode) {
+    if (!results.returncode) {
     
       // Parse multiline output with regex to extract email and size information
       // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
@@ -183,7 +183,7 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
   try {
     debugLog(`Adding new mailbox account: ${mailbox}`);
     const results = await execSetup(`email add ${mailbox} ${password}`);
-    if (!results.exitCode) {
+    if (!results.returncode) {
       
       const { salt, hash } = await hashPassword(password);
       const result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash, scope:containerName});
@@ -227,7 +227,7 @@ async function deleteAccount(mailbox, containerName) {
   try {
     debugLog(`Deleting mailbox account: ${mailbox}`);
     const results = await execSetup(`email del ${mailbox}`);
-    if (!results.exitCode) {
+    if (!results.returncode) {
       
       const result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
       if (result.success) {
@@ -364,7 +364,7 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
     }
     
     const results = await execCommand(formattedCommand);
-    if (!results.exitCode) {
+    if (!results.returncode) {
       
       successLog(formattedPass, results.stdout);
       return { success: true, message: results.stdout };
@@ -440,7 +440,7 @@ async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
 
 // https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list  // not in 2.3
 // curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["indexerList", {"userMask": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
-  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+  // [["error",{"type":"unknownMethod", "returncode":0},"dms-gui"]]
 
 
 // https://doc.dovecot.org/main/core/summaries/doveadm.html#force%20resync
@@ -450,11 +450,11 @@ async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
 
 // https://doc.dovecot.org/main/core/summaries/doveadm.html#acl%20get       // not in 2.3
 // curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["aclGet", {"allUsers": false, "mailbox": "INBOX", "user": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
-  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+  // [["error",{"type":"unknownMethod", "returncode":0},"dms-gui"]]
 
 // https://doc.dovecot.org/main/core/summaries/doveadm.html#auth%20test     // not in 2.3
 // curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["authTest", {"user": "diane@domain.com", "password": "password"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
-  // [["error",{"type":"unknownMethod", "exitCode":0},"dms-gui"]]
+  // [["error",{"type":"unknownMethod", "returncode":0},"dms-gui"]]
 // doveadm auth test diane@domain.com "password"
   // passdb: diane@domain.com auth failed
 // doveadm auth test diane@domain.com "M....!"

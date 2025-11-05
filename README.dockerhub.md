@@ -97,20 +97,25 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 Rename `./config/.dms-gui.env.example` as `./config/.dms-gui.env` and update for your own environment:
 
 ```
-# Docker Mailserver Configuration
-# Docker Mailserver Configuration
+## Docker Mailserver Configuration
 DMS_SETUP_SCRIPT=/usr/local/bin/setup
 DMS_CONTAINER=dms
 
-# backend port
-PORT_NODEJS=3001
+## DMS_API_KEY must be defined as env variable in your DMS compose
+## You can set it up here as well, or let dms-gui generate its own and then, update DMS compose and restart it
+## DMS_API_KEY format is that of a uuid
+# DMS_API_KEY=please-restart-dms
 
-# Dev Environment
-REACT_APP_API_URL=http://localhost:3001
+# Change the port in the same variable in DMS compose as needed
+# DMS_API_PORT=8888
+
+## Optional: Dev Environment
+# PORT_NODEJS=3001
+# REACT_APP_API_URL=http://localhost:3001
 # NODE_ENV=development
-NODE_ENV=production
+# NODE_ENV=production
 
-# Debugging
+## Debugging
 # DEBUG=true
 ```
 

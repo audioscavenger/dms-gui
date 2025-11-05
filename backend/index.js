@@ -29,6 +29,7 @@ const {
   getSettings,
   saveSettings,
   getDomains,
+  initAPI,
 } = require('./settings');
 
 const {
@@ -93,8 +94,10 @@ app.set('query parser', function (str) {
 });
 
 
-// Routes
+// Routes ------------------------------------------------------------------------------------------
 // @swagger descriptions based off https://swagger.io/docs/specification/v3_0/describing-parameters/
+
+
 /**
  * @swagger
  * /api/status:
@@ -958,9 +961,43 @@ app.post('/api/getCount/:table', async (req, res) => {
 
     const count = await dbCount(table);
     res.json(count);
+    
   } catch (error) {
     errorLog(`index POST /api/getCount: ${error.message}`);
     // res.status(500).json({ error: 'Unable to count table' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Endpoint for pushing/getting DMS_API_KEY
+/**
+ * @swagger
+ * /api/initAPI:
+ *   post:
+ *     summary: Provide or get DMS_API_KEY
+ *     description: Provide or get DMS_API_KEY
+ *     parameters:
+ *       - in: query
+ *         name: dms_api_key
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Provide new DMS_API_KEY to store in db
+ *     responses:
+ *       200:
+ *         description: DMS_API_KEY from db
+ *       500:
+ *         description: Unable to retrieve DMS_API_KEY
+ */
+app.post('/api/initAPI', async (req, res) => {
+  try {
+    const dms_api_key = ('dms_api_key' in req.query) ? req.query.dms_api_key : undefined;
+    const dms_api_key_response = await initAPI(dms_api_key);
+    res.json(dms_api_key_response);
+    
+  } catch (error) {
+    errorLog(`index /api/accounts: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -970,6 +1007,7 @@ app.listen(PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
   await dbInit();
+  await initAPI(DMS_API_KEY);
   
   // currently we only preset DMS_CONTAINER globally, the rest of the critical environment is preset during dbInit
   global.DMS_CONTAINER = await getSettings('dms-gui', 'containerName');
