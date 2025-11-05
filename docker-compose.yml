@@ -24,15 +24,9 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./config/:/app/config/
-
-      # Mount the docker socket to allow container communication with Docker
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/dms-gui/:/app/config/
 
       # if you want to develop locally... mount anything you want and reload
-      # - ./backend/dockerMailserver.js:/app/backend/dockerMailserver.js:ro
-      # - ./backend/index.js:/app/backend/index.js:ro
-
       # always keep packages up to date... mount those and run npx+npm install from the container and then same them
       - ./backend/package.json:/app/backend/package.json
       - ./backend/package-lock.json:/app/backend/package-lock.json
@@ -47,6 +41,9 @@ networks:
   frontend:
     external: true
     name: frontend
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-frontend
 
 ## ---------------------------------------------------------------------
 ## build commands: https://hub.docker.com/r/dunajdev/docker-mailserver-gui
@@ -55,9 +52,9 @@ networks:
 # alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
+# docker image rm audioscavenger/dms-gui:v1.2.0 && docker container prune -f && docker image prune -f
 # docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 # docker push audioscavenger/dms-gui --all-tags
-# docker container prune -f && docker image prune -f && docker image rm audioscavenger/dms-gui:v1.1.0
 
 
 ## upgrade commands:

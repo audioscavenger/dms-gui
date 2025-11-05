@@ -152,21 +152,19 @@ async function getServerStatus(containerName) {
       Health: '',
     },
     resources: {
-      cpuUsage: 'N/A',
-      memoryUsage: 'N/A',
-      diskUsage: 'N/A',
+      cpuUsage: 0,
+      memoryUsage: 0,
+      diskUsage: 0,
     },
   };
 
-  // TODO: we should simply process the result of uptime here with load averages for last 1, 5 and 15mn
-  // cpu_Usage    = "uptime"  // 02:04:57 up 35 days, 22:41,  0 user,  load average: 0.02, 0.01, 0.00
+  // cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
+  // memory_Used  = "free -m | awk '/Mem/ {print $3}'"
+  // memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
 
+  disk_cmd     = "du -sm /var/mail | cut -f1"
   top_cmd      = "top -bn1"
-  cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
-  memory_Used  = "free -m | awk '/Mem/ {print $3}'"
-  memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
-
-  // TODO: we should simply process the result of top below, as it contains all we need:
+  // top_parser will parse all of the below
   // top - 02:02:32 up 35 days, 22:39,  0 user,  load average: 0.00, 0.01, 0.00
   // Tasks:  35 total,   1 running,  34 sleeping,   0 stopped,   0 zombie
   // %Cpu(s):  0.0 us,100.0 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
@@ -182,16 +180,21 @@ async function getServerStatus(containerName) {
 
   try {
     
-    const [result_cpu, result_mem] = await Promise.all([
-      execCommand(cpu_Usage, containerName),
-      execCommand(memory_Usage, containerName),
+    // const [result_cpu, result_mem] = await Promise.all([
+      // execCommand(cpu_Usage, containerName),
+      // execCommand(memory_Usage, containerName),
+    // ]);
+    
+    const [result_top, result_disk] = await Promise.all([
+      execCommand(top_cmd, containerName),
+      execCommand(disk_cmd, containerName),
     ]);
     
-    let result_top = await execCommand(top_cmd, containerName);
-    let topJson = await processTopData(result_top.stdout)
-    debugLog('processTopData', topJson);
+    // debugLog('processTopData', processTopData(result_top.stdout))
+    const topJson = await processTopData(result_top.stdout);
     
     // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
+    // debugLog('processTopData', processTopData(result_top.stdout));
     // {
       // top: {
         // time: '04:16:04',
@@ -205,6 +208,16 @@ async function getServerStatus(containerName) {
         // stopped: '0',
         // zombie: '0'
       // },
+      // cpu: {
+        // us: '0.0',
+        // sy: '100.0',
+        // ni: '0.0',
+        // id: '0.0',
+        // wa: '0.0',
+        // hi: '0.0',
+        // si: '0.0',
+        // st: '0.0'
+      // },
       // mem: {
         // total: '4413.7',
         // used: '1305.2',
@@ -213,10 +226,14 @@ async function getServerStatus(containerName) {
       // },
     // }
     
-    if (!result_cpu.returncode) {
+    // if (!result_cpu.returncode) {
+    if (!result_top.returncode) {
       status.status.status = "running";
-      status.resources.cpuUsage = result_cpu.stdout;
-      status.resources.memoryUsage = result_mem.stdout;
+      // status.resources.cpuUsage = result_cpu.stdout;
+      // status.resources.memoryUsage = result_mem.stdout;
+      status.resources.cpuUsage = Number(topJson.cpu.us) + Number(topJson.cpu.sy);
+      status.resources.memoryUsage = 100 * Number(topJson.mem.used) / Number(topJson.mem.total);
+      status.resources.diskUsage = Number(result_disk.stdout);
       
     } else {
       status.status.status = "stopped";
@@ -252,9 +269,9 @@ async function getServerStatusFromDocker(containerName) {
       Health: '',
     },
     resources: {
-      cpuUsage: '0%',
-      memoryUsage: '0MB',
-      diskUsage: '0%',
+      cpuUsage: 0,
+      memoryUsage: 0,
+      diskUsage: 0,
     },
   };
 
@@ -309,8 +326,6 @@ async function getServerStatusFromDocker(containerName) {
 
         // For disk usage, we would need to run a command inside the container
         // This could be a more complex operation involving checking specific directories
-        // For simplicity, we'll set this to "N/A" or implement a basic check
-        status.resources.diskUsage = 'N/A';
       }
     }
 

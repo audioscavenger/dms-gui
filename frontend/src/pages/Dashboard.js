@@ -36,9 +36,9 @@ const Dashboard = () => {
       Health: '',
     },
     resources: {
-      cpuUsage: 'N/A',
-      memoryUsage: 'N/A',
-      diskUsage: 'N/A',
+      cpuUsage: 0,
+      memoryUsage: 0,
+      diskUsage: 0,
     },
   });
   const [accountsCount, setAccountsCount] = useState(0);
@@ -246,7 +246,7 @@ const Dashboard = () => {
             icon="hdd"
             iconColor={isStatusLoading ? "secondary" : "warning"}
             isLoading={isStatusLoading}
-            value={status.resources.diskUsage}
+            value={status.resources.diskUsage+'MB'}
           />
         </Col>
       </Row>{' '}

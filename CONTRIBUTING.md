@@ -77,6 +77,10 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] 1.2.?  - frontend: it becomes clear that we need a profile page and a way to keep current env values like DMS_CONTAINER, lang, etc
 
+* [x] 1.2.7 - backend/settings: disk usage is total of all mailboxes in MB
+* [x] 1.2.7 - backend/settings: getServerStatus is now based off top command + top_parser.js
+* [x] 1.2.7 - README: updated paths, ports, environment and columes requirements for the new DMS API access
+* [x] 1.2.7 - dms-gui-api: added python logger to match dms time format 2025-11-05T15:05:49.710284+00:00 mx dms-gui-api:
 * [x] 1.2.6 - backend/settings: rewrite getServerStatus() for API and integrate top_parser.js
 * [x] 1.2.6 - backend: added Bearer token read from Authorization header in user-patches-api.py, instead of the body
 * [x] 1.2.5 - backend: added execInContainerAPI() and sendJsonToApi() and all seems to work escept 

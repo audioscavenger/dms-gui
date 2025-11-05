@@ -98,21 +98,21 @@ function processTopData( data, options={pid_sort(a,b){return a.cpu-b.cpu}} ) {
       },
     ),
 
-    // cpu:parseStatLine(data[2],
-      // {
-        // root:{regex:/%Cpu/g,name:"cpu"},//root line params
-        // params:[// parse variable values
-          // {regex: /(\d+\.\d) us/g, name:"us"},
-          // {regex: /(\d+\.\d) sy/g, name:"sy"},
-          // {regex: /(\d+\.\d) ni/g, name:"ni"},
-          // {regex: /(\d+\.\d) id/g, name:"id"},
-          // {regex: /(\d+\.\d) wa/g, name:"wa"},
-          // {regex: /(\d+\.\d) hi/g, name:"hi"},
-          // {regex: /(\d+\.\d) si/g, name:"si"},
-          // {regex: /(\d+\.\d) st/g, name:"st"},
-        // ]
-      // },
-    // ),
+    cpu:parseStatLine(data[2],
+      {
+        root:{regex:/%Cpu/g,name:"cpu"},//root line params
+        params:[// parse variable values
+          {regex: /(\d+\.\d) us/g, name:"us"},
+          {regex: /(\d+\.\d) sy/g, name:"sy"},
+          {regex: /(\d+\.\d) ni/g, name:"ni"},
+          {regex: /(\d+\.\d) id/g, name:"id"},
+          {regex: /(\d+\.\d) wa/g, name:"wa"},
+          {regex: /(\d+\.\d) hi/g, name:"hi"},
+          {regex: /(\d+\.\d) si/g, name:"si"},
+          {regex: /(\d+\.\d) st/g, name:"st"},
+        ]
+      },
+    ),
 
     mem:parseStatLine(data[3],
       {
