@@ -1,16 +1,17 @@
 // https://react-bootstrap.netlify.app/docs/components/navbar/
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-// import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from './LanguageSwitcher';
 import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 import {
-  Button,
+  ButtonDropdown,
+  ButtonLanguage,
   Translate,
 } from './';
 
@@ -19,13 +20,22 @@ const Navbar = ({
   ...rest
 }) => {
   // const { t } = useTranslation();
-  
   const { logout } = useAuth();
   const { user } = useAuth();
+  
+  const navigate = useNavigate();
   
   const handleLogout = () => {
     logout();
   };
+
+  // console.debug('ddebug user', user);
+  // { email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
+
+  const profileItems = [
+    { id: 1, title: "logins.profilePage", onClick: () => navigate("/profile") },
+    { id: 2, title: "logins.logout",      onClick: () => handleLogout() },
+  ];
 
   return (
     <RBNavbar bg="dark" variant="dark" expand="lg">
@@ -38,13 +48,15 @@ const Navbar = ({
         <RBNavbar.Collapse id="navbarNav">
           <Nav className="ms-auto align-items-center">
 
-            {(user) &&
-              <Button
+          {user && 
+            <ButtonDropdown
               variant="secondary"
-              onClick={handleLogout}
-              text="logins.logout"
-              />
-            }
+              icon="person-circle"
+              text={user?.username}
+              items={profileItems}
+              size="sm"
+            />
+          }
             
             <Nav.Link
               href="https://docker-mailserver.github.io/docker-mailserver/latest/"
@@ -54,9 +66,8 @@ const Navbar = ({
               {Translate('navbar.documentation')}
             </Nav.Link>
             
-            {/* LanguageSwitcher might need adjustment depending on its implementation */}
             <div className="nav-item mx-2">
-              <LanguageSwitcher />
+              <ButtonLanguage />
             </div>
             
           </Nav>

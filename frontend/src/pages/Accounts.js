@@ -222,6 +222,7 @@ const Accounts = () => {
   // Open password change modal for an account
   const handleChangePassword = (account) => {
     setSelectedAccount(account);
+    
     setPasswordFormData({
       newPassword: '',
       confirmPassword: '',
@@ -239,6 +240,7 @@ const Accounts = () => {
   // Handle input changes for password change form
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
+    
     setPasswordFormData({
       ...passwordFormData,
       [name]: value,

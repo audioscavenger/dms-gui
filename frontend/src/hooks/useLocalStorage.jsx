@@ -8,20 +8,25 @@ export const useLocalStorage = (keyName, defaultValue) => {
     try {
       const value = window.localStorage.getItem(keyName);
       if (value) {
+        console.debug('ddebug 1 return window.localStorage value', value);
         return JSON.parse(value);
       } else {
         window.localStorage.setItem(keyName, JSON.stringify(defaultValue));
-      console.debug('ddebug setValue window.localStorage keyName,defaultValue',keyName,defaultValue);
+        console.debug('ddebug 2 setValue window.localStorage keyName,defaultValue', keyName, defaultValue);
         return defaultValue;
       }
+      
     } catch (err) {
+      console.debug('ddebug 3 window.localStorage defaultValue', defaultValue);
       return defaultValue;
     }
   });
+  
   const setValue = (newValue) => {
     try {
+      console.debug('ddebug 4 window.localStorage.setItem(keyName, JSON.stringify(newValue))', keyName, newValue);
       window.localStorage.setItem(keyName, JSON.stringify(newValue));
-      console.debug('ddebug setValue window.localStorage',window.localStorage);
+      
     } catch (err) {
       console.log(err);
     }

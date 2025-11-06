@@ -95,8 +95,8 @@ function FormContainerAdd() {
     try {
       
       const result = await initAPI();
-      debugLog('ddebug settings',settings)
-      debugLog('ddebug result',result)
+      // debugLog('settings',settings)
+      debugLog('initAPI',result)
 
       if (result.success) {
         setSettings(mergeArrayOfObj(settings, [{name: 'DMS_API_KEY', value: result.message}], 'name'));

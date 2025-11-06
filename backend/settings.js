@@ -70,7 +70,7 @@ async function getSettings(containerName, name) {
     // we could read DB_Logins and it is valid
     if (settings && settings.length) {
       infoLog(`Found ${settings.length} entries in settings`);
-      warnLog('ddebug settings',settings)
+      debugLog('settings', settings)
     
     } else {
       warnLog(`db settings seems empty:`, settings);
@@ -568,7 +568,7 @@ async function pullDoveConf(containerName) {
       if (doveconf?.mail_plugins) {
         // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
         // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN, DOVECOT_ZLIB etc
-        for (const PLUGIN of doveconf.mail_plugins) {
+        for (const PLUGIN of doveconf.mail_plugins.split(' ')) {
           envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
         }
       }

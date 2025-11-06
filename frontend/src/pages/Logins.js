@@ -4,7 +4,6 @@ import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
-import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
 import Chip from '@mui/material/Chip';
@@ -88,7 +87,6 @@ const Logins = () => {
     confirmPassword: '',
   });
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
-  const [loginEmailFormErrors, setLoginEmailFormErrors] = useState(null);
 
   // State for password change modal -------------------------------
   const passwordFormRef = useRef(null);

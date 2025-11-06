@@ -75,8 +75,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
-* [ ] 1.2.?  - frontend: it becomes clear that we need a profile page and a way to keep current env values like DMS_CONTAINER, lang, etc
-
+* [x] 1.3.1 - frontend/Profile: added Profile page! it only changes the password for dms-gui atm
+* [x] 1.3.1 - frontend/components: added ButtonDropdown
+* [x] 1.3.1 - backend/settings: bugfix in pullDoveConf()
 * [x] v1.3.0 - release
 * [x] 1.2.8 - backend/settings: pullServerEnvs() now rely on API and pullDoveConf()
 * [x] 1.2.7 - backend/settings: disk usage is total of all mailboxes in MB

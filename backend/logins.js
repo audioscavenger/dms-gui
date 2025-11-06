@@ -141,7 +141,7 @@ async function addLogin(email, username, password, isAdmin=0, isAccount=0, isAct
 async function loginUser(credential, password) {
   
   try {
-    const login = dbGet(sql.logins.select.isActive.login, credential, credential);
+    let login = await getLogin(credential);
 
     if (login.isActive) {
       const isValid = await verifyPassword(credential, password, 'logins');

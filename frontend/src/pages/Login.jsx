@@ -67,6 +67,8 @@ export const Login = () => {
     // console.debug('ddebug user=', user);
     if (user) {
       
+      debugLog('ddebug user logged in:', user);
+      
       setSuccessMessage(null);
       setErrorMessage(null);
       // (firstRun) ? await login({credential}, "/settings") : await login({credential});
