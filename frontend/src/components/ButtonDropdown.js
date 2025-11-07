@@ -58,6 +58,9 @@ const ButtonDropdown = ({
             key={item.id}
             onClick={item?.onClick}
           >
+            {item?.icon && (
+              <i className={`bi bi-${item.icon} ${item?.title ? 'me-2' : ''}`}></i>
+            )}
             {t(item.title)}
           </Dropdown.Item>
         ))}

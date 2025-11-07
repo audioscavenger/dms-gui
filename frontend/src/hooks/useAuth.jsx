@@ -5,17 +5,18 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from './useLocalStorage';
 const AuthContext = createContext();
+import {
+  logoutUser,
+} from '../services/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useLocalStorage("user", null);
-  // const [user, setUser] = useLocalStorage({}, null);
+  // const [user, setUser] = useLocalStorage("accessToken", null);    // with JWT
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
   // const login = async (username, to="/") => {
   const login = async (user, to="/") => {
-    // console.debug('ddebug setUser(username)', username);
-    // setUser(username);
     
     console.debug('ddebug setUser(user)', user);
     setUser(user);
@@ -25,8 +26,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   // call this function to sign out logged in user
-  const logout = (to="/") => {
+  const logout = async (to="/") => {
+    console.debug('ddebug /logout');
     setUser(null);
+    logoutUser();
     navigate(to, { replace: true });
   };
 

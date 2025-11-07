@@ -33,8 +33,8 @@ const Navbar = ({
   // { email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
 
   const profileItems = [
-    { id: 1, title: "logins.profilePage", onClick: () => navigate("/profile") },
-    { id: 2, title: "logins.logout",      onClick: () => handleLogout() },
+    { id: 1, title: "logins.profileLink", icon: "person-badge", onClick: () => navigate("/profile") },
+    { id: 2, title: "logins.logout",      icon: "box-arrow-right", onClick: () => handleLogout() },
   ];
 
   return (
@@ -51,7 +51,7 @@ const Navbar = ({
           {user && 
             <ButtonDropdown
               variant="secondary"
-              icon="person-circle"
+              icon={user?.isAdmin ? "person-circle": "person-fill"}
               text={user?.username}
               items={profileItems}
               size="sm"

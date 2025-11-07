@@ -26,9 +26,12 @@ As long as the default admin user (_admin_ / password=_changeme_) exist, you are
 ### Logins Management
 
 Logins are 3 types:
-* admins
-* users: can manage multiple mailboxes
-* linked users: attached to a mailbox, dovecot API provides authentication
+
+| type | perks | details |
+| -----|-------|---------|
+| admins | Administrator | Can even demote itself |
+| users | Can manage multiple mailboxes | Not admin, cannot change managed mailboxes |
+| linked users | Can change their mailbox password | Authentication provided by DMS Account |
 
 ![Logins](/assets/dms-gui-Logins-new-user.webp)
 

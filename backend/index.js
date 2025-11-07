@@ -46,12 +46,12 @@ const {
 } = require('./aliases');
 
 const express = require('express');
+const app = express();
 const qs = require('qs');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const app = express();
-
+const jwt = require('jsonwebtoken');
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -879,6 +879,8 @@ app.delete('/api/logins/:email', async (req, res) => {
  *         description: credentials valid
  *       400:
  *         description: Something is missing
+ *       401:
+ *         description: login denied
  *       500:
  *         description: Unable to validate credentials
  */
@@ -888,8 +890,63 @@ app.post('/api/loginUser', async (req, res) => {
     if (!credential)  return res.status(400).json({ error: 'credential is missing' });
     if (!password)    return res.status(400).json({ error: 'password is missing' });
 
-    const result = await loginUser(credential, password);
-    res.json(result);
+    const user = await loginUser(credential, password);
+    debugLog('user', user);
+    
+    if (user) {
+      const accessToken = jwt.sign(user, SECRET_KEY, { expiresIn: SECRET_KEY_EXPIRY });
+      // debugLog('accessToken', accessToken);
+      
+      // Bearer token, in-memory/useState or localStorage:
+      // res.json({accessToken});
+      
+      // HTTP-Only Cookies (for Refresh Tokens):
+      res.cookie('jwt', accessToken, { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production', // Use secure in production
+        sameSite: 'Lax',  // 'None' or 'Lax' or 'Strict' (for CSRF protection)
+        maxAge: 3600000   // 1h
+      });
+      // and we still send user's information because roles etc
+      res.json(user);
+      
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+  } catch (error) {
+    errorLog(`index POST /api/loginUser: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint to logout and clear cookie
+/**
+ * @swagger
+ * /api/logout:
+ *   post:
+ *     summary: logout
+ *     description: logout and clear cookie
+ *     requestBody:
+ *       required: false
+ *     responses:
+ *       200:
+ *         description: logout valid
+ *       400:
+ *         description: Something is wrong
+ *       500:
+ *         description: Unable to logout
+ */
+app.post('/api/logout', async (req, res) => {
+  try {
+    res.clearCookie('jwt', { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', // Set to true in production
+      sameSite: 'Lax', // 'None' or 'Lax' or 'Strict' (for CSRF protection)
+      path: '/' 
+    });
+    
+    res.json({ success: true });
     
   } catch (error) {
     errorLog(`index POST /api/loginUser: ${error.message}`);
@@ -923,6 +980,7 @@ app.get('/api/domains', async (req, res) => {
     const name = ('name' in req.query) ? req.query.name : '';
     const domains = await getDomains(name);
     res.json(domains);
+    
   } catch (error) {
     errorLog(`index GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve domains' });

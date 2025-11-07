@@ -2,6 +2,10 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 debug = (process.env.DEBUG === 'true') ? true : false;
 
+// JWT SECRET_KEY generated when container starts
+SECRET_KEY = process.env.SECRET_KEY;
+SECRET_KEY_EXPIRY = '1h';
+
 // const { name, version, description } = require('./package.json');
 DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;

@@ -47,7 +47,10 @@ export const Login = () => {
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
     
+    debugLog('ddebug isFirstRun loginUser(admin)');
     const user = await loginUser('admin', 'changeme');
+    debugLog('ddebug isFirstRun user', user);
+    
     // if we can login with the default user, display first run welcome message
     if (user) {
       setFirstRun(true);
@@ -64,10 +67,11 @@ export const Login = () => {
     // if (credential === "admin" && password === "password") {
     // const user = await loginUser(credential, password)
     const user = await loginUser(credential, password)
-    // console.debug('ddebug user=', user);
+    console.debug('ddebug loginUser user=', user);
+    // without JWT: {"email":"eric@domain.com","username":"eric","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
+    // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
+    
     if (user) {
-      
-      debugLog('ddebug user logged in:', user);
       
       setSuccessMessage(null);
       setErrorMessage(null);

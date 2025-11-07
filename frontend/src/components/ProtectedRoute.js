@@ -5,22 +5,29 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-export const ProtectedRoute = ({ children }) => {   // { "$$typeof": Symbol("react.transitional.element"), type: Dashboard(), key: null, props: {}, _owner: {…}, _store: {…}, … }
-  // console.debug('ddebug ProtectedRoute children', children);
-  
+  // component: Component,
+export const ProtectedRoute = ({ 
+  children,
+  isAdmin = false,
+  ...rest
+}) => {
+  console.debug('ddebug ProtectedRoute children', children);
+  // { "$$typeof": Symbol("react.transitional.element"), type: Dashboard(), key: "dashboard", props: {}, _owner: {…}, _store: {…}, … }
+
   const { user } = useAuth();
-  if (!user) {
-    // console.debug('ddebug ProtectedRoute useAuth not auth');
-    // user is not authenticated
-    return <Navigate to="/login" />;
-    
-  // move non admin user to Accounts
-  // } else if (!user.isAdmin) {
-    // return <Navigate to="/accounts" />;
+  console.debug('ddebug ProtectedRoute user', user);
+  
+  // user is not authenticated, no access
+  if (!user) return <Navigate to="/login" />;
+  
+  prevent access to non admins
+  if (isAdmin && !user.isAdmin) {
+    return <Navigate to="/profile" />;
   }
   
   // console.debug('ddebug ProtectedRoute useAuth return children');
   return children;
+  // return Component;
 };
 
-// export default ProtectedRoute;
+export default ProtectedRoute;

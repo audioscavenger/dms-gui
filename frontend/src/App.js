@@ -17,6 +17,23 @@ import Login from './pages/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './hooks/useAuth';   // must include any elements that will interact with auth
 
+                // <Route path="/"           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                // <Route path="/login"      element={<Login />} />
+                // <Route path="/dashboard"  element={<ProtectedRoute        ><Dashboard /></ProtectedRoute>} />
+                // <Route path="/logins"     element={<ProtectedRoute isAdmin><Logins /></ProtectedRoute>} />
+                // <Route path="/accounts"   element={<ProtectedRoute isAdmin><Accounts /></ProtectedRoute>} />
+                // <Route path="/aliases"    element={<ProtectedRoute        ><Aliases /></ProtectedRoute>} />
+                // <Route path="/settings"   element={<ProtectedRoute isAdmin><Settings /></ProtectedRoute>} />
+                // <Route path="/profile"    element={<ProtectedRoute        ><Profile /></ProtectedRoute>} />
+
+                // <Route path="/"           element={<ProtectedRoute>        <Dashboard key="dashboard" /></ProtectedRoute>} />
+                // <Route path="/login"      element={                        <Login          />} />
+                // <Route path="/dashboard"  element={<ProtectedRoute        ><Dashboard key="dashboard" /></ProtectedRoute>} />
+                // <Route path="/logins"     element={<ProtectedRoute isAdmin><Logins    key="logins"    /></ProtectedRoute>} />
+                // <Route path="/accounts"   element={<ProtectedRoute isAdmin><Accounts  key="accounts"  /></ProtectedRoute>} />
+                // <Route path="/aliases"    element={<ProtectedRoute        ><Aliases   key="aliases"   /></ProtectedRoute>} />
+                // <Route path="/settings"   element={<ProtectedRoute isAdmin><Settings  key="settings"  /></ProtectedRoute>} />
+                // <Route path="/profile"    element={<ProtectedRoute        ><Profile   key="profile"   /></ProtectedRoute>} />
 
 function App() {
   return (
@@ -32,14 +49,14 @@ function App() {
           
           <Col md={10} className="main-content">{' '}
               <Routes>
-                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/logins" element={<ProtectedRoute><Logins /></ProtectedRoute>} />
-                <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-                <Route path="/aliases" element={<ProtectedRoute><Aliases /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/"           element={<ProtectedRoute>        <Dashboard key="dashboard" /></ProtectedRoute>} />
+                <Route path="/login"      element={                        <Login          />} />
+                <Route path="/dashboard"  element={<ProtectedRoute        ><Dashboard key="dashboard" /></ProtectedRoute>} />
+                <Route path="/logins"     element={<ProtectedRoute isAdmin><Logins    key="logins"    /></ProtectedRoute>} />
+                <Route path="/accounts"   element={<ProtectedRoute isAdmin><Accounts  key="accounts"  /></ProtectedRoute>} />
+                <Route path="/aliases"    element={<ProtectedRoute        ><Aliases   key="aliases"   /></ProtectedRoute>} />
+                <Route path="/settings"   element={<ProtectedRoute isAdmin><Settings  key="settings"  /></ProtectedRoute>} />
+                <Route path="/profile"    element={<ProtectedRoute        ><Profile   key="profile"   /></ProtectedRoute>} />
               </Routes>
           </Col>{' '}
           

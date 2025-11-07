@@ -139,7 +139,7 @@ logins: {
         test:   `SELECT COUNT(email) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND email = ?`,
         check:  function(result) { return result.count == 1; },
         pass:   `UPDATE logins set email = @email WHERE email = ?`,
-        fail:   "Cannot change a normal user's mailbox",
+        fail:   "Cannot change email from a mailbox-linked user.",
       },
     },
     username: `UPDATE logins set username = @username WHERE email = ?`,

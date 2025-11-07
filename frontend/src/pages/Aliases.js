@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
+import { useAuth } from '../hooks/useAuth';
 
 const {
   debugLog,
@@ -32,6 +33,7 @@ import {
 
 const Aliases = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isLoading, setLoading] = useState(true);
   
   const [aliases, setAliases] = useState([]);
@@ -244,7 +246,7 @@ const Aliases = () => {
       
       <Row>
         {' '}
-        {/* Use Row component */}
+        
         <Col md={5} className="mb-4">
           {' '}
           {/* Use Col component */}
@@ -282,7 +284,7 @@ const Aliases = () => {
             </form>
           </Card>
         </Col>{' '}
-        {/* Close first Col */}
+        
         <Col md={7}>
           {' '}
           {/* Use Col component */}

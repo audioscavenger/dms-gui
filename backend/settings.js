@@ -163,7 +163,7 @@ async function getServerStatus(containerName) {
   // memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
 
   disk_cmd     = "du -sm /var/mail | cut -f1"
-  top_cmd      = "top -bn1"
+  top_cmd      = "top -bn1 | head -12"
   // top_parser will parse all of the below
   // top - 02:02:32 up 35 days, 22:39,  0 user,  load average: 0.00, 0.01, 0.00
   // Tasks:  35 total,   1 running,  34 sleeping,   0 stopped,   0 zombie

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 // import { useTranslation } from 'react-i18next';
 import { Nav } from 'react-bootstrap';
+import { useAuth } from '../hooks/useAuth';
 
 import {
   Button,
@@ -14,6 +15,7 @@ import {
 
 const LeftSidebar = () => {
   // const { t } = useTranslation();
+  const { user } = useAuth();
   
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   // const [isDropdownActive, setDropdownActive] = useState("false");  // we don't use it yet
@@ -44,25 +46,33 @@ const LeftSidebar = () => {
         <span> {Translate('dashboard.sidebar')}</span>
       </Nav.Link>
       
-      <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
-        <i className="bi bi-inboxes-fill me-2"></i>
-        <span> {Translate('accounts.sidebar')}</span>
-      </Nav.Link>
+      {(user?.isAdmin) && (
+        <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
+          <i className="bi bi-inboxes-fill me-2"></i>
+          <span> {Translate('accounts.sidebar')}</span>
+        </Nav.Link>
+      )}
       
+      {(user) && (
       <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
         <i className="bi bi-arrow-left-right me-2"></i>
         <span> {Translate('aliases.sidebar')}</span>
       </Nav.Link>
+      )}
       
-      <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
-        <i className="bi bi-person-lock me-2"></i>
-        <span> {Translate('logins.sidebar')}</span>
-      </Nav.Link>
-      
-      <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
-        <i className="bi bi-gear-fill me-2"></i>
-        <span> {Translate('settings.sidebar')}</span>
-      </Nav.Link>
+      {(user?.isAdmin) && (
+      <>
+        <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
+          <i className="bi bi-person-lock me-2"></i>
+          <span> {Translate('logins.sidebar')}</span>
+        </Nav.Link>
+        
+        <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
+          <i className="bi bi-gear-fill me-2"></i>
+          <span> {Translate('settings.sidebar')}</span>
+        </Nav.Link>
+      </>
+      )}
     </Nav>
 
     <div className="leftsidebar-collapse-footer">

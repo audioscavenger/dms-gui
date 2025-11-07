@@ -18,10 +18,21 @@ const API_URL =
     // 'Authorization': 'Bearer YOUR_AUTH_TOKEN',
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // Security with HTTP-Only Cookie
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Security with Bearer token
+// api.interceptors.request.use((config) => {
+  // const token = localStorage.getItem('accessToken'); // Or retrieve from state
+  // if (token) {
+    // config.headers.Authorization = `Bearer ${token}`;
+  // }
+  // return config;
+// });
+
 
 // Server status API
 // export const getServerStatus = async () => {
@@ -126,8 +137,21 @@ export async function deleteLogin(email) {
 };
 
 export async function loginUser(credential, password) {
+  debugLog(`ddebug frontend received credential=${credential}, password=${password}`)
   try {
     const response = await api.post(`/loginUser`, { credential, password });
+    debugLog('ddebug loginUser response', response)
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function logoutUser() {
+  try {
+    const response = await api.post(`/logout`);
+    debugLog('ddebug logoutUser response', response)
     return response.data;
   } catch (error) {
     errorLog(error.message);

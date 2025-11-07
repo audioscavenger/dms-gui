@@ -75,6 +75,12 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [x] 1.3.2 - backend: tried accessToken+localStorage, now switched to HTTP-Only cookie, but still use localStorage for user roles etc
+* [x] 1.3.2 - docker/start.sh: implement random SECRET_KEY generation on start of container
+* [x] 1.3.2 - backend/index: implement JWT token
+* [x] 1.3.2 - frontend: npm add jwt-decode
+* [x] 1.3.2 - backend: npm add jsonwebtoken
+* [x] 1.3.2 - frontend/LeftSidebar: hide items and prevent access based off permissions
 * [x] 1.3.1 - frontend/Profile: added Profile page! it only changes the password for dms-gui atm
 * [x] 1.3.1 - frontend/components: added ButtonDropdown
 * [x] 1.3.1 - backend/settings: bugfix in pullDoveConf()
