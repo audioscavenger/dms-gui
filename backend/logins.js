@@ -1,43 +1,33 @@
-require('./env.js');
-const {
-  docker,
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
+  infoLog,
   successLog,
-  byteSize2HumanSize,
-  jsonFixTrailingCommas,
-  formatDMSError,
-  reduxPropertiesOfObj,
-  execSetup,
-  execCommand,
-  readJson,
-  writeJson,
-} = require('./backend');
+  warnLog,
+} from './backend.js';
+import './env.js';
 
-const {
-  sql,
-  dbRun,
+import {
   dbAll,
   dbGet,
+  dbRun,
   hashPassword,
+  sql,
   verifyPassword,
-} = require('./db');
-
-const fs = require("fs");
-const fsp = fs.promises;
+} from './db.js';
 
 
 // this returns an array
-async function getRoles(email, containerName) {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+export const getRoles = async credential => {
 
   try {
     
-    const roles = await dbGet(sql.logins.select.roles, {scope:containerName}, email);
-    return JSON.parse(roles);
+    let roles = await dbGet(sql.logins.select.roles, {email: credential, username: credential});
+    if (roles.success) {
+      return {success: true, message: JSON.parse(roles.message)};
+      
+    }
+    return roles;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -49,16 +39,24 @@ async function getRoles(email, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // this returns an objects
-async function getLogin(credential) {
+export const getLogin = async credential => {
   try {
     
-    let login = await dbGet(sql.logins.select.login, credential, credential);
-    // now JSON.parse roles as it's stored stringified in the db
-    login.roles = JSON.parse(login.roles);
+    let login = await dbGet(sql.logins.select.login, {email: credential, username: credential});
+    if (login.success) {
+      
+      if (Object.keys(login.message).length) {
+        infoLog(`Found login=`, login.message);
+
+        // now JSON.parse roles as it's stored stringified in the db
+        login.message.roles = (login.message?.roles) ? JSON.parse(login.message.roles) : [];
+      } else login.success = false;
+      
+    }
     return login;
     
   } catch (error) {
@@ -71,32 +69,41 @@ async function getLogin(credential) {
       // error: error.message,
     // };
   }
-}
+};
 
 
-// this returns an array of objects
-async function getLogins(credential) {
-  if (credential) return getLogin(credential);
+// this returns an array of objects, credentials is either email or username, or array of those
+export const getLogins = async credentials => {
+  if (typeof credentials == "string") return getLogin(credentials);
 
   let logins = [];
   try {
     
-    logins = await dbAll(sql.logins.select.logins);
-    debugLog(`pulled ${logins.length} logins`);
-    
-    // we could read DB_Logins and it is valid
-    if (logins.length) {
-      infoLog(`Found ${logins.length} entries in logins`);
-      
-      // now JSON.parse roles as it's stored stringified in the db
-      logins = logins.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
+    debugLog(`credentials=`, credentials);
+    if (Array.isArray(credentials) && credentials.length) {
+      // roles come already parsed from getLogin
+      let logins = await Promise.all(credentials.map(credential => { return getLogin(credential); }));
+      if (logins.success) {
+        infoLog(`Found ${logins.message.length} entries in logins for`, credentials);
+        
+        // now remove all undefined entries
+        logins.message = logins.message.filter(element => element !== undefined);
+      }
       
     } else {
-      warnLog(`db logins seems empty:`, logins);
+      let logins = await dbAll(sql.logins.select.logins);
+      if (logins.success) {
+        // now JSON.parse roles as it's stored stringified in the db
+        logins.message = logins.message.map(login => { return { ...login, roles: JSON.parse(login.message.roles) }; });
+        infoLog(`Found ${logins.message.length} entries in logins`);
+      }
     }
     
+    // we could read DB_Logins and it is valid
+    if (!logins.message.length) warnLog(`db logins seems empty:`, logins);
+    
     return logins;
-    // [ {email: email, username: username, isActive:1, ..}, ..]
+    // {success: true, message: [ {email: email, username: username, isActive:1, ..}, ..] }
     
   } catch (error) {
     let backendError = error.message;
@@ -108,10 +115,10 @@ async function getLogins(credential) {
       // error: error.message,
     // };
   }
-}
+};
 
 
-async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
+export const addLogin = async (email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
 
   try {
     debugLog(email, username, password, email, isAdmin, isActive, isAccount, roles);
@@ -120,9 +127,9 @@ async function addLogin(email, username, password, isAdmin=0, isAccount=0, isAct
     const result = dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, roles:JSON.stringify(roles) });
     if (result.success) {
       successLog(`Saved login ${username}:${email}`);
-      return { success: true, message: `Saved login ${username}:${email}` };
       
-    } else return result;
+    }
+    return result;
 
   } catch (error) {
     let backendError = `${error.message}`;
@@ -134,30 +141,35 @@ async function addLogin(email, username, password, isAdmin=0, isAccount=0, isAct
       // error: error.message,
     // };
   }
-}
+};
 
 
 // loginUser will not throw an error an attacker can exploit
-async function loginUser(credential, password) {
+export const loginUser = async (credential, password) => {
   
   try {
     let login = await getLogin(credential);
 
-    if (login.isActive) {
-      const isValid = await verifyPassword(credential, password, 'logins');
-      
-      if (isValid) {
-        successLog(`User ${credential} logged in successfully.`);
-        return login;
+    if (login.success) {
+      if (login.message.isActive) {
+        const isValid = await verifyPassword(credential, password, 'logins');
         
+        if (isValid) {
+          successLog(`User ${credential} logged in successfully.`);
+          
+        } else {
+          warnLog(`User ${credential} invalid password.`);
+          login.success = false;
+        }
       } else {
-        warnLog(`User ${credential} invalid password.`);
-        return false;
+        warnLog(`User ${credential} is inactive.`);
+        login.success = false;
       }
     } else {
-      warnLog(`User ${credential} is inactive.`);
-      return false;
+      warnLog(`User ${credential} not found.`);
     }
+    return login;
+    
   } catch (error) {
     let backendError = error.message;
     errorLog(`${backendError}`);
@@ -170,30 +182,31 @@ async function loginUser(credential, password) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // this returns an array of objects // cancelled
-async function getRolesFromRoles(containerName) {
+export const getRolesFromRoles = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   debugLog(`start`);
   try {
     
-    const roles = await dbAll(sql.roles.select.roles, {scope:containerName});
-    debugLog(`pulled ${roles.length} roles`);
-    
-    // we could read DB_Logins and it is valid
-    if (roles.length) {
-      infoLog(`Found ${roles.length} entries in roles`);
+    let roles = await dbAll(sql.roles.select.roles, {scope:containerName});
+    if (roles.success) {
+      debugLog(`pulled ${roles.message.length} roles`);
       
-    } else {
-      warnLog(`db roles seems empty:`, roles);
+      // we could read DB_Logins and it is valid
+      if (roles.message.length) {
+        infoLog(`Found ${roles.message.length} entries in roles`);
+        
+      } else {
+        warnLog(`db roles seems empty:`, roles);
+      }
     }
-    
     return roles;
-    // [ { username: username, email: email }, ..]
+    // {success: true, message: [ { username: username, email: email }, ..] }
     
   } catch (error) {
     let backendError = error.message;
@@ -205,15 +218,15 @@ async function getRolesFromRoles(containerName) {
       // error: error.message,
     // };
   }
-}
-
-
-module.exports = {
-  getLogin,
-  getLogins,
-  addLogin,
-  loginUser,
-  getRoles,
 };
+
+
+// module.exports = {
+//   getLogin,
+//   getLogins,
+//   addLogin,
+//   loginUser,
+//   getRoles,
+// };
 
 

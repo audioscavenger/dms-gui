@@ -7,13 +7,13 @@ import { useAuth } from '../hooks/useAuth';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
-const {
+import {
   debugLog,
   infoLog,
   warnLog,
   errorLog,
   successLog,
-} = require('../../frontend');
+} from '../../frontend';
 
 import {
   loginUser,
@@ -34,6 +34,7 @@ export const Login = () => {
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
   const [firstRun, setFirstRun] = useState(false);
+  
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
@@ -48,11 +49,11 @@ export const Login = () => {
   const isFirstRun = async () => {
     
     debugLog('ddebug isFirstRun loginUser(admin)');
-    const user = await loginUser('admin', 'changeme');
-    debugLog('ddebug isFirstRun user', user);
+    const result = await loginUser('admin', 'changeme');
+    debugLog('ddebug isFirstRun result', result);
     
     // if we can login with the default user, display first run welcome message
-    if (user) {
+    if (result.success) {
       setFirstRun(true);
       setSuccessMessage('logins.isFirstRun');
     }
@@ -65,18 +66,14 @@ export const Login = () => {
     // Here you would usually send a request to your backend to authenticate the user
     // For the sake of this example, we're using a mock authentication
     // if (credential === "admin" && password === "password") {
-    // const user = await loginUser(credential, password)
-    const user = await loginUser(credential, password)
-    console.debug('ddebug loginUser user=', user);
+    // const result = await loginUser(credential, password)
+    const result = await loginUser(credential, password)
+    console.debug('ddebug loginUser result=', result.message);
     // without JWT: {"email":"eric@domain.com","username":"eric","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
     // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
     
-    if (user) {
-      
-      setSuccessMessage(null);
-      setErrorMessage(null);
-      // (firstRun) ? await login({credential}, "/settings") : await login({credential});
-      (firstRun) ? await login(user, "/settings") : await login(user);
+    if (result.success) {
+      (firstRun) ? await login(result.message, "/settings") : await login(result.message);
       
     } else {
       setErrorMessage('logins.denied');

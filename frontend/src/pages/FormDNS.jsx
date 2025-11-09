@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const {
+import {
   debugLog,
   infoLog,
   warnLog,
   errorLog,
   successLog,
-} = require('../../frontend.js');
+} from '../../frontend';
 
 import {
   getSettings,

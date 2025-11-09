@@ -6,7 +6,7 @@ import RBAccordion from 'react-bootstrap/Accordion';
 import {
   Button,
   Translate,
-} from './';
+} from '.';
 
 // const tabs = [
   // { id: 1, title: "Tab 1", icon: "person-plus-fill",   content: "Content of Tab 1" },

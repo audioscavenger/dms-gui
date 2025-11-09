@@ -4,6 +4,7 @@ config/*
 git*.cmd
 commit.*.txt
 README.cmd
+*.code-workspace
 
 # Dependencies
 node_modules/

@@ -1,32 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../hooks/useAuth';   // must include any elements that will interact with auth
 
-const {
-  debugLog,
-  infoLog,
-  warnLog,
+import {
   errorLog,
-  successLog,
-  byteSize2HumanSize,
-} = require('../../frontend');
+  reduxArrayOfObjByValue,
+} from '../../frontend';
 import {
   getServerStatus,
   getCount,
+  getSettings,
 } from '../services/api';
 import {
   AlertMessage,
   DashboardCard,
-  LoadingSpinner,
   Button,
-  Translate,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 const Dashboard = () => {
   const { t } = useTranslation();
+  const [containerName] = useLocalStorage("containerName");
+  
   const [status, setServerStatus] = useState({
     status: {
       status: 'loading',
@@ -45,7 +42,6 @@ const Dashboard = () => {
   const [aliasesCount, setAliasesCount] = useState(0);
   const [loginsCount, setLoginsCount] = useState(0);
   
-  // const [isLoading, setLoading] = useState(true);
   const [isStatusLoading, setStatusLoading] = useState(true);
   const [isAccountsLoading, setAccountsLoading] = useState(true);
   const [isAliasesLoading, setAliasesLoading] = useState(true);
@@ -69,6 +65,10 @@ const Dashboard = () => {
   // */
 
   useEffect(() => {
+    fetchContainerName();
+  }, []);
+
+  useEffect(() => {
     fetchAll();
 
     // Refresh data every 30 seconds
@@ -87,23 +87,46 @@ const Dashboard = () => {
     
   };
 
+  const fetchContainerName = async () => {
+    
+    try {
+      const [settingsData] = await Promise.all([
+        getSettings(containerName),
+      ]);
+      
+      const dmsData = reduxArrayOfObjByValue(settingsData, 'name', 'containerName')    // [ {name:'containerName', value:'dms'}, .. ]
+      if (dmsData.success) {
+
+        if (!containerName) setContainerName(dmsData.message[0]?.value);
+        setErrorMessage(null);
+        
+      } else setErrorMessage(dmsData.message);
+      
+    } catch (err) {
+      errorLog(t('api.errors.fetchSettings'), err);
+      setErrorMessage('api.errors.fetchSettings');
+      
+    }
+  };
+
   const fetchDashboard = async () => {
     
     try {
-      // setLoading(true);
       setStatusLoading(true);
 
-      const statusData = await getServerStatus(undefined);
+      const statusData = await getServerStatus(containerName);
+      if (statusData.success) {
 
-      setServerStatus(statusData);
-      setErrorMessage(null);
+        setServerStatus(statusData.message);
+        setErrorMessage(null);
+        
+      } else setErrorMessage(statusData.message);
       
     } catch (err) {
       errorLog(t('api.errors.fetchServerStatus'), err);
       setErrorMessage('api.errors.fetchServerStatus');
       
     } finally {
-      // setLoading(false);
       setStatusLoading(false);
     }
   };
@@ -114,11 +137,12 @@ const Dashboard = () => {
     try {
       setAccountsLoading(true);
 
-      // const accountsResponse = await getAccounts(refresh);
-      // setAccountsCount(accountsResponse.length);
-      const count = await getCount('accounts');
-      setAccountsCount(count);
-      setErrorMessage(null);
+      const count = await getCount('accounts', containerName);
+      if (count.success) {
+        setAccountsCount(count.message);
+        setErrorMessage(null);
+      
+      } else setErrorMessage(count.message);
       
     } catch (err) {
       errorLog(t('api.errors.fetchAccounts'), err);
@@ -135,11 +159,12 @@ const Dashboard = () => {
     try {
       setAliasesLoading(true);
 
-      // const aliasesResponse = await getAliases(refresh);
-      // setAliasesCount(aliasesResponse.length);
-      const count = await getCount('aliases');
-      setAliasesCount(count);
-      setErrorMessage(null);
+      const count = await getCount('aliases', containerName);
+      if (count.success) {
+        setAliasesCount(count.message);
+        setErrorMessage(null);
+      
+      } else setErrorMessage(count.message);
       
     } catch (err) {
       errorLog(t('api.errors.fetchfetchAliases'), err);
@@ -155,11 +180,12 @@ const Dashboard = () => {
     try {
       setLoginsLoading(true);
 
-      // const loginsResponse = await getLogins();
-      // setLoginsCount(loginsResponse.length);
       const count = await getCount('logins');
-      setLoginsCount(count);
-      setErrorMessage(null);
+      if (count.success) {
+        setLoginsCount(count.message);
+        setErrorMessage(null);
+      
+      } else setErrorMessage(count.message);
       
     } catch (err) {
       errorLog(t('api.errors.fetchLogins'), err);
@@ -204,7 +230,7 @@ const Dashboard = () => {
         />
       </div>
 
-      <h2 className="mb-4">{Translate("dashboard.title")}</h2>
+      <h2 className="mb-4">{t("dashboard.title", {containerName: containerName})}</h2>
       <AlertMessage type="danger" message={errorMessage} />
 
       <Row>

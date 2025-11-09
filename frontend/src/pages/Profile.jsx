@@ -1,43 +1,30 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import { useAuth } from '../hooks/useAuth';
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
-import Chip from '@mui/material/Chip';
-import Autocomplete from '@mui/material/Autocomplete';
-import TextField from '@mui/material/TextField';
-import Stack from '@mui/material/Stack';
-
-const {
-  debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-  getValueFromArrayOfObj,
-  pluck,
-  moveKeyToLast,
-} = require('../../frontend');
+// import Chip from '@mui/material/Chip';
+// import Autocomplete from '@mui/material/Autocomplete';
+// import TextField from '@mui/material/TextField';
+// import Stack from '@mui/material/Stack';
 
 import {
-  addLogin,
-  deleteLogin,
+  debugLog,
+  errorLog,
+  moveKeyToLast,
+} from '../../frontend';
+
+import {
+  getLogins,
   updateLogin,
-  getAccounts,
 } from '../services/api';
 
 import {
   AlertMessage,
-  Accordion,
   Button,
-  Card,
-  DataTable,
   FormField,
-  SelectField,
   LoadingSpinner,
   Translate,
 } from '../components';
@@ -47,11 +34,11 @@ const Profile = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const { user } = useAuth();
-
-  const [isLoading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const { logout } = useAuth();
 
   // Common states -------------------------------------------------
+  const [isLoading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedLogin, setSelectedLogin] = useState(null);
   
@@ -86,14 +73,29 @@ const Profile = () => {
     
     try {
       setLoading(true);
-
-      debugLog('ddebug user', user);
-      setloginFormData({
-        ...loginFormData,
-        ...user
-      });
-        
       setErrorMessage(null);
+      setSuccessMessage(null);
+
+      // setloginFormData({
+        // ...loginFormData,
+        // ...user
+      // });
+
+      const userData = await getLogins([user.email, user.username]);  // user.email was maybe altered in Logins page, let's pull with both options
+      if (userData.success) {
+        if (!userData.message.length) logout();                       // user not found, localStorage was altered or corrupt, logout!
+        
+        debugLog('ddebug user', user);
+        debugLog('ddebug userData', userData.message);
+        
+        // update profile form with fresh data
+        setloginFormData({
+          ...loginFormData,
+          ...userData.message[0]
+        });
+
+      } else setErrorMessage(userData.message);
+
       
     } catch (err) {
       errorLog(t('api.errors.fetchProfile'), err);
@@ -164,8 +166,8 @@ const Profile = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.updateLogin'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+      errorLog(t('api.errors.updateLogin'), err.message);
+      setErrorMessage('api.errors.updateLogin', err.message);
     }
   };
 

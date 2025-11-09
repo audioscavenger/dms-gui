@@ -1,16 +1,16 @@
-require('./env.js');
-const {
+import {
+  reduxPropertiesOfObj
+} from '../common.js';
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-  reduxPropertiesOfObj,
   execSetup,
-  execCommand,
-} = require('./backend');
+  infoLog,
+  successLog
+} from './backend.js';
+import './env.js';
 
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 var DB;
 
@@ -18,7 +18,7 @@ var DB;
 // keytypes = ['rsa','ed25519']
 // keysizes = ['1024','2048']
 
-sqlMatch = {
+export const sqlMatch = {
   add: {
     patch: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
     err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
@@ -40,7 +40,7 @@ sqlMatch = {
 // DB.close();
 // DB = new Database(buffer);
 
-sql = {
+export const sql = {
 settings: {
 
   scope:  true,
@@ -103,27 +103,27 @@ logins: {
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (email = ? OR username = ?)`,
+    login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (email = @email OR username = @username)`,
     logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1`,
     admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND email = ?`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND (email = @email OR username = @username)`,
     salt:     `SELECT salt from logins WHERE email = ?`,
     hash:     `SELECT hash from logins WHERE email = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE (email = ? OR username = ?)`,
     isActive: {
-      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (email = ? OR username = ?)`,
+      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (email = @email OR username = @username)`,
       logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
       admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND email = ?`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND (email = @email OR username = @username)`,
       count: {
         admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
       },
     },
     isInactive: {
-      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (email = ? OR username = ?)`,
+      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (email = @email OR username = @username)`,
       logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0`,
       admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND email = ?`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND (email = @email OR username = @username)`,
     },
   },
   
@@ -423,10 +423,10 @@ domains: {
 },
 
 };
-    // password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
+// password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 
 
-function dbOpen() {
+export const dbOpen = () => {
   try {
     if (DB && DB.inTransaction) DB.close();
     
@@ -447,156 +447,162 @@ function dbOpen() {
     errorLog(`dbOpen error: ${err.code}: ${err.message}`);
     throw err;
   }
-}
+};
+
+// password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
 // dbRun takes params as Array = multiple inserts or String/Object = single insert
 // dbRun takes multiple anonymous parameters anonParams as an array of strings, for WHERE clause value(s) when needed
-function dbRun(sql, params=[], ...anonParams) {
+export const dbRun = (sql, params=[], ...anonParams) => {
 
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
+  let result, insertMany;
   try {
     
     // exec https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#execstring---this
     if (sql.match(/BEGIN TRANSACTION/i)) {
       debugLog(`DB.exec(${sql})`);
-      DB.exec(sql);
+      result = DB.exec(sql);
       debugLog(`DB.exec success`);
-      return {success: true}
 
     // multiple inserts at once: DB.transaction https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
     } else if (Array.isArray(params) && params.length) {
       
       if (anonParams.length) {
         debugLog(`DB.transaction("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
-        const insertMany = DB.transaction((params) => {
+        insertMany = DB.transaction((params) => {
           for (const param of params) DB.prepare(sql).run(anonParams, param);
         });
-        insertMany(params);
-        debugLog(`DB.transaction success`);
-        return {success: true}
+        result = insertMany(params);
         
       } else {
         debugLog(`DB.transaction("${sql}").run(${JSON.stringify(params)})`);
-        const insertMany = DB.transaction((params) => {
+        insertMany = DB.transaction((params) => {
           for (const param of params) DB.prepare(sql).run(param);
         });
-        insertMany(params);
-        debugLog(`DB.transaction success`);
-        return {success: true}
+        result = insertMany(params);
       }
+      debugLog(`DB.transaction success`);
       
     // single statement: DB.prepare https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
       if (anonParams.length) {
         debugLog(`DB.prepare("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
-        DB.prepare(sql).run(params,anonParams);
-        debugLog(`DB.prepare success`);
-        return {success: true}
+        result = DB.prepare(sql).run(params,anonParams);
         
       } else {
         debugLog(`DB.prepare("${sql}").run(${JSON.stringify(params)})`);
-        DB.prepare(sql).run(params);
-        debugLog(`DB.prepare success`);
-        return {success: true}
+        result = DB.prepare(sql).run(params);
       }
+      debugLog(`DB.prepare success`);
     }
+    return {success: true, message: result};
     // result = { changes: 0, lastInsertRowid: 0 }
 
   } catch (err) {
     debugLog(`${err.code}: ${err.message}`);
     dbOpen()
     return {success: false, message: err.message}
-    throw err;
+    // throw err;
   }
-}
-    // dupe table:
-      // err.code=SQLITE_ERROR
-      // err.message=table xyz already exists
-    // dupe insert:
-      // err.code=SQLITE_CONSTRAINT_PRIMARYKEY
-      // err.message=UNIQUE constraint failed: settings.name
-    // missing table:
-      // err.code=SQLITE_ERROR
-      // err.message=no such table: master
-    // drop column that does not exist:
-      // err.code=SQLITE_ERROR
-      // err.message=no such column: "password"
-    // add column that exists:
-      // err.code=SQLITE_ERROR
-      // err.message=duplicate column name: salt
+};
+
+// dupe table:
+// err.code=SQLITE_ERROR
+// err.message=table xyz already exists
+// dupe insert:
+// err.code=SQLITE_CONSTRAINT_PRIMARYKEY
+// err.message=UNIQUE constraint failed: settings.name
+// missing table:
+// err.code=SQLITE_ERROR
+// err.message=no such table: master
+// drop column that does not exist:
+// err.code=SQLITE_ERROR
+// err.message=no such column: "password"
+// add column that exists:
+// err.code=SQLITE_ERROR
+// err.message=duplicate column name: salt
 
 
-function dbCount(table, containerName) {
+export const dbCount = (table, containerName) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   
+  let result;
   try {
     
     debugLog(`DB.prepare("${sql[table].select.count}").get({scope:${containerName}})`);
-    const result = DB.prepare(sql[table].select.count).get({scope:containerName});
+    result = DB.prepare(sql[table].select.count).get({scope:containerName});
     infoLog(`success:`, result);
     
-    return result.count;
+    return {success: true, message: result.count};
 
   } catch (err) {
     errorLog(`${err.code}: ${err.message}`);
     dbOpen();
-    throw err;
+    return {success: false, message: err.message}
+    // throw err;
   }
-}
+};
 
-function dbGet(sql, params=[], ...anonParams) {
+export const dbGet = (sql, params=[], ...anonParams) => {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=", sql);
   }
   
+  let result;
   try {
     if (anonParams.length) {
       debugLog(`DB.prepare("${sql}").get(${anonParams}, ${JSON.stringify(params)})`);
-      return DB.prepare(sql).get(params, anonParams);
+      result = DB.prepare(sql).get(params, anonParams);
       
     } else {
       debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)})`);
-      return DB.prepare(sql).get(params);
+      result = DB.prepare(sql).get(params);
     }
+    return {success: true, message: result};
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
 
   } catch (err) {
     errorLog(`${err.code}: ${err.message}`);
     dbOpen();
-    throw err;
+    return {success: false, message: err.message}
+    // throw err;
   }
-}
+};
 
-function dbAll(sql, params=[], ...anonParams) {
+export const dbAll = (sql, params=[], ...anonParams) => {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
+  let result;
   try {
     if (anonParams.length) {
       debugLog(`DB.prepare("${sql}").all(${anonParams}, ${JSON.stringify(params)})`);
-      return DB.prepare(sql).all(params, anonParams);
+      result = DB.prepare(sql).all(params, anonParams);
       
     } else {
       debugLog(`DB.prepare("${sql}").all(${JSON.stringify(params)})`);
-      return DB.prepare(sql).all(params);
+      result = DB.prepare(sql).all(params);
     }
+    return {success: true, message: result};
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
   } catch (err) {
     errorLog(`${err.code}: ${err.message}`);
     dbOpen();
-    throw err;
+    return {success: false, message: err.message}
+    // throw err;
   }
-}
+};
 
-function dbInit() {
+export const dbInit = () => {
 
   debugLog(`start`);
   dbOpen();
@@ -621,24 +627,29 @@ function dbInit() {
 
   try {
     dbUpdate();
+    
   } catch (err) {
     errorLog(`${err.code}: ${err.message}`);
     throw err;
   }
   debugLog(`end`);
-}
+};
 
 
-function dbUpdate() {
+export const dbUpdate = () => {
   debugLog(`start`);
 
   dbOpen();
-  let db_version;
+  let result, db_version;
+  
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      db_version = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
-      db_version = (db_version) ? db_version.value : undefined;
-      debugLog(`DB_VERSION_${table}=`, db_version);
+      result = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
+      if (result.success) {
+        db_version = (result.message) ? result.message.value : undefined;
+        debugLog(`DB_VERSION_${table}=`, db_version);
+        
+      } else throw new Error(result.message);
       
     } catch (err) {
       match = {
@@ -675,8 +686,10 @@ function dbUpdate() {
             // patch.patches is a array of SQL lines to ADD or DROP columns etc
             for (const [num, patchLine] of Object.entries(patch.patches)) {
               try {
-                dbRun(patchLine);
-                successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
+                result = dbRun(patchLine);
+                if (result.success) {
+                  successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
+                } else throw new Error(result.message);
                 
               } catch (err) {
                 match = {
@@ -714,11 +727,12 @@ function dbUpdate() {
   DB.close()
   dbOpen();
   debugLog(`end`);
-}
+};
+
 // ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
 
 
-async function hashPassword(password) {
+export const hashPassword = async password => {
   return new Promise((resolve, reject) => {
     const salt = crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
     crypto.scrypt(password, salt, 64, (err, derivedKey) => { // 64 is the key length
@@ -726,11 +740,11 @@ async function hashPassword(password) {
       resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
     });
   });
-}
+};
 
 
 // verifyPassword works the same wherever a table has a salted hash
-async function verifyPassword(credential, password, table='logins') {
+export const verifyPassword = async (credential, password, table='logins') => {
   
   try {
     debugLog(`for ${credential}`);
@@ -757,7 +771,7 @@ async function verifyPassword(credential, password, table='logins') {
 
 
 // Function to update a password in a table
-async function changePassword(table, id, password, containerName) {
+export const changePassword = async (table, id, password, containerName) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${id} in ${table} for ${containerName}`);
 
@@ -801,11 +815,11 @@ async function changePassword(table, id, password, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to update a table in the db; id can very well be an array as well
-async function updateDB(table, id, jsonDict, scope) {  // jsonDict = { column:value, .. }
+export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = { column:value, .. }
   scope = (scope) ? scope : DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
@@ -902,10 +916,10 @@ async function updateDB(table, id, jsonDict, scope) {  // jsonDict = { column:va
       // error: error.message,
     // };
   }
-}
+};
 
 
-async function deleteEntry(table, id, key, scope) {
+export const deleteEntry = async (table, id, key, scope) => {
   scope = (scope) ? scope : DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
 
@@ -971,25 +985,25 @@ async function deleteEntry(table, id, key, scope) {
       // error: error.message,
     // };
   }
-}
-
-
-module.exports = {
-  DB,
-  sql,
-  dbOpen,
-  dbInit,
-  dbUpdate,
-  dbRun,
-  dbGet,
-  dbAll,
-  dbCount,
-  hashPassword,
-  verifyPassword,
-  changePassword,
-  updateDB,
-  deleteEntry,
 };
+
+
+// module.exports = {
+//   DB,
+//   sql,
+//   dbOpen,
+//   dbInit,
+//   dbUpdate,
+//   dbRun,
+//   dbGet,
+//   dbAll,
+//   dbCount,
+//   hashPassword,
+//   verifyPassword,
+//   changePassword,
+//   updateDB,
+//   deleteEntry,
+// };
 
 
 // debug = true;
@@ -1006,14 +1020,14 @@ module.exports = {
 
 // DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
 // sql=`BEGIN TRANSACTION;
-          // CREATE TABLE IF NOT EXISTS logins (
-          // username  TEXT NOT NULL UNIQUE PRIMARY KEY,
-          // salt      TEXT NOT NULL,
-          // hash      TEXT NOT NULL,
-          // email     TEXT DEFAULT ''
-          // );
-          // REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
-          // COMMIT;`
+// CREATE TABLE IF NOT EXISTS logins (
+// username  TEXT NOT NULL UNIQUE PRIMARY KEY,
+// salt      TEXT NOT NULL,
+// hash      TEXT NOT NULL,
+// email     TEXT DEFAULT ''
+// );
+// REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
+// COMMIT;`
 // DB.prepare('SELECT username, email from logins').all()
 // DB.exec(sql)
 // DB.inTransaction
@@ -1043,8 +1057,8 @@ module.exports = {
 // DB.prepare(`SELECT username, mailbox from roles WHERE 1=1 AND scope = @scope`).all(containerName)
 
 // DB.prepare(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = @scope`).all({scope:containerName})
-  // { username: 'user2', mailbox: 'ops@doctusit.com' },
-  // { username: 'user2', mailbox: 'admin@doctusit.com' }
+// { username: 'user2', mailbox: 'ops@doctusit.com' },
+// { username: 'user2', mailbox: 'admin@doctusit.com' }
 
 // DB.prepare(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = @scope`).all({scope:containerName})
 
@@ -1053,29 +1067,29 @@ module.exports = {
 // DB.prepare(`SELECT COUNT(isAdmin) value from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND username IS NOT ?`).get('diane')
 
 // DB.prepare(`SELECT COUNT(1) count`).get()
-  // { count: 1 }
+// { count: 1 }
 
 
 // bug: leads to duplicate rows since we enabled PRIMARY key=id:
 // DB.transaction("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run([{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"containerName","value":"dms","scope":"dms"}])
 // DB.prepare("SELECT name, value from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
 // DB.prepare("SELECT * from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
-  // [
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'containerName', value: 'dms' },
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'containerName', value: 'dms' },
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'setupPath', value: '/usr/local/bin/setup' },
-    // { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
-    // { name: 'containerName', value: 'dms' }
-  // ]
+// [
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'containerName', value: 'dms' },
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'containerName', value: 'dms' },
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'setupPath', value: '/usr/local/bin/setup' },
+// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'containerName', value: 'dms' }
+// ]
 
 

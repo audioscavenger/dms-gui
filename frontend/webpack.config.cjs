@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/index.jsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
@@ -12,7 +12,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js|jsx|mjs|cjs)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -28,7 +28,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx', '.mjs', '.cjs'],
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -38,7 +38,7 @@ module.exports = {
     new webpack.DefinePlugin({
       'process.env': JSON.stringify({
         NODE_ENV: process.env.NODE_ENV || 'development',
-        REACT_APP_API_URL: process.env.REACT_APP_API_URL || '/api'
+        API_URL: process.env.API_URL || '/api'
       })
     }),
   ],

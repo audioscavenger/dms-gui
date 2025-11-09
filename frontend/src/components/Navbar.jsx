@@ -7,13 +7,13 @@ import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 
 import {
   ButtonDropdown,
   ButtonLanguage,
   Translate,
-} from './';
+} from '.';
 
 const Navbar = ({
   translate = true,
@@ -33,8 +33,8 @@ const Navbar = ({
   // { email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
 
   const profileItems = [
-    { id: 1, title: "logins.profileLink", icon: "person-badge", onClick: () => navigate("/profile") },
-    { id: 2, title: "logins.logout",      icon: "box-arrow-right", onClick: () => handleLogout() },
+    { id: 1, title: "logins.profileLink", icon: "person-bounding-box",  onClick: () => navigate("/profile") },
+    { id: 2, title: "logins.logout",      icon: "box-arrow-right",      onClick: () => handleLogout() },
   ];
 
   return (

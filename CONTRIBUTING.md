@@ -21,6 +21,7 @@ After (7) my life will be complete and I won't need to work on this anymore :D
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore
 * [ ] - frontend/Logins: saving email modification produces NotFoundError: Node.insertBefore: Child to insert before is not a child of this node
+* [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
 
 ## TODO:
 
@@ -31,6 +32,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### chores:
 
+* [ ] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
 * [ ] - chore/frontend: api.js and plenty other files could also use translate for their error messages
 * [ ] - chore/translation: what are all those cannot* messages? no module uses them
 * [ ] - chore/frontend: move all error messages into translation
@@ -39,6 +41,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - chore: refactoring in progress as advised by @polarathene
 * [ ] - chore: add auto-refresh + option
 * [ ] - chore: add refresh all on start after Login + option
+* [ ] - chore: how are we going the let users with multiple roles update each mailbox's password?
 
 ### frontend:
 
@@ -48,7 +51,6 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - frontend/Dashboard:  add current hacking attempts
 * [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
 * [ ] - frontend/Dashboard: where do we display Health/StartedAt etc?
-* [ ] - frontend/Accounts: transform account storage values into bytes so we can sort them
 * [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
 * [ ] - frontend/Logins: provide a way for users to change their profile email and password
 * [ ] - frontend/Logins: why can't I change the email directly in the email field?
@@ -60,8 +62,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - frontend/Domains: add FormDNS or page
 
 ### backend:
-* [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure ~ is not accepted
-* [ ] - backend: get rid of the common.js?
+* [ ] - backend/logins: changePassword calls to accounts for isAccount=1
+* [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
 * [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
 * [ ] - backend: mutate the String with data transform/validation functions as Class
 * [ ] - backend/domains: add dkim modules and exec calls
@@ -75,6 +77,20 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### history:
 
+* [ ] 1.3.4 - backend: bugfix in loading initAPI where API key would be always regenerated
+* [x] 1.3.3 - env.js: use of global variables in js ES6 is discouragead, lots transfered to .dms-gui.env with name
+* [x] 1.3.3 - common.js: moved away from barrel files and each module import their own stuff
+* [x] 1.3.3 - conversion of everything to ES6 modules for imports
+* [x] 1.3.3 - backend: bugfix in common.js as arrow functions are not forgiving
+* [x] 1.3.3 - backend: bugfix in python api
+* [x] 1.3.3 - chore/frontend: convert all exported functions to arrows
+* [x] 1.3.3 - chore/frontend: cleanup all unused imports
+* [x] 1.3.3 - chore/frontend: rename all React components to jsx
+* [x] 1.3.3 - complete revamp of ALL API communications: everything is now Object{success: true, message:whatever}
+* [x] 1.3.3 - bugfixes here and there
+* [x] 1.3.3 - backend: complete revamp of all parameters for all DMS functions
+* [x] 1.3.3 - frontend/Profile: logout user if they changed their email and email in Logins page
+* [x] 1.3.3 - frontend: cleaned up all catch errors removing err.response.data.error
 * [x] 1.3.2 - backend: tried accessToken+localStorage, now switched to HTTP-Only cookie, but still use localStorage for user roles etc
 * [x] 1.3.2 - docker/start.sh: implement random SECRET_KEY generation on start of container
 * [x] 1.3.2 - backend/index: implement JWT token
@@ -214,8 +230,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.0.18 - ALL WORKS, we should release
 * [x] 1.0.18 - backend/db: dbRun now takes anonParam as well as arrays for INSERT queries
 * [x] 1.0.18 - backend: added getSetting and updated getSettings api with query
-* [x] 1.0.18 - frontend: fixed Accounts.js and ServerInfos.jsx to use new getServerInfos and getServerEnvs
-* [x] 1.0.18 - backend/api: getServerInfos is simplified and created getServerEnvs
+* [x] 1.0.18 - frontend: fixed Accounts.js and ServerInfos.jsx to use new getNodeInfos and getServerEnvs
+* [x] 1.0.18 - backend/api: getNodeInfos is simplified and created getServerEnvs
 * [x] 1.0.17 - backend: added sql for infos: it's in settings table with scope = DMS name
 * [x] 1.0.17 - backend: added sql for infos
 * [x] 1.0.17 - backend/api: getSettings/saveSettings uses json array of objects
@@ -375,6 +391,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [-] - backend: added sql for accounts; nah, why?
 * [x] - frontend/pages: refactor validate*Form and load them from individual files
 * [-] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001 - so what
+* [-] - backend: get rid of the common.js?
 
 
 ## Misc

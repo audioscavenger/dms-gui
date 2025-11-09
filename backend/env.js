@@ -1,62 +1,66 @@
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 dotenv.config({ path: '/app/config/.dms-gui.env' });
-debug = (process.env.DEBUG === 'true') ? true : false;
+
+export const env = {
+  debug: (process.env.DEBUG === 'true') ? true : false,
+
+// const { name, version, description }: require('./package.json');
+  DMSGUI_VERSION: (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION,
+  DMSGUI_DESCRIPTION: process.env.DMSGUI_DESCRIPTION,
+  HOSTNAME: process.env.HOSTNAME,
+  NODE_ENV: process.env.NODE_ENV || 'production',
+  PORT_NODEJS: process.env.PORT_NODEJS || 3001,
+  TZ: process.env.TZ || 'UTC',
+
+// internals of dms-gui
+  DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
+  DATABASE     : DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3',
+
+  // some selectors in the DKIM UI
+  DKIM_KEYTYPES: ['rsa','ed25519'],
+  DKIM_KEYSIZES: ['1024','2048'],
+  DKIM_KEYTYPE_DEFAULT: 'rsa',
+  DKIM_KEYSIZE_DEFAULT: 2048,
+
+  // variables we will capture from DMS 
+  DMS_OPTIONS  : [
+    'TZ',
+    'DMS_RELEASE',
+    'ENABLE_RSPAMD',
+    'ENABLE_XAPIAN',
+    'ENABLE_MTA_STS',
+    'PERMIT_DOCKER',
+    'DOVECOT_MAILBOX_FORMAT',
+    'POSTFIX_MAILBOX_SIZE_LIMIT',
+  ],
+
+  isMutable: 1,
+  isImmutable: 0,
+
+  // other DMS internals
+  DMS_SETUP_SCRIPT: ((process.env.DMS_SETUP_SCRIPT) ? process.env.DMS_SETUP_SCRIPT : '/usr/local/bin/setup'),
+  DMS_CONFIG_PATH: ((process.env.DMS_CONFIG_PATH) ? process.env.DMS_CONFIG_PATH : '/tmp/docker-mailserver'),
+  DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'), // hardcoded in DMS
 
 // JWT SECRET_KEY generated when container starts
-SECRET_KEY = process.env.SECRET_KEY;
-SECRET_KEY_EXPIRY = '1h';
+  SECRET_KEY: process.env.SECRET_KEY,
+  SECRET_KEY_EXPIRY: process.env.SECRET_KEY_EXPIRY,
 
-// const { name, version, description } = require('./package.json');
-DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
-DMSGUI_DESCRIPTION = process.env.DMSGUI_DESCRIPTION;
-HOSTNAME = process.env.HOSTNAME;
-NODE_ENV = process.env.NODE_ENV || 'production';
-PORT_NODEJS = process.env.PORT_NODEJS || 3001;
-TZ = process.env.TZ || 'UTC';
+}
 
-DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
-DB_Accounts   = DMSGUI_CONFIG_PATH + '/db.accounts.json';
-DB_Aliases    = DMSGUI_CONFIG_PATH + '/db.aliases.json';
-DB_Settings   = DMSGUI_CONFIG_PATH + '/db.settings.json';
-DB_Infos      = DMSGUI_CONFIG_PATH + '/db.infos.json';
-DB_Logins     = DMSGUI_CONFIG_PATH + '/db.logins.json';
-DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+export var live = {
+  // Docker container name for docker-mailserver
+  DMS_CONTAINER: ((process.env.DMS_CONTAINER) ? process.env.DMS_CONTAINER : 'dms'),
+  containers: {},
 
-// Docker container name for docker-mailserver
-DMS_CONTAINER = (typeof DMS_CONTAINER == "undefined") ? (process.env.DMS_CONTAINER || 'dms') : DMS_CONTAINER;
-containers = (typeof containers == "undefined") ? {} : containers;
+  // doveadm API
+  DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),
 
-// doveadm API
-DMS_DOVEADM_PORT=8080
+  // DMS API key we need to execute commands in DMS container
+  DMS_API_KEY: ((process.env.DMS_API_KEY) ? process.env.DMS_API_KEY : undefined),
+  DMS_API_PORT: ((process.env.DMS_API_PORT) ? process.env.DMS_API_PORT : 8888),
 
-// DMS API we inject
-DMS_API_KEY = (typeof DMS_API_KEY == "undefined") ? (process.env.DMS_API_KEY || undefined) : DMS_API_KEY;
-DMS_API_PORT = (typeof DMS_API_PORT == "undefined") ? (process.env.DMS_API_PORT || 8888) : DMS_API_PORT;
-
-// other DMS stuff
-DMS_SETUP_SCRIPT = (typeof DMS_SETUP_SCRIPT == "undefined") ? (process.env.DMS_SETUP_SCRIPT || '/usr/local/bin/setup') : DMS_SETUP_SCRIPT;
-DMS_CONFIG_PATH = (typeof DMS_CONFIG_PATH == "undefined") ? (process.env.DMS_CONFIG_PATH || '/tmp/docker-mailserver') : DMS_CONFIG_PATH;
-DKIM_SELECTOR_DEFAULT = 'mail';   // that's hardcoded in DMS
-
-DKIM_KEYTYPES = ['rsa','ed25519'];
-DKIM_KEYSIZES = ['1024','2048'];
-DKIM_KEYTYPE_DEFAULT = 'rsa';
-DKIM_KEYSIZE_DEFAULT = 2048;
-
-DMS_OPTIONS   = [
-  'TZ',
-  'DMS_RELEASE',
-  'ENABLE_RSPAMD',
-  'ENABLE_XAPIAN',
-  'ENABLE_MTA_STS',
-  'PERMIT_DOCKER',
-  'DOVECOT_MAILBOX_FORMAT',
-  'POSTFIX_MAILBOX_SIZE_LIMIT',
-];
-
-isMutable = 1;
-isImmutable = 0;
-
+}
 
 /*
   sh: {
@@ -69,12 +73,13 @@ nohup /usr/bin/python3 $(dirname $0)/user-patches-api.py &
 `,
   },
 */
-userPatchesAPI = {
+export const userPatchesAPI = {
   py: {
-    desc: 'python API server - mount this to /tmp/docker-mailserver/user-patches-api.py',
+    desc: 'python API server - mount this to /tmp/docker-mailserver/dms-gui/user-patches-api.py',
     path: DMSGUI_CONFIG_PATH + '/user-patches-api.py',
     content:
 `#!/usr/bin/python3
+# version=${DMSGUI_VERSION}
 
 import http.server
 import socketserver
@@ -97,7 +102,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
 
   def do_POST(self):
     # 1. Get the content length from the headers
-    content_bearer  = self.headers.get('Authorization', 'missing')
+    api_key  = self.headers.get('Authorization', 'missing')
     content_length  = int(self.headers.get('Content-Length', 0))
 
     # 2. Read the raw POST data from the request body
@@ -106,18 +111,16 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
     # 3. Attempt to parse the data as JSON
     try:
       json_data = json.loads(post_data.decode('utf-8'))
-      logger("[dms-gui] API: Received JSON data: {json_data}")
+      logger(f"Received JSON data: {json_data}")
       
-      # api_key = json_data.get('api_key')
       command = json_data.get('command')
       timeout = json_data.get('timeout', timeout_default)
       
-      # logger("[dms-gui] API: Received API Key: {api_key}")
-      # logger("[dms-gui] API: Received command: {command}")
-      # logger("[dms-gui] API: Received timeout: {timeout}")
+      # logger(f"Received API Key: {api_key}")
+      # logger(f"Received command: {command}")
+      # logger(f"Received timeout: {timeout}")
     
-      # if api_key == DMS_API_KEY:
-      if content_bearer == DMS_API_KEY:
+      if api_key == DMS_API_KEY:
         if not command:
           response_message = {"status": "error", "error": "no command was passed"}
           logger(response_message['error'])
@@ -126,7 +129,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
           try:
             # from here we could analyze and limit commands to be executed like remove unlink and rm, etc
             
-            logger("[dms-gui] API: Executing command: {command}")
+            logger(f"Executing command: {command}")
             result = subprocess.run(command, 
                                      shell=True, 
                                      capture_output=True, # Capture stdout and stderr
@@ -134,7 +137,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
                                      check=False,         # Do not raise an exception for non-zero exit codes
                                      timeout=timeout,     # timeout in seconds
                                     )
-            # logger("[dms-gui] ddebug: result: {result}")  #  CompletedProcess(args='/usr/local/bin/setup alias list', returncode=0, stdout='...
+            # logger("ddebug: result: {result}")  #  CompletedProcess(args='/usr/local/bin/setup alias list', returncode=0, stdout='...
             
             response_message = {
               "status": "success",
@@ -142,7 +145,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
               'stdout': result.stdout,
               'stderr': result.stderr
             }
-            # logger("[dms-gui] ddebug: response_message\n{response_message}")
+            # logger(f"ddebug: response_message: {response_message}")
             
 
           except Exception as e:
@@ -157,7 +160,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
       self.send_response(200)
       self.send_header('Content-type', 'application/json')
       self.end_headers()
-      logger("[dms-gui] API: Sending response_message: {response_message}")
+      #logger(f"response_message: {response_message}")
       self.wfile.write(json.dumps(response_message).encode('utf-8'))
 
     except json.JSONDecodeError:
@@ -166,6 +169,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
       self.send_header('Content-type', 'application/json')
       self.end_headers()
       response_message = {"status": "error", "message": "Invalid JSON format"}
+      logger(f"response_message: {response_message}")
       self.wfile.write(json.dumps(response_message).encode('utf-8'))
 
     except Exception as e:
@@ -174,11 +178,12 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
       self.send_header('Content-type', 'application/json')
       self.end_headers()
       response_message = {"status": "error", "message": str(e)}
+      logger(f"response_message: {response_message}")
       self.wfile.write(json.dumps(response_message).encode('utf-8'))
 
 
 with socketserver.TCPServer((DMS_API_HOST, DMS_API_PORT), APIHandler) as httpd:
-  logger("[dms-gui] API: Serving at port {DMS_API_HOST}:{DMS_API_PORT}")
+  logger(f"Serving at port {DMS_API_HOST}:{DMS_API_PORT}")
   httpd.serve_forever()
 `,
   },
@@ -188,8 +193,8 @@ with socketserver.TCPServer((DMS_API_HOST, DMS_API_PORT), APIHandler) as httpd:
     content:
 `
 [program:user-patches-api]
-startsecs=0
-stopwaitsecs=55
+startsecs=1
+stopwaitsecs=0
 autostart=true
 autorestart=true
 stdout_logfile=/var/log/supervisor/%(program_name)s.log
@@ -206,8 +211,8 @@ command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/user-patches-api.py
 // /etc/supervisor/conf.d/dms-api.conf:
 
 // [program:dms-api]
-// startsecs=0
-// stopwaitsecs=55
+// startsecs=5
+// stopwaitsecs=0
 // autostart=true
 // autorestart=true
 // stdout_logfile=/var/log/supervisor/%(program_name)s.log

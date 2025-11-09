@@ -1,34 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import RBAccordion from 'react-bootstrap/Accordion';
 
-const {
-  debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-} = require('../../frontend');
 
-import { 
+import {
   Accordion,
   Button,
   Card,
-  LoadingSpinner,
-  Translate,
+  Translate
 } from '../components';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-import FormContainerAdd     from './FormContainerAdd';
-import ServerInfos      from './ServerInfos';
+import FormContainerAdd from './FormContainerAdd';
+import ServerInfos from './ServerInfos';
 
 
 const Settings = () => {
   // const passwordFormRef = useRef(null);
   const { t } = useTranslation();
-  const [isLoading, setLoading] = useState(true);
-
-  const [errorMessage, setErrorMessage] = useState(null);
 
   // this is how to handle data coming from a child form
   /*

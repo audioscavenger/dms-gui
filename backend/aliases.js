@@ -1,84 +1,78 @@
-require('./env.js');
-const {
-  docker,
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-  byteSize2HumanSize,
-  jsonFixTrailingCommas,
-  formatDMSError,
-  execSetup,
   execCommand,
-  readJson,
-  writeJson,
-  getContainer,
-} = require('./backend');
+  execSetup,
+  formatDMSError,
+  infoLog,
+  successLog,
+  warnLog,
+} from './backend.js';
+import './env.js';
 
-const {
-  sql,
-  dbRun,
+import {
   dbAll,
-  dbGet,
+  dbRun,
   deleteEntry,
-} = require('./db');
-
-const fs = require("fs");
-const fsp = fs.promises;
-const crypto = require('node:crypto');
+  sql
+} from './db.js';
 
 
-async function getAliases(refresh, containerName) {
+export const getAliases = async (containerName, refresh) => {
   refresh = (refresh === undefined) ? false : refresh;
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
   
-  var aliases = [];
+  let aliases = [];
+  let regexes = [];
+  let result;
+  
   try {
     
-      if (!refresh) {
-      aliases = await dbAll(sql.aliases.select.aliases, {scope:containerName});
-      
-      // we could read DB_Logins and it is valid
-      if (aliases && aliases.length) {
-        infoLog(`Found ${aliases.length} entries in aliases`);
+    if (!refresh) {
+      result = await dbAll(sql.aliases.select.aliases, {scope:containerName});
+      if (result.success) {
         
-        return aliases;
-        // [ { source: 'a@b.com', destination:'b@b.com', regex: 0 }, .. ]
-        
-      } else {
-        warnLog(`db aliases seems empty:`, aliases);
-        return [];
+        // we could read DB_Logins and it is valid
+        if (result.message.length) {
+          infoLog(`Found ${result.message.length} entries in aliases`);
+          
+        } else {
+          warnLog(`db aliases seems empty:`, aliases);
+        }
       }
+      return result;
     }
     
     // refresh
     // virtual aliases: -------------------------------
-    aliases = await pullAliasesFromDMS(containerName);
-    
-    infoLog(`got ${aliases.length} aliases from pullAliasesFromDMS(${containerName})`);
+    result = await pullAliasesFromDMS(containerName);
+    if (result.success) {
+      infoLog(`got ${result.message.length} aliases from pullAliasesFromDMS(${containerName})`);
 
-    // now add the alias type and scope
-    aliases = aliases.map(alias => { return { ...alias, regex: 0, scope:containerName }; });
+      // now add the alias type and scope
+      aliases = result.message.map(alias => { return { ...alias, regex: 0, scope:containerName }; });
 
-    // regex aliases: -------------------------------
-    var regexes = await pullPostfixRegexFromDMS(containerName);
-    infoLog(`got ${regexes.length} regexes from pullPostfixRegexFromDMS(${containerName})`);
-
-    // now add the alias type
-    regexes = regexes.map(alias => { return { ...alias, regex: 1, scope:containerName }; });
-    
-    // now merge aliases and regexes ---------------
-    aliases = [ ...aliases, ...regexes ];
-    
-    // now save aliases in db ----------------------
-    const result = dbRun(sql.aliases.insert.alias, aliases);
-    if (!result.success) {
-      errorLog(result.message);
+      // regex aliases: -------------------------------
+      result = await pullPostfixRegexFromDMS(containerName);
+      if (result.success) {
+        
+        infoLog(`got ${result.message.length} regexes from pullPostfixRegexFromDMS(${containerName})`);
+        // now add the alias type
+        regexes = result.message.map(alias => { return { ...alias, regex: 1, scope:containerName }; });
+      }
+      
+      // now merge aliases and regexes ---------------
+      aliases = [ ...aliases, ...regexes ];
+      
+      // now save aliases in db ----------------------
+      result = dbRun(sql.aliases.insert.alias, aliases);
+      if (!result.success) {
+        errorLog(result.message);
+      }
+      return {success: true, message: aliases};
     }
-    
-    return aliases;
+    return result;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -90,30 +84,33 @@ async function getAliases(refresh, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to retrieve aliases from DMS
-async function pullAliasesFromDMS(containerName) {
+export const pullAliasesFromDMS = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
-  var aliases = [];
+  let aliases = [];
   const command = 'alias list';
+  
   try {
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, containerName);
     // debugLog('ddebug results',results)
+    
     if (!results.returncode) {
       aliases = await parseAliasesFromDMS(results.stdout);
+      infoLog(`Found ${aliases.length} aliases`);
       
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
+      return {success: false, message:ErrorMsg};
     }
 
-    infoLog(`Found ${aliases.length} aliases`);
-    return aliases;
+    return {success: true, message: aliases};
     
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
@@ -121,10 +118,10 @@ async function pullAliasesFromDMS(containerName) {
     errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
-}
+};
 
 
-async function parseAliasesFromDMS(stdout) {
+export const parseAliasesFromDMS = async stdout => {
   var aliases = [];
   
   // Parse each line in the format "* source destination"
@@ -157,29 +154,30 @@ async function parseAliasesFromDMS(stdout) {
   }
 
   return aliases;
-}
+};
 
 
-async function pullPostfixRegexFromDMS(containerName) {
+export const pullPostfixRegexFromDMS = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
-  var regexes = [];
+  let regexes = [];
   const command = `cat ${DMS_CONFIG_PATH}/postfix-regexp.cf`;
+  
   try {
     debugLog(`execSetup(${command})`);
     const results = await execCommand(command, containerName);
     if (!results.returncode) {
       
       regexes = await parsePostfixRegexFromDMS(results.stdout);
-      
+      infoLog(`Found ${regexes.length} regexes`);
+    
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
+      return {success: false, message: ErrorMsg};
     }
-
-    infoLog(`Found ${regexes.length} regexes`);
-    return regexes;
+    return {success: true, message: regexes};
     
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
@@ -187,10 +185,10 @@ async function pullPostfixRegexFromDMS(containerName) {
     errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
-}
+};
 
 
-async function parsePostfixRegexFromDMS(stdout) {
+export const parsePostfixRegexFromDMS = async stdout => {
   var regexes = [];
   
   // Parse each line in the format "* source destination"
@@ -218,63 +216,62 @@ async function parsePostfixRegexFromDMS(stdout) {
     }
   }
   return regexes;
-}
+};
 
 
 // Function to add an alias
-async function addAlias(source, destination, containerName) {
+export const addAlias = async (containerName, source, destination) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
+  let results, result;
   try {
     
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
     
-      const results = await execSetup(`alias add ${source} ${destination}`, containerName);
+      results = await execSetup(`alias add ${source} ${destination}`, containerName);
       if (!results.returncode) {
         
-        const result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
+        result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
         if (result.success) {
           successLog(`Alias created: ${source} -> ${destination}`);
           return { success: true, message: `Alias created: ${source} -> ${destination}` };
           
-        } else return result;
+        }
+        return result;
         
-      } else {
-        let ErrorMsg = await formatDMSError('execSetup', results.stderr);
-        errorLog(ErrorMsg);
-        return { success: false, message: ErrorMsg };
       }
-        
+      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      errorLog(ErrorMsg);
+      return { success: false, message: ErrorMsg };
+      
     // this is a regex
     } else {
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
-      const results = await execCommand(`echo '${source} ${destination}' >>${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      results = await execCommand(`echo '${source} ${destination}' >>${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
       if (!results.returncode) {
         
         // reload postfix
-        const results2 = await execCommand(`postfix reload`, containerName);
-        if (!results2.returncode) {
+        results = await execCommand(`postfix reload`, containerName);
+        if (!results.returncode) {
           
-          const result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
+          result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
           if (result.success) {
             successLog(`Alias regex created: ${source} -> ${destination}`);
             return { success: true, message: `Alias regex created: ${source} -> ${destination}` };
             
-          } else return result;
+          }
+          return result;
           
-        } else {
-          errorLog(results2.stderr);
-          return { success: false, message: results2.stderr };
         }
-        
-      } else {
         errorLog(results.stderr);
         return { success: false, message: results.stderr };
+        
       }
-      
+      errorLog(results.stderr);
+      return { success: false, message: results.stderr };
     }
     
   } catch (error) {
@@ -288,26 +285,28 @@ async function addAlias(source, destination, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 // Function to delete an alias
-async function deleteAlias(source, destination, containerName) {
+export const deleteAlias = async (containerName, source, destination) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
+  let results, result;
   try {
     
     if (source.match(regexEmailStrict)) {
       debugLog(`Deleting alias: ${source}`);
       
-      const results = await execSetup(`alias del ${source} ${destination}`, containerName);
+      results = await execSetup(`alias del ${source} ${destination}`, containerName);
       if (!results.returncode) {
-        const result = deleteEntry('aliases', source, 'bySource', containerName);
+        result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
           successLog(`Alias deleted: ${source}`);
           return { success: true, message: `Alias deleted: ${source}` };
           
-        } else return result;
+        }
+        return result;
         
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
@@ -319,29 +318,28 @@ async function deleteAlias(source, destination, containerName) {
     } else {
       debugLog(`Deleting alias regex: ${source}`);
       
-      const results = await execCommand(`grep -Fv "${source} ${destination}" ${DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      results = await execCommand(`grep -Fv "${source} ${destination}" ${DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
       if (!results.returncode) {
         
         // reload postfix
-        const results2 = await execCommand(`postfix reload`, containerName);
-        if (!results2.returncode) {
+        results = await execCommand(`postfix reload`, containerName);
+        if (!results.returncode) {
           
           const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);
           if (result.success) {
             successLog(`Alias regex deleted: ${source}`);
             return { success: true, message: `Alias regex deleted: ${source}` };
             
-          } else return result;
+          }
+          return result;
           
-        } else {
-          return { success: false, message: results2.stderr };
-          errorLog(results.stderr);
         }
-        
-      } else {
-        return { success: false, message: results.stderr };
         errorLog(results.stderr);
+        return { success: false, message: results.stderr };
+        
       }
+      errorLog(results.stderr);
+      return { success: false, message: results.stderr };
 
     }
     
@@ -356,13 +354,13 @@ async function deleteAlias(source, destination, containerName) {
       // error: error.message,
     // };
   }
-}
-
-
-module.exports = {
-  getAliases,
-  addAlias,
-  deleteAlias,
 };
+
+
+// module.exports = {
+//   getAliases,
+//   addAlias,
+//   deleteAlias,
+// };
 
 

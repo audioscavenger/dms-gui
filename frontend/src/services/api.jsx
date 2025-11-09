@@ -6,13 +6,13 @@ import {
   warnLog,
   errorLog,
   successLog,
-} from '../../frontend.js';
+} from '../../frontend';
 
 
 // Fallback to '/api' if environment variable is not available
 const API_URL =
   (typeof process !== 'undefined' &&
-    process.env.REACT_APP_API_URL) ||
+    process.env.API_URL) ||
   '/api';
 
     // 'Authorization': 'Bearer YOUR_AUTH_TOKEN',
@@ -37,10 +37,9 @@ const api = axios.create({
 // Server status API
 // export const getServerStatus = async () => {
 export async function getServerStatus(containerName) {
-  const params = {};
-  if (containerName !== undefined) params.containerName = containerName;
+  if (!containerName) return {};
   try {
-    const response = await api.get(`/status`, {params});
+    const response = await api.get(`/status/${containerName}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -48,8 +47,22 @@ export async function getServerStatus(containerName) {
   }
 };
 
-// Server infos API
-export async function getServerInfos() {
+export async function getServerEnvs(containerName, refresh, name) {
+  if (!containerName) return [];
+  const params = {};
+  if (refresh !== undefined) params.refresh = refresh;
+  if (name !== undefined) params.name = name;
+  try {
+    const response = await api.get(`/envs/${containerName}`, {params});
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+// Node infos API
+export async function getNodeInfos() {
   try {
     const response = await api.get(`/infos`);
     return response.data;
@@ -59,26 +72,13 @@ export async function getServerInfos() {
   }
 };
 
-export async function getServerEnvs(refresh, containerName, name) {
-  const params = {};
-  if (refresh !== undefined) params.refresh = refresh;
-  if (containerName !== undefined) params.containerName = containerName;
-  if (name !== undefined) params.name = name;
-  try {
-    const response = await api.get(`/envs`, {params});
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
 export async function getSettings(containerName, name) {
+  if (!containerName) return [];
   const params = {};
-  if (containerName !== undefined) params.containerName = containerName;
   if (name !== undefined) params.name = name;
   try {
-    const response = await api.get(`/settings`, {params});
+    debugLog(api.get(`/settings/${containerName}`, params));
+    const response = await api.get(`/settings/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -87,7 +87,9 @@ export async function getSettings(containerName, name) {
 };
 
 export async function saveSettings(containerName, jsonArrayOfObjects) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
   try {
+    debugLog(api.post(`/settings/${containerName}`, jsonArrayOfObjects));
     const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return response.data;
   } catch (error) {
@@ -96,9 +98,12 @@ export async function saveSettings(containerName, jsonArrayOfObjects) {
   }
 };
 
-export async function getLogins() {
+export async function getLogins(credentials) {
+  debugLog(`getLogins credentials`, credentials);
+  const body = {credentials: credentials};
   try {
-    const response = await api.get(`/logins`);
+    debugLog(`getLogins api.post(/logins/`, body);
+    const response = await api.post(`/logins`, body);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -107,6 +112,8 @@ export async function getLogins() {
 };
 
 export async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
+  if (!email) return {success: false, message: 'email is required'};
+  if (!username) return {success: false, message: 'username is required'};
   try {
     const response = await api.post(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
     return response.data;
@@ -117,6 +124,7 @@ export async function addLogin(email, username, password, isAdmin=0, isAccount=0
 };
 
 export async function updateLogin(email, jsonDict) {
+  if (!email) return {success: false, message: 'email is required'};
   try {
     const response = await api.put(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0}
     return response.data;
@@ -127,6 +135,7 @@ export async function updateLogin(email, jsonDict) {
 };
 
 export async function deleteLogin(email) {
+  if (!email) return {success: false, message: 'email is required'};
   try {
     const response = await api.delete(`/logins/${email}`);
     return response.data;
@@ -138,6 +147,8 @@ export async function deleteLogin(email) {
 
 export async function loginUser(credential, password) {
   debugLog(`ddebug frontend received credential=${credential}, password=${password}`)
+  if (!credential) return false;
+  if (!password) return false;
   try {
     const response = await api.post(`/loginUser`, { credential, password });
     debugLog('ddebug loginUser response', response)
@@ -159,11 +170,12 @@ export async function logoutUser() {
   }
 };
 
-export async function getAccounts(refresh) {
+export async function getAccounts(containerName, refresh) {
+  if (!containerName) return [];
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/accounts`, {params});
+    const response = await api.get(`/accounts/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -171,10 +183,10 @@ export async function getAccounts(refresh) {
   }
 };
 
-// export const addAccount = async (mailbox, password) => {
-export async function addAccount(mailbox, password, createLogin) {
+export async function addAccount(containerName, mailbox, password, createLogin) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
   try {
-    const response = await api.post(`/accounts`, { mailbox, password, createLogin });
+    const response = await api.post(`/accounts/${containerName}`, { mailbox, password, createLogin });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -183,9 +195,10 @@ export async function addAccount(mailbox, password, createLogin) {
 };
 
 // export const deleteAccount = async (mailbox) => {
-export async function deleteAccount(mailbox) {
+export async function deleteAccount(containerName, mailbox) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
   try {
-    const response = await api.delete(`/accounts/${mailbox}`);
+    const response = await api.delete(`/accounts/${containerName}/${mailbox}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -193,9 +206,12 @@ export async function deleteAccount(mailbox) {
   }
 };
 
-export async function doveadm(command, mailbox, jsonDict={}) {
+export async function doveadm(containerName, command, mailbox, jsonDict={}) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
+  if (!command) return {success: false, message: 'command is required'};
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
-    const response = await api.put(`/doveadm/${command}/${mailbox}`, jsonDict); // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
+    const response = await api.put(`/doveadm/${containerName}/${command}/${mailbox}`, jsonDict); // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -203,9 +219,11 @@ export async function doveadm(command, mailbox, jsonDict={}) {
   }
 };
 
-export async function updateAccount(mailbox, jsonDict) {
+export async function updateAccount(containerName, mailbox, jsonDict) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
-    const response = await api.put(`/accounts/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
+    const response = await api.put(`/accounts/${containerName}/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -214,11 +232,12 @@ export async function updateAccount(mailbox, jsonDict) {
 };
 
 // export const getAliases = async (refresh) => {
-export async function getAliases(refresh) {
+export async function getAliases(containerName, refresh) {
+  if (!containerName) return [];
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/aliases`, {params});
+    const response = await api.get(`/aliases/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -227,9 +246,10 @@ export async function getAliases(refresh) {
 };
 
 // export const addAlias = async (source, destination) => {
-export async function addAlias(source, destination) {
+export async function addAlias(containerName, source, destination) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
   try {
-    const response = await api.post(`/aliases`, { source, destination });
+    const response = await api.post(`/aliases/${containerName}`, { source, destination });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -238,11 +258,12 @@ export async function addAlias(source, destination) {
 };
 
 // export const deleteAlias = async (source, destination) => {
-export async function deleteAlias(source, destination) {
+export async function deleteAlias(containerName, source, destination) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
   try {
     // Although the HTTP specification for DELETE requests does not explicitly define semantics for a request body, Axios allows you to include one by using the data property within the optional config object.
     // const response = await api.delete(`/aliases/${source}/${destination}`);
-    const response = await api.delete(`/aliases`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
+    const response = await api.delete(`/aliases/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -250,11 +271,24 @@ export async function deleteAlias(source, destination) {
   }
 };
 
-export async function getDomains(name) {
+export async function getDomains(containerName, name) {
+  if (!containerName) return [];
+  try {
+    const response = await api.get(`/getDomains/${containerName}/${name}`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export async function getCount(table, containerName) {
+  if (!table) return 0;
   const params = {};
-  if (name !== undefined) params.name = name;
+  if (containerName !== undefined) params.containerName = containerName;
+
   try {
-    const response = await api.post(`/getDomains`, {params});
+    const response = await api.post(`/getCount/${table}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -262,19 +296,11 @@ export async function getDomains(name) {
   }
 };
 
-export async function getCount(table) {
+// TBD
+export async function getRoles(credential) {
+  if (!credential) return [];
   try {
-    const response = await api.post(`/getCount/${table}`);
-    return response.data;
-  } catch (error) {
-    errorLog(error.message);
-    throw error;
-  }
-};
-
-export async function getRoles() {
-  try {
-    const response = await api.get(`/roles`);
+    const response = await api.get(`/roles/${credential}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -283,11 +309,14 @@ export async function getRoles() {
 };
 
 // initAPI to define or generate a new DMS_API_KEY
-export async function initAPI(dms_api_key) {
+export async function initAPI(containerName, dms_api_key_param) {
+  if (!containerName) return {success: false, message: 'containerName is required'};
+  
   const params = {};
-  if (dms_api_key !== undefined) params.dms_api_key = dms_api_key;
+  if (dms_api_key_param !== undefined) params.dms_api_key_param = dms_api_key_param;
+  
   try {
-    const response = await api.post(`/initAPI`, {params});
+    const response = await api.post(`/initAPI/${containerName}`, params);
     return response.data;
   } catch (error) {
     errorLog(error.message);

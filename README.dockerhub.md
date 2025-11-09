@@ -113,7 +113,7 @@ DMS_SETUP_SCRIPT=/usr/local/bin/setup
 
 ## Optional: Dev Environment
 # PORT_NODEJS=3001
-# REACT_APP_API_URL=http://localhost:3001
+# API_URL=http://localhost:3001
 # NODE_ENV=development
 NODE_ENV=production
 
@@ -134,7 +134,7 @@ All is optional, as they will be superseeded by the ones defined and saved withi
 The ones you should never alter unless you want to develop:
 
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
-- `REACT_APP_API_URL`: defaults to `http://localhost:3001`
+- `API_URL`: defaults to `http://localhost:3001`
 - `NODE_ENV`: Node.js environment: (*production or development)
 
 

@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import InputGroup from 'react-bootstrap/InputGroup';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
   mergeArrayOfObj,
   getValueFromArrayOfObj,
-} = require('../../frontend.js');
+} from '../../frontend';
 
 import {
   getSettings,
@@ -23,14 +19,15 @@ import {
   Button,
   FormField,
   LoadingSpinner,
-  Translate,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 // This is how to pass back onInfosSubmit to the parent page
 // const FormContainerAdd = ({ onInfosSubmit }) => {
 function FormContainerAdd() {
   const { t } = useTranslation();
+  const [containerName, setContainerName] = useLocalStorage("containerName");
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
 
@@ -43,12 +40,12 @@ function FormContainerAdd() {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAllSettings();
+    fetchAll();
   }, []);
   // }, [settings]);    // infinite loop if settings fails to update
 
 
-  const fetchAllSettings = async () => {
+  const fetchAll = async () => {
     setLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -63,22 +60,26 @@ function FormContainerAdd() {
   };
 
   const fetchSettings = async () => {
-    debugLog(`fetchSettings call getSettings()`);
+    debugLog(`fetchSettings call getSettings(${containerName})`);
 
     try {
       const [settingsData] = await Promise.all([
-        getSettings(),
+        getSettings(containerName),
       ]);
       // setSettings({
         // ...settings,
         // ...settingsData,
       // });
-      // debugLog(`fetchAllSettings mergeArrayOfObj settingsData`,settingsData);
-      console.debug('fetchAllSettings: settingsData',settingsData)
-      setSettings(mergeArrayOfObj(settingsData, settings, 'name'));
+      // debugLog(`fetchAll mergeArrayOfObj settingsData`,settingsData);
 
-      setErrorMessage(null);
-      return settingsData;
+      if (settingsData.success) {
+        console.debug('fetchAll: settingsData', settingsData)
+        setSettings(mergeArrayOfObj(settingsData.message, settings, 'name'));
+
+        setErrorMessage(null);
+        return settingsData.message;
+        
+      } else setErrorMessage(settingsData.message);
 
     } catch (err) {
       errorLog(t('api.errors.fetchSettings'), err);
@@ -94,19 +95,26 @@ function FormContainerAdd() {
 
     try {
       
-      const result = await initAPI();
-      // debugLog('settings',settings)
-      debugLog('initAPI',result)
+      debugLog('regen API key for containerName=', getValueFromArrayOfObj(settings, 'containerName'))
+      const result = await initAPI(getValueFromArrayOfObj(settings, 'containerName'), 'regen');
 
       if (result.success) {
-        setSettings(mergeArrayOfObj(settings, [{name: 'DMS_API_KEY', value: result.message}], 'name'));
-        setSuccessMessage(Translate(t('settings.DMS_API_KEYregened', {DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY')})));
+        const DMS_API_KEY = result.message;
+        
+        // debugLog('settings',settings)
+        // debugLog('initAPI', result)
+        // debugLog('DMS_API_KEY', DMS_API_KEY)
+
+        if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+        setSettings(mergeArrayOfObj(settings, [{name: 'DMS_API_KEY', value: DMS_API_KEY}], 'name'));
+        
+        setSuccessMessage(t('settings.DMS_API_KEYregened', {DMS_API_KEY: DMS_API_KEY}));
         
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.DMS_API_KEYregen'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.DMS_API_KEYregen');
+      errorLog(t('api.errors.DMS_API_KEYregen'), err.message);
+      setErrorMessage('api.errors.DMS_API_KEYregen', err.message);
     }
   };
 
@@ -192,7 +200,7 @@ function FormContainerAdd() {
             // icon="arrow-repeat"
             // title={t('common.refresh')}
             // className="me-2"
-            // onClick={() => fetchAllSettings()}
+            // onClick={() => fetchAll()}
           // />
         // </div>
 
@@ -241,14 +249,14 @@ function FormContainerAdd() {
             >
             <Button
               variant="warning"
-              icon="arrow-repeat"
+              icon="recycle"
               title={t('settings.DMS_API_KEYregen')}
               onClick={() => handleDMS_API_KEYregen()}
             />
             <Button
               variant="outline-secondary"
               icon="question-circle"
-              title={t('common.copy')}
+              title={t('common.DMS_API_KEYregenedHelp')}
               onClick={() => {setSuccessMessage(t('settings.DMS_API_KEYregened', {DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY')}))}}
             />
             <Button

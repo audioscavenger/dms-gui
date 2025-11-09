@@ -1,68 +1,79 @@
-const debug = true;
+export const debug = true;
 
-const {
-  funcName,
-  fixStringType,
+// const {
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
+// } = require('./common');
+import {
   arrayOfStringToDict,
+  byteSize2HumanSize,
+  fixStringType,
+  funcName,
+  getValueFromArrayOfObj, getValuesFromArrayOfObj,
+  humanSize2ByteSize,
+  mergeArrayOfObj,
+  moveKeyToLast,
   obj2ArrayOfObj,
+  pluck,
   reduxArrayOfObjByKey,
   reduxArrayOfObjByValue,
   reduxPropertiesOfObj,
-  mergeArrayOfObj,
-  getValueFromArrayOfObj,
-  getValuesFromArrayOfObj,
-  pluck,
-  byteSize2HumanSize,
-  humanSize2ByteSize,
-  moveKeyToLast,
-} = require('./common');
+} from '../common.js';
 
 
-const ICON = {
-  success:  '✔️',
-  error:    '❌',
-  warn:     '🔺',
-  info:     '💬',
-  debug:    '🔎',
+export const ICON = {
+  success: '✔️',
+  error: '❌',
+  warn: '🔺',
+  info: '💬',
+  debug: '🔎',
 }
-const LEVEL = {
-  success:  '[SUCCESS]',
-  error:    '[ERROR]  ',
-  warn:     '[WARNING]',
-  info:     '[INFO]   ',
-  debug:    '[DEBUG]  ',
+export const LEVEL = {
+  success: '[SUCCESS]',
+  error: '[ERROR]  ',
+  warn: '[WARNING]',
+  info: '[INFO]   ',
+  debug: '[DEBUG]  ',
 }
-async function logger(level, message='', data = '') {
+
+export const logger = async (level, message = '', data = '') => {
   console[level](ICON[level], LEVEL[level], message, data);
-}
-async function successLog(message, data = '') { logger('success', message, data) }
-async function errorLog(message, data = '') { logger('error', message, data) }
-async function warnLog(message, data = '') { logger('warn', message, data) }
-async function infoLog(message, data = '')  { logger('info', message, data) }
-async function debugLog(message, data = '') { if (debug) logger('debug', message, data) }
+};
+
+export const successLog = async (message, data = '') => { logger('success', message, data) };
+export const errorLog = async (message, data = '') => { logger('error', message, data) };
+export const warnLog = async (message, data = '') => { logger('warn', message, data) };
+export const infoLog = async (message, data = '') => { logger('info', message, data) };
+export const debugLog = async (message, data = '') => { if (debug) logger('debug', message, data) };
 // TODO: add colors: console.log('%c Sample Text', 'color:green;')
 
 
-module.exports = {
-  funcName,
-  fixStringType,
+export {
   arrayOfStringToDict,
-  obj2ArrayOfObj,
-  reduxArrayOfObjByKey,
-  reduxArrayOfObjByValue,
-  reduxPropertiesOfObj,
-  mergeArrayOfObj,
+  byteSize2HumanSize,
+  fixStringType,
+  funcName,
   getValueFromArrayOfObj,
   getValuesFromArrayOfObj,
-  pluck,
-  byteSize2HumanSize,
   humanSize2ByteSize,
+  mergeArrayOfObj,
   moveKeyToLast,
-  debug,
-  ICON,
-  debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
+  obj2ArrayOfObj,
+  pluck,
+  reduxArrayOfObjByKey,
+  reduxArrayOfObjByValue,
+  reduxPropertiesOfObj
 };
+

@@ -5,10 +5,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 // Removed bootstrap.bundle.min.js import as react-bootstrap replaces it
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './index.css';
-import App from './App';
+import App from './App.jsx';
 
 // Import i18n configuration
-import './i18n';
+import './i18n.mjs';
 
 const container = document.getElementById('root');
 const root = createRoot(container);

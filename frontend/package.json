@@ -2,6 +2,7 @@
   "name": "dms-gui-frontend",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module", 
   "scripts": {
     "start": "webpack serve --mode development --open",
     "build": "webpack --mode development",

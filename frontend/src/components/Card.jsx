@@ -9,7 +9,7 @@ import {
   Button,
   LoadingSpinner,
   Translate,
-} from './';
+} from '.';
 
 /**
  * Reusable card component using react-bootstrap, exposing sub-components like Card.Text

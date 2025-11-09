@@ -1,49 +1,48 @@
-const fs = require("fs");
-const fsp = fs.promises;
-
-require('./env.js');
-const {
-  docker,
-  debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-  jsonFixTrailingCommas,
-  reduxPropertiesOfObj,
+import {
   arrayOfStringToDict,
-  obj2ArrayOfObj,
   getValueFromArrayOfObj,
-  byteSize2HumanSize,
-  humanSize2ByteSize,
-  execSetup,
-  execCommand,
-  writeFile,
-  regexColors,
-  regexPrintOnly,
-  getContainer,
-  processTopData,
-} = require('./backend');
+  obj2ArrayOfObj,
+  reduxPropertiesOfObj
+} from '../common.js';
+import './env.js';
 
-const {
-  sql,
-  dbRun,
+import {
+  debugLog,
+  errorLog,
+  execCommand,
+  infoLog,
+  jsonFixTrailingCommas,
+  successLog,
+  warnLog,
+  writeFile
+} from './backend.js';
+import {
+  processTopData,
+} from './topParser.js';
+
+import {
   dbAll,
   dbGet,
-} = require('./db');
+  dbRun,
+  sql,
+} from './db.js';
 
-// const fs = require("fs");
-// const fsp = fs.promises;
-const path = require('node:path');
+// const path = require('node:path');
+import path from 'path';
 
 // returns a string
-async function getSetting(containerName, name) {
+export const getSetting = async (containerName, name) => {
+  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
   containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
 
   try {
     
-    const setting = await dbGet(sql.settings.select.setting, {scope:containerName}, name);
-    return setting?.value;
+    const result = await dbGet(sql.settings.select.setting, {scope:containerName}, name);
+    if (result.success) {
+      return {success: true, message: result?.value};
+    }
+    return result;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -55,28 +54,33 @@ async function getSetting(containerName, name) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // this returns an array of objects
-async function getSettings(containerName, name) {
+export const getSettings = async (containerName, name) => {
+  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
   containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
   if (name) return getSetting(containerName, name);
   
   try {
     
-    const settings = await dbAll(sql.settings.select.settings, {scope:containerName});
+    const result = await dbAll(sql.settings.select.settings, {scope:containerName});
+    if (result.success) {
+      
+      // we could read DB_Logins and it is valid
+      if (result.message.length) {
+        infoLog(`Found ${result.message.length} entries in settings`);
+        debugLog('settings', result.message)
+      
+      } else {
+        warnLog(`db settings seems empty:`, result.message);
+      }
+      
+    } else errorLog(result.message);
     
-    // we could read DB_Logins and it is valid
-    if (settings && settings.length) {
-      infoLog(`Found ${settings.length} entries in settings`);
-      debugLog('settings', settings)
-    
-    } else {
-      warnLog(`db settings seems empty:`, settings);
-    }
-    
-    return settings;
+    return result;
     // [ { name: 'containerName', value: 'dms' }, .. ]
     
   } catch (error) {
@@ -89,17 +93,17 @@ async function getSettings(containerName, name) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // jsonArrayOfObjects = [{name:name, value:value}, ..]
-async function saveSettings(containerName, jsonArrayOfObjects) {
+export const saveSettings = async (containerName, jsonArrayOfObjects) => {
   
   try {
     
     // extract containerName from the settings passed
     let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'DMS_API_KEY');
-    warnLog('DMS_API_KEY extracted=', dms_api_key)
+    infoLog('DMS_API_KEY extracted=', dms_api_key)
     if (dms_api_key) global.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch DMS_API_KEY
     
     // // extract containerName from the settings passed
@@ -135,15 +139,14 @@ async function saveSettings(containerName, jsonArrayOfObjects) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to get server status from DMS
-async function getServerStatus(containerName) {
+export const getServerStatus = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
-  var DBdict = {};
   var status = {
     status: {
       status: 'missing',
@@ -187,59 +190,64 @@ async function getServerStatus(containerName) {
     
     const [result_top, result_disk] = await Promise.all([
       execCommand(top_cmd, containerName),
-      execCommand(disk_cmd, containerName),
+      execCommand(disk_cmd, containerName, {timeout: 5}),
     ]);
     
     // debugLog('processTopData', processTopData(result_top.stdout))
-    const topJson = await processTopData(result_top.stdout);
-    
-    // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
-    // debugLog('processTopData', processTopData(result_top.stdout));
-    // {
-      // top: {
-        // time: '04:16:04',
-        // up_days: '36',
-        // load_average: [ '0.08', '0.07', '0.02' ]
-      // },
-      // tasks: {
-        // total: '31',
-        // running: '1',
-        // sleeping: '30',
-        // stopped: '0',
-        // zombie: '0'
-      // },
-      // cpu: {
-        // us: '0.0',
-        // sy: '100.0',
-        // ni: '0.0',
-        // id: '0.0',
-        // wa: '0.0',
-        // hi: '0.0',
-        // si: '0.0',
-        // st: '0.0'
-      // },
-      // mem: {
-        // total: '4413.7',
-        // used: '1305.2',
-        // free: '272.5',
-        // buff_cache: '3134.2'
-      // },
-    // }
-    
-    // if (!result_cpu.returncode) {
     if (!result_top.returncode) {
-      status.status.status = "running";
+      const topJson = await processTopData(result_top.stdout);
+      
+      // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
+      // debugLog('processTopData', processTopData(result_top.stdout));
+      // {
+        // top: {
+          // time: '04:16:04',
+          // up_days: '36',
+          // load_average: [ '0.08', '0.07', '0.02' ]
+        // },
+        // tasks: {
+          // total: '31',
+          // running: '1',
+          // sleeping: '30',
+          // stopped: '0',
+          // zombie: '0'
+        // },
+        // cpu: {
+          // us: '0.0',
+          // sy: '100.0',
+          // ni: '0.0',
+          // id: '0.0',
+          // wa: '0.0',
+          // hi: '0.0',
+          // si: '0.0',
+          // st: '0.0'
+        // },
+        // mem: {
+          // total: '4413.7',
+          // used: '1305.2',
+          // free: '272.5',
+          // buff_cache: '3134.2'
+        // },
+      // }
+      
       // status.resources.cpuUsage = result_cpu.stdout;
       // status.resources.memoryUsage = result_mem.stdout;
+      
+      status.status.status = "running";
       status.resources.cpuUsage = Number(topJson.cpu.us) + Number(topJson.cpu.sy);
       status.resources.memoryUsage = 100 * Number(topJson.mem.used) / Number(topJson.mem.total);
-      status.resources.diskUsage = Number(result_disk.stdout);
       
     } else {
-      status.status.status = "stopped";
+      errorLog(result_top.stderr);
     }
 
-    return status;
+    if (!result_disk.returncode) {
+      status.resources.diskUsage = Number(result_disk.stdout);
+    } else {
+      errorLog(result_disk.stderr);
+    }
+    
+    return {success: true, message: status};
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -251,103 +259,104 @@ async function getServerStatus(containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
+/*
 // Function to get server status from a docker container - deprecated
 async function getServerStatusFromDocker(containerName) {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+containerName = (containerName) ? containerName : DMS_CONTAINER;
+debugLog(`for ${containerName}`);
 
-  var DBdict = {};
-  var status = {
-    status: {
-      status: 'missing',
-      Error: '',
-      StartedAt: '',
-      FinishedAt: '',
-      Health: '',
-    },
-    resources: {
-      cpuUsage: 0,
-      memoryUsage: 0,
-      diskUsage: 0,
-    },
-  };
+var status = {
+  status: {
+    status: 'missing',
+    Error: '',
+    StartedAt: '',
+    FinishedAt: '',
+    Health: '',
+  },
+  resources: {
+    cpuUsage: 0,
+    memoryUsage: 0,
+    diskUsage: 0,
+  },
+};
 
-  try {
+try {
+  
+  // Get container info
+  let container = getContainer(containerName);
+  let containerInfo = await container.inspect();
+
+  // Check if container exist
+  status.status.status = (containerInfo.Id) ? "stopped" : "missing";
+  
+  if ( status.status.status != "missing") {
     
-    // Get container info
-    let container = getContainer(containerName);
-    let containerInfo = await container.inspect();
+    // Check if container is running
+    const isRunning = containerInfo.State.Running === true;
+    // debugLog(`Container running: ${isRunning} status.status=`, status.status);
 
-    // Check if container exist
-    status.status.status = (containerInfo.Id) ? "stopped" : "missing";
-    
-    if ( status.status.status != "missing") {
+    // get also errors and stuff
+    status.status.Error = containerInfo.State.Error;
+    status.status.StartedAt = containerInfo.State.StartedAt;
+    status.status.FinishedAt = containerInfo.State.FinishedAt;
+    status.status.Health = containerInfo.State.Health.Status;
+
+    // pull cpu stats if isRunning
+    if (isRunning) {
+      status.status.status = 'running';
       
-      // Check if container is running
-      const isRunning = containerInfo.State.Running === true;
-      // debugLog(`Container running: ${isRunning} status.status=`, status.status);
+      // Get container stats
+      // debugLog(`Getting container stats`);
+      const stats = await container.stats({ stream: false });
+      // debugLog('stats:',stats);
+      
+      // Calculate CPU usage percentage
+      const cpuDelta =
+          stats.cpu_stats.cpu_usage.total_usage
+        - stats.precpu_stats.cpu_usage.total_usage;
+      const systemCpuDelta =
+        stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+      const cpuPercent =
+        (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus;
+        // (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
+      // status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
+      status.resources.cpuUsage = cpuPercent;
 
-      // get also errors and stuff
-      status.status.Error = containerInfo.State.Error;
-      status.status.StartedAt = containerInfo.State.StartedAt;
-      status.status.FinishedAt = containerInfo.State.FinishedAt;
-      status.status.Health = containerInfo.State.Health.Status;
+      // Calculate memory usage
+      const memoryUsageBytes = stats.memory_stats.usage;
+      // status.resources.memoryUsage = byteSize2HumanSize(memoryUsageBytes);
+      status.resources.memoryUsage = memoryUsageBytes;
 
-      // pull cpu stats if isRunning
-      if (isRunning) {
-        status.status.status = 'running';
-        
-        // Get container stats
-        // debugLog(`Getting container stats`);
-        const stats = await container.stats({ stream: false });
-        // debugLog('stats:',stats);
-        
-        // Calculate CPU usage percentage
-        const cpuDelta =
-            stats.cpu_stats.cpu_usage.total_usage
-          - stats.precpu_stats.cpu_usage.total_usage;
-        const systemCpuDelta =
-          stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
-        const cpuPercent =
-          (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus;
-          // (cpuDelta / systemCpuDelta) * stats.cpu_stats.online_cpus * 100;
-        // status.resources.cpuUsage = `${cpuPercent.toFixed(2)}%`;
-        status.resources.cpuUsage = cpuPercent;
+      // debugLog(`Resources:`, status.resources);
 
-        // Calculate memory usage
-        const memoryUsageBytes = stats.memory_stats.usage;
-        // status.resources.memoryUsage = byteSize2HumanSize(memoryUsageBytes);
-        status.resources.memoryUsage = memoryUsageBytes;
-
-        // debugLog(`Resources:`, status.resources);
-
-        // For disk usage, we would need to run a command inside the container
-        // This could be a more complex operation involving checking specific directories
-      }
+      // For disk usage, we would need to run a command inside the container
+      // This could be a more complex operation involving checking specific directories
     }
-
-    // debugLog(`Server pull status result:`, status);
-    successLog(`Server pull status`);
-    return status;
-    
-  } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
-    // TODO: we should return smth to theindex API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
   }
+
+  // debugLog(`Server pull status result:`, status);
+  successLog(`Server pull status`);
+  return status;
+  
+} catch (error) {
+  let backendError = `${error.message}`;
+  errorLog(`${backendError}`);
+  throw new Error(backendError);
+  // TODO: we should return smth to theindex API instead of throwing an error
+  // return {
+    // status: 'unknown',
+    // error: error.message,
+  // };
 }
+}
+*/
 
 
 // function readDovecotConfFile will convert dovecot conf file syntax to JSON
-async function readDovecotConfFile(stdout) {
+export const readDovecotConfFile = async stdout => {
   // what we get: -------------------
   /*
   mail_plugins = $mail_plugins fts fts_xapian
@@ -408,21 +417,21 @@ async function readDovecotConfFile(stdout) {
   }
 
   const cleanData = `{${cleanlines.join('\n')}}`;
-  debugLog(`cleanData:`, cleanData);
+  // debugLog(`cleanData:`, cleanData);
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
-    debugLog(`json:`, json);
+    // debugLog(`json:`, json);
     return json;
   } catch (error) {
     errorLog(`cleanData not valid JSON:`, error);
     return {};
   }
-}
+};
 
 
 // function readDkimFile will convert dkim conf file syntax to JSON
-async function readDkimFile(stdout) {
+export const readDkimFile = async stdout => {
   // what we get: -------------------
   /*
   enabled = true;
@@ -530,7 +539,7 @@ async function readDkimFile(stdout) {
 
 
   const cleanData = `{${cleanlines.join('\n')}}`;
-  debugLog(`cleanData:`, cleanData);
+  // debugLog(`cleanData:`, cleanData);
 
   try {
     const json = jsonFixTrailingCommas(cleanData, true);
@@ -541,11 +550,11 @@ async function readDkimFile(stdout) {
     errorLog(`cleanData not valid JSON:`, error);
     return {};
   }
-}
+};
 
 
 // pulls entire doveconf and parse what we need
-async function pullDoveConf(containerName) {
+export const pullDoveConf = async containerName => {
 // TODO: add quotas
 // "quota_max_mail_size": "314M",
 // "quota_rule": "*:storage=5242M",
@@ -569,7 +578,7 @@ async function pullDoveConf(containerName) {
         // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
         // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN, DOVECOT_ZLIB etc
         for (const PLUGIN of doveconf.mail_plugins.split(' ')) {
-          envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+          if (PLUGIN) envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
         }
       }
 
@@ -579,49 +588,51 @@ async function pullDoveConf(containerName) {
     errorLog(`execCommand failed with error:`,error);
   }
   return envs;
-}
+};
 
 
+/*
 // pulls FTS info from detecting fts named mounts in docker - deprecated
 async function pullFTSFromDocker(containerName, containerInfo) {
-  let ftsMount = '';
-  let envs = {};
+let ftsMount = '';
+let envs = {};
 
-  try {
-    
-    containerInfo.Mounts.forEach( async (mount) => {
-      debugLog(`found mount ${mount.Destination}`);
-      if (mount.Destination.match(/fts.*\.conf$/i)) {
-        // we get the DMS internal mount as we cannot say if we have access to that file on the host system
-        ftsMount = mount.Destination;
-      }
-    });
-
-    // if we found fts override plugin, let's load it
-    if (ftsMount) {
-      const results = await execCommand(`cat ${ftsMount}`, containerName);
-      if (!results.returncode) {
-        debugLog(`dovecot file content:`, results.stdout);
-        const ftsConfig = await readDovecotConfFile(results.stdout);
-        debugLog(`dovecot json:`, ftsConfig);
-        
-        if (ftsConfig?.plugin?.fts) {
-          envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
-          envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
-
-        }
-      } else errorLog(results.stderr);
-    
+try {
+  
+  containerInfo.Mounts.forEach( async (mount) => {
+    debugLog(`found mount ${mount.Destination}`);
+    if (mount.Destination.match(/fts.*\.conf$/i)) {
+      // we get the DMS internal mount as we cannot say if we have access to that file on the host system
+      ftsMount = mount.Destination;
     }
-    
-  } catch (error) {
-    errorLog(`execCommand failed with error:`,error);
+  });
+
+  // if we found fts override plugin, let's load it
+  if (ftsMount) {
+    const results = await execCommand(`cat ${ftsMount}`, containerName);
+    if (!results.returncode) {
+      debugLog(`dovecot file content:`, results.stdout);
+      const ftsConfig = await readDovecotConfFile(results.stdout);
+      debugLog(`dovecot json:`, ftsConfig);
+      
+      if (ftsConfig?.plugin?.fts) {
+        envs.DOVECOT_FTS_PLUGIN = ftsConfig.plugin.fts;
+        envs.DOVECOT_FTS_AUTOINDEX = ftsConfig.plugin.fts_autoindex;
+
+      }
+    } else errorLog(results.stderr);
+  
   }
-  return envs;
+  
+} catch (error) {
+  errorLog(`execCommand failed with error:`,error);
 }
+return envs;
+}
+*/
 
 
-async function pullDOVECOT(containerName) {
+export const pullDOVECOT = async containerName => {
   debugLog(`start`);
   let envs = {};
 
@@ -640,35 +651,36 @@ async function pullDOVECOT(containerName) {
     errorLog(`execCommand failed with error:`,error);
   }
   return envs;
-}
+};
 
 
+/*
 // deprecated
 async function pullMailPluginsOLD(containerName) {
-  debugLog(`start`);
-  let envs = {};
+debugLog(`start`);
+let envs = {};
 
-  try {
-    
-    const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
-    if (!results.returncode) {
-      // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
-      // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
-      for (const PLUGIN of results.stdout.split(/[=\s]+/)) {
-        if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
-      }
+try {
+  
+  const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
+  if (!results.returncode) {
+    // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
+    // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
+    for (const PLUGIN of results.stdout.split(/[=\s]+/)) {
+      if (PLUGIN && PLUGIN.toUpperCase() != 'MAIL_PLUGINS') envs[`DOVECOT_${PLUGIN.toUpperCase()}`] = 1;
+    }
 
-    } else errorLog(results.stderr);
+  } else errorLog(results.stderr);
 
-  } catch (error) {
-    errorLog(`execCommand failed with error:`,error);
-  }
-  return envs;
+} catch (error) {
+  errorLog(`execCommand failed with error:`,error);
 }
+return envs;
+}
+*/
 
 
-// async function pullDkimRspamd(envs, containerName) {
-async function pullDkimRspamd(containerName) {
+export const pullDkimRspamd = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
@@ -706,11 +718,11 @@ async function pullDkimRspamd(containerName) {
     errorLog(`execCommand failed with error:`,error);
   }
   return envs;
-}
+};
 
 
 // Function to pull server environment from API
-async function pullServerEnvs(containerName) {
+export const pullServerEnvs = async containerName => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
@@ -718,17 +730,16 @@ async function pullServerEnvs(containerName) {
   try {
     
     // Get container instance
-    const result_env = await execCommand(`env`, containerName);
+    const result_env = await execCommand(`env|head -5`, containerName);
     if (!result_env.returncode) {
 
       // get and conver DMS environment to dict ------------------------------------------ envs
-      debugLog(`result_env.stdout`, result_env.stdout);
       const dictEnvDMS = arrayOfStringToDict(result_env.stdout, '=');
       // debugLog(`dictEnvDMS`, dictEnvDMS);
       
       // we keep only some options not all
-      dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
+      const dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+      // debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
 
 
       // look for dovecot version -------------------------------------------------- dovecot version
@@ -744,87 +755,85 @@ async function pullServerEnvs(containerName) {
       
       // merge all ------------------------------------------------------------------ merge
       envs = { ...envs, ...dictEnvDMSredux, ...dovecot, ...doveconf, ...dkim };
-      debugLog(`Server pull envs result:`, envs);
+      // debugLog(`Server pull envs result:`, envs);
       
     } else {
-      warnLog(`DMS or API seems down`);
+      throw new Error(result_env.stderr);
     }
     
     return obj2ArrayOfObj(envs, true);
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
   }
   
-}
+};
 
-
+/*
 // Function to pull server environment - deprecated
 async function pullServerEnvsFromDocker(containerName) {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+containerName = (containerName) ? containerName : DMS_CONTAINER;
+debugLog(`for ${containerName}`);
 
-  var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
-  try {
+var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
+try {
+  
+  // Get container instance
+  let container = getContainer(containerName);
+  let containerInfo = await container.inspect();
+
+  if (containerInfo.Id) {
     
-    // Get container instance
-    let container = getContainer(containerName);
-    let containerInfo = await container.inspect();
-
-    if (containerInfo.Id) {
-      
-      debugLog(`containerInfo found, Id=`, containerInfo.Id);
-      
-      // get and conver DMS environment to dict ------------------------------------------ envs
-      dictEnvDMS = await arrayOfStringToDict(containerInfo.Config?.Env, '=');
-      // debugLog(`dictEnvDMS:`,dictEnvDMS);
-      
-      // we keep only some options not all
-      dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
-      debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
-
-
-      // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
-      let mail_plugins = await pullMailPlugins(containerName);
-      
-      // TODO: look for quotas -------------------------------------------------- quota
-      
-      // look for dovecot version -------------------------------------------------- dovecot
-      let dovecot = await pullDOVECOT(containerName);
-
-      // look for FTS values -------------------------------------------------- fts
-      let fts = await pullFTSFromDocker(containerName, containerInfo);
-
-      // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      let dkim = await pullDkimRspamd(containerName);
-      
-      // merge all ------------------------------------------------------------------ merge
-      envs = { ...envs, ...dictEnvDMSredux, ...mail_plugins, ...dovecot, ...fts, ...dkim };
-
-    }
+    debugLog(`containerInfo found, Id=`, containerInfo.Id);
     
-    debugLog(`Server pull envs result:`, envs);
-    return obj2ArrayOfObj(envs, true);
+    // get and conver DMS environment to dict ------------------------------------------ envs
+    dictEnvDMS = await arrayOfStringToDict(containerInfo.Config?.Env, '=');
+    // debugLog(`dictEnvDMS:`,dictEnvDMS);
     
-  } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    // we keep only some options not all
+    dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+    debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
+
+
+    // look for dovecot mail_plugins -------------------------------------------------- mail_plugins
+    let mail_plugins = await pullMailPlugins(containerName);
+    
+    // TODO: look for quotas -------------------------------------------------- quota
+    
+    // look for dovecot version -------------------------------------------------- dovecot
+    let dovecot = await pullDOVECOT(containerName);
+
+    // look for FTS values -------------------------------------------------- fts
+    let fts = await pullFTSFromDocker(containerName, containerInfo);
+
+    // pull dkim conf ------------------------------------------------------------------ dkim rspamd
+    let dkim = await pullDkimRspamd(containerName);
+    
+    // merge all ------------------------------------------------------------------ merge
+    envs = { ...envs, ...dictEnvDMSredux, ...mail_plugins, ...dovecot, ...fts, ...dkim };
+
   }
   
+  debugLog(`Server pull envs result:`, envs);
+  return obj2ArrayOfObj(envs, true);
+  
+} catch (error) {
+  let backendError = `${error.message}`;
+  errorLog(`${backendError}`);
+  throw new Error(backendError);
 }
+}
+*/
 
-
-async function getServerEnv(containerName, name) {
+export const getServerEnv = async (containerName, name) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`name=${name} for ${containerName}`);
   
   try {
 
     const env = await dbGet(sql.settings.select.env, {scope:containerName}, name);
-    return env?.value;
+    return {success: true, message: env?.value};
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -836,10 +845,10 @@ async function getServerEnv(containerName, name) {
       // error: error.message,
     // };
   }
-}
+};
 
 
-async function getServerEnvs(refresh, containerName, name) {
+export const getServerEnvs = async (containerName, refresh, name) => {
   refresh = (refresh === undefined) ? true : refresh;
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   
@@ -847,22 +856,24 @@ async function getServerEnvs(refresh, containerName, name) {
     if (name) return getServerEnv(containerName, name);
     
     debugLog(`refresh=${refresh} for ${containerName}`);
-    
     try {
       
-      const envs = await dbAll(sql.settings.select.envs, {scope:containerName});
-      debugLog(`envs: envs (${typeof envs})`);
-      
-      // we could read DB_Logins and it is valid
-      if (envs && envs.length) {
-        infoLog(`Found ${envs.length} entries in envs`, envs);
-        return envs;
-        // [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ]
+      const result = await dbAll(sql.settings.select.envs, {scope:containerName});
+      if (result.success) {
+        const envs = result.message;
+        debugLog(`envs: (${typeof envs})`, envs);
         
-      } else {
-        warnLog(`db settings[env] seems empty:`, JSON.stringify(envs));
-        return [];
+        // we could read DB_Logins and it is valid
+        if (envs.length) {
+          infoLog(`Found ${envs.length} entries in envs`);
+          // {success:true, message: [ { name: 'DOVECOT_FTS_PLUGIN', value: 'xapian' }, .. ] }
+          
+        } else {
+          warnLog(`db settings[env] seems empty:`, envs);
+        }
+        
       }
+      return result;
       
     } catch (error) {
       let backendError = `${error.message}`;
@@ -876,65 +887,67 @@ async function getServerEnvs(refresh, containerName, name) {
     }
   }
   
+  // now refreshing by pulling data from DMS
   debugLog(`will pullServerEnvs for ${containerName}`);
   pulledEnv = await pullServerEnvs(containerName);
   infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
-    saveServerEnvs(pulledEnv, containerName);
-    return (name) ? getServerEnv(containerName, name) : pulledEnv;
+    saveServerEnvs(containerName, pulledEnv);
+    return (name) ? await getServerEnv(containerName, name) : {success: true, message: pulledEnv};
     
   // unknown error
   } else {
     errorLog(`pullServerEnvs could not pull environment from ${containerName}`);
+    return {success: false, message: `pullServerEnvs could not pull environment from ${containerName}`};
   }
-}
+};
 
 
-async function saveServerEnvs(jsonArrayOfObjects, containerName) {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
+export const saveServerEnvs = async (containerName, jsonArrayOfObjects) => {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
   containerName = (containerName) ? containerName : DMS_CONTAINER;
 
+  let result;
   try {
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, scope:containerName }; });
-    const result = dbRun(sql.settings.delete.envs, {scope:containerName});
+    result = dbRun(sql.settings.delete.envs, {scope:containerName});
     if (result.success) {
-      return dbRun(sql.settings.insert.env, jsonArrayOfObjectsScoped); // jsonArrayOfObjectsScoped = [{name:name, value:value, scope:scope}, ..]
-      
-    } else return result;
+      result = dbRun(sql.settings.insert.env, jsonArrayOfObjectsScoped); // jsonArrayOfObjectsScoped = [{name:name, value:value, scope:scope}, ..]  
+    }
+    return result;
 
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    return {success: false, message: error.message};
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to get dms-gui server infos
-async function getServerInfos() {
-  return [
+export const getNodeInfos = async () => {
+  return {success: true, message: [
     { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
     { name: 'HOSTNAME', value: HOSTNAME },
     { name: 'TZ', value: TZ },
     { name: 'NODE_VERSION', value: process.version },
     { name: 'NODE_ENV', value: NODE_ENV },
     { name: 'PORT_NODEJS', value: PORT_NODEJS },
-  ];
-}
+  ]};
+};
 
 
-async function getDomain(name, containerName) {
+export const getDomain = async (containerName, name) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
 
   try {
     
     const domain = await dbGet(sql.settings.select.domain, {scope:containerName}, name);
-    return domain;
+    return {success: true, message: domain};
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -946,28 +959,29 @@ async function getDomain(name, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
-async function getDomains(name, containerName) {
+export const getDomains = async (containerName, name) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
-  if (name) return getDomain(name, containerName);
+  if (name) return getDomain(containerName, name);
   
   try {
     
     const domains = await dbAll(sql.domains.select.domains, {scope:containerName});
-    debugLog(`domains: domains (${typeof domains})`);
-    
-    // we could read DB_Logins and it is valid
-    if (domains && domains.length) {
-      infoLog(`Found ${domains.length} entries in domains`);
-      return domains;
-      // [ { name: 'containerName', value: 'dms' }, .. ]
+    if (domains.success) {
+      debugLog(`domains: domains (${typeof domains.message})`);
       
-    } else {
-      warnLog(`db domains seems empty:`, domains);
-      return [];
+      // we could read DB_Logins and it is valid
+      if (domains.message && domains.message.length) {
+        infoLog(`Found ${domains.message.length} entries in domains`);
+        // {success: true, [ { name: 'containerName', value: 'dms' }, .. ] }
+        
+      } else {
+        warnLog(`db domains seems empty:`, domains.message);
+      }
     }
+    return domains;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -979,71 +993,76 @@ async function getDomains(name, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // initialize DMS_API_KEY if not passed from env, 
 //  or if env value <> from what's in db, 
-//  or simply when it's called to regenerate it
+//  or simply when it's called with dms_api_key_param='regen' to regenerate it
 // Env/passed value takes precedence always
-async function initAPI(dms_api_key_param) {
+export const initAPI = async (containerName, dms_api_key_param) => {
+  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
+
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   
-  let result;
+  let result, dms_api_key_new, dms_api_key_db;
   try {
     
-    // shortcut: environment always takes precedence over everything else
-    dms_api_key_passed = (process.env.DMS_API_KEY) ? process.env.DMS_API_KEY : dms_api_key_param;
-    
     // get it from db
-    let dms_api_key = await getSetting('dms-gui', 'DMS_API_KEY');
+    result = await getSetting(containerName, 'DMS_API_KEY');
+    if (result.success) dms_api_key_db = result.message;
+    debugLog(`dms_api_key_db=`, dms_api_key_db);
 
-    // environment AND passed key are undefined, make it equal to what's in the db, even if undefined
-    if (!dms_api_key_passed) dms_api_key_passed = dms_api_key;
-    
-    // passed key is defined
-    if (dms_api_key_passed) {
-      
-      // globalize it if defined in db AND passed key or environment are the same
-      if (dms_api_key && dms_api_key == dms_api_key_passed) {
-        
-        // load it and return
-        debugLog(`Loading DMS_API_KEY=`, dms_api_key);
-        global.DMS_API_KEY = dms_api_key;
-        result = await createAPIfiles();
-        return {success: true, message: dms_api_key};
-      }
-    
-      // passed key is defined but different from db, or it's from env
-      // save it
-      debugLog(`Saving new DMS_API_KEY=`, dms_api_key);
-      result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key, scope:'dms-gui'});
-      if (result.success) {
-        
-        // load it and return
-        global.DMS_API_KEY = dms_api_key;
-        result = await createAPIfiles();
-        return {success: true, message: dms_api_key};
-        
-      } else throw new Error(result.message);
-      
+    // environment always takes precedence over everything else
+    if (process.env.DMS_API_KEY) {
+      debugLog(`dms_api_key_new=process.env.DMS_API_KEY`, process.env.DMS_API_KEY);
+      dms_api_key_new = process.env.DMS_API_KEY;
     }
     
-    // passed key, env and db are all undefined
-    // OR dms_api_key_passed is defined AND env is undefined
-    // generate it
-    dms_api_key = (dms_api_key_passed) ? dms_api_key_passed : crypto.randomUUID();
+    debugLog('ddebug 1 dms_api_key_new',dms_api_key_new)
+    // no key in env
+    if (!dms_api_key_new) {
       
-    // save it
-    debugLog(`Saving new DMS_API_KEY=`, dms_api_key);
-    result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key, scope:'dms-gui'});
-    if (result.success) {
-      
-      // load it and return
-      global.DMS_API_KEY = dms_api_key;
-      result = await createAPIfiles();
-      return {success: true, message: dms_api_key};
-      
-    } else throw new Error(result.message);
+      // no key in env, no key passed
+      if (!dms_api_key_param) {
+        debugLog('ddebug 2 dms_api_key_param',dms_api_key_param)
+        debugLog('ddebug 3 dms_api_key_db',dms_api_key_db)
+        // use key from db if exist
+        if (dms_api_key_db) {
+          debugLog(`dms_api_key_db=`, dms_api_key_db);
+          dms_api_key_new = dms_api_key_db;
+        } else {
+          debugLog(`ddebug typeof crypto.randomUUID()=`, typeof crypto.randomUUID());
+          dms_api_key_new = containerName + "-" + crypto.randomUUID();
+          debugLog(`dms_api_key_new=`, dms_api_key_new);
+        }
+        
+      // no key in env, key passed
+      } else {
+        debugLog(`dms_api_key_param=`, dms_api_key_param);
+        debugLog(`ddebug typeof crypto.randomUUID()=`, typeof crypto.randomUUID());
+        dms_api_key_new = (dms_api_key_param == 'regen') ? containerName + "-" + crypto.randomUUID() : dms_api_key_param;
+        debugLog(`dms_api_key_new=`, dms_api_key_new);
+      }
+    }
+    debugLog('ddebug 4',dms_api_key_new)
+    // save key in db
+    if (dms_api_key_new != dms_api_key_db) {
+      debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
+      result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
+      if (!result.success) return {success: false, message: result.message};
+    }
+
+    // regen API files
+    debugLog(`Regenerate API scripts...`);
+    result = await createAPIfiles();
+    if (!result.success) return {success: false, message: result.message};
+
+    // load it and return
+    debugLog(`Loading DMS_API_KEY=`, dms_api_key_new);
+    global.DMS_API_KEY = dms_api_key_new;
+    return {success: true, message: dms_api_key_new};
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -1055,25 +1074,31 @@ async function initAPI(dms_api_key_param) {
       // error: error.message,
     // };
   }
-}
-
-
-async function createAPIfiles() {
-  for (const file of Object.values(userPatchesAPI)) {
-    // writeFile(file.path, file.content.replace(/{DMS_API_KEY}/, DMS_API_KEY));
-    writeFile(file.path, file.content);
-  }
-}
-
-
-module.exports = {
-  getServerStatus,
-  getServerInfos,
-  getServerEnv,
-  getServerEnvs,
-  saveServerEnvs,
-  getSetting,
-  getSettings,
-  saveSettings,
-  initAPI,
 };
+
+
+export const createAPIfiles = async () => {
+  try {
+    for (const file of Object.values(userPatchesAPI)) {
+      // writeFile(file.path, file.content.replace(/{DMS_API_KEY}/, DMS_API_KEY));
+      writeFile(file.path, file.content);
+    }
+    return {success: true, message: 'API files created'};
+    
+  } catch (error) {
+    return {success: false, message: error.message};
+  }
+};
+
+
+// module.exports = {
+//   getServerStatus,
+//   getNodeInfos,
+//   getServerEnv,
+//   getServerEnvs,
+//   saveServerEnvs,
+//   getSetting,
+//   getSettings,
+//   saveSettings,
+//   initAPI,
+// };

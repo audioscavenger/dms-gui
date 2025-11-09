@@ -36,7 +36,7 @@ DMS_CONTAINER=dms
 PORT_NODEJS=3001
 
 # Dev Environment
-REACT_APP_API_URL=http://localhost:3001
+API_URL=http://localhost:3001
 # NODE_ENV=development
 NODE_ENV=production
 

@@ -6,21 +6,15 @@ import Col from 'react-bootstrap/Col';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
-import Chip from '@mui/material/Chip';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
-import Stack from '@mui/material/Stack';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-  getValueFromArrayOfObj,
   pluck,
   moveKeyToLast,
-} = require('../../frontend');
+} from '../../frontend';
 
 import {
   getLogins,
@@ -34,22 +28,25 @@ import {
   AlertMessage,
   Accordion,
   Button,
-  Card,
   DataTable,
   FormField,
   SelectField,
   LoadingSpinner,
   Translate,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 
 const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
+  const [containerName] = useLocalStorage("containerName");
+
+  // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
-
-  const [logins, setLogins] = useState([]);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [selectedLogin, setSelectedLogin] = useState(null);
   
   // Form states --------------------------------------------------
   const [accountOptions, setAccountOptions] = useState([]);
@@ -57,12 +54,9 @@ const Logins = () => {
   // Roles states -------------------------------------------------- // https://mui.com/material-ui/react-autocomplete/#multiple-values
   const [rolesAvailable, setRolesAvailable] = useState([]);
   
-  // Common states -------------------------------------------------
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [selectedLogin, setSelectedLogin] = useState(null);
-  
   // changed data --------------------------------------------------
   // Track changes in a separate dictionary
+  const [logins, setLogins] = useState([]);
   const [editedData, setEditedData] = useState({});
   
   // show and changes in fields without modifying logins state
@@ -108,45 +102,52 @@ const Logins = () => {
     
     try {
       setLoading(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      
       const [loginsData, accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getLogins(),
-        getAccounts(),
+        getAccounts(containerName),
       ]);
 
-      // Prepare account options for the select field
-      setAccountOptions(accountsData.map((account) => ({
-        value: account.mailbox,
-        label: account.mailbox,
-      })));
+      if (accountsData.success) {
+        // Prepare account options for the select field
+        setAccountOptions(accountsData.message.map((account) => ({
+          value: account.mailbox,
+          label: account.mailbox,
+        })));
 
-      let loginsDataAltered;
+        let mailboxes = (pluck(accountsData, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
+        setRolesAvailable(mailboxes);
+
+      } else setErrorMessage(accountsData.message);
+
+      if (loginsData.success) {
+        let loginsDataAltered;
         
-      // add bolder for admins
-      loginsDataAltered = loginsData.map(login => { return { 
-      ...login, 
-      color:    (login.isAdmin) ? "fw-bolder" : null,
-      }; });
+        // add bolder for admins
+        loginsDataAltered = loginsData.message.map(login => { return { 
+        ...login, 
+        color:    (login.isAdmin) ? "fw-bolder" : null,
+        }; });
+        
+        // add blue color for linked accounts
+        loginsDataAltered = loginsData.message.map(login => { return { 
+        ...login, 
+        color:    (login.isAccount) ? login?.color+" text-info" : login?.color,
+        }; });
+        
+        // add muted color for inactives
+        loginsDataAltered = loginsDataAltered.map(login => { return { 
+        ...login, 
+        color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
+        }; });
       
-      // add blue color for linked accounts
-      loginsDataAltered = loginsData.map(login => { return { 
-      ...login, 
-      color:    (login.isAccount) ? login?.color+" text-info" : login?.color,
-      }; });
-      
-      // add muted color for inactives
-      loginsDataAltered = loginsDataAltered.map(login => { return { 
-      ...login, 
-      color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
-      }; });
-      
-      debugLog('loginsDataAltered', loginsDataAltered);
-      
-      setLogins(loginsDataAltered);
-      let mailboxes = (pluck(accountsData, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
-      setRolesAvailable(mailboxes);
-      
-      setErrorMessage(null);
-      
+        debugLog('loginsDataAltered', loginsDataAltered);
+        setLogins(loginsDataAltered);
+
+      } else setErrorMessage(loginsData.message);
+
     } catch (err) {
       errorLog(t('api.errors.fetchLogins'), err);
       setErrorMessage('api.errors.fetchLogins');
@@ -292,8 +293,8 @@ const Logins = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.addLogin'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addLogin');
+      errorLog(t('api.errors.addLogin'), err.message);
+      setErrorMessage('api.errors.addLogin', err.message);
     }
   };
 
@@ -342,8 +343,8 @@ const Logins = () => {
         } else setErrorMessage(result.message);
         
       } catch (err) {
-        errorLog(t('api.errors.deleteLogin'), err);
-        (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteLogin');
+        errorLog(t('api.errors.deleteLogin'), err.message);
+        setErrorMessage('api.errors.deleteLogin', err.message);
       }
     }
   };
@@ -382,8 +383,8 @@ const Logins = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.updateLogin'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+      errorLog(t('api.errors.updateLogin'), err.message);
+      setErrorMessage('api.errors.updateLogin', err.message);
     }
   };
 
@@ -427,8 +428,8 @@ const Logins = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.updateLogin'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.updateLogin');
+        errorLog(t('api.errors.updateLogin'), err.message);
+        setErrorMessage('api.errors.updateLogin', err.message);
     }
   };
 

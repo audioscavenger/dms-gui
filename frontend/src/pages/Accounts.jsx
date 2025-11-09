@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-  getValueFromArrayOfObj,
-  byteSize2HumanSize,
-} = require('../../frontend');
+} from '../../frontend';
 
 import {
   getAccounts,
@@ -25,30 +20,29 @@ import {
   AlertMessage,
   Accordion,
   Button,
-  Card,
   DataTable,
   FormField,
   LoadingSpinner,
   Translate,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import { useRef } from 'react';
-import Row from 'react-bootstrap/Row'; // Import Row
-import Col from 'react-bootstrap/Col'; // Import Col
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 
 const Accounts = () => {
   const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
-  const [isLoading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [containerName] = useLocalStorage("containerName");
 
   const [accounts, setAccounts] = useState([]);
   const [dnsProvider, setDnsProvider] = useState({});
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   // Common states -------------------------------------------------
+  const [isLoading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   
@@ -87,16 +81,30 @@ const Accounts = () => {
     
     try {
       setLoading(true);
-      const [accountsData, dnsProviderData, DOVECOT_FTSdata] = await Promise.all([
-        getAccounts(refresh),
-        getSettings(undefined, 'dnsProvider'),
-        getServerEnvs(refresh, undefined, 'DOVECOT_FTS'),
-      ]);
-      setAccounts(accountsData);
-      setDnsProvider(dnsProviderData);
-      setDOVECOT_FTS(DOVECOT_FTSdata);
       setErrorMessage(null);
+      setSuccessMessage(null);
       
+      const [accountsData, dnsProviderData, DOVECOT_FTSdata] = await Promise.all([
+        getAccounts(containerName, refresh),
+        getSettings(containerName, 'dnsProvider'),
+        getServerEnvs(containerName, refresh, 'DOVECOT_FTS'),
+      ]);
+
+      if (accountsData.success) {
+        setAccounts(accountsData.message);
+        
+      } else setErrorMessage(accountsData.message);
+
+      if (dnsProviderData.success) {
+        setDnsProvider(dnsProviderData.message);
+        
+      } else setErrorMessage(dnsProviderData.message);
+
+      if (DOVECOT_FTSdata.success) {
+        setDOVECOT_FTS(DOVECOT_FTSdata.message);
+        
+      } else setErrorMessage(DOVECOT_FTSdata.message);
+
       debugLog('accountsData', accountsData);
       debugLog('dnsProvider', dnsProvider);
       debugLog('DOVECOT_FTS', DOVECOT_FTS);
@@ -176,8 +184,8 @@ const Accounts = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.addAccount'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAccount');
+      errorLog(t('api.errors.addAccount'), err.message);
+      setErrorMessage('api.errors.addAccount', err.message);
     }
   };
 
@@ -193,8 +201,8 @@ const Accounts = () => {
         } else setErrorMessage(result.message);
         
       } catch (err) {
-        errorLog(t('api.errors.deleteAccount'), err);
-        (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAccount');
+        errorLog(t('api.errors.deleteAccount'), err.message);
+        setErrorMessage('api.errors.deleteAccount', err.message);
       }
     }
   };
@@ -212,8 +220,8 @@ const Accounts = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.doveadm'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.doveadm');
+      errorLog(t('api.errors.doveadm'), err.message);
+      setErrorMessage('api.errors.doveadm', err.message);
     }
   };
 

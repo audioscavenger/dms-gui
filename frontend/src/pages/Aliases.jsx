@@ -4,14 +4,11 @@ import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 import { useAuth } from '../hooks/useAuth';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
   pluck,
-} = require('../../frontend');
+} from '../../frontend';
 
 import {
   getAccounts,
@@ -30,9 +27,11 @@ import {
   SelectField,
   Translate,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const Aliases = () => {
   const { t } = useTranslation();
+  const [containerName] = useLocalStorage("containerName");
   const { user } = useAuth();
   const [isLoading, setLoading] = useState(true);
   
@@ -69,32 +68,40 @@ const Aliases = () => {
 
   const fetchAliases = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(false)`);
+    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${refresh})`);
     
     try {
       setLoading(true);
-      const [aliasesData, accountsData] = await Promise.all([
-        getAliases(refresh),
-        getAccounts(refresh),
-      ]);
-      setAccounts(accountsData);
-      
-      // add color column for regex aliases
-      let aliasesDataFormatted = aliasesData.map(alias => { return { 
-        ...alias, 
-        source: (alias.regex) ? JSON.parse(alias.source) : alias.source,
-        color:  (alias.regex) ? "text-info" : "",
-        }; });
-      setAliases(aliasesDataFormatted);
-      
       setErrorMessage(null);
+      setSuccessMessage(null);
+      
+      const [aliasesData, accountsData] = await Promise.all([
+        getAliases(containerName, refresh),
+        getAccounts(containerName, refresh),
+      ]);
 
-      debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
-      debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+      if (accountsData.success) {
+        setAccounts(accountsData.message);
+        debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+      } else setErrorMessage(accountsData.message);
+      
+      if (aliasesData.success) {
+        // add color column for regex aliases
+        let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
+          ...alias, 
+          source: (alias.regex) ? JSON.parse(alias.source) : alias.source,
+          color:  (alias.regex) ? "text-info" : "",
+          }; });
+        setAliases(aliasesDataFormatted);
+        debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
+        
+      } else setErrorMessage(aliasesData.message);
+      
 
     } catch (err) {
       errorLog(t('api.errors.fetchAliases'), err);
       setErrorMessage('api.errors.fetchAliases');
+      
     } finally {
       setLoading(false);
     }
@@ -179,8 +186,8 @@ const Aliases = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.addAlias'), err);
-      (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.addAlias');
+      errorLog(t('api.errors.addAlias'), err.message);
+      setErrorMessage('api.errors.addAlias', err.message);
     }
   };
 
@@ -198,8 +205,8 @@ const Aliases = () => {
         } else setErrorMessage(result.message);
         
       } catch (err) {
-        errorLog(t('api.errors.deleteAlias'), err);
-        (err.response.data.error) ? setErrorMessage(String(err.response.data.error)) : setErrorMessage('api.errors.deleteAlias');
+        errorLog(t('api.errors.deleteAlias'), err.message);
+        setErrorMessage('api.errors.deleteAlias', err.message);
       }
     }
   };

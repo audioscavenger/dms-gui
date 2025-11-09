@@ -1,83 +1,80 @@
-require('./env.js');
-const {
-  docker,
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-  byteSize2HumanSize,
-  humanSize2ByteSize,
-  jsonFixTrailingCommas,
-  formatDMSError,
-  reduxPropertiesOfObj,
-  execSetup,
   execCommand,
-  readJson,
-  writeJson,
-  getContainer,
-} = require('./backend');
+  execSetup,
+  formatDMSError,
+  infoLog,
+  successLog,
+  warnLog,
+} from './backend.js';
+import './env.js';
 
-const {
-  sql,
-  dbRun,
+import {
   dbAll,
-  dbGet,
-  hashPassword,
+  dbRun,
   deleteEntry,
-} = require('./db');
+  hashPassword,
+  sql
+} from './db.js';
 
-const fs = require("fs");
-const fsp = fs.promises;
 
-
-async function getAccounts(refresh, containerName) {
+export const getAccounts = async (containerName, refresh) => {
   refresh = (refresh === undefined) ? false : refresh;
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
   
   let accounts = [];
+  let result;
   try {
     
     if (!refresh) {
-      accounts = await dbAll(sql.accounts.select.accounts, {scope:containerName});
-      
-      // we could read DB_Logins and it is valid
-      if (accounts && accounts.length) {
-        infoLog(`Found ${accounts.length} entries in accounts`);
+      result = await dbAll(sql.accounts.select.accounts, {scope:containerName});
+      if (result.success) {
         
-        // now JSON.parse storage as it's stored stringified in the db
-        accounts = accounts.map(account => { return { ...account, storage: JSON.parse(account.storage) }; });
+        // we could read DB_Logins and it is valid
+        if (result.message.length) {
+          infoLog(`Found ${result.message.length} entries in accounts`);
+          
+          // now JSON.parse storage as it's stored stringified in the db
+          accounts = result.message.map(account => { return { ...account, storage: JSON.parse(account?.storage) }; });
+          
+        } else warnLog(`db accounts seems empty:`, result.message);
+
+        return {success: true, message: accounts};
         
-      } else {
-        warnLog(`db accounts seems empty:`, accounts);
-      }
+      } else errorLog(result.message);
       
-      return accounts;
+      return result;
       // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
     }
     
     // refresh
-    accounts = await pullAccountsFromDMS(containerName);
-    // [{ mailbox: 'a@b.com', storage: {} }, .. ]
-    infoLog(`got ${accounts.length} accounts from pullAccountsFromDMS(${containerName})`);
-
-    // now add the domain item
-    accounts = accounts.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
-
-    // now save accounts in db
-    let accountsList = accounts.map(account => { return { ...account, storage: JSON.stringify(account.storage), scope:containerName }; });
-    const result = dbRun(sql.accounts.insert.fromDMS, accountsList);
+    result = await pullAccountsFromDMS(containerName);
     if (result.success) {
+      // [{ mailbox: 'a@b.com', storage: {} }, .. ]
+      infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
+
+      // now add the domain item
+      accounts = result.message.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
+
+      // now save accounts in db
+      let accountsList = accounts.map(account => { return { ...account, storage: JSON.stringify(account?.storage), scope:containerName }; });
+      result = dbRun(sql.accounts.insert.fromDMS, accountsList);
+      if (result.success) {
+        
+        // now save isAccount logins in db
+        let loginsList = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]), scope:containerName }; });
+        result = dbRun(sql.logins.insert.fromDMS, loginsList);
+        if (!result.success) errorLog(result.message);
+        
+      } else errorLog(result.message);
       
-      // now save isAccount logins in db
-      let loginsList = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]), scope:containerName }; });
-      const result2 = dbRun(sql.logins.insert.fromDMS, loginsList);
-      if (!result2.success) errorLog(result2.message);
+      return {success: true, message: accounts};
       
     } else errorLog(result.message);
     
-    return accounts;
+    return result;
     
   } catch (error) {
     let backendError = `${error.message}`;
@@ -89,11 +86,11 @@ async function getAccounts(refresh, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to retrieve mailbox accounts from DMS
-async function pullAccountsFromDMS(containerName) {
+export const pullAccountsFromDMS = async containerName => {
   const command = 'email list';
   const accounts = [];
   
@@ -166,7 +163,7 @@ async function pullAccountsFromDMS(containerName) {
     }
 
     debugLog(`Found ${accounts.length} accounts`, accounts);
-    return accounts;
+    return { success: true, message: accounts };
     
   } catch (error) {
     let backendError = `Error execSetup(${command}): ${error}`;
@@ -174,11 +171,12 @@ async function pullAccountsFromDMS(containerName) {
     errorLog(`${backendError}:`, ErrorMsg);
     throw new Error(ErrorMsg);
   }
-}
+};
 
 // Function to add a new mailbox account
-async function addAccount(mailbox, password, createLogin=1, containerName) {
+export const addAccount = async (containerName, mailbox, password, createLogin=1) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
+  let result;
 
   try {
     debugLog(`Adding new mailbox account: ${mailbox}`);
@@ -186,19 +184,19 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
     if (!results.returncode) {
       
       const { salt, hash } = await hashPassword(password);
-      const result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash, scope:containerName});
+      result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash, scope:containerName});
       if (result.success) {
+        
         if (createLogin) {
-          const result2 = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:[mailbox], scope:containerName});
-          if (result2.success) {
+          result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:[mailbox], scope:containerName});
+          if (result.success) {
             successLog(`Account created: ${mailbox}`);
-            return { success: true };
-            
-          } else return result2;
+          } // login created
         
-        } else return result;
+        } // also create login
         
-      } else return result;
+      } // account created
+      return result;
       
     } else {
       let ErrorMsg = await formatDMSError(backendError, results.stderr);
@@ -216,11 +214,11 @@ async function addAccount(mailbox, password, createLogin=1, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 
 // Function to delete an mailbox account
-async function deleteAccount(mailbox, containerName) {
+export const deleteAccount = async (containerName, mailbox) => {
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
@@ -232,9 +230,9 @@ async function deleteAccount(mailbox, containerName) {
       const result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
       if (result.success) {
         successLog(`Account deleted: ${mailbox}`);
-        return { success: true, message: `Account deleted: ${mailbox}` };
         
-      } else return result;
+      } else warnLog(`Failed to delete Account: ${mailbox}`, result.message);
+      return result;
       
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
@@ -253,11 +251,11 @@ async function deleteAccount(mailbox, containerName) {
       // error: error.message,
     // };
   }
-}
+};
 
 // doveadm function
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
-async function doveadm(command, mailbox, jsonDict={}, containerName) {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
+export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
   containerName = (containerName) ? containerName : DMS_CONTAINER;
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
@@ -384,15 +382,11 @@ async function doveadm(command, mailbox, jsonDict={}, containerName) {   // json
       // error: error.message,
     // };
   }
-}
+};
 
 
-async function doveadmNative(command, mailbox, jsonDict={}, containerName) {
-
-}
-
-
-async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
+// unused
+export const doveadmAPIforTesting = async (containerName, command, mailbox, jsonDict={}) => {
 
 // https://doc.dovecot.org/main/core/admin/doveadm.html
 // https://doc.dovecot.org/2.3/admin_manual/doveadm_http_api/
@@ -467,7 +461,8 @@ async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
 // curl -H "Authorization: X-Dovecot-API $API_KEY" -H "Content-Type: application/json" -d '[["who", {"mask": "diane@domain.com"}, "dms-gui"]]' http://localhost:8080/doveadm/v1
   // [["doveadmResponse",[],"dms-gui"]]
   
-  
+// test DMS API:
+// curl -H "Authorization: dms-d6657c97-2f43-40c6-8104-3e3d43478f41" -H "Content-Type: application/json" -d '{"command":"ls -l"}' http://dms:8888
   
 
 // https://doc.dovecot.org/main/core/admin/doveadm.html#example-session
@@ -479,15 +474,15 @@ async function doveadmAPI(command, mailbox, jsonDict={}, containerName) {
   // 404	Unknown doveadm command.
   // 500	Internal server error (see Dovecot logs for more information).
 
-}
-
-
-
-module.exports = {
-  getAccounts,
-  addAccount,
-  deleteAccount,
-  doveadm,
 };
+
+
+
+// module.exports = {
+//   getAccounts,
+//   addAccount,
+//   deleteAccount,
+//   doveadm,
+// };
 
 

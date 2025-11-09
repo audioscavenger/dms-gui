@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
   reduxArrayOfObjByValue,
-} = require('../../frontend.js');
+} from '../../frontend';
 
 import {
-  getServerInfos,
+  getNodeInfos,
   getServerEnvs,
   getSettings,
   saveSettings,
@@ -24,16 +21,18 @@ import {
   DataTable,
   LoadingSpinner,
 } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 
 const ServerInfos = () => {
   const { t } = useTranslation();
+  const [containerName, setContainerName] = useLocalStorage("containerName");
   const [isLoading, setLoading] = useState(true);
 
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
-  const [infos, setServerInfos] = useState([]);
+  const [infos, setInfos] = useState([]);
   const [envs, setServerEnvs] = useState([]);
 
   const [DMSs, setDMSs] = useState([]);
@@ -59,21 +58,24 @@ const ServerInfos = () => {
   };
 
   const fetchSettings = async () => {
-    debugLog(`fetchSettings call getSettings()`);
+    debugLog(`fetchSettings call getSettings(${containerName})`);
     
     try {
       const [settingsData] = await Promise.all([
-        getSettings(),
+        getSettings(containerName),
       ]);
 
-      const dmsData = reduxArrayOfObjByValue(settingsData, 'name', 'containerName')    // [ {name:'containerName', value:'dms'}, .. ]
-      setDMSs(dmsData);
+      if (settingsData.success) {
+        const dmsData = reduxArrayOfObjByValue(settingsData.message, 'name', 'containerName')    // [ {name:'containerName', value:'dms'}, .. ]
+        setDMSs(dmsData);
+        if (!containerName) setContainerName(dmsData[0]?.value);
 
-      debugLog('settingsData', settingsData);
-      debugLog('dmsData', dmsData);
-      
-      setErrorMessage(null);
-      return dmsData;
+        debugLog('settingsData', settingsData.message);
+        debugLog('dmsData', dmsData);
+        
+        setErrorMessage(null);
+        
+      } else setErrorMessage(settingsData.message);
 
     } catch (err) {
       errorLog(t('api.errors.fetchSettings'), err);
@@ -82,17 +84,20 @@ const ServerInfos = () => {
   };
 
   const fetchServerInfos = async () => {
-    debugLog(`fetchServerInfos call getServerInfos()`);
+    debugLog(`fetchServerInfos call getNodeInfos()`);
     
     try {
       const [infosData] = await Promise.all([
-        getServerInfos(),
+        getNodeInfos(),
       ]);
-      setServerInfos(infosData);
-      debugLog('infosData', infosData);
+
+      if (infosData.success) {
+        setInfos(infosData.message);
+        debugLog('infosData', infosData.message);
+        
+        setErrorMessage(null);
       
-      setErrorMessage(null);
-      return infosData;
+      } else setErrorMessage(infosData.message);
 
     } catch (err) {
       errorLog(t('api.errors.fetchServerInfos'), err);
@@ -102,17 +107,20 @@ const ServerInfos = () => {
 
   const fetchServerEnvs = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchServerEnvs call getServerInfos(${refresh})`);
+    debugLog(`fetchServerEnvs call getServerEnvs(${containerName}, ${refresh})`);
     
     try {
       const [envsData] = await Promise.all([
-        getServerEnvs(refresh),
+        getServerEnvs(containerName, refresh),
       ]);
-      setServerEnvs(envsData);
+
       debugLog('envsData', envsData);
+      if (envsData.success) {
+        setServerEnvs(envsData.message);
+        
+        setErrorMessage(null);
       
-      setErrorMessage(null);
-      return envsData;
+      } else setErrorMessage(envsData.message);
 
     } catch (err) {
       errorLog(t('api.errors.fetchServerEnvs'), err);
@@ -130,17 +138,21 @@ const ServerInfos = () => {
     setSuccessMessage(null);
 
     try {
-      // this effectively switches name='containerName' to value selected, for scope='dms-gui' in settings table
-      const result = await saveSettings(
-        value,
-        [],
-      );
       
-      if (result.success) {
-        setSuccessMessage('settings.settingsSaved');
-        fetchSettings(); // Refresh the settings
+      if (value) {
+        // this effectively switches name='containerName' to value selected, for scope='dms-gui' in settings table
+        const result = await saveSettings(
+          value,
+          [],
+        );
         
-      } else setErrorMessage(result.message);
+        if (result.success) {
+          setContainerName(value);
+          setSuccessMessage('settings.settingsSaved');
+          fetchSettings(); // Refresh the settings
+          
+        } else setErrorMessage(result.message);
+      }
       
     } catch (err) {
       errorLog(t('api.errors.saveSettings'), err);
@@ -173,10 +185,10 @@ const ServerInfos = () => {
       <AlertMessage type="success" message={successMessage} />
       
       <SelectField
-        id="dms"
-        name="dms"
+        id="containerName"
+        name="containerName"
         label="settings.containerName"
-        value={dmsOptions[0]?.value}
+        value={containerName}
         onChange={handleChangeDMS}
         options={dmsOptions}
         placeholder="common.container"

@@ -5,19 +5,15 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, Form } from 'react-bootstrap';
 // import { useTranslation } from 'react-i18next';
 
-const {
+import {
   debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-} = require('../../frontend');
+} from '../../frontend';
 
 import {
   LoadingSpinner,
   AlertMessage,
   Translate,
-} from './';
+} from '.';
 
 /**
  * Reusable data table component using react-bootstrap
