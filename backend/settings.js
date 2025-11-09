@@ -4,7 +4,10 @@ import {
   obj2ArrayOfObj,
   reduxPropertiesOfObj
 } from '../common.js';
-import './env.js';
+import {
+  env,
+  live
+} from './env.js';
 
 import {
   debugLog,
@@ -33,7 +36,7 @@ import path from 'path';
 // returns a string
 export const getSetting = async (containerName, name) => {
   debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
 
   try {
@@ -60,7 +63,7 @@ export const getSetting = async (containerName, name) => {
 // this returns an array of objects
 export const getSettings = async (containerName, name) => {
   debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
   if (name) return getSetting(containerName, name);
   
@@ -102,19 +105,19 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
   try {
     
     // extract containerName from the settings passed
-    let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'DMS_API_KEY');
-    infoLog('DMS_API_KEY extracted=', dms_api_key)
-    if (dms_api_key) global.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch DMS_API_KEY
+    let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'live.DMS_API_KEY');
+    infoLog('live.DMS_API_KEY extracted=', dms_api_key)
+    if (dms_api_key) live.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch live.DMS_API_KEY
     
     // // extract containerName from the settings passed
     // containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
     // warnLog('containerName extracted=', containerName)
-    // global.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
+    // live.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
     
     // scope all settings for that DMS container
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return { ...setting, scope:containerName }; });
     
-    // first we start with the (new?) global DMS name; the new DMS_API_KEY is saved by initAPI itself
+    // first we start with the (new?) global DMS name; the new live.DMS_API_KEY is saved by initAPI itself
     let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});
     if (result.success && jsonArrayOfObjectsScoped.length) {
     
@@ -144,7 +147,7 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
 
 // Function to get server status from DMS
 export const getServerStatus = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   var status = {
@@ -265,7 +268,7 @@ export const getServerStatus = async containerName => {
 /*
 // Function to get server status from a docker container - deprecated
 async function getServerStatusFromDocker(containerName) {
-containerName = (containerName) ? containerName : DMS_CONTAINER;
+containerName = (containerName) ? containerName : live.DMS_CONTAINER;
 debugLog(`for ${containerName}`);
 
 var status = {
@@ -681,20 +684,20 @@ return envs;
 
 
 export const pullDkimRspamd = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
   try {
-    const results = await execCommand(`cat ${DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
+    const results = await execCommand(`cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
     if (!results.returncode) {
       debugLog(`dkim file content:`, results.stdout);
       const dkimConfig = await readDkimFile(results.stdout);
       debugLog(`dkim json:`, dkimConfig);
       
       envs.DKIM_ENABLED   = dkimConfig?.enabled;
-      envs.DKIM_SELECTOR  = dkimConfig?.selector || DKIM_SELECTOR_DEFAULT;
+      envs.DKIM_SELECTOR  = dkimConfig?.selector || env.DKIM_SELECTOR_DEFAULT;
       envs.DKIM_PATH      = dkimConfig?.path;
 
       if (dkimConfig?.domain) {
@@ -723,10 +726,10 @@ export const pullDkimRspamd = async containerName => {
 
 // Function to pull server environment from API
 export const pullServerEnvs = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
-  var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
+  var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
   try {
     
     // Get container instance
@@ -738,7 +741,7 @@ export const pullServerEnvs = async containerName => {
       // debugLog(`dictEnvDMS`, dictEnvDMS);
       
       // we keep only some options not all
-      const dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+      const dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, env.DMS_OPTIONS);
       // debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
 
 
@@ -773,10 +776,10 @@ export const pullServerEnvs = async containerName => {
 /*
 // Function to pull server environment - deprecated
 async function pullServerEnvsFromDocker(containerName) {
-containerName = (containerName) ? containerName : DMS_CONTAINER;
+containerName = (containerName) ? containerName : live.DMS_CONTAINER;
 debugLog(`for ${containerName}`);
 
-var envs = {DKIM_SELECTOR_DEFAULT: DKIM_SELECTOR_DEFAULT };
+var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
 try {
   
   // Get container instance
@@ -792,7 +795,7 @@ try {
     // debugLog(`dictEnvDMS:`,dictEnvDMS);
     
     // we keep only some options not all
-    dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, DMS_OPTIONS);
+    dictEnvDMSredux = reduxPropertiesOfObj(dictEnvDMS, env.DMS_OPTIONS);
     debugLog(`dictEnvDMSredux:`, dictEnvDMSredux);
 
 
@@ -827,7 +830,7 @@ try {
 */
 
 export const getServerEnv = async (containerName, name) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`name=${name} for ${containerName}`);
   
   try {
@@ -850,7 +853,7 @@ export const getServerEnv = async (containerName, name) => {
 
 export const getServerEnvs = async (containerName, refresh, name) => {
   refresh = (refresh === undefined) ? true : refresh;
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   
   if (!refresh) {
     if (name) return getServerEnv(containerName, name);
@@ -905,7 +908,7 @@ export const getServerEnvs = async (containerName, refresh, name) => {
 
 
 export const saveServerEnvs = async (containerName, jsonArrayOfObjects) => {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
 
   let result;
   try {
@@ -931,18 +934,18 @@ export const saveServerEnvs = async (containerName, jsonArrayOfObjects) => {  //
 // Function to get dms-gui server infos
 export const getNodeInfos = async () => {
   return {success: true, message: [
-    { name: 'DMSGUI_VERSION', value: DMSGUI_VERSION },
-    { name: 'HOSTNAME', value: HOSTNAME },
-    { name: 'TZ', value: TZ },
+    { name: 'env.DMSGUI_VERSION', value: env.DMSGUI_VERSION },
+    { name: 'HOSTNAME', value: env.HOSTNAME },
+    { name: 'TZ', value: env.TZ },
     { name: 'NODE_VERSION', value: process.version },
-    { name: 'NODE_ENV', value: NODE_ENV },
-    { name: 'PORT_NODEJS', value: PORT_NODEJS },
+    { name: 'NODE_ENV', value: env.NODE_ENV },
+    { name: 'PORT_NODEJS', value: env.PORT_NODEJS },
   ]};
 };
 
 
 export const getDomain = async (containerName, name) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
 
   try {
     
@@ -963,7 +966,7 @@ export const getDomain = async (containerName, name) => {
 
 
 export const getDomains = async (containerName, name) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   if (name) return getDomain(containerName, name);
   
   try {
@@ -996,12 +999,12 @@ export const getDomains = async (containerName, name) => {
 };
 
 
-// initialize DMS_API_KEY if not passed from env, 
+// initialize live.DMS_API_KEY if not passed from env, 
 //  or if env value <> from what's in db, 
 //  or simply when it's called with dms_api_key_param='regen' to regenerate it
 // Env/passed value takes precedence always
 export const initAPI = async (containerName, dms_api_key_param) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
 
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
@@ -1010,7 +1013,7 @@ export const initAPI = async (containerName, dms_api_key_param) => {
   try {
     
     // get it from db
-    result = await getSetting(containerName, 'DMS_API_KEY');
+    result = await getSetting(containerName, 'live.DMS_API_KEY');
     if (result.success) dms_api_key_db = result.message;
     debugLog(`dms_api_key_db=`, dms_api_key_db);
 
@@ -1049,7 +1052,7 @@ export const initAPI = async (containerName, dms_api_key_param) => {
     debugLog('ddebug 4',dms_api_key_new)
     // save key in db
     if (dms_api_key_new != dms_api_key_db) {
-      debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
+      debugLog(`Saving live.DMS_API_KEY=`, dms_api_key_new);
       result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
       if (!result.success) return {success: false, message: result.message};
     }
@@ -1060,8 +1063,8 @@ export const initAPI = async (containerName, dms_api_key_param) => {
     if (!result.success) return {success: false, message: result.message};
 
     // load it and return
-    debugLog(`Loading DMS_API_KEY=`, dms_api_key_new);
-    global.DMS_API_KEY = dms_api_key_new;
+    debugLog(`Loading live.DMS_API_KEY=`, dms_api_key_new);
+    live.DMS_API_KEY = dms_api_key_new;
     return {success: true, message: dms_api_key_new};
     
   } catch (error) {
@@ -1079,8 +1082,8 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 
 export const createAPIfiles = async () => {
   try {
-    for (const file of Object.values(userPatchesAPI)) {
-      // writeFile(file.path, file.content.replace(/{DMS_API_KEY}/, DMS_API_KEY));
+    for (const file of Object.values(env.userPatchesAPI)) {
+      // writeFile(file.path, file.content.replace(/{live.DMS_API_KEY}/, live.DMS_API_KEY));
       writeFile(file.path, file.content);
     }
     return {success: true, message: 'API files created'};

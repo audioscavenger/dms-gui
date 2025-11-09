@@ -78,7 +78,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 ### history:
 
 * [ ] 1.3.4 - backend: bugfix in loading initAPI where API key would be always regenerated
-* [x] 1.3.3 - env.js: use of global variables in js ES6 is discouragead, lots transfered to .dms-gui.env with name
+* [x] 1.3.3 - env.js: creation of 3 large dictionaries as global variables
+* [x] 1.3.3 - env.js: use of global variables in js ES6 is discouragead, lots transfered to .dms-gui.env
 * [x] 1.3.3 - common.js: moved away from barrel files and each module import their own stuff
 * [x] 1.3.3 - conversion of everything to ES6 modules for imports
 * [x] 1.3.3 - backend: bugfix in common.js as arrow functions are not forgiving

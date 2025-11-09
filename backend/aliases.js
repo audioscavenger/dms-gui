@@ -8,7 +8,10 @@ import {
   successLog,
   warnLog,
 } from './backend.js';
-import './env.js';
+import {
+  env,
+  live
+} from './env.js';
 
 import {
   dbAll,
@@ -20,7 +23,7 @@ import {
 
 export const getAliases = async (containerName, refresh) => {
   refresh = (refresh === undefined) ? false : refresh;
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
   
   let aliases = [];
@@ -89,7 +92,7 @@ export const getAliases = async (containerName, refresh) => {
 
 // Function to retrieve aliases from DMS
 export const pullAliasesFromDMS = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   let aliases = [];
@@ -158,11 +161,11 @@ export const parseAliasesFromDMS = async stdout => {
 
 
 export const pullPostfixRegexFromDMS = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   let regexes = [];
-  const command = `cat ${DMS_CONFIG_PATH}/postfix-regexp.cf`;
+  const command = `cat ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
   
   try {
     debugLog(`execSetup(${command})`);
@@ -221,7 +224,7 @@ export const parsePostfixRegexFromDMS = async stdout => {
 
 // Function to add an alias
 export const addAlias = async (containerName, source, destination) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   let results, result;
@@ -250,7 +253,7 @@ export const addAlias = async (containerName, source, destination) => {
     } else {
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
-      results = await execCommand(`echo '${source} ${destination}' >>${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      results = await execCommand(`echo '${source} ${destination}' >>${env.DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
       if (!results.returncode) {
         
         // reload postfix
@@ -289,7 +292,7 @@ export const addAlias = async (containerName, source, destination) => {
 
 // Function to delete an alias
 export const deleteAlias = async (containerName, source, destination) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   let results, result;
@@ -318,7 +321,7 @@ export const deleteAlias = async (containerName, source, destination) => {
     } else {
       debugLog(`Deleting alias regex: ${source}`);
       
-      results = await execCommand(`grep -Fv "${source} ${destination}" ${DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      results = await execCommand(`grep -Fv "${source} ${destination}" ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
       if (!results.returncode) {
         
         // reload postfix

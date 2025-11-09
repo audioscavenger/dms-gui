@@ -8,7 +8,9 @@ import {
   successLog,
   warnLog,
 } from './backend.js';
-import './env.js';
+import {
+  live
+} from './env.js';
 
 import {
   dbAll,
@@ -21,7 +23,7 @@ import {
 
 export const getAccounts = async (containerName, refresh) => {
   refresh = (refresh === undefined) ? false : refresh;
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`(refresh=${refresh} for ${containerName}`);
   
   let accounts = [];
@@ -175,7 +177,7 @@ export const pullAccountsFromDMS = async containerName => {
 
 // Function to add a new mailbox account
 export const addAccount = async (containerName, mailbox, password, createLogin=1) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   let result;
 
   try {
@@ -219,7 +221,7 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
 
 // Function to delete an mailbox account
 export const deleteAccount = async (containerName, mailbox) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   try {
@@ -256,7 +258,7 @@ export const deleteAccount = async (containerName, mailbox) => {
 // doveadm function
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
 export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
   const doveadm = {

@@ -8,8 +8,12 @@ import {
   infoLog,
   successLog
 } from './backend.js';
-import './env.js';
+import {
+  env,
+  live
+} from './env.js';
 
+import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
 
 var DB;
@@ -45,12 +49,12 @@ settings: {
 
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${isMutable}`,
-    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = @scope`,
-    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${isMutable} AND scope = @scope AND name = ?`,
-    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
-    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
-    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${isMutable} AND name = 'containerName'`,
+    count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
+    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
+    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
+    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName'`,
   },
   
   insert: {
@@ -59,8 +63,8 @@ settings: {
   },
   
   delete: {
-    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope`,
-    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${isImmutable} AND scope = @scope AND name = ?`,
+    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
   },
   
   init:   `BEGIN TRANSACTION;
@@ -69,29 +73,29 @@ settings: {
           name    TEXT NOT NULL,
           value   TEXT NOT NULL,
           scope   TEXT NOT NULL,
-          isMutable BIT DEFAULT ${isImmutable},
+          env.isMutable BIT DEFAULT ${env.isImmutable},
           UNIQUE (name, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${DMS_CONTAINER}', 'dms-gui', ${isMutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${DMS_SETUP_SCRIPT}', '${DMS_CONTAINER}', ${isMutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DMS_CONFIG_PATH', '${DMS_CONFIG_PATH}', '${DMS_CONTAINER}', ${isMutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', 'dms-gui', ${env.isMutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable});
           COMMIT;`,
   
   patch: [
     { DB_VERSION: '1.0.17',
       patches: [
-        `ALTER TABLE settings ADD scope TEXT DEFAULT '${DMS_CONTAINER}'`,
-        `ALTER TABLE settings ADD isMutable BIT DEFAULT ${isImmutable}`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${isImmutable})`,
+        `ALTER TABLE settings ADD scope TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+        `ALTER TABLE settings ADD env.isMutable BIT DEFAULT ${env.isImmutable}`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.2.4',
       patches: [
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${DMS_CONTAINER}', '${DMS_CONTAINER}', ${isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${DMS_SETUP_SCRIPT}', '${DMS_CONTAINER}', ${isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DMS_CONFIG_PATH', '${DMS_CONFIG_PATH}', '${DMS_CONTAINER}', ${isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -218,7 +222,7 @@ logins: {
           roles     TEXT DEFAULT '[]'
           );
           INSERT OR IGNORE INTO logins (email, username, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
   patch: [
@@ -227,7 +231,7 @@ logins: {
         `ALTER TABLE logins DROP COLUMN password;`,
         `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
         `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.1',
@@ -236,7 +240,7 @@ logins: {
         `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
         `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
         `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.6',
@@ -244,13 +248,13 @@ logins: {
         `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
         `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
         `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.9',
       patches: [
         `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -283,7 +287,7 @@ roles: {
           mailbox     TEXT NOT NULL,
           scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_roles', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_roles', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
 },
@@ -328,14 +332,14 @@ accounts: {
           scope     TEXT NOT NULL,
           UNIQUE (mailbox, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
   patch: [
     { DB_VERSION: '1.1.3',
       patches: [
-        `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${DMS_CONTAINER}'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${isImmutable})`,
+        `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -371,7 +375,7 @@ aliases: {
           scope       NOT NULL,
           UNIQUE (source, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
 },
@@ -396,13 +400,13 @@ domains: {
           CREATE TABLE domains (
           id        INTEGER PRIMARY KEY,
           domain    TEXT NOT NULL UNIQUE,
-          dkim      TEXT DEFAULT '${DKIM_SELECTOR_DEFAULT}',
+          dkim      TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
           keytype   TEXT DEFAULT 'rsa',
           keysize   TEXT DEFAULT '2048',
-          path      TEXT DEFAULT '${DMS_CONFIG_PATH}/rspamd/dkim/${DKIM_KEYTYPE_DEFAULT}-${DKIM_KEYSIZE_DEFAULT}-${DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
+          path      TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
           scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${DMSGUI_VERSION}', 'dms-gui', ${isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
   patch: [
@@ -410,13 +414,13 @@ domains: {
       patches: [
         `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
         `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.3',
       patches: [
-        `ALTER TABLE domains ADD scope   TEXT DEFAULT '${DMS_CONTAINER}'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${isImmutable})`,
+        `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -431,10 +435,11 @@ export const dbOpen = () => {
     if (DB && DB.inTransaction) DB.close();
     
     if (!DB || !DB.open) {
-      DB = require('better-sqlite3')(DATABASE);
-      // const Database = require('better-sqlite3');
-      // const DB = new Database('foobar.db', { verbose: console.log });
+      // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
+      // DB = new Database(env.DATABASE, { verbose: console.debug });
+      DB = new Database(env.DATABASE);
       DB.pragma('journal_mode = WAL');
+
       // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
       process.on('exit', () => DB.close());
       process.on('SIGHUP', () => process.exit(128 + 1));
@@ -529,7 +534,7 @@ export const dbRun = (sql, params=[], ...anonParams) => {
 
 
 export const dbCount = (table, containerName) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   
   let result;
   try {
@@ -676,7 +681,7 @@ export const dbUpdate = () => {
     // first, check if there are any patches available
     if (actions.patch && actions.patch.length) {
       // now check is patches ar needed
-      if (!db_version || db_version.localeCompare(DMSGUI_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
+      if (!db_version || db_version.localeCompare(env.DMSGUI_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
       
       // now check each patch array if we need it
         for (const patch of actions.patch) {
@@ -772,7 +777,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
 
 // Function to update a password in a table
 export const changePassword = async (table, id, password, containerName) => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${id} in ${table} for ${containerName}`);
 
   try {
@@ -820,7 +825,7 @@ export const changePassword = async (table, id, password, containerName) => {
 
 // Function to update a table in the db; id can very well be an array as well
 export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = { column:value, .. }
-  scope = (scope) ? scope : DMS_CONTAINER;
+  scope = (scope) ? scope : live.DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
   try {
@@ -920,7 +925,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
 
 
 export const deleteEntry = async (table, id, key, scope) => {
-  scope = (scope) ? scope : DMS_CONTAINER;
+  scope = (scope) ? scope : live.DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
 
   try {
@@ -1008,17 +1013,17 @@ export const deleteEntry = async (table, id, key, scope) => {
 
 // debug = true;
 // containerName = 'dms';
-// DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
-// DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
-// DB = require('better-sqlite3')(DATABASE);
+// env.DMSGUI_CONFIG_PATH   = process.env.env.DMSGUI_CONFIG_PATH || '/app/config';
+// env.DATABASE      = env.DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+// DB = require('better-sqlite3')(env.DATABASE);
 // process.on('exit', () => DB.close());
-// function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
+// function dbOpen() {DB = require('better-sqlite3')(env.DATABASE);}
 // function debugLog(message) {console.debug(message)}
 // function errorLog(message) {console.debug(message)}
 
 
 
-// DMSGUI_VERSION = (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION;
+// env.DMSGUI_VERSION = (process.env.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.env.DMSGUI_VERSION.split("v")[1] : process.env.env.DMSGUI_VERSION;
 // sql=`BEGIN TRANSACTION;
 // CREATE TABLE IF NOT EXISTS logins (
 // username  TEXT NOT NULL UNIQUE PRIMARY KEY,
@@ -1026,7 +1031,7 @@ export const deleteEntry = async (table, id, key, scope) => {
 // hash      TEXT NOT NULL,
 // email     TEXT DEFAULT ''
 // );
-// REPLACE INTO envs VALUES ('DB_VERSION_logins', '${DMSGUI_VERSION}');
+// REPLACE INTO envs VALUES ('DB_VERSION_logins', '${env.DMSGUI_VERSION}');
 // COMMIT;`
 // DB.prepare('SELECT username, email from logins').all()
 // DB.exec(sql)
@@ -1071,24 +1076,24 @@ export const deleteEntry = async (table, id, key, scope) => {
 
 
 // bug: leads to duplicate rows since we enabled PRIMARY key=id:
-// DB.transaction("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run([{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"containerName","value":"dms","scope":"dms"}])
+// DB.transaction("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run([{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"env.DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"setupPath","value":"/usr/local/bin/setup","scope":"dms"},{"name":"env.DMS_CONFIG_PATH","value":"/tmp/docker-mailserver","scope":"dms"},{"name":"containerName","value":"dms","scope":"dms"}])
 // DB.prepare("SELECT name, value from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
 // DB.prepare("SELECT * from settings WHERE 1=1 AND isMutable = 1 AND scope = @scope").all({"scope":"dms"})
 // [
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'containerName', value: 'dms' },
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'containerName', value: 'dms' },
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'setupPath', value: '/usr/local/bin/setup' },
-// { name: 'DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
+// { name: 'env.DMS_CONFIG_PATH', value: '/tmp/docker-mailserver' },
 // { name: 'containerName', value: 'dms' }
 // ]
 

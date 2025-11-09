@@ -3,7 +3,10 @@ import {
   errorLog,
   infoLog
 } from './backend.js';
-import './env.js';
+import {
+  env,
+  live
+} from './env.js';
 
 import {
   dbCount,
@@ -61,9 +64,9 @@ const app = express();
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    version: DMSGUI_VERSION,
+    version: env.DMSGUI_VERSION,
     title: 'dms-gui-backend',
-    description: DMSGUI_DESCRIPTION,
+    description: env.DMSGUI_DESCRIPTION,
   },
 };
 
@@ -994,7 +997,7 @@ app.post('/api/loginUser', async (req, res) => {
     debugLog('user', user);
     
     if (user) {
-      const accessToken = jwt.sign(user, SECRET_KEY, { expiresIn: SECRET_KEY_EXPIRY });
+      const accessToken = jwt.sign(user, env.SECRET_KEY, { expiresIn: env.SECRET_KEY_EXPIRY });
       // debugLog('accessToken', accessToken);
       
       // Bearer token, in-memory/useState or localStorage:
@@ -1149,13 +1152,13 @@ app.post('/api/getCount/:table', async (req, res) => {
 });
 
 
-// Endpoint for pushing/getting DMS_API_KEY
+// Endpoint for pushing/getting live.DMS_API_KEY
 /**
  * @swagger
  * /api/initAPI:
  *   post:
- *     summary: Provide or regenerate DMS_API_KEY
- *     description: Provide or regenerate DMS_API_KEY + API scripts
+ *     summary: Provide or regenerate live.DMS_API_KEY
+ *     description: Provide or regenerate live.DMS_API_KEY + API scripts
  *     parameters:
  *       - in: path
  *         name: containerName
@@ -1175,11 +1178,11 @@ app.post('/api/getCount/:table', async (req, res) => {
  *                 description: DMS API key to use or 'regen' to  get a new one
  *     responses:
  *       200:
- *         description: DMS_API_KEY from db
+ *         description: live.DMS_API_KEY from db
  *       400:
  *         description: Something is missing
  *       500:
- *         description: Unable to generate DMS_API_KEY
+ *         description: Unable to generate live.DMS_API_KEY
  */
 app.post('/api/initAPI/:containerName', async (req, res) => {
   try {
@@ -1200,20 +1203,20 @@ app.post('/api/initAPI/:containerName', async (req, res) => {
 });
 
 
-app.listen(PORT_NODEJS, async () => {
-  infoLog(`dms-gui-backend ${DMSGUI_VERSION} Server ${process.version} running on port ${PORT_NODEJS}`);
+app.listen(env.PORT_NODEJS, async () => {
+  infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
   dbInit();
   
-  // currently we only preset DMS_CONTAINER globally, the rest of the critical environment is preset during dbInit
-  if (typeof DMS_CONTAINER == "undefined") {
+  // currently we only preset live.DMS_CONTAINER globally, the rest of the critical environment is preset during dbInit
+  if (typeof live.DMS_CONTAINER == "undefined") {
     const result = await getSettings('dms-gui', 'containerName');
-    if (result.success) global.DMS_CONTAINER = result.message;
+    if (result.success) live.DMS_CONTAINER = result.message;
   }
-  if (typeof DMS_API_KEY == "undefined") {
-    const result = await getSettings('dms-gui', 'DMS_API_KEY');
-    if (result.success) global.DMS_API_KEY = result.message;
+  if (typeof live.DMS_API_KEY == "undefined") {
+    const result = await getSettings('dms-gui', 'live.DMS_API_KEY');
+    if (result.success) live.DMS_API_KEY = result.message;
   }
   
-  await initAPI(DMS_CONTAINER, DMS_API_KEY);
+  await initAPI(live.DMS_CONTAINER, live.DMS_API_KEY);
 });

@@ -52,26 +52,24 @@ It's a very small size and classic React structure. Most has been factored but s
 dms-gui/
 ├── backend/                    # Backend API
 │   ├── env.js                  # Environment variables
+│   ├── backend.js              # backend functions
 │   ├── index.js                # /api server
 │   ├── db.js                   # better-sqlite3 database functions
 │   └── *.js                    # One module per menu item
 ├── frontend/                   # Frontend React app
 │   ├── public                  # favicon and index template
+│   ├── frontend.js             # frontend functions
 │   └── src                     # Frontend sources build in step 1 & 2
 │       ├── components          # Classic React factored components
 │       ├── hooks               # Authentication hooks for Login page
 │       ├── locales             # Language packs for i18n
 │       ├── pages               # the left menu items
 │       └── services            # The frontend API calls to the backend API
-├── common/                     # Docker configuration files
-│   ├── backend.conf            # backend functions
-│   └── frontend.conf           # frontend functions
 ├── docker/                     # Docker configuration files
 │   ├── nginx.conf              # Nginx configuration
 │   └── start.sh                # Container startup script
-├── config/                     # Local config and database
-│   ├── dms-gui.env             # Your environment variables
-│   ├── db.*.json               # Local json databases (deprecated)
+├── config/dms-gui/             # Local config and database
+│   ├── .dms-gui.env            # Your environment variables
 │   └── dms-gui.sqlite3         # As its name suggests
 ├── Dockerfile                  # Docker image configuration
 ├── docker-compose.yml          # Docker Compose configuration

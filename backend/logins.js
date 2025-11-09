@@ -5,7 +5,9 @@ import {
   successLog,
   warnLog,
 } from './backend.js';
-import './env.js';
+import {
+  live
+} from './env.js';
 
 import {
   dbAll,
@@ -187,7 +189,7 @@ export const loginUser = async (credential, password) => {
 
 // this returns an array of objects // cancelled
 export const getRolesFromRoles = async containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${containerName}`);
 
   debugLog(`start`);

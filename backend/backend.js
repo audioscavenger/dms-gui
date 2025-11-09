@@ -22,7 +22,10 @@ import fs from 'node:fs';
 import {
   funcName
 } from '../common.js';
-
+import {
+  env,
+  live
+} from './env.js';
 
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
@@ -94,7 +97,7 @@ export const execSetup = async (setupCommand, containerName, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing setup command: ${setupCommand}`);
-  return execCommand(`${DMS_SETUP_SCRIPT} ${setupCommand}`, containerName, ...rest);
+  return execCommand(`${env.DMS_SETUP_SCRIPT} ${setupCommand}`, containerName, ...rest);
 };
 
 
@@ -181,7 +184,7 @@ async function execInContainer(command, containerName) {
  */
 export const execInContainerAPI = async (command, containerName, ...rest) => {
   
-    // api_key: DMS_API_KEY,  // moved to the Authorization header
+    // api_key: live.DMS_API_KEY,  // moved to the Authorization header
   const jsonData = Object.assign({}, 
     {
       command: command,
@@ -190,8 +193,8 @@ export const execInContainerAPI = async (command, containerName, ...rest) => {
     ...rest);
   
   try {
-    debugLog(`http://${containerName}:${DMS_API_PORT}`)
-    const response = await sendJsonToApi(`http://${containerName}:${DMS_API_PORT}`, jsonData)
+    debugLog(`http://${containerName}:${live.DMS_API_PORT}`)
+    const response = await sendJsonToApi(`http://${containerName}:${live.DMS_API_PORT}`, jsonData)
     // debugLog('ddebug response',response)
 
     if ('error' in response) {
@@ -226,7 +229,7 @@ export const execInContainerAPI = async (command, containerName, ...rest) => {
  */
 export const sendJsonToApi = async (apiUrl, jsonData) => {
   // debugLog('ddebug apiUrl', apiUrl)
-  // debugLog('ddebug DMS_API_KEY', DMS_API_KEY)
+  // debugLog('ddebug live.DMS_API_KEY', live.DMS_API_KEY)
   // debugLog('ddebug jsonData', jsonData)
   
   try {
@@ -234,7 +237,7 @@ export const sendJsonToApi = async (apiUrl, jsonData) => {
       method: 'POST', // or 'PUT'
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': DMS_API_KEY
+        'Authorization': live.DMS_API_KEY
       },
       body: JSON.stringify(jsonData), // Convert JavaScript object to JSON string
     });
@@ -478,7 +481,7 @@ export const formatDMSError = async (errorMsg, error) => {
 /*
 // foolproof future where we can deal with multiple containers
 export const getContainer = containerName => {
-  containerName = (containerName) ? containerName : DMS_CONTAINER;
+  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   if (!containers[containerName]) global.containers[containerName] = docker.getContainer(containerName);
   return containers[containerName];
 };
