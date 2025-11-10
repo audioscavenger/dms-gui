@@ -7,15 +7,17 @@ import { useAuth } from '../hooks/useAuth';
 import {
   debugLog,
   errorLog,
+} from '../../frontend.mjs';
+import {
   pluck,
-} from '../../frontend';
+} from '../../../common.mjs';
 
 import {
   getAccounts,
   getAliases,
   addAlias,
   deleteAlias,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import {
   AlertMessage,
@@ -26,7 +28,7 @@ import {
   LoadingSpinner,
   SelectField,
   Translate,
-} from '../components';
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const Aliases = () => {

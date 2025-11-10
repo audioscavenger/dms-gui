@@ -3,18 +3,21 @@ import { useTranslation } from 'react-i18next';
 
 import {
   errorLog,
+} from '../../frontend.mjs';
+import {
   reduxArrayOfObjByValue,
-} from '../../frontend';
+} from '../../../common.mjs';
+
 import {
   getServerStatus,
   getCount,
   getSettings,
-} from '../services/api';
+} from '../services/api.mjs';
 import {
   AlertMessage,
   DashboardCard,
   Button,
-} from '../components';
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import Row from 'react-bootstrap/Row'; // Import Row

@@ -1,13 +1,35 @@
+// import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
+// } from '../common.mjs'
 import {
   debugLog,
   errorLog,
   infoLog,
   successLog,
   warnLog,
-} from './backend.js';
-import {
-  live
-} from './env.js';
+} from './backend.mjs';
 
 import {
   dbAll,
@@ -16,7 +38,7 @@ import {
   hashPassword,
   sql,
   verifyPassword,
-} from './db.js';
+} from './db.mjs';
 
 
 // this returns an array
@@ -78,33 +100,39 @@ export const getLogin = async credential => {
 export const getLogins = async credentials => {
   if (typeof credentials == "string") return getLogin(credentials);
 
+  let result, results;
   let logins = [];
   try {
     
     debugLog(`credentials=`, credentials);
     if (Array.isArray(credentials) && credentials.length) {
-      // roles come already parsed from getLogin
-      let logins = await Promise.all(credentials.map(credential => { return getLogin(credential); }));
-      if (logins.success) {
-        infoLog(`Found ${logins.message.length} entries in logins for`, credentials);
+      // roles come already parsed from getLogin, we stop at the first we find
+      logins = await Promise.all(
+        credentials.map(async (credential) => {
+          const login = await getLogin(credential);
+          if (login.success) return login.message;
+        })
+      );
+      if (logins.length) {
+        infoLog(`Found ${logins.length} entries in logins for`, credentials);
         
         // now remove all undefined entries
-        logins.message = logins.message.filter(element => element !== undefined);
+        logins = logins.filter(element => element !== undefined);
       }
       
     } else {
-      let logins = await dbAll(sql.logins.select.logins);
-      if (logins.success) {
+      result = await dbAll(sql.logins.select.logins);
+      if (result.success) {
         // now JSON.parse roles as it's stored stringified in the db
-        logins.message = logins.message.map(login => { return { ...login, roles: JSON.parse(login.message.roles) }; });
-        infoLog(`Found ${logins.message.length} entries in logins`);
+        logins = result.message.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
+        infoLog(`Found ${logins.length} entries in logins`);
       }
     }
     
     // we could read DB_Logins and it is valid
-    if (!logins.message.length) warnLog(`db logins seems empty:`, logins);
+    if (!logins.length) warnLog(`db logins seems empty:`, logins);
     
-    return logins;
+    return {success: true, message: logins};
     // {success: true, message: [ {email: email, username: username, isActive:1, ..}, ..] }
     
   } catch (error) {
@@ -155,6 +183,7 @@ export const loginUser = async (credential, password) => {
     if (login.success) {
       if (login.message.isActive) {
         const isValid = await verifyPassword(credential, password, 'logins');
+        debugLog('ddebug isValid',isValid)
         
         if (isValid) {
           successLog(`User ${credential} logged in successfully.`);
@@ -175,7 +204,7 @@ export const loginUser = async (credential, password) => {
   } catch (error) {
     let backendError = error.message;
     errorLog(`${backendError}`);
-    return false;
+    return {success: false, message: error.message};
     // throw new Error(backendError);
     
     // TODO: we should return smth to the index API instead of throwing an error
@@ -189,8 +218,7 @@ export const loginUser = async (credential, password) => {
 
 // this returns an array of objects // cancelled
 export const getRolesFromRoles = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   debugLog(`start`);
   try {

@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// import {
+//   arrayOfStringToDict,
+//   byteSize2HumanSize,
+//   fixStringType,
+//   funcName,
+//   getValueFromArrayOfObj, 
+//   getValuesFromArrayOfObj,
+//   humanSize2ByteSize,
+//   mergeArrayOfObj,
+//   moveKeyToLast,
+//   obj2ArrayOfObj,
+//   pluck,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+// } from '../../../common.mjs';
 
 import {
   Accordion,
   Button,
   Card,
   Translate
-} from '../components';
+} from '../components/index.jsx';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 import FormContainerAdd from './FormContainerAdd';
@@ -47,8 +63,8 @@ const Settings = () => {
 
   // https://icons.getbootstrap.com/
   const settingTabs = [
-    { id: 1, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:'dms'}) },
-    { id: 2, title: "settings.titleContainerAdd", icon: "house-add",  content: FormContainerAdd(),  },
+    { id: 1, title: "settings.titleContainerAdd", icon: "house-add",  content: FormContainerAdd(),  },
+    { id: 2, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:'dms'}) },
     { id: 3, title: "settings.titleContainers",   icon: "houses-fill",content: <></>,                  },
   ];
 

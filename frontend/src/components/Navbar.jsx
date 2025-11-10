@@ -13,7 +13,7 @@ import {
   ButtonDropdown,
   ButtonLanguage,
   Translate,
-} from '.';
+} from './index.jsx';
 
 const Navbar = ({
   translate = true,

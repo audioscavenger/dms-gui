@@ -1,30 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import Row from 'react-bootstrap/Row'; // Import Row
+import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
   debugLog,
   errorLog,
+} from '../../frontend.mjs';
+import {
+  getValueFromArrayOfObj, 
   mergeArrayOfObj,
-  getValueFromArrayOfObj,
-} from '../../frontend';
+} from '../../../common.mjs';
 
 import {
+  getScopes,
   getSettings,
   saveSettings,
   initAPI,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import { 
   AlertMessage,
   Button,
+  Card,
   FormField,
   LoadingSpinner,
-} from '../components';
+  SelectField,
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-// https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
-// This is how to pass back onInfosSubmit to the parent page
-// const FormContainerAdd = ({ onInfosSubmit }) => {
 function FormContainerAdd() {
   const { t } = useTranslation();
   const [containerName, setContainerName] = useLocalStorage("containerName");
@@ -37,12 +41,17 @@ function FormContainerAdd() {
   const [formErrors, setFormErrors] = useState({});
   const [settings, setSettings] = useState([]);
 
+  // selector fields
+  const [DMSs, setDMSs] = useState([]);
+  const [protocols, setProtocols] = useState([
+    {value: 'http', label: 'http'},
+    {value: 'https', label: 'https'},
+  ]);
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
   }, []);
-  // }, [settings]);    // infinite loop if settings fails to update
 
 
   const fetchAll = async () => {
@@ -51,20 +60,47 @@ function FormContainerAdd() {
     setSuccessMessage(null);
 
     // const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
-    await fetchSettings();  // [ {name:name, value: value}, ..]
-
-    // onInfosSubmit(infosData);  // that's what you send back to the parent page
+    await fetchScopes();                    // [ {scope:name}, ..]
+    await fetchSettings(containerName);  // [ {name:name, value: value}, ..]
 
     setLoading(false);
 
   };
 
-  const fetchSettings = async () => {
-    debugLog(`fetchSettings call getSettings(${containerName})`);
+  const fetchScopes = async () => {
+    
+    debugLog(`fetchScopes call getScopes()`);
+    try {
+      const [scopesData] = await Promise.all([
+        getScopes(),
+      ]);
 
+      if (scopesData.success) {
+        // this will be all containers in db except dms-gui
+        console.debug('fetchScopes: scopesData', scopesData);   // [ {value:'containerName'}, .. ]
+ 
+        // update selector list
+        setDMSs(scopesData.message.map(scope => { return { ...scope, label:scope.value } }));   // duplicate value as label for the select field
+
+        // set the current DMS containerName to the first value in the list if not already set
+        // this action will (re)fetch form settings for that container scope
+        if (!containerName) setContainerName(scopesData.message[0]?.value);
+        
+      } else setErrorMessage(scopesData.message);
+
+    } catch (err) {
+      errorLog(t('api.errors.fetchSettings'), err);
+      setErrorMessage('api.errors.fetchSettings');
+    }
+  };
+
+
+  const fetchSettings = async (container) => {
+    
+    debugLog(`fetchSettings call getSettings(${container})`);
     try {
       const [settingsData] = await Promise.all([
-        getSettings(containerName),
+        getSettings(container),
       ]);
       // setSettings({
         // ...settings,
@@ -73,12 +109,11 @@ function FormContainerAdd() {
       // debugLog(`fetchAll mergeArrayOfObj settingsData`,settingsData);
 
       if (settingsData.success) {
-        console.debug('fetchAll: settingsData', settingsData)
-        setSettings(mergeArrayOfObj(settingsData.message, settings, 'name'));
+        // this will be settings for that container only
+        console.debug(`fetchAll: settingsData for ${container}`, settingsData);
+ 
+        setSettings(settingsData.message);  // reset settings to what's coming from the db
 
-        setErrorMessage(null);
-        return settingsData.message;
-        
       } else setErrorMessage(settingsData.message);
 
     } catch (err) {
@@ -150,6 +185,16 @@ function FormContainerAdd() {
       errors.setupPath = 'settings.setupPathRequired';
     }
 
+    // if (settings.DMS_API_PORT.length == 0) {
+    if (!settings.find(item => item['name'] == 'DMS_API_PORT') 
+        || !settings.find(item => item['name'] == 'DMS_API_PORT').value.length
+        || !Number(settings.find(item => item['name'] == 'DMS_API_PORT').value)
+        || (Number(settings.find(item => item['name'] == 'DMS_API_PORT').value) < 1)
+        || (Number(settings.find(item => item['name'] == 'DMS_API_PORT').value) > 65535)
+      ) {
+      errors.setupPath = 'settings.setupPathRequired';
+    }
+
     // TODO: setupPath: maybe add an api call to execInContainer/execCommand to test if exist?
 
     setFormErrors(errors);
@@ -176,7 +221,13 @@ function FormContainerAdd() {
       if (result.success) {
         setSubmissionSettings('success');
         setSuccessMessage('settings.settingsSaved');
-        fetchSettings(); // Refresh the settings
+
+        // switch to this new container to trigger fetchSettings and confirm all was saved properly
+        // UNLESS containerName is already set, indeed
+        if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+
+        // however, we do pull scopes again to refresh the select field list
+        fetchScopes();
         
       } else setErrorMessage(result.message);
       
@@ -188,28 +239,71 @@ function FormContainerAdd() {
   };
 
 
+  const handleChangeDMS = async (e) => {
+    // e.preventDefault();
+    const { name, value } = e.target;
+    debugLog(`Switching to ${name}=${value}`);
+    
+    try {
+      
+      if (value) {
+        if (result.success) {
+          setContainerName(value);
+          fetchSettings(value); // Refresh the settings
+
+          // only reset errors, we still wantto see the successful saved settings message as this change will be triggered when saving a new container
+          setErrorMessage(null);
+          
+        } else setErrorMessage(result.message);
+      }
+      
+    } catch (err) {
+      errorLog(t('api.errors.saveSettings'), err);
+      setErrorMessage('api.errors.saveSettings');
+    }
+  };
+
+
   // if (isLoading && !settings && !Object.keys(settings).length) {
   if (isLoading && !settings.length) {
     return <LoadingSpinner />;
   }
   
-        // <div className="float-end">
-          // <Button
-            // variant="warning"
-            // size="sm"
-            // icon="arrow-repeat"
-            // title={t('common.refresh')}
-            // className="me-2"
-            // onClick={() => fetchAll()}
-          // />
-        // </div>
-
   return (
     <>
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
+      <Row className="align-items-center justify-content-center">
+        <Col md={6}>{' '}
+          <Card title="settings.containerNameSwitch" icon="house-heart-fill">{' '}
+            <SelectField
+              id="DMS_CONTAINER"
+              name="DMS_CONTAINER"
+              value={containerName}
+              onChange={handleChangeDMS}
+              options={DMSs}
+              placeholder="common.container"
+              helpText="settings.DMSHelp"
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row>
         <form onSubmit={handleSubmitSettings} className="form-wrapper">
+          <SelectField
+            id="protocol"
+            name="protocol"
+            label="settings.protocol"
+            value={getValueFromArrayOfObj(settings, 'protocol')}
+            onChange={handleChangeSettings}
+            options={protocols}
+            placeholder="common.protocol"
+            helpText="settings.protocolHelp"
+            required
+          />
+
           <FormField
             type="text"
             id="containerName"
@@ -236,17 +330,18 @@ function FormContainerAdd() {
             required
           />
         
-            <FormField
-              type="text"
-              id="DMS_API_KEY"
-              name="DMS_API_KEY"
-              label="settings.DMS_API_KEY"
-              value={getValueFromArrayOfObj(settings, 'DMS_API_KEY')}
-              onChange={handleChangeSettings}
-              placeholder="DMS_API_KEY"
-              error={formErrors.DMS_API_KEY}
-              helpText="settings.DMS_API_KEYHelp"
-            >
+          <FormField
+            type="text"
+            id="DMS_API_KEY"
+            name="DMS_API_KEY"
+            label="settings.DMS_API_KEY"
+            value={getValueFromArrayOfObj(settings, 'DMS_API_KEY')}
+            onChange={handleChangeSettings}
+            placeholder="DMS_API_KEY"
+            error={formErrors.DMS_API_KEY}
+            helpText="settings.DMS_API_KEYHelp"
+            required
+          >
             <Button
               variant="warning"
               icon="recycle"
@@ -265,7 +360,20 @@ function FormContainerAdd() {
               title={t('common.copy')}
               onClick={() => {navigator.clipboard.writeText(getValueFromArrayOfObj(settings, 'DMS_API_KEY'))}}
             />
-            </FormField>
+          </FormField>
+        
+          <FormField
+            type="number"
+            id="DMS_API_PORT"
+            name="DMS_API_PORT"
+            label="settings.DMS_API_PORT"
+            value={getValueFromArrayOfObj(settings, 'DMS_API_PORT')}
+            onChange={handleChangeSettings}
+            placeholder="settings.DMS_API_PORTdefault"
+            error={formErrors.DMS_API_PORT}
+            helpText="settings.DMS_API_PORTHelp"
+            required
+          />
         
           <FormField
             type="text"
@@ -281,6 +389,7 @@ function FormContainerAdd() {
         
           <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
         </form>
+      </Row>
     </>
   );
 

@@ -3,29 +3,15 @@ import fs from 'node:fs';
 // const Docker = require('dockerode');
 // const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
-// const {
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
-// } = require('./common');
 import {
-  funcName
-} from '../common.js';
+  funcName,
+  reduxPropertiesOfObj,
+  regexColors,
+  regexPrintOnly
+} from '../common.mjs';
 import {
-  env,
-  live
-} from './env.js';
+  env
+} from './env.mjs';
 
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
@@ -80,33 +66,25 @@ export const infoLog = async (message, ...data) => { logger('info', message, ...
 export const debugLog = async (message, ...data) => { if (env.debug) logger('debug', message, ...data) };
 
 
-export const jsonFixTrailingCommas = (jsonString, returnJson=false) => {
-  var jsonObj;
-  eval('jsonObj = ' + jsonString);
-  if (returnJson) return jsonObj;
-  else return JSON.stringify(jsonObj);
-};
-
-
 /**
  * Executes a setup.sh command in the docker-mailserver container
  * @param {string} setupCommand Command to pass to setup.sh
  * @return {Promise<string>} stdout from the command
  */
-export const execSetup = async (setupCommand, containerName, ...rest) => {
+export const execSetup = async (setupCommand, targetDict, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
-  debugLog(`Executing setup command: ${setupCommand}`);
-  return execCommand(`${env.DMS_SETUP_SCRIPT} ${setupCommand}`, containerName, ...rest);
+  const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
+  debugLog(`Executing setup command: ${command}`);
+  return execCommand(command, targetDict, ...rest);
 };
 
 
-export const execCommand = async (command, containerName, ...rest) => {
+export const execCommand = async (command, targetDict, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
-  // return execInContainer(command, containerName);
-  const result = await execInContainerAPI(command, containerName, ...rest);
+  const result = await execInContainerAPI(command, targetDict.message, ...rest);
   // debugLog('ddebug result', result)
   return result;
 };
@@ -180,21 +158,26 @@ async function execInContainer(command, containerName) {
 /**
  * Executes a command in the docker-mailserver container through an http API
  * @param {string} command Command to execute
+ * @param {object} targetDict with protocol, host, port, Authorization
  * @return {Promise<string>} stdout from the command
  */
-export const execInContainerAPI = async (command, containerName, ...rest) => {
-  
-    // api_key: live.DMS_API_KEY,  // moved to the Authorization header
-  const jsonData = Object.assign({}, 
-    {
-      command: command,
-      timeout: 1,
-    },
-    ...rest);
+export const execInContainerAPI = async (command, targetDict, ...rest) => {
   
   try {
-    debugLog(`http://${containerName}:${live.DMS_API_PORT}`)
-    const response = await sendJsonToApi(`http://${containerName}:${live.DMS_API_PORT}`, jsonData)
+    if (Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) return {
+      returncode: 99,
+      stderr: 'execInContainerAPI missing targetDict with 4 keys: protocol, host, port, Authorization',
+    };
+
+    const jsonData = Object.assign({}, 
+      {
+        command: command,
+        timeout: 1,
+      },
+      ...rest);
+
+    debugLog(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`)
+    const response = await postJsonToApi(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`, jsonData, targetDict.Authorization)
     // debugLog('ddebug response',response)
 
     if ('error' in response) {
@@ -227,24 +210,24 @@ export const execInContainerAPI = async (command, containerName, ...rest) => {
  * @param {string} apiUrl API url like http://whatever:8888
  * @return {Promise<string>} stdout from the fetch
  */
-export const sendJsonToApi = async (apiUrl, jsonData) => {
+export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
   // debugLog('ddebug apiUrl', apiUrl)
   // debugLog('ddebug live.DMS_API_KEY', live.DMS_API_KEY)
   // debugLog('ddebug jsonData', jsonData)
   
   try {
     const response = await fetch(apiUrl, {
-      method: 'POST', // or 'PUT'
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': live.DMS_API_KEY
+        'Authorization': Authorization
       },
-      body: JSON.stringify(jsonData), // Convert JavaScript object to JSON string
+      body: JSON.stringify(jsonData),
     });
 
     // debugLog('ddebug response', response)
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP POST error! status: ${response.status}`);
     }
 
     const responseData = await response.json(); // Parse the JSON response
@@ -263,23 +246,25 @@ export const sendJsonToApi = async (apiUrl, jsonData) => {
  * @param {string} apiUrl API url like http://whatever:8888
  * @return {Promise<string>} stdout from the fetch
  */
-export const getJsonFromApi = async apiUrl => {
+export const getJsonFromApi = async (apiUrl, Authorization) => {
+
   try {
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json', // Indicate that you expect JSON
-        // Add any other necessary headers
+        'Accept': 'application/json',
+        'Authorization': Authorization,
       },
     });
 
+    // debugLog('ddebug response', response)
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP GET error! status: ${response.status}`);
     }
 
-    const jsonData = await response.json(); // Parse the JSON response
-    debugLog('Received JSON data:', jsonData);
-    return jsonData;
+    const responseData = await response.json(); // Parse the JSON response
+    debugLog('Received JSON data:', responseData);
+    return responseData;
     
   } catch (error) {
     errorLog('Error fetching JSON from API:', error);
@@ -482,8 +467,8 @@ export const formatDMSError = async (errorMsg, error) => {
 // foolproof future where we can deal with multiple containers
 export const getContainer = containerName => {
   containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  if (!containers[containerName]) global.containers[containerName] = docker.getContainer(containerName);
-  return containers[containerName];
+  if (!live.[containerName]) live.containers[containerName] = docker.getContainer(containerName);
+  return live.containers[containerName];
 };
 */
 
@@ -511,7 +496,6 @@ export const getContainer = containerName => {
 //   errorLog,
 //   successLog,
 //   docker,
-//   jsonFixTrailingCommas,
 //   formatDMSError,
 //   execSetup,
 //   execCommand,

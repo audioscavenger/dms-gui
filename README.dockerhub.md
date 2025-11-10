@@ -24,22 +24,31 @@ As long as the default admin user (_admin_ / password=_changeme_) exist, you are
 
 ![Login](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Login.webp?raw=true)
 
+### Profile page
+
+There you can change your dms-gui / DMS Dovecot password. Users managers of multiple mailboxes cannot change individual mailboxes yet.
+
+![Login](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Profile.webp?raw=true)
+
 ### Logins Management
 
 Logins are 3 types:
-* admins
-* users: can manage multiple mailboxes
-* linked users: attached to a mailbox, dovecot API provides authentication
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-user.webp?raw=true)
+| type | perks | details |
+| -----|-------|---------|
+| admins | Administrator | Can even demote itself |
+| users | Can manage multiple mailboxes | Not admin, cannot change managed mailboxes, Authentication by dms-gui |
+| linked users | Can change their mailbox password | Authentication provided by DMS Dovecot |
 
-Mailbox selection list comes from DMS directly.
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main//assets/dms-gui-Logins-new-user.webp?raw=true)
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-new-linkbox.webp?raw=true)
+Mailbox selection list comes from DMS directly. Password will be saved in both dms-gui and Dovecot in DMS, but Authentication for linked mailbox users is provided by DMS.
+
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main//assets/dms-gui-Logins-new-linkbox.webp?raw=true)
 
 Mailbox users are automatically created, based off the scan of DMS dovecot server. The mechanic does not check if mailboxes have been deleted, it only pulls the current list and update the local db.
 
-![Logins](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Logins-auto.webp?raw=true)
+![Logins](https://github.com/audioscavenger/dms-gui/blob/main//assets/dms-gui-Logins-auto.webp?raw=true)
 
 ### Accounts
 
@@ -59,11 +68,15 @@ Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`fil
 
 ### Settings
 
-Multiple sections to save UI settings, DMS access variables, and show some internals + DMS environment values. Currently relying on `docker.sock`, and dump+parse of dovecot config files (for FTS, dkim values, . Should be replaced by dovecot 2.4 API calls easily.
+Multiple sections to save UI settings, DMS API access, and show some internals + DMS environment values.
+
+![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Settings.webp?raw=true)
+
+dms-gui internals come from Node environment, and DMS values come from a mox of the `env` command and parsing dkim and dovecot configuration.
 
 Some environment values like FTS (Full Text Search) will enable some options on the _Accounts_ page (`reindex` for instance).
 
-![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-Settings.webp?raw=true)
+![Settings](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-ServerInfos.webp?raw=true)
 
 ### Dashboard
 

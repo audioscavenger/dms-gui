@@ -7,7 +7,7 @@ import { useLocalStorage } from './useLocalStorage';
 const AuthContext = createContext();
 import {
   logoutUser,
-} from '../services/api';
+} from '../services/api.mjs';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useLocalStorage("user", null);

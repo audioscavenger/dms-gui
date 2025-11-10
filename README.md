@@ -23,6 +23,12 @@ As long as the default admin user (_admin_ / password=_changeme_) exist, you are
 
 ![Login](/assets/dms-gui-Login.webp)
 
+### Profile page
+
+There you can change your dms-gui / DMS Dovecot password. Users managers of multiple mailboxes cannot change individual mailboxes yet.
+
+![Login](/assets/dms-gui-Profile.webp)
+
 ### Logins Management
 
 Logins are 3 types:
@@ -30,12 +36,12 @@ Logins are 3 types:
 | type | perks | details |
 | -----|-------|---------|
 | admins | Administrator | Can even demote itself |
-| users | Can manage multiple mailboxes | Not admin, cannot change managed mailboxes |
-| linked users | Can change their mailbox password | Authentication provided by DMS Account |
+| users | Can manage multiple mailboxes | Not admin, cannot change managed mailboxes, Authentication by dms-gui |
+| linked users | Can change their mailbox password | Authentication provided by DMS Dovecot |
 
 ![Logins](/assets/dms-gui-Logins-new-user.webp)
 
-Mailbox selection list comes from DMS directly.
+Mailbox selection list comes from DMS directly. Password will be saved in both dms-gui and Dovecot in DMS, but Authentication for linked mailbox users is provided by DMS.
 
 ![Logins](/assets/dms-gui-Logins-new-linkbox.webp)
 
@@ -61,11 +67,15 @@ Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`fil
 
 ### Settings
 
-Multiple sections to save UI settings, DMS access variables, and show some internals + DMS environment values. Currently relying on `docker.sock`, and dump+parse of dovecot config files (for FTS, dkim values, . Should be replaced by dovecot 2.4 API calls easily.
+Multiple sections to save UI settings, DMS API access, and show some internals + DMS environment values.
+
+![Settings](/assets/dms-gui-Settings.webp)
+
+dms-gui internals come from Node environment, and DMS values come from a mox of the `env` command and parsing dkim and dovecot configuration.
 
 Some environment values like FTS (Full Text Search) will enable some options on the _Accounts_ page (`reindex` for instance).
 
-![Settings](/assets/dms-gui-Settings.webp)
+![Settings](/assets/dms-gui-ServerInfos.webp)
 
 ### Dashboard
 

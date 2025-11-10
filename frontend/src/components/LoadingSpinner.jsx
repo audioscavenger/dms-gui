@@ -4,7 +4,7 @@ import RBSpinner from 'react-bootstrap/Spinner'; // Import react-bootstrap Spinn
 
 import {
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Reusable loading spinner component using react-bootstrap

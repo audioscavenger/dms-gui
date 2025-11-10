@@ -1,43 +1,41 @@
 import {
   arrayOfStringToDict,
-  getValueFromArrayOfObj,
+  jsonFixTrailingCommas,
   obj2ArrayOfObj,
   reduxPropertiesOfObj
-} from '../common.js';
+} from '../common.mjs';
 import {
-  env,
-  live
-} from './env.js';
+  env
+} from './env.mjs';
 
 import {
   debugLog,
   errorLog,
   execCommand,
   infoLog,
-  jsonFixTrailingCommas,
   successLog,
   warnLog,
   writeFile
-} from './backend.js';
+} from './backend.mjs';
 import {
   processTopData,
-} from './topParser.js';
+} from './topParser.mjs';
 
 import {
   dbAll,
   dbGet,
   dbRun,
+  getTargetDict,
   sql,
-} from './db.js';
+} from './db.mjs';
 
 // const path = require('node:path');
 import path from 'path';
 
 // returns a string
 export const getSetting = async (containerName, name) => {
-  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  if (!name.length)               return {success: false, message: 'name is required'};
 
   try {
     
@@ -62,9 +60,7 @@ export const getSetting = async (containerName, name) => {
 
 // this returns an array of objects
 export const getSettings = async (containerName, name) => {
-  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`ddebug containerName=${containerName} ${typeof containerName} name=${name} ${typeof name} ------------------------------------------`)
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
   if (name) return getSetting(containerName, name);
   
   try {
@@ -99,27 +95,65 @@ export const getSettings = async (containerName, name) => {
 };
 
 
+// this returns all scopes from settings
+export const getScopes = async () => {
+
+  try {
+    const result = await dbAll(sql.settings.select.scopes);
+    if (result.success) {
+      if (result.message.length) {
+        infoLog(`Found ${result.message.length} entries in scopes`);
+      
+      } else {
+        warnLog(`db scopes seems empty:`, result.message);
+      }
+      
+    } else errorLog(result.message);
+    
+    return result;
+    // [ { scope: 'containerName', }, .. ]
+    
+  } catch (error) {
+    let backendError = `${error.message}`;
+    errorLog(backendError);
+    throw new Error(backendError);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+};
+
+
 // jsonArrayOfObjects = [{name:name, value:value}, ..]
+// Until we figure a better way or decide to not handle more then one DMS container... 
+// ... the value for containerName will always be decided and come from the frontend
+// ... the value for DMS_API_KEY   will always be dependent on containerName from the frontend
+// ... the value for DMS_API_PORT  will always be dependent on containerName from the frontend
 export const saveSettings = async (containerName, jsonArrayOfObjects) => {
-  
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  if (!jsonArrayOfObjects.length) return {success: false, message: 'values=jsonArrayOfObjects is required'};
+  let result;
+
   try {
     
     // extract containerName from the settings passed
-    let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'live.DMS_API_KEY');
-    infoLog('live.DMS_API_KEY extracted=', dms_api_key)
-    if (dms_api_key) live.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch live.DMS_API_KEY
+    // let dms_api_key = getValueFromArrayOfObj(jsonArrayOfObjects, 'DMS_API_KEY');
+    // infoLog('DMS_API_KEY extracted=', dms_api_key)
+    // if (dms_api_key) live.DMS_API_KEY = dms_api_key;    // TODO: this is not where we should switch live.DMS_API_KEY
     
-    // // extract containerName from the settings passed
+    // extract containerName from the settings passed  // NOOOOOOOOOO absolutely not
     // containerName = getValueFromArrayOfObj(jsonArrayOfObjects, 'containerName');
-    // warnLog('containerName extracted=', containerName)
+    // warnLog('containerName scope extracted=', containerName)
     // live.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
     
-    // scope all settings for that DMS container
+    // scope all settings for that container, wh
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return { ...setting, scope:containerName }; });
     
     // first we start with the (new?) global DMS name; the new live.DMS_API_KEY is saved by initAPI itself
-    let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});
-    if (result.success && jsonArrayOfObjectsScoped.length) {
+    // let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});
+    // if (result.success && jsonArrayOfObjectsScoped.length) {
     
       // then we pass the rest of the values, scoped for the (new?) DMS name
       // we should remove containerName from the (self) scoped settings to save, but we don't really care since we are not pulling it ever again
@@ -128,9 +162,10 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
         successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
         return { success: true };
         
-      } else return result;
+      }
+      return result;
     
-    } else return result;
+    // } else return result;
 
   } catch (error) {
     let backendError = `${error.message}`;
@@ -147,7 +182,7 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
 
 // Function to get server status from DMS
 export const getServerStatus = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
   debugLog(`for ${containerName}`);
 
   var status = {
@@ -164,12 +199,12 @@ export const getServerStatus = async containerName => {
     },
   };
 
-  // cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
-  // memory_Used  = "free -m | awk '/Mem/ {print $3}'"
-  // memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
+  // const cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
+  // const memory_Used  = "free -m | awk '/Mem/ {print $3}'"
+  // const memory_Usage = "free -m | awk '/Mem/ {print 100*$3/$2}'"
 
-  disk_cmd     = "du -sm /var/mail | cut -f1"
-  top_cmd      = "top -bn1 | head -12"
+  const disk_cmd     = "du -sm /var/mail | cut -f1"
+  const top_cmd      = "top -bn1 | head -12"
   // top_parser will parse all of the below
   // top - 02:02:32 up 35 days, 22:39,  0 user,  load average: 0.00, 0.01, 0.00
   // Tasks:  35 total,   1 running,  34 sleeping,   0 stopped,   0 zombie
@@ -185,15 +220,16 @@ export const getServerStatus = async containerName => {
      // 1899 root      20   0   24716  18048   9088 S   0.0   0.4   0:00.52 python3
 
   try {
-    
+    const targetDict = getTargetDict(containerName);
+
     // const [result_cpu, result_mem] = await Promise.all([
-      // execCommand(cpu_Usage, containerName),
-      // execCommand(memory_Usage, containerName),
+      // execCommand(cpu_Usage, targetDict),
+      // execCommand(memory_Usage, targetDict),
     // ]);
     
     const [result_top, result_disk] = await Promise.all([
-      execCommand(top_cmd, containerName),
-      execCommand(disk_cmd, containerName, {timeout: 5}),
+      execCommand(top_cmd, targetDict),
+      execCommand(disk_cmd, targetDict, {timeout: 5}),
     ]);
     
     // debugLog('processTopData', processTopData(result_top.stdout))
@@ -558,6 +594,7 @@ export const readDkimFile = async stdout => {
 
 // pulls entire doveconf and parse what we need
 export const pullDoveConf = async containerName => {
+
 // TODO: add quotas
 // "quota_max_mail_size": "314M",
 // "quota_rule": "*:storage=5242M",
@@ -566,8 +603,10 @@ export const pullDoveConf = async containerName => {
   let envs = {};
 
   try {
-    
-    const results = await execCommand(`doveconf`, containerName);
+    const targetDict = getTargetDict(containerName);
+    const command = `doveconf`;
+
+    const results = await execCommand(command, targetDict);
     if (!results.returncode) {
       const doveconf = await readDovecotConfFile(results.stdout);
       // debugLog(`doveconf:`, doveconf);   // super large output, beware
@@ -601,7 +640,8 @@ let ftsMount = '';
 let envs = {};
 
 try {
-  
+  const targetDict = getTargetDict(containerName);
+
   containerInfo.Mounts.forEach( async (mount) => {
     debugLog(`found mount ${mount.Destination}`);
     if (mount.Destination.match(/fts.*\.conf$/i)) {
@@ -612,7 +652,7 @@ try {
 
   // if we found fts override plugin, let's load it
   if (ftsMount) {
-    const results = await execCommand(`cat ${ftsMount}`, containerName);
+    const results = await execCommand(`cat ${ftsMount}`, targetDict);
     if (!results.returncode) {
       debugLog(`dovecot file content:`, results.stdout);
       const ftsConfig = await readDovecotConfFile(results.stdout);
@@ -636,12 +676,13 @@ return envs;
 
 
 export const pullDOVECOT = async containerName => {
-  debugLog(`start`);
   let envs = {};
 
   try {
-    
-    const results = await execCommand(`dovecot --version`, containerName);   // 2.3.19.1 (9b53102964)
+    const targetDict = getTargetDict(containerName);
+    const command = `dovecot --version`;
+
+    const results = await execCommand(command, targetDict);   // 2.3.19.1 (9b53102964)
     if (!results.returncode) {
       const DOVECOT_VERSION = results.stdout.split(" ")[0];
       debugLog(`DOVECOT_VERSION:`, DOVECOT_VERSION);
@@ -664,8 +705,9 @@ debugLog(`start`);
 let envs = {};
 
 try {
-  
-  const results = await execCommand(`doveconf mail_plugins`, containerName);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
+  const targetDict = getTargetDict(containerName);
+
+  const results = await execCommand(`doveconf mail_plugins`, targetDict);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
   if (!results.returncode) {
     // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
     // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
@@ -684,13 +726,15 @@ return envs;
 
 
 export const pullDkimRspamd = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
 
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
+  
   try {
-    const results = await execCommand(`cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`, containerName);
+    const targetDict = getTargetDict(containerName);
+    const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
+
+    const results = await execCommand(command, targetDict);
     if (!results.returncode) {
       debugLog(`dkim file content:`, results.stdout);
       const dkimConfig = await readDkimFile(results.stdout);
@@ -726,14 +770,14 @@ export const pullDkimRspamd = async containerName => {
 
 // Function to pull server environment from API
 export const pullServerEnvs = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
 
   var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
   try {
-    
+    const targetDict = getTargetDict(containerName);
+    const command = `env`;
+
     // Get container instance
-    const result_env = await execCommand(`env|head -5`, containerName);
+    const result_env = await execCommand(command, targetDict);
     if (!result_env.returncode) {
 
       // get and conver DMS environment to dict ------------------------------------------ envs
@@ -830,8 +874,8 @@ try {
 */
 
 export const getServerEnv = async (containerName, name) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`name=${name} for ${containerName}`);
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  if (!name)                      return {success: false, message: 'name is required'};
   
   try {
 
@@ -852,8 +896,8 @@ export const getServerEnv = async (containerName, name) => {
 
 
 export const getServerEnvs = async (containerName, refresh, name) => {
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
   refresh = (refresh === undefined) ? true : refresh;
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   
   if (!refresh) {
     if (name) return getServerEnv(containerName, name);
@@ -908,7 +952,8 @@ export const getServerEnvs = async (containerName, refresh, name) => {
 
 
 export const saveServerEnvs = async (containerName, jsonArrayOfObjects) => {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  if (!jsonArrayOfObjects.length) return {success: false, message: 'values=jsonArrayOfObjects is required'};
 
   let result;
   try {
@@ -945,7 +990,8 @@ export const getNodeInfos = async () => {
 
 
 export const getDomain = async (containerName, name) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  if (!name)                      return {success: false, message: 'name is required'};
 
   try {
     
@@ -966,7 +1012,7 @@ export const getDomain = async (containerName, name) => {
 
 
 export const getDomains = async (containerName, name) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
   if (name) return getDomain(containerName, name);
   
   try {
@@ -999,74 +1045,49 @@ export const getDomains = async (containerName, name) => {
 };
 
 
-// initialize live.DMS_API_KEY if not passed from env, 
-//  or if env value <> from what's in db, 
-//  or simply when it's called with dms_api_key_param='regen' to regenerate it
-// Env/passed value takes precedence always
+// Creates API script and conf file for DMS
+// 1. if    dms_api_key_param, use it and replace value in db 
+// 2. if no dms_api_key_param, use what's in db
+// 3. if no dms_api_key_param and nothing in db, generate it
+// 4. if    dms_api_key_param == 'regen', regenerate it and save in db
+// 5. always create script and conf file at the end
 export const initAPI = async (containerName, dms_api_key_param) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
+  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
 
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
   
-  let result, dms_api_key_new, dms_api_key_db;
+  let result, dms_api_key_new;
   try {
     
-    // get it from db
-    result = await getSetting(containerName, 'live.DMS_API_KEY');
+    // check if exist in db
+    result = await getSetting(containerName, 'DMS_API_KEY');
     if (result.success) dms_api_key_db = result.message;
     debugLog(`dms_api_key_db=`, dms_api_key_db);
 
-    // environment always takes precedence over everything else
-    if (process.env.DMS_API_KEY) {
-      debugLog(`dms_api_key_new=process.env.DMS_API_KEY`, process.env.DMS_API_KEY);
-      dms_api_key_new = process.env.DMS_API_KEY;
+    // replace key
+    if (dms_api_key_param && dms_api_key_param != 'regen') {
+      dms_api_key_new = dms_api_key_param;
+      debugLog(`replacing dms_api_key by`, dms_api_key_new);
     }
-    
-    debugLog('ddebug 1 dms_api_key_new',dms_api_key_new)
-    // no key in env
-    if (!dms_api_key_new) {
-      
-      // no key in env, no key passed
-      if (!dms_api_key_param) {
-        debugLog('ddebug 2 dms_api_key_param',dms_api_key_param)
-        debugLog('ddebug 3 dms_api_key_db',dms_api_key_db)
-        // use key from db if exist
-        if (dms_api_key_db) {
-          debugLog(`dms_api_key_db=`, dms_api_key_db);
-          dms_api_key_new = dms_api_key_db;
-        } else {
-          debugLog(`ddebug typeof crypto.randomUUID()=`, typeof crypto.randomUUID());
-          dms_api_key_new = containerName + "-" + crypto.randomUUID();
-          debugLog(`dms_api_key_new=`, dms_api_key_new);
-        }
-        
-      // no key in env, key passed
-      } else {
-        debugLog(`dms_api_key_param=`, dms_api_key_param);
-        debugLog(`ddebug typeof crypto.randomUUID()=`, typeof crypto.randomUUID());
-        dms_api_key_new = (dms_api_key_param == 'regen') ? containerName + "-" + crypto.randomUUID() : dms_api_key_param;
-        debugLog(`dms_api_key_new=`, dms_api_key_new);
-      }
+
+    // nothing passed, nothing in db
+    if (!dms_api_key_new && !dms_api_key_db) {
+      dms_api_key_new = containerName + "-" + crypto.randomUUID();
+      debugLog(`regen dms_api_key_new=`, dms_api_key_new);
     }
-    debugLog('ddebug 4',dms_api_key_new)
+
     // save key in db
     if (dms_api_key_new != dms_api_key_db) {
-      debugLog(`Saving live.DMS_API_KEY=`, dms_api_key_new);
+      debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
       result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
       if (!result.success) return {success: false, message: result.message};
     }
 
     // regen API files
-    debugLog(`Regenerate API scripts...`);
-    result = await createAPIfiles();
+    debugLog(`Regenerate API scripts for ${containerName}...`);
+    result = await createAPIfiles(containerName);
     if (!result.success) return {success: false, message: result.message};
 
-    // load it and return
-    debugLog(`Loading live.DMS_API_KEY=`, dms_api_key_new);
-    live.DMS_API_KEY = dms_api_key_new;
-    return {success: true, message: dms_api_key_new};
-    
   } catch (error) {
     let backendError = `${error.message}`;
     errorLog(`${backendError}`);
@@ -1080,7 +1101,8 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 };
 
 
-export const createAPIfiles = async () => {
+// TODO: add containerName somewhere in path or file name
+export const createAPIfiles = async (containerName) => {
   try {
     for (const file of Object.values(env.userPatchesAPI)) {
       // writeFile(file.path, file.content.replace(/{live.DMS_API_KEY}/, live.DMS_API_KEY));

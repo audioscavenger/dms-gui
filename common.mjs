@@ -13,6 +13,31 @@ export const regexEmailLax = /^([\S]+)@([\S]+)$/;
 export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
 export const regexUsername = /^[^\s]+$/;
 
+// import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
+// } from '../common.mjs'
 
 export const funcName = (parent=4) => {
   const err = new Error();
@@ -33,6 +58,14 @@ export const funcName = (parent=4) => {
 
 export const fixStringType = string => {
   return Number(string) ? Number(string) : string;
+};
+
+
+export const jsonFixTrailingCommas = (jsonString, returnJson=false) => {
+  var jsonObj;
+  eval('jsonObj = ' + jsonString);
+  if (returnJson) return jsonObj;
+  else return JSON.stringify(jsonObj);
 };
 
 
@@ -173,18 +206,22 @@ export const mergeArrayOfObj = (a=[], b=[], prop='name') => {
   return reduced.concat(b);
 };
 
-// this will return the FIRST value from an array of objects like array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => "value1"
-export const getValueFromArrayOfObj = (array, propValue, keyName='name', keyValue='value') => {
+// this will return the FIRST value found in a list of props, from an array of objects like:
+// array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => "value1"
+export const getValueFromArrayOfObj = (array, propValues, keyName='name', keyValue='value') => {
   if (!Array.isArray(array)) return undefined;
-  return (array.find(item => item[keyName] == propValue)) ? array.find(item => item[keyName] == propValue)[keyValue] : undefined;
+  if (!Array.isArray(propValues)) propValues = [propValues];
+  return (array.find(item => propValues.includes(item[keyName]) )) ? array.find(item => propValues.includes(item[keyName]))[keyValue] : undefined;
 };
 
 
-// this will return the FIRST value from an array of objects like array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => ["value1"]
-export const getValuesFromArrayOfObj = (array, propValue, keyName='name', keyValue='value') => {
+// this will return ALL the value found in a list of props, from an array of objects like:
+// array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => ["value1"]
+export const getValuesFromArrayOfObj = (array, propValues, keyName='name', keyValue='value') => {
   let output = [];
   if (!Array.isArray(array)) return output;
-  for (const item of array.filter(item => item[keyName] == propValue)) {
+  if (!Array.isArray(propValues)) propValues = [propValues];
+  for (const item of array.filter(item => propValues.includes(item[keyName]) )) {
     output.push(item[keyValue]);
   }
   return output;

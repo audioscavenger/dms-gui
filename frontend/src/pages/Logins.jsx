@@ -12,9 +12,11 @@ import TextField from '@mui/material/TextField';
 import {
   debugLog,
   errorLog,
-  pluck,
+} from '../../frontend.mjs';
+import {
   moveKeyToLast,
-} from '../../frontend';
+  pluck,
+} from '../../../common.mjs';
 
 import {
   getLogins,
@@ -22,7 +24,7 @@ import {
   deleteLogin,
   updateLogin,
   getAccounts,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import {
   AlertMessage,
@@ -33,7 +35,7 @@ import {
   SelectField,
   LoadingSpinner,
   Translate,
-} from '../components';
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 
@@ -95,18 +97,56 @@ const Logins = () => {
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchLogins();
+    fetchAll();
   }, []);
 
-  const fetchLogins = async () => {
+  const formatLoginsForTable = async (data) => {
+    // add bolder for admins
+    data = data.map(login => { return { 
+    ...login, 
+    color:    (login.isAdmin) ? "fw-bolder" : null,
+    }; });
+    
+    // add blue color for linked accounts
+    data = data.map(login => { return { 
+    ...login, 
+    color:    (login.isAccount) ? login?.color+" text-info" : login?.color,
+    }; });
+    
+    // add muted color for inactives
+    data = data.map(login => { return { 
+    ...login, 
+    color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
+    }; });
+
+    return data;
+  }
+
+  const fetchAll = async () => {
     
     try {
       setLoading(true);
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      const [loginsData, accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
-        getLogins(),
+      await Promise.all([
+        fetchAccounts(),
+        fetchLogins(),
+      ]);
+
+    } catch (err) {
+      errorLog(t('api.errors.fetchLogins'), err);
+      setErrorMessage('api.errors.fetchLogins');
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    
+    try {
+      const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getAccounts(containerName),
       ]);
 
@@ -117,32 +157,29 @@ const Logins = () => {
           label: account.mailbox,
         })));
 
-        let mailboxes = (pluck(accountsData, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
+        let mailboxes = (pluck(accountsData.message, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
         setRolesAvailable(mailboxes);
 
       } else setErrorMessage(accountsData.message);
 
-      if (loginsData.success) {
-        let loginsDataAltered;
-        
-        // add bolder for admins
-        loginsDataAltered = loginsData.message.map(login => { return { 
-        ...login, 
-        color:    (login.isAdmin) ? "fw-bolder" : null,
-        }; });
-        
-        // add blue color for linked accounts
-        loginsDataAltered = loginsData.message.map(login => { return { 
-        ...login, 
-        color:    (login.isAccount) ? login?.color+" text-info" : login?.color,
-        }; });
-        
-        // add muted color for inactives
-        loginsDataAltered = loginsDataAltered.map(login => { return { 
-        ...login, 
-        color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
-        }; });
+    } catch (err) {
+      errorLog(t('api.errors.fetchAccounts'), err);
+      setErrorMessage('api.errors.fetchAccounts');
       
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLogins = async () => {
+    
+    try {
+      const [loginsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
+        getLogins(),
+      ]);
+
+      if (loginsData.success) {
+        let loginsDataAltered = await formatLoginsForTable(loginsData.message);
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);
 
@@ -288,7 +325,7 @@ const Logins = () => {
           isActive: 1,
           roles: [],
         });
-        fetchLogins(); // Refresh the logins list
+        fetchAll(); // Refresh the logins list
         
       } else setErrorMessage(result.message);
       
@@ -338,7 +375,7 @@ const Logins = () => {
         const result = await deleteLogin(login.email);
         if (result.success) {
           setSuccessMessage('logins.loginDeleted');
-          fetchLogins(); // Refresh the logins list
+          fetchAll(); // Refresh the logins list
           
         } else setErrorMessage(result.message);
         
@@ -370,15 +407,16 @@ const Logins = () => {
       );
 
       if (result.success) {
-        // reflect changes in the table instead of fetching all again
-        setLogins(prevLogins =>
-          prevLogins.map(item =>
-            item.id === login.id                          // for that login...
-              ? { ...item, ...jsonDict }                  // Set state for what hasChanged
-              : item                                      // and keep other items as they are
-          )
-        );
-        setSuccessMessage(t('logins.updated', {username:login.email}));
+        // reflect changes in the table instead of fetching all again // edit: nope, because of the alteration of logins data after fetch, we need to reload
+        // setLogins(prevLogins =>
+        //   prevLogins.map(item =>
+        //     item.id === login.id                          // for that login...
+        //       ? { ...item, ...jsonDict }                  // Set state for what hasChanged
+        //       : item                                      // and keep other items as they are
+        //   )
+        // );
+        // setSuccessMessage(t('logins.updated', {username:login.email}));  // no need for that, the table will reflect the changes
+        fetchLogins();
         
       } else setErrorMessage(result.message);
       
@@ -524,7 +562,7 @@ const Logins = () => {
   };
 
 
-  if (isLoading && !logins && !rolesAvailable) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -595,7 +633,7 @@ const Logins = () => {
       render: (login) => (
       /* only render linkAccount button when isAccount=0 if rolesAvailable.includes(login.email) */
       /* always render unlinkAccount button when isAccount=1 */
-      ( login.isAccount || rolesAvailable.includes(login.email) ) &&
+      ( login.isAccount || (rolesAvailable && rolesAvailable.includes(login.email)) ) &&
         <>
         <span>{(login.isAccount) ? t('common.yes') : t('common.no')}</span>
         <Button
@@ -839,7 +877,7 @@ const Logins = () => {
   
   // https://icons.getbootstrap.com/
   const loginTabs = [
-  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchLogins(), content: DataTableLogins },
+  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchAll(), content: DataTableLogins },
   { id: 2, title: "logins.newLogin",        icon: "person-fill-add", content: FormNewLogin },
   ];
 

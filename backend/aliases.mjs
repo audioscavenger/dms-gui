@@ -1,4 +1,8 @@
 import {
+  regexEmailStrict,
+  regexMatchPostfix
+} from '../common.mjs';
+import {
   debugLog,
   errorLog,
   execCommand,
@@ -7,24 +11,23 @@ import {
   infoLog,
   successLog,
   warnLog,
-} from './backend.js';
+} from './backend.mjs';
 import {
-  env,
-  live
-} from './env.js';
+  env
+} from './env.mjs';
 
 import {
   dbAll,
   dbRun,
   deleteEntry,
+  getTargetDict,
   sql
-} from './db.js';
+} from './db.mjs';
 
 
 export const getAliases = async (containerName, refresh) => {
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : refresh;
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`(refresh=${refresh} for ${containerName}`);
   
   let aliases = [];
   let regexes = [];
@@ -92,15 +95,16 @@ export const getAliases = async (containerName, refresh) => {
 
 // Function to retrieve aliases from DMS
 export const pullAliasesFromDMS = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   let aliases = [];
   const command = 'alias list';
   
   try {
+    const targetDict = getTargetDict(containerName);
+
     debugLog(`execSetup(${command})`);
-    const results = await execSetup(command, containerName);
+    const results = await execSetup(command, targetDict);
     // debugLog('ddebug results',results)
     
     if (!results.returncode) {
@@ -161,15 +165,16 @@ export const parseAliasesFromDMS = async stdout => {
 
 
 export const pullPostfixRegexFromDMS = async containerName => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   let regexes = [];
   const command = `cat ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
   
   try {
+    const targetDict = getTargetDict(containerName);
+
     debugLog(`execSetup(${command})`);
-    const results = await execCommand(command, containerName);
+    const results = await execCommand(command, targetDict);
     if (!results.returncode) {
       
       regexes = await parsePostfixRegexFromDMS(results.stdout);
@@ -224,16 +229,16 @@ export const parsePostfixRegexFromDMS = async stdout => {
 
 // Function to add an alias
 export const addAlias = async (containerName, source, destination) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    
+    const targetDict = getTargetDict(containerName);
+
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
     
-      results = await execSetup(`alias add ${source} ${destination}`, containerName);
+      results = await execSetup(`alias add ${source} ${destination}`, targetDict);
       if (!results.returncode) {
         
         result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
@@ -251,13 +256,15 @@ export const addAlias = async (containerName, source, destination) => {
       
     // this is a regex
     } else {
+      let command = `echo '${source} ${destination}' >>${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
-      results = await execCommand(`echo '${source} ${destination}' >>${env.DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      results = await execCommand(command, targetDict);
       if (!results.returncode) {
         
         // reload postfix
-        results = await execCommand(`postfix reload`, containerName);
+        command = `postfix reload`;
+        results = await execCommand(command, targetDict);
         if (!results.returncode) {
           
           result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
@@ -292,16 +299,16 @@ export const addAlias = async (containerName, source, destination) => {
 
 // Function to delete an alias
 export const deleteAlias = async (containerName, source, destination) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    
+    const targetDict = getTargetDict(containerName);
+
     if (source.match(regexEmailStrict)) {
       debugLog(`Deleting alias: ${source}`);
       
-      results = await execSetup(`alias del ${source} ${destination}`, containerName);
+      results = await execSetup(`alias del ${source} ${destination}`, targetDict);
       if (!results.returncode) {
         result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
@@ -321,11 +328,13 @@ export const deleteAlias = async (containerName, source, destination) => {
     } else {
       debugLog(`Deleting alias regex: ${source}`);
       
-      results = await execCommand(`grep -Fv "${source} ${destination}" ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`, containerName);
+      let command = `grep -Fv "${source} ${destination}" ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
+      results = await execCommand(command, targetDict);
       if (!results.returncode) {
         
         // reload postfix
-        results = await execCommand(`postfix reload`, containerName);
+        command = `postfix reload`;
+        results = await execCommand(command, targetDict);
         if (!results.returncode) {
           
           const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);

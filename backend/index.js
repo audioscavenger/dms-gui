@@ -1,49 +1,49 @@
 import {
   debugLog,
   errorLog,
-  infoLog
-} from './backend.js';
+  infoLog,
+} from './backend.mjs';
 import {
-  env,
-  live
-} from './env.js';
+  env
+} from './env.mjs';
 
 import {
   dbCount,
   dbInit,
   deleteEntry,
   updateDB,
-} from './db.js';
+} from './db.mjs';
 
 import {
   addLogin,
   getLogins,
   getRoles,
   loginUser,
-} from './logins.js';
+} from './logins.mjs';
 
 import {
   getDomains,
   getNodeInfos,
+  getScopes,
   getServerEnvs,
   getServerStatus,
   getSettings,
   initAPI,
   saveSettings,
-} from './settings.js';
+} from './settings.mjs';
 
 import {
   addAccount,
   deleteAccount,
   doveadm,
   getAccounts,
-} from './accounts.js';
+} from './accounts.mjs';
 
 import {
   addAlias,
   deleteAlias,
   getAliases,
-} from './aliases.js';
+} from './aliases.mjs';
 
 // const express = require('express');
 // const app = express();
@@ -664,6 +664,31 @@ app.get('/api/settings/:containerName', async (req, res) => {
   }
 });
 
+
+// Endpoint for retrieving scopes
+/**
+ * @swagger
+ * /api/scopes:
+ *   get:
+ *     summary: Get scopes other then dms-gui
+ *     description: Get scopes other then dms-gui = DMS containers in settings
+ *     responses:
+ *       200:
+ *         description: all scopes or empty array
+ *       500:
+ *         description: Unable to retrieve scopes
+ */
+app.get('/api/scopes', async (req, res) => {
+  try {
+    const scopes = await getScopes();
+    res.json(scopes);
+    
+  } catch (error) {
+    errorLog(`GET /api/scopes: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint for saving settings
 /**
  * @swagger
@@ -1188,10 +1213,7 @@ app.post('/api/initAPI/:containerName', async (req, res) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-
-    debugLog('ddebug req.body ---------------------------', req.body)
     const { dms_api_key_param } = req.body;
-    debugLog('ddebug dms_api_key_param ---------------------------', dms_api_key_param)
     
     const dms_api_key_response = await initAPI(containerName, dms_api_key_param);
     res.json(dms_api_key_response);
@@ -1207,16 +1229,5 @@ app.listen(env.PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
   dbInit();
-  
-  // currently we only preset live.DMS_CONTAINER globally, the rest of the critical environment is preset during dbInit
-  if (typeof live.DMS_CONTAINER == "undefined") {
-    const result = await getSettings('dms-gui', 'containerName');
-    if (result.success) live.DMS_CONTAINER = result.message;
-  }
-  if (typeof live.DMS_API_KEY == "undefined") {
-    const result = await getSettings('dms-gui', 'live.DMS_API_KEY');
-    if (result.success) live.DMS_API_KEY = result.message;
-  }
-  
-  await initAPI(live.DMS_CONTAINER, live.DMS_API_KEY);
+
 });

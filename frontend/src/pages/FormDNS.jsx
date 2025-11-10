@@ -3,23 +3,23 @@ import { useTranslation } from 'react-i18next';
 
 import {
   debugLog,
-  infoLog,
-  warnLog,
   errorLog,
-  successLog,
-} from '../../frontend';
+} from '../../frontend.mjs';
+import {
+  mergeArrayOfObj,
+} from '../../../common.mjs';
 
 import {
   getSettings,
   getDomains,
 } from '../services/api';
 
-import { 
-  AlertMessage,
-  Button,
-  FormField,
-  LoadingSpinner,
-} from '../components';
+// import { 
+//   AlertMessage,
+//   Button,
+//   FormField,
+//   LoadingSpinner,
+// } from '../components';
 
 
 function FormDomains() {

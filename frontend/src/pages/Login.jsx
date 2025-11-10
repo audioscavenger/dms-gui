@@ -1,7 +1,7 @@
 // https://blog.logrocket.com/authentication-react-router-v6/
 
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+// import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 // import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
@@ -9,22 +9,34 @@ import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
   debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-} from '../../frontend';
+} from '../../frontend.mjs';
+// import {
+//   arrayOfStringToDict,
+//   byteSize2HumanSize,
+//   fixStringType,
+//   funcName,
+//   getValueFromArrayOfObj, 
+//   getValuesFromArrayOfObj,
+//   humanSize2ByteSize,
+//   mergeArrayOfObj,
+//   moveKeyToLast,
+//   obj2ArrayOfObj,
+//   pluck,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+// } from '../../../common.mjs';
 
 import {
   loginUser,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import { 
   AlertMessage,
   Button,
   FormField,
   Card,
-} from '../components';
+} from '../components/index.jsx';
 
 
 // function Login() {

@@ -1,17 +1,18 @@
 import {
-  reduxPropertiesOfObj
-} from '../common.js';
+  getValueFromArrayOfObj,
+  reduxPropertiesOfObj,
+} from '../common.mjs';
 import {
   debugLog,
   errorLog,
   execSetup,
   infoLog,
   successLog
-} from './backend.js';
+} from './backend.mjs';
 import {
   env,
   live
-} from './env.js';
+} from './env.mjs';
 
 import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
@@ -54,7 +55,7 @@ settings: {
     setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
     envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
     env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
-    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName'`,
+    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName' AND scope NOT IN (SELECT DISTINCT id from logins)`,
   },
   
   insert: {
@@ -73,20 +74,20 @@ settings: {
           name    TEXT NOT NULL,
           value   TEXT NOT NULL,
           scope   TEXT NOT NULL,
-          env.isMutable BIT DEFAULT ${env.isImmutable},
+          isMutable BIT DEFAULT ${env.isImmutable},
           UNIQUE (name, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', 'dms-gui', ${env.isMutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable});
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable});
+          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', 'dms-gui', ${env.isMutable});
+          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable});
+          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable});
           COMMIT;`,
   
   patch: [
     { DB_VERSION: '1.0.17',
       patches: [
         `ALTER TABLE settings ADD scope TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-        `ALTER TABLE settings ADD env.isMutable BIT DEFAULT ${env.isImmutable}`,
+        `ALTER TABLE settings ADD isMutable BIT DEFAULT ${env.isImmutable}`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${env.isImmutable})`,
       ],
     },
@@ -113,7 +114,7 @@ logins: {
     roles:    `SELECT roles from logins WHERE 1=1 AND (email = @email OR username = @username)`,
     salt:     `SELECT salt from logins WHERE email = ?`,
     hash:     `SELECT hash from logins WHERE email = ?`,
-    saltHash: `SELECT salt, hash FROM logins WHERE (email = ? OR username = ?)`,
+    saltHash: `SELECT salt, hash FROM logins WHERE (email = @email OR username = @username)`,
     isActive: {
       login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (email = @email OR username = @username)`,
       logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
@@ -304,7 +305,7 @@ accounts: {
     byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND domain = ?`,
     salt:     `SELECT salt from accounts WHERE mailbox = ?`,
     hash:     `SELECT hash from accounts WHERE mailbox = ?`,
-    saltHash: `SELECT salt, hash FROM accounts WHERE (mailbox = ? OR mailbox = ?)`,
+    saltHash: `SELECT salt, hash FROM accounts WHERE (mailbox = @mailbox)`,
   },
   
   insert: {
@@ -561,8 +562,9 @@ export const dbGet = (sql, params=[], ...anonParams) => {
   
   let result;
   try {
+
     if (anonParams.length) {
-      debugLog(`DB.prepare("${sql}").get(${anonParams}, ${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
       result = DB.prepare(sql).get(params, anonParams);
       
     } else {
@@ -645,7 +647,7 @@ export const dbUpdate = () => {
   debugLog(`start`);
 
   dbOpen();
-  let result, db_version;
+  let result, db_version, match;
   
   for (const [table, actions] of Object.entries(sql)) {
     try {
@@ -694,7 +696,9 @@ export const dbUpdate = () => {
                 result = dbRun(patchLine);
                 if (result.success) {
                   successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
-                } else throw new Error(result.message);
+                } else {
+                  throw new Error(result.message);
+                }
                 
               } catch (err) {
                 match = {
@@ -737,9 +741,9 @@ export const dbUpdate = () => {
 // ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
 
 
-export const hashPassword = async password => {
+export const hashPassword = async (password, salt) => {
   return new Promise((resolve, reject) => {
-    const salt = crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
+    salt = (salt) ? salt: crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
     crypto.scrypt(password, salt, 64, (err, derivedKey) => { // 64 is the key length
       if (err) return reject(err);
       resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
@@ -753,18 +757,29 @@ export const verifyPassword = async (credential, password, table='logins') => {
   
   try {
     debugLog(`for ${credential}`);
-    const login = dbGet(sql[table].select.saltHash, credential, credential);
+    // const login = dbGet(sql[table].select.saltHash, credential, credential);  // this worked perfectly until we switched to ES6
+    const login = dbGet(sql[table].select.saltHash, {email:credential, mailbox:credential, username:credential });
+    const saltHash = (login.success) ? login.message : false;
+    // console.log('saltHash',saltHash);
 
-    return new Promise((resolve, reject) => {
-      if (Object.keys(login).length) {
-        if (login.salt && login.hash) {
-          crypto.scrypt(password, login.salt, 64, (err, derivedKey) => {
-            if (err) return reject(err);
-            resolve(login.hash === derivedKey.toString('hex'));
-          });
-        } else return reject(`please reset password for ${credential}`);
-      } else return reject(`username ${credential} not found`);
-    });
+    // return new Promise((resolve, reject) => {
+    //   if (Object.keys(saltHash).length) {
+    //     if (saltHash.salt && saltHash.hash) {
+    //       crypto.scrypt(password, saltHash.salt, 64, (err, derivedKey) => {
+    //         if (err) return reject(err);
+    //         resolve(saltHash.hash === derivedKey.toString('hex'));
+    //       });
+    //     } else return reject(`please reset password for ${credential}`);
+    //   } else return reject(`username ${credential} not found`);
+    // });
+    if (Object.keys(saltHash).length) {
+      console.log('Object.keys(saltHash).length',Object.keys(saltHash).length);
+      if (saltHash.salt && saltHash.hash) {
+        const { salt, hash } = await hashPassword(password, saltHash.salt);
+        return saltHash.hash === hash;
+      }
+    }
+    return false;
 
   } catch (error) {
     let backendError = error.message;
@@ -779,18 +794,20 @@ export const verifyPassword = async (credential, password, table='logins') => {
 export const changePassword = async (table, id, password, containerName) => {
   containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   debugLog(`for ${id} in ${table} for ${containerName}`);
+  let result, results;
 
   try {
+    const targetDict = getTargetDict(containerName);
     const { salt, hash } = await hashPassword(password);
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
-      const results = await execSetup(`email update ${id} password`);
+      results = await execSetup(`email update ${id} password`, targetDict);
       if (!results.returncode) {
         
         debugLog(`Updating password for ${id} in ${table} with scope=${containerName}...`);
-        const result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
+        result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
         successLog(`Password updated for ${table}: ${id}`);
         return { success: true, message: `Password updated for ${id} in ${table}`};
         
@@ -802,7 +819,7 @@ export const changePassword = async (table, id, password, containerName) => {
       
     } else {
       debugLog(`Updating password for ${id} in ${table}...`);
-      const result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);
+      result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);
       if (result.success) {
         successLog(`Password updated for ${id} in ${table}`);
         return { success: true, message: `Password updated for ${id} in ${table}` };
@@ -828,6 +845,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
   scope = (scope) ? scope : live.DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
+  let result, scopedValues, value2test, testResult;
   try {
     if (!sql[table]) {
       throw new Error(`unknown table ${table}`);
@@ -856,7 +874,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
           
         // objects must be saved as JSON
         } else if (typeof value == 'object') {
-          const result = dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
+          result = dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
           successLog(`Updated ${table} ${id} with ${key}=${value}`);
           return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
         
@@ -867,23 +885,24 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
           if (sql[table].update[key]) {
             
             // add named scope to the scopedValues, even if not used in the query it won't fail
-            // let scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
-            let scopedValues = {[key]:value, scope:scope};    // always add scope, why care? it's failproof
+            // scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
+            scopedValues = {[key]:value, scope:scope};    // always add scope even when undefined, why care? it's failproof
             
             // is there a test for THAT value or ANY values?
             if (sql[table].update[key][value] || sql[table].update[key][undefined]) {
               
               // fix the value2test and scope as we may have tests for any values
-              let value2test = (sql[table].update[key][value]) ? value : undefined;
+              value2test = (sql[table].update[key][value]) ? value : undefined;
               
               // there is a test for THAT value and now we check with id in mind
-              const testResult = dbGet(sql[table].update[key][value2test].test, scopedValues, id);
+              testResult = dbGet(sql[table].update[key][value2test].test, scopedValues, id);
+              debugLog(`there is a test for ${table}.${key}=${value2test} and check(${testResult.message})=${sql[table].update[key][value2test].check(testResult.message)}`);
               
               // compare the result in the check function
-              if (sql[table].update[key][value2test].check(testResult)) {
+              if (sql[table].update[key][value2test].check(testResult.message)) {
                 
                 // we pass the test
-                const result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
+                result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
                 return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
                 
@@ -895,7 +914,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
               
             // no test, update the db with new value
             } else {
-              const result = dbRun(sql[table].update[key], scopedValues, id);
+              result = dbRun(sql[table].update[key], scopedValues, id);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
               return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
             }
@@ -942,14 +961,13 @@ export const deleteEntry = async (table, id, key, scope) => {
         
         // fix the value2test as we may have tests for any values
         let value2test = (sql[table].delete[key][id]) ? value : undefined;
-        debugLog('value2test',value2test)
         
         // there is a test for THAT value and now we check with id in mind
         const testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
-        debugLog('testResult',testResult)
+        debugLog(`there is a test for ${table}.${key}=${value2test} and check(${testResult.message})=${sql[table].delete[key][value2test].check(testResult.message)}`);
         
         // compare the result in the check function
-        if (sql[table].delete[key][value2test].check(testResult)) {
+        if (sql[table].delete[key][value2test].check(testResult.message)) {
           
           // we pass the test
           const result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
@@ -993,6 +1011,35 @@ export const deleteEntry = async (table, id, key, scope) => {
 };
 
 
+export const getTargetDict = (containerName) => {
+  
+  let result;
+  try {
+    debugLog(`dbAll(sql.settings.select.settings, {scope:${containerName}})`);
+    result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
+    
+    if (result.message.length >= 4) {
+      // limit results to protocol, host, port, and also Authorization
+      let targetDict = {
+        protocol:       getValueFromArrayOfObj(result.message, 'protocol'),
+        host:           getValueFromArrayOfObj(result.message, 'containerName'),
+        port:           getValueFromArrayOfObj(result.message, 'DMS_API_PORT'),
+        Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
+      }
+      
+      if (Object.keys(targetDict).length == 4) return {success: true, message: targetDict};
+    }
+    return {success: false, message: 'missing values from this container'};
+
+  } catch (err) {
+    errorLog(`${err.code}: ${err.message}`);
+    dbOpen();
+    return {success: false, message: err.message}
+    // throw err;
+  }
+};
+
+
 // module.exports = {
 //   DB,
 //   sql,
@@ -1013,15 +1060,20 @@ export const deleteEntry = async (table, id, key, scope) => {
 
 // debug = true;
 // containerName = 'dms';
-// env.DMSGUI_CONFIG_PATH   = process.env.env.DMSGUI_CONFIG_PATH || '/app/config';
-// env.DATABASE      = env.DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
-// DB = require('better-sqlite3')(env.DATABASE);
+// DMSGUI_CONFIG_PATH   = process.env.DMSGUI_CONFIG_PATH || '/app/config';
+// DATABASE      = DMSGUI_CONFIG_PATH + '/dms-gui.sqlite3';
+// DB = require('better-sqlite3')(DATABASE);
 // process.on('exit', () => DB.close());
-// function dbOpen() {DB = require('better-sqlite3')(env.DATABASE);}
+// function dbOpen() {DB = require('better-sqlite3')(DATABASE);}
 // function debugLog(message) {console.debug(message)}
 // function errorLog(message) {console.debug(message)}
 
-
+// get saltHash from admin:
+// DB.prepare("SELECT salt, hash FROM logins WHERE (email = @email OR username = @username)").get({"email":"admin","mailbox":"admin","username":"admin"})
+  // {
+  //   salt: 'fdebebcdcec4e534757a49473759355b',
+  //   hash: 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18'
+  // }
 
 // env.DMSGUI_VERSION = (process.env.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.env.DMSGUI_VERSION.split("v")[1] : process.env.env.DMSGUI_VERSION;
 // sql=`BEGIN TRANSACTION;

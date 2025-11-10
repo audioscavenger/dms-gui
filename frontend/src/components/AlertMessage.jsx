@@ -4,7 +4,7 @@ import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
 
 import {
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Reusable alert component using react-bootstrap

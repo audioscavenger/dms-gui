@@ -4,29 +4,41 @@ import { useTranslation } from 'react-i18next';
 import {
   debugLog,
   errorLog,
-  reduxArrayOfObjByValue,
-} from '../../frontend';
+} from '../../frontend.mjs';
+// import {
+//   arrayOfStringToDict,
+//   byteSize2HumanSize,
+//   fixStringType,
+//   funcName,
+//   getValueFromArrayOfObj, 
+//   getValuesFromArrayOfObj,
+//   humanSize2ByteSize,
+//   mergeArrayOfObj,
+//   moveKeyToLast,
+//   obj2ArrayOfObj,
+//   pluck,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+// } from '../../../common.mjs';
 
 import {
   getNodeInfos,
   getServerEnvs,
-  getSettings,
-  saveSettings,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import { 
   Button,
   AlertMessage,
-  SelectField,
   DataTable,
   LoadingSpinner,
-} from '../components';
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 
 const ServerInfos = () => {
   const { t } = useTranslation();
-  const [containerName, setContainerName] = useLocalStorage("containerName");
+  const [containerName] = useLocalStorage("containerName");
   const [isLoading, setLoading] = useState(true);
 
   const [successMessage, setSuccessMessage] = useState(null);
@@ -34,8 +46,6 @@ const ServerInfos = () => {
   
   const [infos, setInfos] = useState([]);
   const [envs, setServerEnvs] = useState([]);
-
-  const [DMSs, setDMSs] = useState([]);
 
 
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -49,38 +59,11 @@ const ServerInfos = () => {
     debugLog(`fetchAll refresh=(${refresh})`);
     setLoading(true);
 
-    await fetchSettings();
     await fetchServerInfos();
     await fetchServerEnvs(refresh);
     
     setLoading(false);
 
-  };
-
-  const fetchSettings = async () => {
-    debugLog(`fetchSettings call getSettings(${containerName})`);
-    
-    try {
-      const [settingsData] = await Promise.all([
-        getSettings(containerName),
-      ]);
-
-      if (settingsData.success) {
-        const dmsData = reduxArrayOfObjByValue(settingsData.message, 'name', 'containerName')    // [ {name:'containerName', value:'dms'}, .. ]
-        setDMSs(dmsData);
-        if (!containerName) setContainerName(dmsData[0]?.value);
-
-        debugLog('settingsData', settingsData.message);
-        debugLog('dmsData', dmsData);
-        
-        setErrorMessage(null);
-        
-      } else setErrorMessage(settingsData.message);
-
-    } catch (err) {
-      errorLog(t('api.errors.fetchSettings'), err);
-      setErrorMessage('api.errors.fetchSettings');
-    }
   };
 
   const fetchServerInfos = async () => {
@@ -129,45 +112,6 @@ const ServerInfos = () => {
   };
 
 
-  const handleChangeDMS = async (e) => {
-    // e.preventDefault();
-    const { name, value } = e.target;
-    debugLog(`Switching to ${name}=${value}`);
-    
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    try {
-      
-      if (value) {
-        // this effectively switches name='containerName' to value selected, for scope='dms-gui' in settings table
-        const result = await saveSettings(
-          value,
-          [],
-        );
-        
-        if (result.success) {
-          setContainerName(value);
-          setSuccessMessage('settings.settingsSaved');
-          fetchSettings(); // Refresh the settings
-          
-        } else setErrorMessage(result.message);
-      }
-      
-    } catch (err) {
-      errorLog(t('api.errors.saveSettings'), err);
-      setErrorMessage('api.errors.saveSettings');
-    }
-  };
-
-
-  // Prepare account options for the select field
-  const dmsOptions = DMSs.map((dms) => ({
-    value: dms.value,
-    label: dms.value,
-  }));
-
-
   // Column definitions
   const columns = [
     { key: 'name', label: 'settings.name' },
@@ -184,17 +128,6 @@ const ServerInfos = () => {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
       
-      <SelectField
-        id="containerName"
-        name="containerName"
-        label="settings.containerName"
-        value={containerName}
-        onChange={handleChangeDMS}
-        options={dmsOptions}
-        placeholder="common.container"
-        helpText="settings.DMSHelp"
-      />
-
       <div className="float-end">
         <Button
           variant="warning"

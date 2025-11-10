@@ -7,13 +7,13 @@ import { Table, Form } from 'react-bootstrap';
 
 import {
   debugLog,
-} from '../../frontend';
+} from '../../frontend.mjs';
 
 import {
   LoadingSpinner,
   AlertMessage,
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Reusable data table component using react-bootstrap

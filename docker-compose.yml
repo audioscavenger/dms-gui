@@ -30,8 +30,8 @@ services:
       # always keep packages up to date... mount those and run npx+npm install from the container and then same them
       - ./backend/package.json:/app/backend/package.json
       - ./backend/package-lock.json:/app/backend/package-lock.json
-      - ./frontend/package.json:/app/frontend/package.json
-      - ./frontend/package-lock.json:/app/frontend/package-lock.json
+      - ./frontend.mjs/package.json:/app/frontend/package.json
+      - ./frontend.mjs/package-lock.json:/app/frontend/package-lock.json
       
     # # add your proxy network if you need:
     networks:

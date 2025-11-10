@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import {
   Button,
   Translate,
-} from '.';
+} from './index.jsx';
 
 // https://getbootstrap.com/docs/5.0/examples/sidebars/
 // https://stackoverflow.com/questions/60482018/make-a-sidebar-from-react-bootstrap

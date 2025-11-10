@@ -1,6 +1,15 @@
 export const debug = true;
 
-// const {
+// import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
 //   funcName,
 //   fixStringType,
 //   arrayOfStringToDict,
@@ -15,22 +24,8 @@ export const debug = true;
 //   byteSize2HumanSize,
 //   humanSize2ByteSize,
 //   moveKeyToLast,
-// } = require('./common');
-import {
-  arrayOfStringToDict,
-  byteSize2HumanSize,
-  fixStringType,
-  funcName,
-  getValueFromArrayOfObj, getValuesFromArrayOfObj,
-  humanSize2ByteSize,
-  mergeArrayOfObj,
-  moveKeyToLast,
-  obj2ArrayOfObj,
-  pluck,
-  reduxArrayOfObjByKey,
-  reduxArrayOfObjByValue,
-  reduxPropertiesOfObj,
-} from '../common.js';
+// } from '../common.mjs'
+
 
 
 export const ICON = {
@@ -60,20 +55,20 @@ export const debugLog = async (message, data = '') => { if (debug) logger('debug
 // TODO: add colors: console.log('%c Sample Text', 'color:green;')
 
 
-export {
-  arrayOfStringToDict,
-  byteSize2HumanSize,
-  fixStringType,
-  funcName,
-  getValueFromArrayOfObj,
-  getValuesFromArrayOfObj,
-  humanSize2ByteSize,
-  mergeArrayOfObj,
-  moveKeyToLast,
-  obj2ArrayOfObj,
-  pluck,
-  reduxArrayOfObjByKey,
-  reduxArrayOfObjByValue,
-  reduxPropertiesOfObj
-};
+// export {
+//   arrayOfStringToDict,
+//   byteSize2HumanSize,
+//   fixStringType,
+//   funcName,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   humanSize2ByteSize,
+//   mergeArrayOfObj,
+//   moveKeyToLast,
+//   obj2ArrayOfObj,
+//   pluck,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj
+// };
 

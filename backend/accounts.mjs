@@ -1,3 +1,28 @@
+// import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
+// } from '../common.mjs'
 import {
   debugLog,
   errorLog,
@@ -7,27 +32,24 @@ import {
   infoLog,
   successLog,
   warnLog,
-} from './backend.js';
-import {
-  live
-} from './env.js';
+} from './backend.mjs';
 
 import {
   dbAll,
   dbRun,
   deleteEntry,
+  getTargetDict,
   hashPassword,
   sql
-} from './db.js';
+} from './db.mjs';
 
 
 export const getAccounts = async (containerName, refresh) => {
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : refresh;
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`(refresh=${refresh} for ${containerName}`);
   
-  let accounts = [];
   let result;
+  let accounts = [];
   try {
     
     if (!refresh) {
@@ -93,12 +115,15 @@ export const getAccounts = async (containerName, refresh) => {
 
 // Function to retrieve mailbox accounts from DMS
 export const pullAccountsFromDMS = async containerName => {
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   const command = 'email list';
-  const accounts = [];
+  let accounts = [];
   
   try {
-    debugLog(`execSetup(${command})`);
-    const results = await execSetup(command, containerName);
+    const targetDict = getTargetDict(containerName);
+
+    debugLog(`execSetup(${command})`, targetDict);
+    const results = await execSetup(command, targetDict);
     if (!results.returncode) {
     
       // Parse multiline output with regex to extract email and size information
@@ -177,12 +202,14 @@ export const pullAccountsFromDMS = async containerName => {
 
 // Function to add a new mailbox account
 export const addAccount = async (containerName, mailbox, password, createLogin=1) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   let result;
 
   try {
+    const targetDict = getTargetDict(containerName);
+
     debugLog(`Adding new mailbox account: ${mailbox}`);
-    const results = await execSetup(`email add ${mailbox} ${password}`);
+    const results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
     if (!results.returncode) {
       
       const { salt, hash } = await hashPassword(password);
@@ -221,12 +248,13 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
 
 // Function to delete an mailbox account
 export const deleteAccount = async (containerName, mailbox) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${containerName}`);
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
   try {
+    const targetDict = getTargetDict(containerName);
+
     debugLog(`Deleting mailbox account: ${mailbox}`);
-    const results = await execSetup(`email del ${mailbox}`);
+    const results = await execSetup(`email del ${mailbox}`, targetDict);
     if (!results.returncode) {
       
       const result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
@@ -258,7 +286,7 @@ export const deleteAccount = async (containerName, mailbox) => {
 // doveadm function
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
 export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
+  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
   const doveadm = {
@@ -351,6 +379,7 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
 
   try {
     if (!doveadm[command]) throw new Error(`unknown command: ${command}`);
+    const targetDict = getTargetDict(containerName);
     
     let formattedCommand = doveadm[command].cmd.replace(/{mailbox}/g, mailbox);
     let formattedPass    = doveadm[command].messages.pass.replace(/{mailbox}/g, mailbox);
@@ -363,7 +392,7 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
       }
     }
     
-    const results = await execCommand(formattedCommand);
+    const results = await execCommand(formattedCommand, targetDict);
     if (!results.returncode) {
       
       successLog(formattedPass, results.stdout);

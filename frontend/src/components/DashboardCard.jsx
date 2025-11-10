@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LoadingSpinner,
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Dashboard card component using react-bootstrap

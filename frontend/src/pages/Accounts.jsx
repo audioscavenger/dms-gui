@@ -4,7 +4,22 @@ import { useTranslation } from 'react-i18next';
 import {
   debugLog,
   errorLog,
-} from '../../frontend';
+} from '../../frontend.mjs';
+// import {
+//   arrayOfStringToDict,
+//   byteSize2HumanSize,
+//   fixStringType,
+//   funcName,
+//   getValueFromArrayOfObj, getValuesFromArrayOfObj,
+//   humanSize2ByteSize,
+//   mergeArrayOfObj,
+//   moveKeyToLast,
+//   obj2ArrayOfObj,
+//   pluck,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+// } from '../../../common.mjs';
 
 import {
   getAccounts,
@@ -14,7 +29,7 @@ import {
   deleteAccount,
   updateAccount,
   doveadm,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import {
   AlertMessage,
@@ -24,7 +39,7 @@ import {
   FormField,
   LoadingSpinner,
   Translate,
-} from '../components';
+} from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import { useRef } from 'react';
@@ -211,7 +226,7 @@ const Accounts = () => {
     setErrorMessage(null);
     
     try {
-      const result = await doveadm(command, mailbox);
+      const result = await doveadm(containerName, command, mailbox);
       debugLog('result',result);
       if (result.success) {
         // setSuccessMessage('accounts.doveadmExecuted');

@@ -6,7 +6,7 @@ import InputGroup from 'react-bootstrap/InputGroup';
 
 import {
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Reusable form field component using react-bootstrap

@@ -13,13 +13,15 @@ import { useAuth } from '../hooks/useAuth';
 import {
   debugLog,
   errorLog,
+} from '../../frontend.mjs';
+import {
   moveKeyToLast,
-} from '../../frontend';
+} from '../../../common.mjs';
 
 import {
   getLogins,
   updateLogin,
-} from '../services/api';
+} from '../services/api.mjs';
 
 import {
   AlertMessage,
@@ -27,7 +29,7 @@ import {
   FormField,
   LoadingSpinner,
   Translate,
-} from '../components';
+} from '../components/index.jsx';
 
 
 const Profile = () => {
@@ -82,6 +84,7 @@ const Profile = () => {
       // });
 
       const userData = await getLogins([user.email, user.username]);  // user.email was maybe altered in Logins page, let's pull with both options
+      debugLog('userData', userData);
       if (userData.success) {
         if (!userData.message.length) logout();                       // user not found, localStorage was altered or corrupt, logout!
         

@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card';
 import Collapse from 'react-bootstrap/Collapse';
 // https://react-bootstrap.netlify.app/docs/components/placeholder/
-// import Placeholder from 'react-bootstrap/Placeholder';   // Our cards are more like containers, let's create another Card component when Placeholder are needed
+// import Placeholder from 'react-bootstrap/Placeholder';   // TODO: Our cards are more like containers, let's create another Card component when Placeholder are needed
 import {
   Button,
   LoadingSpinner,
   Translate,
-} from '.';
+} from './index.jsx';
 
 /**
  * Reusable card component using react-bootstrap, exposing sub-components like Card.Text

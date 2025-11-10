@@ -2,11 +2,8 @@ import axios from 'axios';
 
 import {
   debugLog,
-  infoLog,
-  warnLog,
-  errorLog,
-  successLog,
-} from '../../frontend';
+  errorLog
+} from '../../frontend.mjs';
 
 
 // Fallback to '/api' if environment variable is not available
@@ -36,7 +33,7 @@ const api = axios.create({
 
 // Server status API
 // export const getServerStatus = async () => {
-export async function getServerStatus(containerName) {
+export const getServerStatus = async containerName => {
   if (!containerName) return {};
   try {
     const response = await api.get(`/status/${containerName}`);
@@ -47,7 +44,7 @@ export async function getServerStatus(containerName) {
   }
 };
 
-export async function getServerEnvs(containerName, refresh, name) {
+export const getServerEnvs = async (containerName, refresh, name) => {
   if (!containerName) return [];
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
@@ -62,7 +59,7 @@ export async function getServerEnvs(containerName, refresh, name) {
 };
 
 // Node infos API
-export async function getNodeInfos() {
+export const getNodeInfos = async () => {
   try {
     const response = await api.get(`/infos`);
     return response.data;
@@ -72,7 +69,7 @@ export async function getNodeInfos() {
   }
 };
 
-export async function getSettings(containerName, name) {
+export const getSettings = async (containerName, name) => {
   if (!containerName) return [];
   const params = {};
   if (name !== undefined) params.name = name;
@@ -86,8 +83,19 @@ export async function getSettings(containerName, name) {
   }
 };
 
-export async function saveSettings(containerName, jsonArrayOfObjects) {
+export const getScopes = async () => {
+  try {
+    const response = await api.get(`/scopes`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+export const saveSettings = async (containerName, jsonArrayOfObjects) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
+  
   try {
     debugLog(api.post(`/settings/${containerName}`, jsonArrayOfObjects));
     const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
@@ -98,7 +106,7 @@ export async function saveSettings(containerName, jsonArrayOfObjects) {
   }
 };
 
-export async function getLogins(credentials) {
+export const getLogins = async credentials => {
   debugLog(`getLogins credentials`, credentials);
   const body = {credentials: credentials};
   try {
@@ -111,7 +119,7 @@ export async function getLogins(credentials) {
   }
 };
 
-export async function addLogin(email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) {
+export const addLogin = async (email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
   if (!email) return {success: false, message: 'email is required'};
   if (!username) return {success: false, message: 'username is required'};
   try {
@@ -123,7 +131,7 @@ export async function addLogin(email, username, password, isAdmin=0, isAccount=0
   }
 };
 
-export async function updateLogin(email, jsonDict) {
+export const updateLogin = async (email, jsonDict) => {
   if (!email) return {success: false, message: 'email is required'};
   try {
     const response = await api.put(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0}
@@ -134,7 +142,7 @@ export async function updateLogin(email, jsonDict) {
   }
 };
 
-export async function deleteLogin(email) {
+export const deleteLogin = async email => {
   if (!email) return {success: false, message: 'email is required'};
   try {
     const response = await api.delete(`/logins/${email}`);
@@ -145,7 +153,7 @@ export async function deleteLogin(email) {
   }
 };
 
-export async function loginUser(credential, password) {
+export const loginUser = async (credential, password) => {
   debugLog(`ddebug frontend received credential=${credential}, password=${password}`)
   if (!credential) return false;
   if (!password) return false;
@@ -159,7 +167,7 @@ export async function loginUser(credential, password) {
   }
 };
 
-export async function logoutUser() {
+export const logoutUser = async () => {
   try {
     const response = await api.post(`/logout`);
     debugLog('ddebug logoutUser response', response)
@@ -170,7 +178,7 @@ export async function logoutUser() {
   }
 };
 
-export async function getAccounts(containerName, refresh) {
+export const getAccounts = async (containerName, refresh) => {
   if (!containerName) return [];
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
@@ -183,7 +191,7 @@ export async function getAccounts(containerName, refresh) {
   }
 };
 
-export async function addAccount(containerName, mailbox, password, createLogin) {
+export const addAccount = async (containerName, mailbox, password, createLogin) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   try {
     const response = await api.post(`/accounts/${containerName}`, { mailbox, password, createLogin });
@@ -195,7 +203,7 @@ export async function addAccount(containerName, mailbox, password, createLogin) 
 };
 
 // export const deleteAccount = async (mailbox) => {
-export async function deleteAccount(containerName, mailbox) {
+export const deleteAccount = async (containerName, mailbox) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   try {
     const response = await api.delete(`/accounts/${containerName}/${mailbox}`);
@@ -206,7 +214,7 @@ export async function deleteAccount(containerName, mailbox) {
   }
 };
 
-export async function doveadm(containerName, command, mailbox, jsonDict={}) {
+export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   if (!command) return {success: false, message: 'command is required'};
   if (!mailbox) return {success: false, message: 'mailbox is required'};
@@ -219,7 +227,7 @@ export async function doveadm(containerName, command, mailbox, jsonDict={}) {
   }
 };
 
-export async function updateAccount(containerName, mailbox, jsonDict) {
+export const updateAccount = async (containerName, mailbox, jsonDict) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
@@ -232,7 +240,7 @@ export async function updateAccount(containerName, mailbox, jsonDict) {
 };
 
 // export const getAliases = async (refresh) => {
-export async function getAliases(containerName, refresh) {
+export const getAliases = async (containerName, refresh) => {
   if (!containerName) return [];
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
@@ -246,7 +254,7 @@ export async function getAliases(containerName, refresh) {
 };
 
 // export const addAlias = async (source, destination) => {
-export async function addAlias(containerName, source, destination) {
+export const addAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   try {
     const response = await api.post(`/aliases/${containerName}`, { source, destination });
@@ -258,7 +266,7 @@ export async function addAlias(containerName, source, destination) {
 };
 
 // export const deleteAlias = async (source, destination) => {
-export async function deleteAlias(containerName, source, destination) {
+export const deleteAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   try {
     // Although the HTTP specification for DELETE requests does not explicitly define semantics for a request body, Axios allows you to include one by using the data property within the optional config object.
@@ -271,7 +279,7 @@ export async function deleteAlias(containerName, source, destination) {
   }
 };
 
-export async function getDomains(containerName, name) {
+export const getDomains = async (containerName, name) => {
   if (!containerName) return [];
   try {
     const response = await api.get(`/getDomains/${containerName}/${name}`);
@@ -282,7 +290,7 @@ export async function getDomains(containerName, name) {
   }
 };
 
-export async function getCount(table, containerName) {
+export const getCount = async (table, containerName) => {
   if (!table) return 0;
   const params = {};
   if (containerName !== undefined) params.containerName = containerName;
@@ -297,7 +305,7 @@ export async function getCount(table, containerName) {
 };
 
 // TBD
-export async function getRoles(credential) {
+export const getRoles = async credential => {
   if (!credential) return [];
   try {
     const response = await api.get(`/roles/${credential}`);
@@ -309,7 +317,7 @@ export async function getRoles(credential) {
 };
 
 // initAPI to define or generate a new DMS_API_KEY
-export async function initAPI(containerName, dms_api_key_param) {
+export const initAPI = async (containerName, dms_api_key_param) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   
   const params = {};

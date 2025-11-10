@@ -31,7 +31,7 @@ const ButtonDropdown = ({
 }) => {
   const { t } = useTranslation();
 
-  console.debug('ddebug items', items);
+  // console.debug('ddebug items', items);
 
   return (
     <Dropdown>
