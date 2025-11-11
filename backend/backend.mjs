@@ -164,7 +164,7 @@ async function execInContainer(command, containerName) {
 export const execInContainerAPI = async (command, targetDict, ...rest) => {
   
   try {
-    if (Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) return {
+    if (targetDict && Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) return {
       returncode: 99,
       stderr: 'execInContainerAPI missing targetDict with 4 keys: protocol, host, port, Authorization',
     };

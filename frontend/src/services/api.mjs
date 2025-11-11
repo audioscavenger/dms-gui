@@ -123,7 +123,7 @@ export const addLogin = async (email, username, password, isAdmin=0, isAccount=0
   if (!email) return {success: false, message: 'email is required'};
   if (!username) return {success: false, message: 'username is required'};
   try {
-    const response = await api.post(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
+    const response = await api.put(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -134,7 +134,8 @@ export const addLogin = async (email, username, password, isAdmin=0, isAccount=0
 export const updateLogin = async (email, jsonDict) => {
   if (!email) return {success: false, message: 'email is required'};
   try {
-    const response = await api.put(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0}
+    const response = await api.patch(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0, email:newEmail} // email must be last
+    debugLog('ddebug updateLogin patch', response)
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -231,7 +232,7 @@ export const updateAccount = async (containerName, mailbox, jsonDict) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
-    const response = await api.put(`/accounts/${containerName}/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
+    const response = await api.patch(`/accounts/${containerName}/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -291,12 +292,10 @@ export const getDomains = async (containerName, name) => {
 };
 
 export const getCount = async (table, containerName) => {
-  if (!table) return 0;
-  const params = {};
-  if (containerName !== undefined) params.containerName = containerName;
+  if (!table) return {success: false, count:0};
 
   try {
-    const response = await api.post(`/getCount/${table}`, {params});
+    const response = await api.get(`/getCount/${table}/${containerName}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);

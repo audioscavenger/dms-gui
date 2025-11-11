@@ -414,7 +414,7 @@ app.delete('/api/accounts/:containerName/:mailbox', async (req, res) => {
 /**
  * @swagger
  * /api/accounts/{mailbox}/update:
- *   put:
+ *   patch:
  *     summary: Update an mailbox account
  *     description: Update an existing mailbox account
  *     parameters:
@@ -448,7 +448,7 @@ app.delete('/api/accounts/:containerName/:mailbox', async (req, res) => {
  *       500:
  *         description: Unable to update account
  */
-app.put('/api/accounts/:containerName/:mailbox/update', async (req, res) => {
+app.patch('/api/accounts/:containerName/:mailbox/update', async (req, res) => {
   try {
     const { containerName, mailbox } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -458,7 +458,7 @@ app.put('/api/accounts/:containerName/:mailbox/update', async (req, res) => {
     res.json(result);
     
   } catch (error) {
-    errorLog(`index /api/accounts: ${error.message}`);
+    errorLog(`index PATCH /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update Account' });
     res.status(500).json({ error: error.message });
   }
@@ -809,7 +809,7 @@ app.post('/api/logins', async (req, res) => {
     res.json(logins);
     
   } catch (error) {
-    errorLog(`index GET /api/logins: ${error.message}`);
+    errorLog(`index POST /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
     res.status(500).json({ error: error.message });
   }
@@ -820,7 +820,7 @@ app.post('/api/logins', async (req, res) => {
 /**
  * @swagger
  * /api/logins:
- *   post:
+ *   put:
  *     summary: add Login
  *     description: add Login in db
  *     requestBody:
@@ -866,7 +866,7 @@ app.post('/api/logins', async (req, res) => {
  *       500:
  *         description: Unable to save Login
  */
-app.post('/api/logins', async (req, res) => {
+app.put('/api/logins', async (req, res) => {
   try {
     const { email, username, password, isAdmin, isAccount, isActive, roles } = req.body;
     if (!email)     return res.status(400).json({ error: 'email is missing' });
@@ -877,7 +877,7 @@ app.post('/api/logins', async (req, res) => {
     res.status(201).json(result);
     
   } catch (error) {
-    errorLog(`index POST /api/logins: ${error.message}`);
+    errorLog(`index PUT /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Login' });
     res.status(500).json({ error: error.message });
   }
@@ -887,7 +887,7 @@ app.post('/api/logins', async (req, res) => {
 /**
  * @swagger
  * /api/logins/{email}/update:
- *   put:
+ *   patch:
  *     summary: Update a login data
  *     description: Update the data for an existing login account
  *     parameters:
@@ -925,18 +925,20 @@ app.post('/api/logins', async (req, res) => {
  *       500:
  *         description: Unable to update login
  */
-app.put('/api/logins/:email/update', async (req, res) => {
+app.patch('/api/logins/:email/update', async (req, res) => {
   try {
     const { email } = req.params;
     if (!email) {
       return res.status(400).json({ error: 'email is required' });
     }
 
+    debugLog('ddebug index PATCH /api/logins/${email}/update req.body', req.body);
     const result = await updateDB('logins', email, req.body);
+    debugLog(`index PATCH /api/logins/${email}/update`, result)
     res.json(result);
     
   } catch (error) {
-    errorLog(`index PUT /api/logins: ${error.message}`);
+    errorLog(`index PATCH /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update login' });
     res.status(500).json({ error: error.message });
   }
@@ -1087,8 +1089,8 @@ app.post('/api/logout', async (req, res) => {
  * @swagger
  * /api/domains:
  *   get:
- *     summary: Get domains
- *     description: Retrieve all domains
+ *     summary: Get domain(s)
+ *     description: Retrieve 1 or all domains
  *     parameters:
  *       - in: path
  *         name: containerName
@@ -1115,7 +1117,6 @@ app.get('/api/domains/:containerName/:domain', async (req, res) => {
   try {
     const { containerName, domain } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-    if (!domain) return res.status(400).json({ error: 'domain is required' });
 
     const domains = await getDomains(containerName, domain);
     res.json(domains);
@@ -1131,7 +1132,7 @@ app.get('/api/domains/:containerName/:domain', async (req, res) => {
 /**
  * @swagger
  * /api/getCount/{table}:
- *   post:
+ *   get:
  *     summary: Get count
  *     description: Get count from a table
  *     parameters:
@@ -1159,18 +1160,16 @@ app.get('/api/domains/:containerName/:domain', async (req, res) => {
  *       500:
  *         description: Unable to count table
  */
-app.post('/api/getCount/:table', async (req, res) => {
+app.get('/api/getCount/:table/:containerName', async (req, res) => {
   try {
-    const { table } = req.params;
+    const { table, containerName } = req.params;
     if (!table) return res.status(400).json({ error: 'table is required' });
     
-    const { containerName } = req.body;
-
     const count = await dbCount(table, containerName);
     res.json(count);
     
   } catch (error) {
-    errorLog(`index POST /api/getCount: ${error.message}`);
+    errorLog(`index GET /api/getCount: ${error.message}`);
     // res.status(500).json({ error: 'Unable to count table' });
     res.status(500).json({ error: error.message });
   }

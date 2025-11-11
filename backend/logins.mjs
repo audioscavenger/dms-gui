@@ -70,10 +70,11 @@ export const getRoles = async credential => {
 export const getLogin = async credential => {
   try {
     
-    let login = await dbGet(sql.logins.select.login, {email: credential, username: credential});
+    let login = dbGet(sql.logins.select.login, {email: credential, username: credential});
     if (login.success) {
       
-      if (Object.keys(login.message).length) {
+      debugLog(`ddebug login=`, login);
+      if (login.message && Object.keys(login.message).length) {
         infoLog(`Found login=`, login.message);
 
         // now JSON.parse roles as it's stored stringified in the db

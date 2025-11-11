@@ -78,6 +78,10 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 ### history:
 
 * [ ] - frontend/Profile: add managed mailboxes rendered table to change Dovecot passwords
+* [x] v1.4.2 - release
+* [x] 1.4.1 - frontend/Profile: cannot update user's email or username anymore, or it works every other time, solution: disable this ability
+* [x] 1.4.1 - proper README update and next time, think of disabling debug mode before release, damn it
+* [x] 1.4.1 - bugfixes
 * [x] v1.4.0 - release
 * [x] 1.3.4 - a gazillion bugfixes since we switched all calls to the new json form {success:true, message:result}
 * [x] 1.3.4 - ALL files have been renamed properly for what they are: js, jsx, mjs and cjs

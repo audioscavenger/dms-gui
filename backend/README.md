@@ -24,24 +24,38 @@ npm start
 
 ## Configuration
 
-Configure the `.env` file with the appropriate environment variables:
+Configure the `.dms-gui.env` file with the appropriate environment variables:
 
 ```
-# Docker Mailserver Configuration
-# Docker Mailserver Configuration
-DMS_SETUP_SCRIPT=/usr/local/bin/setup
-DMS_CONTAINER=dms
+## Docker-Mailserver Configuration: all is handled byREact.
+## React is incompatible with environment set variables
+## Only the defaults used in dms-gui will be mentionned here.
+## Don't set those variables as they will not be read
+## DMS_CONTAINER=dms
+## DMS_SETUP_SCRIPT=/usr/local/bin/setup
+## DMS_API_KEY=uuid set in dms-gui
+## DMS_API_PORT=8888
 
-# backend port
-PORT_NODEJS=3001
-
-# Dev Environment
-API_URL=http://localhost:3001
+## Optional: Dev Environment
+# PORT_NODEJS=3001
+# API_URL=http://localhost:3001
 # NODE_ENV=development
 NODE_ENV=production
 
-# Debugging
-# DEBUG=true
+## Debugging
+DEBUG=true
+
+## SECRET_KEY = secret for salting the cookies, regenerated during container start, inside the container
+## SECRET_KEY cannot be defined anywhere else then during container start, and is secret as the name suggests
+## how long before rotation of the secret: yet to be handled
+SECRET_KEY_EXPIRY=1h
+
+## utility paths for internal database
+DMSGUI_CONFIG_PATH=/app/config
+DATABASE=${DMSGUI_CONFIG_PATH}/dms-gui.sqlite3
+
+## possible and lots of new calls available with dovecot 2.4, but will likely never be used
+# DOVEADM_PORT=8080
 ```
 
 ## Project Structure

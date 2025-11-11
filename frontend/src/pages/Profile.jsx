@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
 import { useAuth } from '../hooks/useAuth';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
 // import Chip from '@mui/material/Chip';
@@ -15,6 +16,8 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+  regexUsername,
+  regexEmailStrict,
   moveKeyToLast,
 } from '../../../common.mjs';
 
@@ -91,7 +94,7 @@ const Profile = () => {
         debugLog('ddebug user', user);
         debugLog('ddebug userData', userData.message);
         
-        // update profile form with fresh data
+        // update profile form with fresh data, we use the first entry in userData as there will be 2 identical ones
         setloginFormData({
           ...loginFormData,
           ...userData.message[0]
@@ -153,13 +156,18 @@ const Profile = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
+    if (!validateloginForm()) {
+      return;
+    }
+
     try {
       
-    // send only the editedData from id: {email:newEmail, username:newValue, roles:[whatever]}
-    // ATTENTION the key field=email must come last or else subsequent db updates will fail!
+      // send only the editedData from id: {email:newEmail, username:newValue, roles:[whatever]}
+      // ATTENTION the key field=email must come last or else subsequent db updates will fail when you modify it!
+      debugLog('ddebug loginFormData', loginFormData)
       const result = await updateLogin(
         user.email,
-        moveKeyToLast(user, 'email')
+        moveKeyToLast(loginFormData, 'email')
       );
       if (result.success) {
         // TODO: handle individual change failure
@@ -169,7 +177,7 @@ const Profile = () => {
       } else setErrorMessage(result.message);
       
     } catch (err) {
-      errorLog(t('api.errors.updateLogin'), err.message);
+      errorLog(err.message);
       setErrorMessage('api.errors.updateLogin', err.message);
     }
   };
@@ -305,6 +313,7 @@ const Profile = () => {
             error={loginFormErrors.email}
             helpText="logins.emailHelp"
             required
+            disabled
           />
         )}
 
@@ -319,6 +328,7 @@ const Profile = () => {
           error={loginFormErrors.username}
           helpText="logins.usernameHelp"
           required
+          disabled
         />
 
         <FormField

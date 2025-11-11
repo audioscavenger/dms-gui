@@ -772,7 +772,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
     //     } else return reject(`please reset password for ${credential}`);
     //   } else return reject(`username ${credential} not found`);
     // });
-    if (Object.keys(saltHash).length) {
+    if (saltHash && Object.keys(saltHash).length) {
       console.log('Object.keys(saltHash).length',Object.keys(saltHash).length);
       if (saltHash.salt && saltHash.hash) {
         const { salt, hash } = await hashPassword(password, saltHash.salt);
@@ -851,13 +851,13 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
       throw new Error(`unknown table ${table}`);
     }
     
-    if (Object.keys(jsonDict).length = 0) {
+    if (!jsonDict || Object.keys(jsonDict).length == 0) {
       throw new Error('nothing to modify was passed');
     }
     
     // keep only keys defined as updatable
     let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
-    if (Object.keys(validDict).length = 0) {
+    if (!validDict || Object.keys(validDict).length == 0) {
       errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)}`); // only dump stuff in container log
       throw new Error(`jsonDict is invalid`);
     }
@@ -1027,7 +1027,7 @@ export const getTargetDict = (containerName) => {
         Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
       }
       
-      if (Object.keys(targetDict).length == 4) return {success: true, message: targetDict};
+      if (targetDict && Object.keys(targetDict).length == 4) return {success: true, message: targetDict};
     }
     return {success: false, message: 'missing values from this container'};
 

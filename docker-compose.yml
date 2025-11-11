@@ -52,7 +52,7 @@ networks:
 # alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
 
 # docker login -u audioscavenger
-# docker image rm audioscavenger/dms-gui:v1.2.3 && docker container prune -f && docker image prune -f
+# docker image rm audioscavenger/dms-gui:v1.3.0 && docker container prune -f && docker image prune -f
 # docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 # docker push audioscavenger/dms-gui --all-tags
 
