@@ -26,14 +26,14 @@ var DB;
 export const sqlMatch = {
   add: {
     patch: /ALTER[\s]+TABLE[\s]+[\"]?[\w]+[\"]?[\s]+ADD[\s]+[\"]?(\w+)[\"]?/i,
-    err:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
+    error:  /duplicate[\s]+column[\s]+name:[\s]+[\"]?(\w+)[\"]?/i,
   },
   drop: {
     patch: /DROP[\s]+COLUMN[\s]+[\"]?(\w+)[\";]?/i,
-    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+    error:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
   },
   get: {
-    err:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
+    error:  /no[\s]+such[\s]+column[:\s]+[\"]?(\w+)[\"]?/i,
   },
 }
 
@@ -449,9 +449,9 @@ export const dbOpen = () => {
       
       return DB;
     }
-  } catch (err) {
-    errorLog(`dbOpen error: ${err.code}: ${err.message}`);
-    throw err;
+  } catch (error) {
+    errorLog(`dbOpen error: ${error.code}: ${error.message}`);
+    throw error;
   }
 };
 
@@ -460,7 +460,7 @@ export const dbOpen = () => {
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters
 // dbRun takes params as Array = multiple inserts or String/Object = single insert
 // dbRun takes multiple anonymous parameters anonParams as an array of strings, for WHERE clause value(s) when needed
-export const dbRun = (sql, params=[], ...anonParams) => {
+export const dbRun = (sql, params={}, ...anonParams) => {
 
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
@@ -509,29 +509,29 @@ export const dbRun = (sql, params=[], ...anonParams) => {
     return {success: true, message: result};
     // result = { changes: 0, lastInsertRowid: 0 }
 
-  } catch (err) {
-    debugLog(`${err.code}: ${err.message}`);
+  } catch (error) {
+    infoLog(`${error.code}: ${error.message}`);
     dbOpen()
-    return {success: false, message: err.message}
-    // throw err;
+    return {success: false, message: error.message}
+    // throw error;
   }
 };
 
 // dupe table:
-// err.code=SQLITE_ERROR
-// err.message=table xyz already exists
+// error.code=SQLITE_ERROR
+// error.message=table xyz already exists
 // dupe insert:
-// err.code=SQLITE_CONSTRAINT_PRIMARYKEY
-// err.message=UNIQUE constraint failed: settings.name
+// error.code=SQLITE_CONSTRAINT_PRIMARYKEY
+// error.message=UNIQUE constraint failed: settings.name
 // missing table:
-// err.code=SQLITE_ERROR
-// err.message=no such table: master
+// error.code=SQLITE_ERROR
+// error.message=no such table: master
 // drop column that does not exist:
-// err.code=SQLITE_ERROR
-// err.message=no such column: "password"
+// error.code=SQLITE_ERROR
+// error.message=no such column: "password"
 // add column that exists:
-// err.code=SQLITE_ERROR
-// err.message=duplicate column name: salt
+// error.code=SQLITE_ERROR
+// error.message=duplicate column name: salt
 
 
 export const dbCount = (table, containerName) => {
@@ -546,15 +546,15 @@ export const dbCount = (table, containerName) => {
     
     return {success: true, message: result.count};
 
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
+  } catch (error) {
+    errorLog(error.message);
     dbOpen();
-    return {success: false, message: err.message}
-    // throw err;
+    return {success: false, message: error.message}
+    // throw error;
   }
 };
 
-export const dbGet = (sql, params=[], ...anonParams) => {
+export const dbGet = (sql, params={}, ...anonParams) => {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=", sql);
@@ -574,15 +574,15 @@ export const dbGet = (sql, params=[], ...anonParams) => {
     return {success: true, message: result};
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
 
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
+  } catch (error) {
+    errorLog(error.message);
     dbOpen();
-    return {success: false, message: err.message}
-    // throw err;
+    return {success: false, message: error.message}
+    // throw error;
   }
 };
 
-export const dbAll = (sql, params=[], ...anonParams) => {
+export const dbAll = (sql, params={}, ...anonParams) => {
   
   if (typeof sql != "string") {
     throw new Error("Error: sql argument must be a string: sql=",sql);
@@ -601,11 +601,11 @@ export const dbAll = (sql, params=[], ...anonParams) => {
     return {success: true, message: result};
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
+  } catch (error) {
+    errorLog(error.message);
     dbOpen();
-    return {success: false, message: err.message}
-    // throw err;
+    return {success: false, message: error.message}
+    // throw error;
   }
 };
 
@@ -622,11 +622,11 @@ export const dbInit = () => {
         dbRun(actions.init);
         successLog(`${table}: success`);
         
-      } catch (err) {
-        if (!err.message.match(/already exists/i)) {
-          errorLog(`${table}: ${err.code}: ${err.message}`);
-          throw err;
-        } else infoLog(`${table}: ${err.message}`);
+      } catch (error) {
+        if (!error.message.match(/already exists/i)) {
+          errorLog(`${table}: ${error.code}: ${error.message}`);
+          throw error;
+        } else infoLog(`${table}: ${error.message}`);
       }
     }
   }
@@ -635,9 +635,9 @@ export const dbInit = () => {
   try {
     dbUpdate();
     
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
-    throw err;
+  } catch (error) {
+    errorLog(error.message);
+    throw new Error(error.message);
   }
   debugLog(`end`);
 };
@@ -658,20 +658,20 @@ export const dbUpdate = () => {
         
       } else throw new Error(result.message);
       
-    } catch (err) {
+    } catch (error) {
       match = {
         get: {
-          err:  err.message.match(sqlMatch.get.err),
+          error:  error.message.match(sqlMatch.get.error),
         },
       }
       
       // column does not exist or smth like that... patch needed
-      if (match.get.err) {
+      if (match.get.error) {
         debugLog(`DB_VERSION_${table}= PATCH NEEDED`);
         
       } else {
-        errorLog(`DB_VERSION_${table}= ${err.code}: ${err.message}`);
-        throw err;
+        errorLog(`DB_VERSION_${table}= ${error.code}: ${error.message}`);
+        throw error;
       }
     }
     
@@ -700,29 +700,29 @@ export const dbUpdate = () => {
                   throw new Error(result.message);
                 }
                 
-              } catch (err) {
+              } catch (ererrorr) {
                 match = {
                   add: {
                     patch: patchLine.match(sqlMatch.add.patch),
-                    err:  err.message.match(sqlMatch.add.err),
+                    error:  error.message.match(sqlMatch.add.error),
                   },
                   drop: {
                     patch: patchLine.match(sqlMatch.drop.patch),
-                    err:  err.message.match(sqlMatch.drop.err),
+                    error:  error.message.match(sqlMatch.drop.error),
                   }
                 }
                 
                 // ADD COLUMN already exists:
-                if (match.add.patch && match.add.err && match.add.patch[1].toUpperCase() == match.add.err[1].toUpperCase()) {
+                if (match.add.patch && match.add.error && match.add.patch[1].toUpperCase() == match.add.error[1].toUpperCase()) {
                   infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                 
                 // DROP COLUMN does not exist:
-                } else if (match.drop.patch && match.drop.err && match.drop.patch[1].toUpperCase() == match.drop.err[1].toUpperCase()) {
+                } else if (match.drop.patch && match.drop.error && match.drop.patch[1].toUpperCase() == match.drop.error[1].toUpperCase()) {
                   infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
                   
                 } else {
-                  errorLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: ${err.code}: ${err.message}`);
-                  throw err;
+                  errorLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: ${error.code}: ${error.message}`);
+                  throw error;
                 }
               }
             }
@@ -744,8 +744,8 @@ export const dbUpdate = () => {
 export const hashPassword = async (password, salt) => {
   return new Promise((resolve, reject) => {
     salt = (salt) ? salt: crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => { // 64 is the key length
-      if (err) return reject(err);
+    crypto.scrypt(password, salt, 64, (error, derivedKey) => { // 64 is the key length
+      if (error) return reject(error);
       resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
     });
   });
@@ -765,8 +765,8 @@ export const verifyPassword = async (credential, password, table='logins') => {
     // return new Promise((resolve, reject) => {
     //   if (Object.keys(saltHash).length) {
     //     if (saltHash.salt && saltHash.hash) {
-    //       crypto.scrypt(password, saltHash.salt, 64, (err, derivedKey) => {
-    //         if (err) return reject(err);
+    //       crypto.scrypt(password, saltHash.salt, 64, (error, derivedKey) => {
+    //         if (error) return reject(error);
     //         resolve(saltHash.hash === derivedKey.toString('hex'));
     //       });
     //     } else return reject(`please reset password for ${credential}`);
@@ -782,9 +782,8 @@ export const verifyPassword = async (credential, password, table='logins') => {
     return false;
 
   } catch (error) {
-    let backendError = error.message;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 
 };
@@ -828,9 +827,8 @@ export const changePassword = async (table, id, password, containerName) => {
     }
     
   } catch (error) {
-    let ErrorMsg = error.message;
-    errorLog(ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -931,9 +929,8 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
     return { success: true, message: 'Login updated successfully' };
     
   } catch (error) {
-    let ErrorMsg = error.message;
-    errorLog(ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -999,9 +996,8 @@ export const deleteEntry = async (table, id, key, scope) => {
     }
     
   } catch (error) {
-    let ErrorMsg = error.message;
-    errorLog(ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1031,11 +1027,11 @@ export const getTargetDict = (containerName) => {
     }
     return {success: false, message: 'missing values from this container'};
 
-  } catch (err) {
-    errorLog(`${err.code}: ${err.message}`);
+  } catch (error) {
+    errorLog(error.message);
     dbOpen();
-    return {success: false, message: err.message}
-    // throw err;
+    return {success: false, message: error.message}
+    // throw error;
   }
 };
 

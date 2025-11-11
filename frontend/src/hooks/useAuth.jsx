@@ -29,8 +29,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async (to="/login") => {
     console.debug('ddebug /logout');
     // setUser(null);
-    window.localStorage.clear();
     logoutUser();
+    window.localStorage.clear();
     navigate(to, { replace: true });
   };
 

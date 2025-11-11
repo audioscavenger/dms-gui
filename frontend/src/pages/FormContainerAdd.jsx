@@ -88,8 +88,8 @@ function FormContainerAdd() {
         
       } else setErrorMessage(scopesData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchSettings'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
       setErrorMessage('api.errors.fetchSettings');
     }
   };
@@ -116,8 +116,8 @@ function FormContainerAdd() {
 
       } else setErrorMessage(settingsData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchSettings'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
       setErrorMessage('api.errors.fetchSettings');
     }
   };
@@ -147,9 +147,9 @@ function FormContainerAdd() {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.DMS_API_KEYregen'), err.message);
-      setErrorMessage('api.errors.DMS_API_KEYregen', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.DMS_API_KEYregen'), error.message);
+      setErrorMessage('api.errors.DMS_API_KEYregen', error.message);
     }
   };
 
@@ -231,9 +231,9 @@ function FormContainerAdd() {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
+    } catch (error) {
       setSubmissionSettings('error');
-      errorLog(t('api.errors.saveSettings'), err);
+      errorLog(t('api.errors.saveSettings'), error);
       setErrorMessage('api.errors.saveSettings');
     }
   };
@@ -257,8 +257,8 @@ function FormContainerAdd() {
         } else setErrorMessage(result.message);
       }
       
-    } catch (err) {
-      errorLog(t('api.errors.saveSettings'), err);
+    } catch (error) {
+      errorLog(t('api.errors.saveSettings'), error);
       setErrorMessage('api.errors.saveSettings');
     }
   };

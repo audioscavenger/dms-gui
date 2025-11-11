@@ -17,7 +17,6 @@ import {
 } from '../../frontend.mjs';
 import {
   regexUsername,
-  regexEmailStrict,
   moveKeyToLast,
 } from '../../../common.mjs';
 
@@ -103,8 +102,8 @@ const Profile = () => {
       } else setErrorMessage(userData.message);
 
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchProfile'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchProfile'), error);
       setErrorMessage('api.errors.fetchProfile');
       
     } finally {
@@ -176,9 +175,9 @@ const Profile = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(err.message);
-      setErrorMessage('api.errors.updateLogin', err.message);
+    } catch (error) {
+      errorLog(error.message);
+      setErrorMessage('api.errors.updateLogin', error.message);
     }
   };
 
@@ -258,8 +257,8 @@ const Profile = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.changePassword'), err);
+    } catch (error) {
+      errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
   };

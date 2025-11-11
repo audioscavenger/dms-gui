@@ -46,9 +46,8 @@ export const getSetting = async (containerName, name) => {
     return result;
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -83,9 +82,8 @@ export const getSettings = async (containerName, name) => {
     // [ { name: 'containerName', value: 'dms' }, .. ]
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -114,9 +112,8 @@ export const getScopes = async () => {
     // [ { scope: 'containerName', }, .. ]
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -168,9 +165,8 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
     // } else return result;
 
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -289,9 +285,8 @@ export const getServerStatus = async containerName => {
     return {success: true, message: status};
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -463,7 +458,7 @@ export const readDovecotConfFile = async stdout => {
     // debugLog(`json:`, json);
     return json;
   } catch (error) {
-    errorLog(`cleanData not valid JSON:`, error);
+    errorLog(`cleanData not valid JSON:`, error.message);
     return {};
   }
 };
@@ -586,7 +581,7 @@ export const readDkimFile = async stdout => {
     return json;
     
   } catch (error) {
-    errorLog(`cleanData not valid JSON:`, error);
+    errorLog(`cleanData not valid JSON:`, error.message);
     return {};
   }
 };
@@ -627,7 +622,7 @@ export const pullDoveConf = async containerName => {
     } else errorLog(results.stderr);
     
   } catch (error) {
-    errorLog(`execCommand failed with error:`,error);
+    errorLog(`execCommand failed with error:`, error.message);
   }
   return envs;
 };
@@ -692,7 +687,7 @@ export const pullDOVECOT = async containerName => {
     } else errorLog(results.stderr);
     
   } catch (error) {
-    errorLog(`execCommand failed with error:`,error);
+    errorLog(`execCommand failed with error:`, error.message);
   }
   return envs;
 };
@@ -729,15 +724,16 @@ export const pullDkimRspamd = async containerName => {
 
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
-  
+  let results, dkimConfig;
+  const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
+
   try {
     const targetDict = getTargetDict(containerName);
-    const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
 
-    const results = await execCommand(command, targetDict);
+    results = await execCommand(command, targetDict);
     if (!results.returncode) {
       debugLog(`dkim file content:`, results.stdout);
-      const dkimConfig = await readDkimFile(results.stdout);
+      dkimConfig = await readDkimFile(results.stdout);
       debugLog(`dkim json:`, dkimConfig);
       
       envs.DKIM_ENABLED   = dkimConfig?.enabled;
@@ -753,16 +749,16 @@ export const pullDkimRspamd = async containerName => {
             keysize = split[1];
           }
           if (item?.selector) {
-            const results = dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH),scope:containerName});
+            results = dbRun(sql.domains.insert.domain, {domain:domain, dkim:item?.selector, keytype:keytype, keysize:keysize, path:(item?.path || envs.DKIM_PATH),scope:containerName});
           }
         }
       }
 
-    } else warnLog(result.stderr);  // dkim is optional, not an error if absent
+    } else warnLog(results.stderr);  // dkim is optional, not an error if absent
 
 
   } catch (error) {
-    errorLog(`execCommand failed with error:`,error);
+    errorLog(`execCommand failed with error:`, error.message);
   }
   return envs;
 };
@@ -883,9 +879,8 @@ export const getServerEnv = async (containerName, name) => {
     return {success: true, message: env?.value};
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -923,9 +918,8 @@ export const getServerEnvs = async (containerName, refresh, name) => {
       return result;
       
     } catch (error) {
-      let backendError = `${error.message}`;
-      errorLog(backendError);
-      throw new Error(backendError);
+      errorLog(error.message);
+      throw new Error(error.message);
       // TODO: we should return smth to the index API instead of throwing an error
       // return {
         // status: 'unknown',
@@ -936,7 +930,7 @@ export const getServerEnvs = async (containerName, refresh, name) => {
   
   // now refreshing by pulling data from DMS
   debugLog(`will pullServerEnvs for ${containerName}`);
-  pulledEnv = await pullServerEnvs(containerName);
+  const pulledEnv = await pullServerEnvs(containerName);
   infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
@@ -999,9 +993,8 @@ export const getDomain = async (containerName, name) => {
     return {success: true, message: domain};
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1033,9 +1026,8 @@ export const getDomains = async (containerName, name) => {
     return domains;
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1089,9 +1081,8 @@ export const initAPI = async (containerName, dms_api_key_param) => {
     if (!result.success) return {success: false, message: result.message};
 
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1111,6 +1102,7 @@ export const createAPIfiles = async (containerName) => {
     return {success: true, message: 'API files created'};
     
   } catch (error) {
+    errorLog(error.message);
     return {success: false, message: error.message};
   }
 };

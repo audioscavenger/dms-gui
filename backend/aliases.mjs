@@ -120,10 +120,8 @@ export const pullAliasesFromDMS = async containerName => {
     return {success: true, message: aliases};
     
   } catch (error) {
-    let backendError = `Error execSetup(${command}): ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -188,10 +186,8 @@ export const pullPostfixRegexFromDMS = async containerName => {
     return {success: true, message: regexes};
     
   } catch (error) {
-    let backendError = `Error execSetup(${command}): ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -285,10 +281,8 @@ export const addAlias = async (containerName, source, destination) => {
     }
     
   } catch (error) {
-    let backendError = 'Unable to add alias';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -356,10 +350,8 @@ export const deleteAlias = async (containerName, source, destination) => {
     }
     
   } catch (error) {
-    let backendError = 'Unable to delete alias';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',

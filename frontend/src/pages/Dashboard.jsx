@@ -105,8 +105,8 @@ const Dashboard = () => {
         
       } else setErrorMessage(dmsData.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchSettings'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
       setErrorMessage('api.errors.fetchSettings');
       
     }
@@ -125,8 +125,8 @@ const Dashboard = () => {
         
       } else setErrorMessage(statusData.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchServerStatus'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerStatus'), error);
       setErrorMessage('api.errors.fetchServerStatus');
       
     } finally {
@@ -147,8 +147,8 @@ const Dashboard = () => {
       
       } else setErrorMessage(count.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchAccounts'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage('api.errors.fetchAccounts');
       
     } finally {
@@ -169,8 +169,8 @@ const Dashboard = () => {
       
       } else setErrorMessage(count.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchfetchAliases'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchfetchAliases'), error);
       setErrorMessage('api.errors.fetchfetchAliases');
       
     } finally {
@@ -190,8 +190,8 @@ const Dashboard = () => {
       
       } else setErrorMessage(count.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchLogins'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchLogins'), error);
       setErrorMessage('api.errors.fetchLogins');
       
     } finally {

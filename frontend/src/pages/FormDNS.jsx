@@ -64,8 +64,8 @@ function FormDomains() {
       setSettings(settingsData);
       setErrorMessage(null);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchSettings'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
       setErrorMessage('api.errors.fetchSettings');
     }
   };
@@ -82,8 +82,8 @@ function FormDomains() {
       setDomains(domainsData);
       setErrorMessage(null);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchDomains'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchDomains'), error);
       setErrorMessage('api.errors.fetchDomains');
     }
   };
@@ -152,9 +152,9 @@ function FormDomains() {
       setSubmissionSettings('success');
       setSuccessMessage('settings.settingsSaved');
       fetchSettings(); // Refresh the settings
-    } catch (err) {
+    } catch (error) {
       setSubmissionSettings('error');
-      errorLog(t('api.errors.saveSettings'), err);
+      errorLog(t('api.errors.saveSettings'), error);
       setErrorMessage('api.errors.saveSettings');
     }
   };

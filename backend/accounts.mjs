@@ -1,27 +1,28 @@
 // import {
-//   regexColors,
-//   regexPrintOnly,
-//   regexFindEmailRegex,
-//   regexFindEmailStrict,
-//   regexFindEmailLax,
-//   regexEmailStrict,
-//   regexEmailLax,
-//   regexMatchPostfix,
-//   regexUsername,
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
+  // regexColors,
+  // regexPrintOnly,
+  // regexFindEmailRegex,
+  // regexFindEmailStrict,
+  // regexFindEmailLax,
+  // regexEmailRegex,
+  // regexEmailStrict,
+  // regexEmailLax,
+  // regexMatchPostfix,
+  // regexUsername,
+  // funcName,
+  // fixStringType,
+  // arrayOfStringToDict,
+  // obj2ArrayOfObj,
+  // reduxArrayOfObjByKey,
+  // reduxArrayOfObjByValue,
+  // reduxPropertiesOfObj,
+  // mergeArrayOfObj,
+  // getValueFromArrayOfObj,
+  // getValuesFromArrayOfObj,
+  // pluck,
+  // byteSize2HumanSize,
+  // humanSize2ByteSize,
+  // moveKeyToLast,
 // } from '../common.mjs'
 import {
   debugLog,
@@ -101,9 +102,8 @@ export const getAccounts = async (containerName, refresh) => {
     return result;
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -193,10 +193,8 @@ export const pullAccountsFromDMS = async containerName => {
     return { success: true, message: accounts };
     
   } catch (error) {
-    let backendError = `Error execSetup(${command}): ${error}`;
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -208,7 +206,7 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
   try {
     const targetDict = getTargetDict(containerName);
 
-    debugLog(`Adding new mailbox account: ${mailbox}`);
+    debugLog(`Adding new mailbox account for ${containerName}: ${mailbox}`);
     const results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
     if (!results.returncode) {
       
@@ -217,7 +215,7 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
       if (result.success) {
         
         if (createLogin) {
-          result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:[mailbox], scope:containerName});
+          result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
           if (result.success) {
             successLog(`Account created: ${mailbox}`);
           } // login created
@@ -228,15 +226,14 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
       return result;
       
     } else {
-      let ErrorMsg = await formatDMSError(backendError, results.stderr);
+      let ErrorMsg = await formatDMSError('addAccount', results.stderr);
       errorLog(ErrorMsg);
       return { success: false, message: ErrorMsg};
     }
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -271,10 +268,8 @@ export const deleteAccount = async (containerName, mailbox) => {
     }
     
   } catch (error) {
-    let backendError = 'Error deleting account';
-    let ErrorMsg = await formatDMSError(backendError, error);
-    errorLog(`${backendError}:`, ErrorMsg);
-    throw new Error(ErrorMsg);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -404,9 +399,8 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
     }
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',

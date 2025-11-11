@@ -194,6 +194,8 @@ export const getAccounts = async (containerName, refresh) => {
 
 export const addAccount = async (containerName, mailbox, password, createLogin) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
+  if (!password) return {success: false, message: 'password is required'};
   try {
     const response = await api.post(`/accounts/${containerName}`, { mailbox, password, createLogin });
     return response.data;

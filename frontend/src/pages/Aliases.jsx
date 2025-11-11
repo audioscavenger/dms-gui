@@ -9,6 +9,8 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+  regexEmailRegex,
+  regexEmailStrict,
   pluck,
 } from '../../../common.mjs';
 
@@ -70,7 +72,7 @@ const Aliases = () => {
 
   const fetchAliases = async (refresh) => {
     refresh = (refresh === undefined) ? false : refresh;
-    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${refresh})`);
+    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
     
     try {
       setLoading(true);
@@ -100,8 +102,8 @@ const Aliases = () => {
       } else setErrorMessage(aliasesData.message);
       
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchAliases'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchAliases'), error);
       setErrorMessage('api.errors.fetchAliases');
       
     } finally {
@@ -176,7 +178,7 @@ const Aliases = () => {
     }
 
     try {
-      const result = await addAlias(formData.source.trim(), formData.destination.trim());
+      const result = await addAlias(containerName, formData.source.trim(), formData.destination.trim());
       if (result.success) {
         setFormData({
           source: '',
@@ -187,9 +189,9 @@ const Aliases = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.addAlias'), err.message);
-      setErrorMessage('api.errors.addAlias', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.addAlias'), error.message);
+      setErrorMessage('api.errors.addAlias', error.message);
     }
   };
 
@@ -199,16 +201,16 @@ const Aliases = () => {
       setSuccessMessage(null);
       
       try {
-        const result = await deleteAlias(source, destination);
+        const result = await deleteAlias(containerName, source, destination);
         if (result.success) {
           fetchAliases(true); // Refresh the aliases list
           setSuccessMessage('aliases.aliasDeleted');
           
         } else setErrorMessage(result.message);
         
-      } catch (err) {
-        errorLog(t('api.errors.deleteAlias'), err.message);
-        setErrorMessage('api.errors.deleteAlias', err.message);
+      } catch (error) {
+        errorLog(t('api.errors.deleteAlias'), error.message);
+        setErrorMessage('api.errors.deleteAlias', error.message);
       }
     }
   };

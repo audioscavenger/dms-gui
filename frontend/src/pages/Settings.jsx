@@ -2,20 +2,30 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // import {
-//   arrayOfStringToDict,
-//   byteSize2HumanSize,
-//   fixStringType,
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailRegex,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
 //   funcName,
-//   getValueFromArrayOfObj, 
-//   getValuesFromArrayOfObj,
-//   humanSize2ByteSize,
-//   mergeArrayOfObj,
-//   moveKeyToLast,
+//   fixStringType,
+//   arrayOfStringToDict,
 //   obj2ArrayOfObj,
-//   pluck,
 //   reduxArrayOfObjByKey,
 //   reduxArrayOfObjByValue,
 //   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
 // } from '../../../common.mjs';
 
 import {
@@ -52,8 +62,8 @@ const Settings = () => {
       
       debugLog('handleInfosReceived infos.envTable=', infos.envTable);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchServerInfos'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerInfos'), error);
       setErrorMessage('api.errors.fetchServerInfos');
     } finally {
       setLoading(false);

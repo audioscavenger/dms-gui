@@ -19,6 +19,7 @@ export const regexUsername = /^[^\s]+$/;
 //   regexFindEmailRegex,
 //   regexFindEmailStrict,
 //   regexFindEmailLax,
+//   regexEmailRegex,
 //   regexEmailStrict,
 //   regexEmailLax,
 //   regexMatchPostfix,
@@ -40,10 +41,10 @@ export const regexUsername = /^[^\s]+$/;
 // } from '../common.mjs'
 
 export const funcName = (parent=4) => {
-  const err = new Error();
+  const error = new Error();
   // The stack trace is formatted differently depending on the Node.js version.
   // We grab the line with the caller's function name.
-  const callerLine = err.stack.split('\n')[parent];
+  const callerLine = error.stack.split('\n')[parent];
   
   // This regular expression works well for many Node.js stack formats.
   // It looks for "at <functionName>".

@@ -6,6 +6,7 @@ export const debug = true;
 //   regexFindEmailRegex,
 //   regexFindEmailStrict,
 //   regexFindEmailLax,
+//   regexEmailRegex,
 //   regexEmailStrict,
 //   regexEmailLax,
 //   regexMatchPostfix,

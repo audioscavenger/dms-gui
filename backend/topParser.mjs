@@ -22,7 +22,7 @@ const parseStatLine = (line, options) => {
         }//else
       }//if
     })
-  } catch(err) {console.error(err)}
+  } catch(error) {console.error(error)}
 
   return result
 };
@@ -49,7 +49,7 @@ const parseProcessLine = str => {
       "time":data[10][0],
       "command":data[11][0],
     }
-  } catch(err) {console.error(err)}
+  } catch(error) {console.error(error)}
   return result
 };
 
@@ -151,7 +151,7 @@ export const processTopData = (data, options={pid_sort(a,b){return a.cpu-b.cpu}}
               // if(typeof options.pid_filter=="function"){
                 // proc=options.pid_filter(proc)
               // }//if
-            // } catch(err) {console.error(err)}
+            // } catch(error) {console.error(error)}
             // proc?result.push(proc):null            
           // }//for
           // return result.slice(0,options.pid_limit||result.length).sort(options.pid_sort)

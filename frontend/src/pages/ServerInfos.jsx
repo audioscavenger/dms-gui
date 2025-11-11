@@ -6,20 +6,30 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 // import {
-//   arrayOfStringToDict,
-//   byteSize2HumanSize,
-//   fixStringType,
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailRegex,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
 //   funcName,
-//   getValueFromArrayOfObj, 
-//   getValuesFromArrayOfObj,
-//   humanSize2ByteSize,
-//   mergeArrayOfObj,
-//   moveKeyToLast,
+//   fixStringType,
+//   arrayOfStringToDict,
 //   obj2ArrayOfObj,
-//   pluck,
 //   reduxArrayOfObjByKey,
 //   reduxArrayOfObjByValue,
 //   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
 // } from '../../../common.mjs';
 
 import {
@@ -82,8 +92,8 @@ const ServerInfos = () => {
       
       } else setErrorMessage(infosData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchServerInfos'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerInfos'), error);
       setErrorMessage('api.errors.fetchServerInfos');
     }
   };
@@ -105,8 +115,8 @@ const ServerInfos = () => {
       
       } else setErrorMessage(envsData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchServerEnvs'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerEnvs'), error);
       setErrorMessage('api.errors.fetchServerEnvs');
     }
   };

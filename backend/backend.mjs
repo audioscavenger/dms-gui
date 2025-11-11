@@ -235,8 +235,8 @@ export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
     return responseData;
     
   } catch (error) {
-    errorLog('Error sending JSON to API:', error);
-    throw error;
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -267,8 +267,8 @@ export const getJsonFromApi = async (apiUrl, Authorization) => {
     return responseData;
     
   } catch (error) {
-    errorLog('Error fetching JSON from API:', error);
-    throw error;
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -349,9 +349,9 @@ try {
         resolve(stdoutData);
     });
 
-    stream.on('error', (err) => {
-      debugLog(`Command error:`, err);
-      reject(err);
+    stream.on('error', (error) => {
+      debugLog(`Command error:`, error);
+      reject(error);
     });
   });
 } catch (error) {
@@ -382,12 +382,12 @@ export const readJson = async jsonFile => {
     } else {
       warnLog(`empty ${jsonFile}`);
     }
+    return json;
     
   } catch (error) {
-    errorLog(`${jsonFile} read error:`, error.message);
+    errorLog(error.message);
     throw new Error(error.message);
   }
-  return json;
 };
 
 
@@ -406,8 +406,8 @@ export const writeJson = async (jsonFile, DBdict) => {
       throw new Error(error.message);
     }
   } else {
-    errorLog(`DBdict not an Object:`, DBdict);
-    throw new Error('DBdict not an Object');
+    errorLog(error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -422,7 +422,7 @@ export const writeFile = async (file, content) => {
 
     
   } catch (error) {
-    errorLog(`${file} write error:`, error.message);
+    errorLog(error.message);
     throw new Error(error.message);
   }
 };

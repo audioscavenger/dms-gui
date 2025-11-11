@@ -9,9 +9,10 @@ The primary goals are:
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
 5. [x] add a login page
-6. [ ] add DNS entries page
-7. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
-8. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
+6. [ ] add a Profile page and ability to change mailbox passwords
+7. [ ] add DNS entries page
+8. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
+9. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
 
 After (7) my life will be complete and I won't need to work on this anymore :D
 
@@ -42,6 +43,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - chore: add auto-refresh + option
 * [ ] - chore: add refresh all on start after Login + option
 * [ ] - chore: how are we going the let users with multiple roles update each mailbox's password?
+* [ ] - chore: there gotta be a way to embedd transforms in fields we push to DB likealways stringify roles etc
 
 ### frontend:
 
@@ -62,6 +64,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - frontend/Domains: add FormDNS or page
 
 ### backend:
+* [ ] - backend/accounts: why have a frontend option to create login if we auto-create them each time we pull accounts? make up your mind
 * [ ] - backend/logins: changePassword calls to accounts for isAccount=1
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
 * [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
@@ -79,6 +82,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 * [ ] - frontend/Profile: add managed mailboxes rendered table to change Dovecot passwords
 * [x] v1.4.2 - release
+* [x] 1.4.1 - backend/account: bugfix in addLogin, roles must be stringified
 * [x] 1.4.1 - frontend/Profile: cannot update user's email or username anymore, or it works every other time, solution: disable this ability
 * [x] 1.4.1 - proper README update and next time, think of disabling debug mode before release, damn it
 * [x] 1.4.1 - bugfixes
@@ -110,7 +114,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] 1.3.3 - bugfixes here and there
 * [x] 1.3.3 - backend: complete revamp of all parameters for all DMS functions
 * [x] 1.3.3 - frontend/Profile: logout user if they changed their email and email in Logins page
-* [x] 1.3.3 - frontend: cleaned up all catch errors removing err.response.data.error
+* [x] 1.3.3 - frontend: cleaned up all catch errors removing error.response.data.error
 * [x] 1.3.2 - backend: tried accessToken+localStorage, now switched to HTTP-Only cookie, but still use localStorage for user roles etc
 * [x] 1.3.2 - docker/start.sh: implement random SECRET_KEY generation on start of container
 * [x] 1.3.2 - backend/index: implement JWT token

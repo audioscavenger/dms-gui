@@ -134,8 +134,8 @@ const Logins = () => {
         fetchLogins(),
       ]);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchLogins'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchLogins'), error);
       setErrorMessage('api.errors.fetchLogins');
       
     } finally {
@@ -162,8 +162,8 @@ const Logins = () => {
 
       } else setErrorMessage(accountsData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchAccounts'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage('api.errors.fetchAccounts');
       
     } finally {
@@ -185,8 +185,8 @@ const Logins = () => {
 
       } else setErrorMessage(loginsData.message);
 
-    } catch (err) {
-      errorLog(t('api.errors.fetchLogins'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchLogins'), error);
       setErrorMessage('api.errors.fetchLogins');
       
     } finally {
@@ -329,9 +329,9 @@ const Logins = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.addLogin'), err.message);
-      setErrorMessage('api.errors.addLogin', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.addLogin'), error.message);
+      setErrorMessage('api.errors.addLogin', error.message);
     }
   };
 
@@ -379,9 +379,9 @@ const Logins = () => {
           
         } else setErrorMessage(result.message);
         
-      } catch (err) {
-        errorLog(t('api.errors.deleteLogin'), err.message);
-        setErrorMessage('api.errors.deleteLogin', err.message);
+      } catch (error) {
+        errorLog(t('api.errors.deleteLogin'), error.message);
+        setErrorMessage('api.errors.deleteLogin', error.message);
       }
     }
   };
@@ -420,9 +420,9 @@ const Logins = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.updateLogin'), err.message);
-      setErrorMessage('api.errors.updateLogin', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.updateLogin'), error.message);
+      setErrorMessage('api.errors.updateLogin', error.message);
     }
   };
 
@@ -465,9 +465,9 @@ const Logins = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-        errorLog(t('api.errors.updateLogin'), err.message);
-        setErrorMessage('api.errors.updateLogin', err.message);
+    } catch (error) {
+        errorLog(t('api.errors.updateLogin'), error.message);
+        setErrorMessage('api.errors.updateLogin', error.message);
     }
   };
 
@@ -546,8 +546,8 @@ const Logins = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.changePassword'), err);
+    } catch (error) {
+      errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
   };

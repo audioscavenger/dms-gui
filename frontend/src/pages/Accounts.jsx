@@ -5,21 +5,9 @@ import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
-// import {
-//   arrayOfStringToDict,
-//   byteSize2HumanSize,
-//   fixStringType,
-//   funcName,
-//   getValueFromArrayOfObj, getValuesFromArrayOfObj,
-//   humanSize2ByteSize,
-//   mergeArrayOfObj,
-//   moveKeyToLast,
-//   obj2ArrayOfObj,
-//   pluck,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-// } from '../../../common.mjs';
+import {
+  regexEmailStrict,
+} from '../../../common.mjs';
 
 import {
   getAccounts,
@@ -124,8 +112,8 @@ const Accounts = () => {
       debugLog('dnsProvider', dnsProvider);
       debugLog('DOVECOT_FTS', DOVECOT_FTS);
       
-    } catch (err) {
-      errorLog(t('api.errors.fetchAccounts'), err);
+    } catch (error) {
+      errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage('api.errors.fetchAccounts');
       
     } finally {
@@ -182,6 +170,7 @@ const Accounts = () => {
 
     try {
       const result = await addAccount(
+        containerName,
         newAccountformData.mailbox,
         newAccountformData.password,
         newAccountformData.createLogin,
@@ -198,9 +187,9 @@ const Accounts = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.addAccount'), err.message);
-      setErrorMessage('api.errors.addAccount', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.addAccount'), error.message);
+      setErrorMessage('api.errors.addAccount', error.message);
     }
   };
 
@@ -208,16 +197,16 @@ const Accounts = () => {
     setErrorMessage(null);
     if (window.confirm(t('accounts.confirmDelete', { mailbox:mailbox }))) {
       try {
-        const result = await deleteAccount(mailbox);
+        const result = await deleteAccount(containerName, mailbox);
         if (result.success) {
           fetchAccounts(true); // Refresh the accounts list
           setSuccessMessage('accounts.accountDeleted');
           
         } else setErrorMessage(result.message);
         
-      } catch (err) {
-        errorLog(t('api.errors.deleteAccount'), err.message);
-        setErrorMessage('api.errors.deleteAccount', err.message);
+      } catch (error) {
+        errorLog(t('api.errors.deleteAccount'), error.message);
+        setErrorMessage('api.errors.deleteAccount', error.message);
       }
     }
   };
@@ -234,9 +223,9 @@ const Accounts = () => {
       
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.doveadm'), err.message);
-      setErrorMessage('api.errors.doveadm', err.message);
+    } catch (error) {
+      errorLog(t('api.errors.doveadm'), error.message);
+      setErrorMessage('api.errors.doveadm', error.message);
     }
   };
 
@@ -308,6 +297,7 @@ const Accounts = () => {
 
     try {
       const result = await updateAccount(
+        containerName,
         selectedAccount.mailbox,
         { password: passwordFormData.newPassword }
       );
@@ -317,8 +307,8 @@ const Accounts = () => {
         
       } else setErrorMessage(result.message);
       
-    } catch (err) {
-      errorLog(t('api.errors.changePassword'), err);
+    } catch (error) {
+      errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
   };
@@ -384,8 +374,8 @@ const Accounts = () => {
       );
       setSuccessMessage('accounts.dnsUpdated');
       handleCloseDNSModal(); // Close the modal
-    } catch (err) {
-      errorLog(t('api.errors.updateDNS'), err);
+    } catch (error) {
+      errorLog(t('api.errors.updateDNS'), error);
       setErrorMessage('api.errors.updateDNS');
     }
   };

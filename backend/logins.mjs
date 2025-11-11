@@ -4,6 +4,7 @@
 //   regexFindEmailRegex,
 //   regexFindEmailStrict,
 //   regexFindEmailLax,
+//   regexEmailRegex,
 //   regexEmailStrict,
 //   regexEmailLax,
 //   regexMatchPostfix,
@@ -54,9 +55,8 @@ export const getRoles = async credential => {
     return roles;
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -85,9 +85,8 @@ export const getLogin = async credential => {
     return login;
     
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -137,9 +136,8 @@ export const getLogins = async credentials => {
     // {success: true, message: [ {email: email, username: username, isActive:1, ..}, ..] }
     
   } catch (error) {
-    let backendError = error.message;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -163,9 +161,8 @@ export const addLogin = async (email, username, password, isAdmin=0, isAccount=0
     return result;
 
   } catch (error) {
-    let backendError = `${error.message}`;
-    errorLog(`${backendError}`);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -203,9 +200,8 @@ export const loginUser = async (credential, password) => {
     return login;
     
   } catch (error) {
-    let backendError = error.message;
-    errorLog(`${backendError}`);
-    return {success: false, message: error.message};
+    errorLog(error.message);
+    throw new Error(error.message);
     // throw new Error(backendError);
     
     // TODO: we should return smth to the index API instead of throwing an error
@@ -240,9 +236,8 @@ export const getRolesFromRoles = async containerName => {
     // {success: true, message: [ { username: username, email: email }, ..] }
     
   } catch (error) {
-    let backendError = error.message;
-    errorLog(backendError);
-    throw new Error(backendError);
+    errorLog(error.message);
+    throw new Error(error.message);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
