@@ -104,15 +104,16 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
-* [x] v1.4.3 - translation: updated bunch of related messages
-* [x] v1.4.3 - frontend/Dashboard: updated the new bunch of status codes
-* [x] v1.4.3 - frontend/Settings: add API test to setupPath field entry
-* [x] v1.4.3 - frontend/Settings: add ping test to dms field entry
-* [x] v1.4.3 - backend/settings: saveSettings correctly calls initAPI when all settings are saved properly and all valid
-* [x] v1.4.3 - backend/settings: getServerStatus now clearly shows the actual error: dns down, ping down, API key missing, not gen, mismatch or unset, etc
-* [x] v1.4.3 - backend/settings: transmit ping error to Dashboard
-* [x] v1.4.3 - backend: added checkPort test to dms
-* [x] v1.4.3 - backend: added ping test to dms
+* [x] v1.4.4 - release
+* [x] 1.4.3 - translation: updated bunch of related messages
+* [x] 1.4.3 - frontend/Dashboard: updated the new bunch of status codes
+* [x] 1.4.3 - frontend/Settings: add API test to setupPath field entry
+* [x] 1.4.3 - frontend/Settings: add ping test to dms field entry
+* [x] 1.4.3 - backend/settings: saveSettings correctly calls initAPI when all settings are saved properly and all valid
+* [x] 1.4.3 - backend/settings: getServerStatus now clearly shows the actual error: dns down, ping down, API key missing, not gen, mismatch or unset, etc
+* [x] 1.4.3 - backend/settings: transmit ping error to Dashboard
+* [x] 1.4.3 - backend: added checkPort test to dms
+* [x] 1.4.3 - backend: added ping test to dms
 * [x] v1.4.2 - release
 * [x] 1.4.1 - backend/account: bugfix in addLogin, roles must be stringified
 * [x] 1.4.1 - frontend/Profile: cannot update user's email or username anymore, or it works every other time, solution: disable this ability
