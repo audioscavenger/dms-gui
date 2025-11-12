@@ -89,7 +89,7 @@ export const getAccounts = async (containerName, refresh) => {
       if (result.success) {
         
         // now save isAccount logins in db
-        let loginsList = accounts.map(account => { return { email:account.mailbox, username:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]), scope:containerName }; });
+        let loginsList = accounts.map(account => { return { mailbox:account.mailbox, username:account.mailbox, email:account.mailbox, isAccount:1, roles:JSON.stringify([account.mailbox]), scope:containerName }; });
         result = dbRun(sql.logins.insert.fromDMS, loginsList);
         if (!result.success) errorLog(result.message);
         

@@ -91,7 +91,7 @@ export const Login = () => {
     // const result = await loginUser(credential, password)
     const result = await loginUser(credential, password)
     console.debug('ddebug loginUser result=', result.message);
-    // without JWT: {"email":"eric@domain.com","username":"eric","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
+    // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
     // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
     
     if (result.success) {

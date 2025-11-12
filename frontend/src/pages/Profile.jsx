@@ -35,7 +35,7 @@ import {
 
 
 const Profile = () => {
-  // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
+  // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const { user } = useAuth();
   const { logout } = useAuth();
@@ -48,8 +48,9 @@ const Profile = () => {
   
   // State for new login inputs ----------------------------------
   const [loginFormData, setloginFormData] = useState({
-    email: '',
+    mailbox: '',
     username: '',
+    email: '',
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
@@ -85,7 +86,7 @@ const Profile = () => {
         // ...user
       // });
 
-      const userData = await getLogins([user.email, user.username]);  // user.email was maybe altered in Logins page, let's pull with both options
+      const userData = await getLogins([user.mailbox, user.username]);  // user.mailbox was maybe altered in Logins page, let's pull with both options
       debugLog('userData', userData);
       if (userData.success) {
         if (!userData.message.length) logout();                       // user not found, localStorage was altered or corrupt, logout!
@@ -140,6 +141,13 @@ const Profile = () => {
     }
 
     // this is done by react
+    // if (!loginFormData.mailbox.trim()) {
+      // errors.mailbox = 'logins.emailRequired';
+    // } else if (!regexEmailStrict.test(loginFormData.mailbox)) {
+      // errors.mailbox = 'logins.invalidEmail';
+    // }
+
+    // this is done by react
     // if (!loginFormData.email.trim()) {
       // errors.email = 'logins.emailRequired';
     // } else if (!regexEmailStrict.test(loginFormData.email)) {
@@ -161,17 +169,17 @@ const Profile = () => {
 
     try {
       
-      // send only the editedData from id: {email:newEmail, username:newValue, roles:[whatever]}
-      // ATTENTION the key field=email must come last or else subsequent db updates will fail when you modify it!
+      // send only the editedData from id: {mailbox:newEmail, username:newValue, email:newEmail, roles:[whatever]}
+      // ATTENTION the key field=mailbox must come last or else subsequent db updates will fail when you modify it!
       debugLog('ddebug loginFormData', loginFormData)
       const result = await updateLogin(
-        user.email,
-        moveKeyToLast(loginFormData, 'email')
+        user.mailbox,
+        moveKeyToLast(loginFormData, 'mailbox')
       );
       if (result.success) {
         // TODO: handle individual change failure
         
-        setSuccessMessage(t('logins.saved', {username:login.email}));
+        setSuccessMessage(t('logins.saved', {username:login.mailbox}));
         
       } else setErrorMessage(result.message);
       
@@ -248,7 +256,7 @@ const Profile = () => {
 
     try {
       const result = await updateLogin(
-        selectedLogin.email,
+        selectedLogin.mailbox,
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
@@ -302,15 +310,15 @@ const Profile = () => {
 
         {!loginFormData.isAccount && (
           <FormField
-            type="email"
-            id="email"
-            name="email"
-            label="logins.email"
-            value={loginFormData.email}
+            type="mailbox"
+            id="mailbox"
+            name="mailbox"
+            label="logins.mailbox"
+            value={loginFormData.mailbox}
             onChange={handleLoginInputChange}
             placeholder="user@domain.com"
-            error={loginFormErrors.email}
-            helpText="logins.emailHelp"
+            error={loginFormErrors.mailbox}
+            helpText="logins.mailboxHelp"
             required
             disabled
           />
@@ -328,6 +336,18 @@ const Profile = () => {
           helpText="logins.usernameHelp"
           required
           disabled
+        />
+
+        <FormField
+          type="email"
+          id="email"
+          name="email"
+          label="logins.email"
+          value={loginFormData.email}
+          onChange={handleLoginInputChange}
+          placeholder="user@domain.com"
+          error={loginFormErrors.email}
+          helpText="logins.emailHelp"
         />
 
         <FormField
@@ -360,7 +380,7 @@ const Profile = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedLogin?.email}{' '}
+            {Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

@@ -73,14 +73,15 @@ const Logins = () => {
   
   // State for new login inputs ----------------------------------
   const [newLoginformData, setNewLoginFormData] = useState({
-    email: '',
+    mailbox: '',
     username: '',
     password: '',
+    confirmPassword: '',
+    email: '',
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
     roles: [],
-    confirmPassword: '',
   });
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
 
@@ -231,7 +232,7 @@ const Logins = () => {
     if (name == 'isAdmin' && checked) {
       debugLog('isAccount ==> 0');
       // disable isAccount checkbox and SelectField
-      // but we keep the email that was selected
+      // but we keep the mailbox that was selected
       // setNewLoginFormData({
         // ...newLoginformData,
         // isAccount: 0
@@ -241,7 +242,7 @@ const Logins = () => {
 
     if (name == 'isAccount' && checked) {
       debugLog('isAccount ==> 1');
-      jsonDict.roles = pluck(accountOptions, 'value').includes(newLoginformData.email) ? [newLoginformData.email] : [];
+      jsonDict.roles = pluck(accountOptions, 'value').includes(newLoginformData.mailbox) ? [newLoginformData.mailbox] : [];
     }
 
     setNewLoginFormData({
@@ -271,6 +272,13 @@ const Logins = () => {
     } else if (!regexUsername.test(newLoginformData.username)) {
       errors.username = 'logins.usernameInvalid';
     }
+
+    // this is done by react
+    // if (!newLoginformData.mailbox.trim()) {
+      // errors.mailbox = 'logins.emailRequired';
+    // } else if (!regexEmailStrict.test(newLoginformData.mailbox)) {
+      // errors.mailbox = 'logins.invalidEmail';
+    // }
 
     // this is done by react
     // if (!newLoginformData.email.trim()) {
@@ -304,9 +312,10 @@ const Logins = () => {
 
     try {
       const result = await addLogin(
-        newLoginformData.email,
+        newLoginformData.mailbox,
         newLoginformData.username,
         newLoginformData.password,
+        newLoginformData.email,
         newLoginformData.isAdmin,
         newLoginformData.isAccount,
         newLoginformData.isActive,
@@ -316,10 +325,11 @@ const Logins = () => {
       if (result.success) {
         setSuccessMessage('logins.loginCreated');
         setNewLoginFormData({
-          email: '',
+          mailbox: '',
           username: '',
           password: '',
           confirmPassword: '',
+          email: '',
           isAdmin: 0,
           isAccount: 0,
           isActive: 1,
@@ -339,10 +349,10 @@ const Logins = () => {
 
   const handleLoginChange = (e, login, key, newValue) => {  // newValue is an arrey with all the options selected
     
-    debugLog('login', login);               // { id: 1, email: "admin@domain.com", username: "admin", isAdmin: 1, isActive: 1, color: "" }
+    debugLog('login', login);               // { id: 1, mailbox: "admin@domain.com", username: "admin", isAdmin: 1, isActive: 1, color: "" }
     debugLog('key', key);                   // roles, emails, username...
-    debugLog('newValue', newValue);         // role: _[ "box1@domain.com", .. ]_ or email: _new.email@gmail.com_ or username: _admin2_
-    debugLog('editedData', editedData);     // { 1:{email:newValue, username:newValue}, .. }
+    debugLog('newValue', newValue);         // role: _[ "box1@domain.com", .. ]_ or mailbox: _new.mailbox@gmail.com_ or username: _admin2_
+    debugLog('editedData', editedData);     // { 1:{mailbox:newValue, username:newValue}, .. }
     debugLog(`isRowChanged(${login.id})`, isRowChanged(login.id));     // 
     
     // set state, with changes
@@ -370,9 +380,9 @@ const Logins = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (window.confirm(t('logins.confirmDelete', { username:login.email }))) {
+    if (window.confirm(t('logins.confirmDelete', { username:login.mailbox }))) {
       try {
-        const result = await deleteLogin(login.email);
+        const result = await deleteLogin(login.mailbox);
         if (result.success) {
           setSuccessMessage('logins.loginDeleted');
           fetchAll(); // Refresh the logins list
@@ -402,7 +412,7 @@ const Logins = () => {
       if (what == 'isAccount' && +!login.isAccount == 1) jsonDict.isAdmin = 0;
       
       const result = await updateLogin(
-        login.email,
+        login.mailbox,
         jsonDict
       );
 
@@ -415,7 +425,7 @@ const Logins = () => {
         //       : item                                      // and keep other items as they are
         //   )
         // );
-        // setSuccessMessage(t('logins.updated', {username:login.email}));  // no need for that, the table will reflect the changes
+        // setSuccessMessage(t('logins.updated', {username:login.mailbox}));  // no need for that, the table will reflect the changes
         fetchLogins();
         
       } else setErrorMessage(result.message);
@@ -438,11 +448,11 @@ const Logins = () => {
         // editedData[row.id] ? { ...row, ...editedData[row.id] } : row
       // );
 
-    // send only the editedData from id: {email:newEmail, username:newValue, roles:[whatever]}
+    // send only the editedData from id: {mailbox:newEmail, username:newValue, roles:[whatever]}
     // ATTENTION the key field=email must come last or else subsequent db updates will fail!
       const result = await updateLogin(
-        login.email,
-        moveKeyToLast(editedData[login.id], 'email')
+        login.mailbox,
+        moveKeyToLast(editedData[login.id], 'mailbox')
       );
       if (result.success) {
         // TODO: handle individual change failure
@@ -461,7 +471,7 @@ const Logins = () => {
         const { [login.id]:{}, ...editedDataReset } = editedData;
         setEditedData(editedDataReset);
 
-        setSuccessMessage(t('logins.saved', {username:login.email}));
+        setSuccessMessage(t('logins.saved', {username:login.mailbox}));
         
       } else setErrorMessage(result.message);
       
@@ -537,7 +547,7 @@ const Logins = () => {
 
     try {
       const result = await updateLogin(
-        selectedLogin.email,
+        selectedLogin.mailbox,
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
@@ -552,11 +562,11 @@ const Logins = () => {
     }
   };
 
-  // highlight options by shades of yellow if they aequal to login's email or at least the domains are the same
-  const highlightOptionByDomain = (option, email=undefined, className="") => {
+  // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same
+  const highlightOptionByDomain = (option, mailbox=undefined, className="") => {
     let highlight = "";
-    if (email) {
-      highlight = (email == option) ? " bg-warning bg-opacity-25" : ((email.match(option.split('@')[1])) ? " bg-warning bg-opacity-10" : "");
+    if (mailbox) {
+      highlight = (mailbox == option) ? " bg-warning bg-opacity-25" : ((mailbox.match(option.split('@')[1])) ? " bg-warning bg-opacity-10" : "");
     }
     return className + highlight;
   };
@@ -573,16 +583,16 @@ const Logins = () => {
   // adding hidden data in the span before the FormField let us sort also this column
   const columns = [
     { 
-      key: 'email',
-      label: 'logins.email',
+      key: 'mailbox',
+      label: 'logins.mailbox',
       render: (login) => (
-        <span><span className="d-none">{login.email}</span>
+        <span><span className="d-none">{login.mailbox}</span>
         <FormField
-          type="email"
-          id="email"
-          name="email"
-          value={getFieldValue(login.id, 'email')}
-          onChange={(e) => handleLoginChange(e, login, "email", event.target.value)}
+          type="mailbox"
+          id="mailbox"
+          name="mailbox"
+          value={getFieldValue(login.id, 'mailbox')}
+          onChange={(e) => handleLoginChange(e, login, "mailbox", e.target.value)}
           groupClass=""
           className="form-control-sm"
           required
@@ -600,7 +610,7 @@ const Logins = () => {
           id="username"
           name="username"
           value={getFieldValue(login.id, 'username')}
-          onChange={(e) => handleLoginChange(e, login, "username", event.target.value)}
+          onChange={(e) => handleLoginChange(e, login, "username", e.target.value)}
           groupClass=""
           className="form-control-sm"
           required
@@ -631,9 +641,9 @@ const Logins = () => {
       label: 'logins.isAccount',
       noFilter: true,
       render: (login) => (
-      /* only render linkAccount button when isAccount=0 if rolesAvailable.includes(login.email) */
+      /* only render linkAccount button when isAccount=0 if rolesAvailable.includes(login.mailbox) */
       /* always render unlinkAccount button when isAccount=1 */
-      ( login.isAccount || (rolesAvailable && rolesAvailable.includes(login.email)) ) &&
+      ( login.isAccount || (rolesAvailable && rolesAvailable.includes(login.mailbox)) ) &&
         <>
         <span>{(login.isAccount) ? t('common.yes') : t('common.no')}</span>
         <Button
@@ -666,7 +676,7 @@ const Logins = () => {
             renderOption={(props, option) => (
               <li
                 {...props}
-                className={highlightOptionByDomain(option, login?.email, props.className)}
+                className={highlightOptionByDomain(option, login?.mailbox, props.className)}
                 key={option}
               >
               {option}
@@ -702,7 +712,7 @@ const Logins = () => {
             variant="danger"
             size="sm"
             icon="trash"
-            title={t('logins.confirmDelete', { username: login.email })}
+            title={t('logins.confirmDelete', { username: login.mailbox })}
             onClick={() => handleLoginDelete(login)}
             className="me-2"
           />
@@ -710,7 +720,7 @@ const Logins = () => {
             variant="secondary"
             size="sm"
             icon={(login.isActive) ? "toggle-on" : "toggle-off"}
-            title={(login.isActive) ? t('logins.deactivate', { username: login.email }) : t('logins.activate', { username: login.email })}
+            title={(login.isActive) ? t('logins.deactivate', { username: login.mailbox }) : t('logins.activate', { username: login.mailbox })}
             onClick={() => handleLoginFlipBit(login, 'isActive')}
             className="me-2"
           />
@@ -754,28 +764,28 @@ const Logins = () => {
 
       {newLoginformData.isAccount && (
         <SelectField
-          id="email"
-          name="email"
+          id="mailbox"
+          name="mailbox"
           label="accounts.mailbox"
-          value={pluck(accountOptions, 'value').includes(newLoginformData.email) ? newLoginformData.email : ""}
+          value={pluck(accountOptions, 'value').includes(newLoginformData.mailbox) ? newLoginformData.mailbox : ""}
           onChange={handleNewLoginInputChange}
           options={accountOptions}
           placeholder="accounts.mailboxRequired"
-          error={newLoginFormErrors.email}
+          error={newLoginFormErrors.mailbox}
           helpText="accounts.mailboxRequired"
           required
         />
       ) || (
         <FormField
-          type="email"
-          id="email"
-          name="email"
-          label="logins.email"
-          value={newLoginformData.email}
+          type="mailbox"
+          id="mailbox"
+          name="mailbox"
+          label="logins.mailbox"
+          value={newLoginformData.mailbox}
           onChange={handleNewLoginInputChange}
           placeholder="user@domain.com"
-          error={newLoginFormErrors.email}
-          helpText="logins.emailHelp"
+          error={newLoginFormErrors.mailbox}
+          helpText="logins.mailboxHelp"
           required
         />
       )}
@@ -793,7 +803,7 @@ const Logins = () => {
         renderOption={(props, option) => (
           <li
             {...props}
-            className={highlightOptionByDomain(option, newLoginformData?.email, props.className)}
+            className={highlightOptionByDomain(option, newLoginformData?.mailbox, props.className)}
             key={option}
           >
           {option}
@@ -819,6 +829,18 @@ const Logins = () => {
         error={newLoginFormErrors.username}
         helpText="logins.usernameHelp"
         required
+      />
+
+      <FormField
+        type="email"
+        id="email"
+        name="email"
+        label="logins.email"
+        value={newLoginformData.email}
+        onChange={handleNewLoginInputChange}
+        placeholder="user@domain.com"
+        error={newLoginFormErrors.email}
+        helpText="logins.emailHelp"
       />
 
       <Row className="mb-3">
@@ -869,7 +891,7 @@ const Logins = () => {
           <DataTable
           columns={columns}
           data={logins}
-          keyExtractor={(login) => login.email}
+          keyExtractor={(login) => login.mailbox}
           isLoading={isLoading}
           emptyMessage="logins.noLogins"
           />
@@ -897,7 +919,7 @@ const Logins = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedLogin?.email}{' '}
+            {Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

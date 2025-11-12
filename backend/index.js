@@ -757,7 +757,7 @@ app.post('/api/settings/:containerName', async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: login credential = email or username
+ *         description: login credential = mailbox or username
  *     responses:
  *       200:
  *         description: all roles even if empty
@@ -788,7 +788,7 @@ app.get('/api/roles/:credential', async (req, res) => {
  *     summary: Get logins
  *     description: Retrieve all or 1 logins
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
@@ -832,14 +832,18 @@ app.post('/api/logins', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               email:
+ *               mailbox:
  *                 type: string
  *                 format: email
- *                 description: Email address of the new login account
+ *                 description: mailbox address of the new login account
  *               username:
  *                 type: string
  *                 default: ''
  *                 description: Login name of the new login account
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: external email address for password recovery
  *               password:
  *                 type: string
  *                 description: Password for the new login account
@@ -856,7 +860,7 @@ app.post('/api/logins', async (req, res) => {
  *                 default: []
  *                 description: mailboxes the user can manage
  *             required:
- *               - email
+ *               - mailbox
  *               - username
  *               - password
  *               - isAdmin
@@ -870,12 +874,12 @@ app.post('/api/logins', async (req, res) => {
  */
 app.put('/api/logins', async (req, res) => {
   try {
-    const { email, username, password, isAdmin, isAccount, isActive, roles } = req.body;
-    if (!email)     return res.status(400).json({ error: 'email is missing' });
+    const { mailbox, username, password, email, isAdmin, isAccount, isActive, roles } = req.body;
+    if (!mailbox)     return res.status(400).json({ error: 'mailbox is missing' });
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(email, username, password, isAdmin, isAccount, isActive, roles);
+    const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, roles);
     res.status(201).json(result);
     
   } catch (error) {
@@ -888,17 +892,17 @@ app.put('/api/logins', async (req, res) => {
 // https://swagger.io/docs/specification/v3_0/data-models/data-types/#objects
 /**
  * @swagger
- * /api/logins/{email}/update:
+ * /api/logins/{mailbox}/update:
  *   patch:
  *     summary: Update a login data
  *     description: Update the data for an existing login account
  *     parameters:
  *       - in: path
- *         name: email
+ *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: email address of the login account to update
+ *         description: mailbox address of the login account to update
  *     requestBody:
  *       required: true
  *       content:
@@ -908,7 +912,11 @@ app.put('/api/logins', async (req, res) => {
  *             properties:
  *               password:
  *                 type: string
- *                 description: New email for the login account
+ *                 description: New password for the login account
+ *               mailbox:
+ *                 type: string
+ *                 format: email
+ *                 description: New mailbox for the login account
  *               email:
  *                 type: string
  *                 format: email
@@ -923,20 +931,20 @@ app.put('/api/logins', async (req, res) => {
  *       200:
  *         description: Data updated successfully
  *       400:
- *         description: email or data are required
+ *         description: mailbox or data are required
  *       500:
  *         description: Unable to update login
  */
-app.patch('/api/logins/:email/update', async (req, res) => {
+app.patch('/api/logins/:mailbox/update', async (req, res) => {
   try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'email is required' });
+    const { mailbox } = req.params;
+    if (!mailbox) {
+      return res.status(400).json({ error: 'mailbox is required' });
     }
 
-    debugLog('ddebug index PATCH /api/logins/${email}/update req.body', req.body);
-    const result = await updateDB('logins', email, req.body);
-    debugLog(`index PATCH /api/logins/${email}/update`, result)
+    debugLog('ddebug index PATCH /api/logins/${mailbox}/update req.body', req.body);
+    const result = await updateDB('logins', mailbox, req.body);
+    debugLog(`index PATCH /api/logins/${mailbox}/update`, result)
     res.json(result);
     
   } catch (error) {
@@ -950,32 +958,32 @@ app.patch('/api/logins/:email/update', async (req, res) => {
 // Endpoint for deleting a login account
 /**
  * @swagger
- * /api/logins/{email}:
+ * /api/logins/{mailbox}:
  *   delete:
  *     summary: Delete a login account
  *     description: Delete a login account from dms-gui
  *     parameters:
  *       - in: path
- *         name: email
+ *         name: mailbox
  *         required: true
  *         schema:
  *           type: string
- *         description: email of the account to delete
+ *         description: mailbox of the account to delete
  *     responses:
  *       200:
  *         description: Login deleted successfully
  *       400:
- *         description: email is required
+ *         description: mailbox is required
  *       500:
  *         description: Unable to delete login
  */
-app.delete('/api/logins/:email', async (req, res) => {
+app.delete('/api/logins/:mailbox', async (req, res) => {
   try {
-    const { email } = req.params;
-    if (!email) {
-      return res.status(400).json({ error: 'email is required' });
+    const { mailbox } = req.params;
+    if (!mailbox) {
+      return res.status(400).json({ error: 'mailbox is required' });
     }
-    const result = await deleteEntry('logins', email, 'email');
+    const result = await deleteEntry('logins', mailbox, 'mailbox');
     res.json(result);
     
   } catch (error) {
@@ -1002,7 +1010,7 @@ app.delete('/api/logins/:email', async (req, res) => {
  *             properties:
  *               credential:
  *                 type: string
- *                 description: Login username or email
+ *                 description: Login username or mailbox
  *               password:
  *                 type: string
  *                 description: Password

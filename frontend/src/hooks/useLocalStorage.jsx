@@ -14,7 +14,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
       
       if (value) {
         console.debug(`ddebug 1 return window.localStorage.getItem(${keyName})=`, value);
-        // without JWT: "user":         '{"email":"eric@domain.com","username":"eric","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}'
+        // without JWT: "user":         '{"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}'
         // with    JWT: "accessToken":  null
         
         // const decodedToken = jwt_decode(value);
@@ -42,7 +42,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
   const setValue = (newValue) => {
     try {
       console.debug(`ddebug 4 window.localStorage.setItem(${keyName}), ${JSON.stringify(newValue)}`, newValue);
-      // without JWT: user, {"email":"eric@domain.com","username":"eric","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
+      // without JWT: user, {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
       // with    JWT: user, { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
 
       window.localStorage.setItem(keyName, JSON.stringify(newValue));

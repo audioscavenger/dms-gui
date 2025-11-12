@@ -95,7 +95,7 @@ alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up -
 
 docker login -u audioscavenger
 
-docker image rm audioscavenger/dms-gui:v1.4.0 && docker container prune -f && docker image prune -f
+docker image rm audioscavenger/dms-gui:v1.4.2 && docker container prune -f && docker image prune -f
 
 docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 
@@ -104,6 +104,8 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
+* [x] 1.4.5 - frontend/Settings: bugfix: choosing a containerName now fetch settings
+* [x] 1.4.5 - db update: logins now have an external email field for password recovery
 * [x] v1.4.4 - release
 * [x] 1.4.3 - translation: updated bunch of related messages
 * [x] 1.4.3 - frontend/Dashboard: updated the new bunch of status codes

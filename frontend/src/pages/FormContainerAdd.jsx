@@ -59,6 +59,10 @@ function FormContainerAdd() {
     fetchAll();
   }, []);
 
+  useEffect(() => {
+     fetchSettings(containerName);  // [ {name:name, value: value}, ..]
+  }, [containerName]);
+
 
   const fetchAll = async () => {
     setLoading(true);
@@ -67,7 +71,6 @@ function FormContainerAdd() {
 
     // const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
     await fetchScopes();                    // [ {scope:name}, ..]
-    await fetchSettings(containerName);  // [ {name:name, value: value}, ..]
 
     setLoading(false);
 
@@ -290,7 +293,6 @@ function FormContainerAdd() {
 
     try {
 
-      debugLog('ddebug --------------------------saveSettings ---------------------------')
       const result = await saveSettings(
         getValueFromArrayOfObj(settings, 'containerName'),
         settings,

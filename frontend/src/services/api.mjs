@@ -121,11 +121,12 @@ export const getLogins = async credentials => {
   }
 };
 
-export const addLogin = async (email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
-  if (!email) return {success: false, message: 'email is required'};
+export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
   if (!username) return {success: false, message: 'username is required'};
+  if (!password) return {success: false, message: 'password is required'};
   try {
-    const response = await api.put(`/logins`, { email, username, password, isAdmin, isActive, isAccount, roles });
+    const response = await api.put(`/logins`, { mailbox, username, password, email, isAdmin, isActive, isAccount, roles });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -133,10 +134,11 @@ export const addLogin = async (email, username, password, isAdmin=0, isAccount=0
   }
 };
 
-export const updateLogin = async (email, jsonDict) => {
-  if (!email) return {success: false, message: 'email is required'};
+export const updateLogin = async (mailbox, jsonDict) => {
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
+  if (!jsonDict) return {success: false, message: 'jsonDict is required'};
   try {
-    const response = await api.patch(`/logins/${email}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0, email:newEmail} // email must be last
+    const response = await api.patch(`/logins/${mailbox}/update`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0, mailbox:newEmail} // mailbox must be last
     debugLog('ddebug updateLogin patch', response)
     return response.data;
   } catch (error) {
@@ -145,10 +147,10 @@ export const updateLogin = async (email, jsonDict) => {
   }
 };
 
-export const deleteLogin = async email => {
-  if (!email) return {success: false, message: 'email is required'};
+export const deleteLogin = async mailbox => {
+  if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
-    const response = await api.delete(`/logins/${email}`);
+    const response = await api.delete(`/logins/${mailbox}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);

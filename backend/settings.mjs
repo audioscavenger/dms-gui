@@ -1089,7 +1089,7 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 
   debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
   
-  let result, dms_api_key_new;
+  let result, dms_api_key_db, dms_api_key_new;
   try {
     
     // get what key is in db

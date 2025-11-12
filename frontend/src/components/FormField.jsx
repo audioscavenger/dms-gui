@@ -1,5 +1,5 @@
 import React from 'react';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import InputGroup from 'react-bootstrap/InputGroup';
@@ -45,7 +45,7 @@ const FormField = ({
   children,
   ...rest // Pass any other props down to Form.Control
 }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const require       = required     == true ? true : false;
   const checked       = isChecked    == true ? true : false;
 
@@ -65,7 +65,7 @@ const FormField = ({
             name={name}
             label={Translate(label, translate)}
             onChange={onChange}
-            placeholder={placeholder}
+            placeholder={(translate) && t(placeholder) || placeholder}
             isInvalid={!!error} // Set isInvalid based on error presence
             checked={checked}
             {...rest} // Spread remaining props
@@ -76,7 +76,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={onChange}
-            placeholder={placeholder}
+            placeholder={(translate) && t(placeholder) || placeholder}
             isInvalid={!!error} // Set isInvalid based on error presence
             required={require} // Pass required prop
             {...rest} // Spread remaining props

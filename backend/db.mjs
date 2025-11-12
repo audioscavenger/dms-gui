@@ -101,107 +101,107 @@ settings: {
 
 logins: {
       
-  keys:   {password:'string', email:'string', username:'string', isAdmin:'number', isActive:'number', isAccount:'number', roles:'object'},
+  keys:   {password:'string', mailbox:'string', username:'string', email:'string', isAdmin:'number', isActive:'number', isAccount:'number', roles:'object'},
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (email = @email OR username = @username)`,
-    logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1`,
-    admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND (email = @email OR username = @username)`,
-    salt:     `SELECT salt from logins WHERE email = ?`,
-    hash:     `SELECT hash from logins WHERE email = ?`,
-    saltHash: `SELECT salt, hash FROM logins WHERE (email = @email OR username = @username)`,
+    login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1`,
+    admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isAdmin = 1`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    salt:     `SELECT salt from logins WHERE mailbox = ?`,
+    hash:     `SELECT hash from logins WHERE mailbox = ?`,
+    saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
     isActive: {
-      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (email = @email OR username = @username)`,
-      logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
-      admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND (email = @email OR username = @username)`,
+      login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
+      logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
+      admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
       count: {
         admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
       },
     },
     isInactive: {
-      login:    `SELECT email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (email = @email OR username = @username)`,
-      logins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0`,
-      admins:   `SELECT id, email, username, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND (email = @email OR username = @username)`,
+      login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
+      logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0`,
+      admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
     },
   },
   
   insert: {
-    login:    `REPLACE INTO logins          (email, username, salt, hash, isAdmin, isAccount, isActive, roles) VALUES (@email, @username, @salt, @hash, @isAdmin, @isAccount, @isActive, @roles)`,
-    fromDMS:  `INSERT OR IGNORE INTO logins (email, username, isAccount, roles) VALUES (@email, @username, @isAccount, @roles)`,
+    login:    `REPLACE INTO logins          (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @roles)`,
+    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, roles) VALUES (@mailbox, @username, @email, @isAccount, @roles)`,
   },
   
   update: {
-    email: {
+    mailbox: {
       undefined: {
-        desc:   "allow to change a login's email only if isAdmin or not isAccount",
-        test:   `SELECT COUNT(email) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND email = ?`,
+        desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
+        test:   `SELECT COUNT(mailbox) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND mailbox = ?`,
         check:  function(result) { return result.count == 1; },
-        pass:   `UPDATE logins set email = @email WHERE email = ?`,
-        fail:   "Cannot change email from a mailbox-linked user.",
+        pass:   `UPDATE logins set mailbox = @mailbox WHERE mailbox = ?`,
+        fail:   "Cannot change mailbox from a mailbox-linked user.",
       },
     },
-    username: `UPDATE logins set username = @username WHERE email = ?`,
-    password: `UPDATE logins set salt=@salt, hash=@hash WHERE email = ?`,
+    username: `UPDATE logins set username = @username WHERE mailbox = ?`,
+    password: `UPDATE logins set salt=@salt, hash=@hash WHERE mailbox = ?`,
     isAdmin: {
       0: {
         desc:   "refuse to demote the last admin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND mailbox IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `UPDATE logins set isAdmin = @isAdmin WHERE email = ?`,
+        pass:   `UPDATE logins set isAdmin = @isAdmin WHERE mailbox = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
       1: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND email = ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND mailbox = ?`,
         check:  function(result) { return true; },
-        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE email = ?`,
+        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE mailbox = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
     },
     isActive: {
       0: {
         desc:   "refuse to deactivate the last admin",
-        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND email IS NOT ?`,
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND mailbox IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `UPDATE logins set isActive = @isActive WHERE email = ?`,
+        pass:   `UPDATE logins set isActive = @isActive WHERE mailbox = ?`,
         fail:   "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
       undefined: {
         desc:   "no test",
-        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND email = ?`,
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND mailbox = ?`,
         check:  function(result) { return true; },
-        pass:   `UPDATE logins set isActive = @isActive WHERE email = ?`,
+        pass:   `UPDATE logins set isActive = @isActive WHERE mailbox = ?`,
       },
     },
     isAccount: {
       0: {
         desc:   "refuse to be isAccount when isAdmin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND email = ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND mailbox = ?`,
         check:  function(result) { return result.count == 0; },
-        pass:   `UPDATE logins set isAccount = @isAccount WHERE email = ?`,
+        pass:   `UPDATE logins set isAccount = @isAccount WHERE mailbox = ?`,
         fail:   "Cannot make an admin also a linked account, it's one or the other",
       },
       1: {
         desc:   "not a test, just flipping login to isAccount also flips isAdmin to 0",
-        test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND email = ?`,
+        test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND mailbox = ?`,
         check:  function(result) { return true; },
-        pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE email = ?`,
+        pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE mailbox = ?`,
       },
     },
-    roles:    `UPDATE logins set roles = @roles WHERE email = ?`,
+    roles:      `UPDATE logins set roles = @roles WHERE (mailbox = @mailbox OR username = @username)`,
   },
   
   delete: {
-    email: {
+    mailbox: {
       undefined: {
         desc:   "refuse to delete last admin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND email IS NOT ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND mailbox IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `DELETE from logins WHERE 1=1 AND email = ?`,
+        pass:   `DELETE from logins WHERE 1=1 AND mailbox = ?`,
         fail:   "Cannot delete the last admin, how will you administer dms-gui?",
       },
     },
@@ -210,7 +210,8 @@ logins: {
   init:  `BEGIN TRANSACTION;
           CREATE TABLE logins (
           id        INTEGER PRIMARY KEY,
-          email     TEXT NOT NULL UNIQUE,
+          mailbox   TEXT NOT NULL UNIQUE,
+          email     TEXT DEFAULT '',
           username  TEXT NOT NULL UNIQUE,
           salt      TEXT DEFAULT '',
           hash      TEXT DEFAULT '',
@@ -219,7 +220,7 @@ logins: {
           isAccount BIT DEFAULT 0,
           roles     TEXT DEFAULT '[]'
           );
-          INSERT OR IGNORE INTO logins (email, username, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
+          INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
           COMMIT;`,
   
@@ -253,6 +254,13 @@ logins: {
       patches: [
         `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${env.isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.4.5',
+      patches: [
+        `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
+        `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -1064,7 +1072,7 @@ export const getTargetDict = (containerName) => {
 // function errorLog(message) {console.debug(message)}
 
 // get saltHash from admin:
-// DB.prepare("SELECT salt, hash FROM logins WHERE (email = @email OR username = @username)").get({"email":"admin","mailbox":"admin","username":"admin"})
+// DB.prepare("SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)").get({"email":"admin","mailbox":"admin","username":"admin"})
   // {
   //   salt: 'fdebebcdcec4e534757a49473759355b',
   //   hash: 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18'

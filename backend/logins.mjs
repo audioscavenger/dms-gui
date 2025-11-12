@@ -47,7 +47,7 @@ export const getRoles = async credential => {
 
   try {
     
-    let roles = await dbGet(sql.logins.select.roles, {email: credential, username: credential});
+    let roles = await dbGet(sql.logins.select.roles, {mailbox: credential, username: credential});
     if (roles.success) {
       return {success: true, message: JSON.parse(roles.message)};
       
@@ -70,7 +70,7 @@ export const getRoles = async credential => {
 export const getLogin = async credential => {
   try {
     
-    let login = dbGet(sql.logins.select.login, {email: credential, username: credential});
+    let login = dbGet(sql.logins.select.login, {mailbox: credential, username: credential});
     if (login.success) {
       
       debugLog(`ddebug login=`, login);
@@ -96,7 +96,7 @@ export const getLogin = async credential => {
 };
 
 
-// this returns an array of objects, credentials is either email or username, or array of those
+// this returns an array of objects, credentials is either mailbox or username, or array of those
 export const getLogins = async credentials => {
   if (typeof credentials == "string") return getLogin(credentials);
 
@@ -133,7 +133,7 @@ export const getLogins = async credentials => {
     if (!logins.length) warnLog(`db logins seems empty:`, logins);
     
     return {success: true, message: logins};
-    // {success: true, message: [ {email: email, username: username, isActive:1, ..}, ..] }
+    // {success: true, message: [ {mailbox: mailbox, username: username, email: email, isActive:1, ..}, ..] }
     
   } catch (error) {
     errorLog(error.message);
@@ -147,15 +147,15 @@ export const getLogins = async credentials => {
 };
 
 
-export const addLogin = async (email, username, password, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
+export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
 
   try {
-    debugLog(email, username, password, email, isAdmin, isActive, isAccount, roles);
+    debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, roles);
     
     const { salt, hash } = await hashPassword(password);
-    const result = dbRun(sql.logins.insert.login, { email:email, username:username, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, roles:JSON.stringify(roles) });
+    const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, roles:JSON.stringify(roles) });
     if (result.success) {
-      successLog(`Saved login ${username}:${email}`);
+      successLog(`Saved login ${username}:${mailbox}`);
       
     }
     return result;
@@ -233,7 +233,7 @@ export const getRolesFromRoles = async containerName => {
       }
     }
     return roles;
-    // {success: true, message: [ { username: username, email: email }, ..] }
+    // {success: true, message: [ { username: username, mailbox: mailbox }, ..] }
     
   } catch (error) {
     errorLog(error.message);
