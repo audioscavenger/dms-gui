@@ -33,10 +33,12 @@ const api = axios.create({
 
 // Server status API
 // export const getServerStatus = async () => {
-export const getServerStatus = async containerName => {
+export const getServerStatus = async (containerName, test=undefined) => {
   if (!containerName) return {};
+  const params = {};
+  if (test !== undefined) params.test = test;
   try {
-    const response = await api.get(`/status/${containerName}`);
+    const response = await api.get(`/status/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);

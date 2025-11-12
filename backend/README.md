@@ -127,10 +127,7 @@ Result:
 {
   "status": {
     "status": "running",
-    "Error": "",
-    "StartedAt": "2025-10-18T02:51:51.111429788Z",
-    "FinishedAt": "0001-01-01T00:00:00Z",
-    "Health": "healthy"
+    "error": "",
   },
   "resources": {
     "cpuUsage": 0.0051578073089701,

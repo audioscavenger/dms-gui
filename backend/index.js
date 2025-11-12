@@ -129,8 +129,9 @@ app.get('/api/status/:containerName', async (req, res) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
+    const test = ('test' in req.query) ? req.query.test : undefined;
 
-    const status = await getServerStatus(containerName);
+    const status = await getServerStatus(containerName, test);
     res.json(status);
   } catch (error) {
     errorLog(`index /api/status: ${error.message}`);
@@ -731,6 +732,7 @@ app.post('/api/settings/:containerName', async (req, res) => {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     
+    debugLog('ddebug --------------------------------- saveSettings')
     const result = await saveSettings(containerName, req.body);     // req.body = [{name:name, value:value}, ..]
     res.status(201).json(result);
     
@@ -1176,13 +1178,13 @@ app.get('/api/getCount/:table/:containerName', async (req, res) => {
 });
 
 
-// Endpoint for pushing/getting live.DMS_API_KEY
+// Endpoint for pushing/getting DMS_API_KEY
 /**
  * @swagger
  * /api/initAPI:
  *   post:
- *     summary: Provide or regenerate live.DMS_API_KEY
- *     description: Provide or regenerate live.DMS_API_KEY + API scripts
+ *     summary: Provide or regenerate DMS_API_KEY
+ *     description: Provide or regenerate DMS_API_KEY + API scripts
  *     parameters:
  *       - in: path
  *         name: containerName
@@ -1202,11 +1204,11 @@ app.get('/api/getCount/:table/:containerName', async (req, res) => {
  *                 description: DMS API key to use or 'regen' to  get a new one
  *     responses:
  *       200:
- *         description: live.DMS_API_KEY from db
+ *         description: DMS_API_KEY from db
  *       400:
  *         description: Something is missing
  *       500:
- *         description: Unable to generate live.DMS_API_KEY
+ *         description: Unable to generate DMS_API_KEY
  */
 app.post('/api/initAPI/:containerName', async (req, res) => {
   try {

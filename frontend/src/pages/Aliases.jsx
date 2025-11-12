@@ -242,11 +242,11 @@ const Aliases = () => {
   }));
 
 
-  if (isLoading && !aliases && !aliases.length) {
+  // if (isLoading && !aliases && !aliases.length) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
   
-  const howMany = `(${aliases.length})`;
   
   return (
     <div>
@@ -301,7 +301,7 @@ const Aliases = () => {
           {/* Use Col component */}
           <Card 
             title="aliases.existingAliases" 
-            titleExtra={howMany} 
+            titleExtra={`(${aliases.length})`} 
             icon="person-lines-fill" 
             isLoading={isLoading}
             onClickRefresh={() => fetchAliases(true)}

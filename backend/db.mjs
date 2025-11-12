@@ -78,15 +78,12 @@ settings: {
           UNIQUE (name, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
-          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', 'dms-gui', ${env.isMutable});
-          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable});
-          -- INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable});
           COMMIT;`,
   
   patch: [
     { DB_VERSION: '1.0.17',
       patches: [
-        `ALTER TABLE settings ADD scope TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+        `ALTER TABLE settings ADD scope TEXT NOT NULL`,
         `ALTER TABLE settings ADD isMutable BIT DEFAULT ${env.isImmutable}`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${env.isImmutable})`,
       ],
@@ -535,13 +532,17 @@ export const dbRun = (sql, params={}, ...anonParams) => {
 
 
 export const dbCount = (table, containerName) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
   
   let result;
   try {
     
-    debugLog(`DB.prepare("${sql[table].select.count}").get({scope:${containerName}})`);
-    result = DB.prepare(sql[table].select.count).get({scope:containerName});
+    if (sql[table].scope) {
+      debugLog(`DB.prepare("${sql[table].select.count}").get({scope:${containerName}})`);
+      result = DB.prepare(sql[table].select.count).get({scope:containerName});
+    } else {
+      debugLog(`DB.prepare("${sql[table].select.count}").get()`);
+      result = DB.prepare(sql[table].select.count).get();
+    }
     infoLog(`success:`, result);
     
     return {success: true, message: result.count};
@@ -791,16 +792,15 @@ export const verifyPassword = async (credential, password, table='logins') => {
 
 // Function to update a password in a table
 export const changePassword = async (table, id, password, containerName) => {
-  containerName = (containerName) ? containerName : live.DMS_CONTAINER;
-  debugLog(`for ${id} in ${table} for ${containerName}`);
   let result, results;
 
   try {
-    const targetDict = getTargetDict(containerName);
     const { salt, hash } = await hashPassword(password);
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
+      const targetDict = getTargetDict(containerName);
+
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
       results = await execSetup(`email update ${id} password`, targetDict);
       if (!results.returncode) {
@@ -818,7 +818,7 @@ export const changePassword = async (table, id, password, containerName) => {
       
     } else {
       debugLog(`Updating password for ${id} in ${table}...`);
-      result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);
+      result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);  // doesn't hurt to add scope even when unused
       if (result.success) {
         successLog(`Password updated for ${id} in ${table}`);
         return { success: true, message: `Password updated for ${id} in ${table}` };
@@ -840,7 +840,6 @@ export const changePassword = async (table, id, password, containerName) => {
 
 // Function to update a table in the db; id can very well be an array as well
 export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = { column:value, .. }
-  scope = (scope) ? scope : live.DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
   let result, scopedValues, value2test, testResult;
@@ -941,7 +940,6 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
 
 
 export const deleteEntry = async (table, id, key, scope) => {
-  scope = (scope) ? scope : live.DMS_CONTAINER;
   debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
 
   try {
@@ -1014,7 +1012,7 @@ export const getTargetDict = (containerName) => {
     debugLog(`dbAll(sql.settings.select.settings, {scope:${containerName}})`);
     result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
     
-    if (result.message.length >= 4) {
+    // if (result.message.length >= 4) {
       // limit results to protocol, host, port, and also Authorization
       let targetDict = {
         protocol:       getValueFromArrayOfObj(result.message, 'protocol'),
@@ -1023,9 +1021,10 @@ export const getTargetDict = (containerName) => {
         Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
       }
       
-      if (targetDict && Object.keys(targetDict).length == 4) return {success: true, message: targetDict};
-    }
-    return {success: false, message: 'missing values from this container'};
+      // if (targetDict && Object.keys(targetDict).length == 4) return {success: true, message: targetDict}; // what?? no
+      return targetDict;
+    // }
+    // return {success: false, message: 'missing values from this container'};
 
   } catch (error) {
     errorLog(error.message);

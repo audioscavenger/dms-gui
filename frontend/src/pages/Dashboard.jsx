@@ -30,10 +30,7 @@ const Dashboard = () => {
   const [status, setServerStatus] = useState({
     status: {
       status: 'loading',
-      Error: '',
-      StartedAt: '',
-      FinishedAt: '',
-      Health: '',
+      error: undefined,
     },
     resources: {
       cpuUsage: 0,
@@ -201,19 +198,21 @@ const Dashboard = () => {
 
 
   const getStatusColor = () => {
+    if (status.status.status === 'loading') return 'secondary';
+    if (status.status.status === 'alive') return 'warning';
+    if (status.status.status === 'missing') return 'danger';
+    if (status.status.status === 'api_gen') return 'warning';
+    if (status.status.status === 'api_miss') return 'warning';
+    if (status.status.status === 'api_error') return 'warning';
+    if (status.status.status === 'api_unset') return 'warning';
     if (status.status.status === 'running') return 'success';
     if (status.status.status === 'stopped') return 'danger';
-    if (status.status.status === 'missing') return 'danger';
-    if (status.status.status === 'loading') return 'secondary';
-    return 'warning';
+    if (status.status.status === 'unknown') return 'danger';
+    return 'danger';
   };
 
   const getStatusText = () => {
-    if (status.status.status === 'running') return 'dashboard.status.running';
-    if (status.status.status === 'stopped') return 'dashboard.status.stopped';
-    if (status.status.status === 'missing') return 'dashboard.status.stopped';
-    if (status.status.status === 'loading') return 'dashboard.status.unknown';
-    return 'dashboard.status.unknown';
+    return `dashboard.status.${status.status.status}`;
   };
 
   // if (isLoading && !status && !Object.keys(status).length) {

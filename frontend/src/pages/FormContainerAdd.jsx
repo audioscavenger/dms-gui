@@ -13,6 +13,7 @@ import {
 } from '../../../common.mjs';
 
 import {
+  getServerStatus,
   getScopes,
   getSettings,
   saveSettings,
@@ -34,6 +35,7 @@ function FormContainerAdd() {
   const [containerName, setContainerName] = useLocalStorage("containerName");
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
+  const [readyForTest, setReadyForTest] = useState(false);
 
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -46,6 +48,10 @@ function FormContainerAdd() {
   const [protocols, setProtocols] = useState([
     {value: 'http', label: 'http'},
     {value: 'https', label: 'https'},
+  ]);
+
+  const [dnsProviders, setDnsProviders] = useState([
+    {value: 'cloudflare', label: 'Cloudflare'},
   ]);
 
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -123,6 +129,64 @@ function FormContainerAdd() {
   };
 
 
+  const handlePingTest = async (e) => {
+    // e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      
+      const result = await getServerStatus(getValueFromArrayOfObj(settings, 'containerName'), 'ping');
+
+      if (result.success) {
+        if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
+        if (result.message.status.status === 'stopped') setErrorMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
+        if (result.message.status.status === 'alive') setSuccessMessage(t('dashboard.status.alive'));
+
+      } else setErrorMessage(result.message);
+      
+    } catch (error) {
+      errorLog(t('api.errors.ping'), error.message);
+      setErrorMessage('api.errors.ping', error.message);
+    }
+  };
+
+
+  const handleAPITest = async (e) => {
+    // e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      
+      if (!validateFormContainerAdd()) {
+        return;
+      }
+
+      const result = await getServerStatus(getValueFromArrayOfObj(settings, 'containerName'), 'execSetup');
+
+      if (result.success) {
+        if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
+        if (result.message.status.status === 'stopped') setErrorMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
+        if (result.message.status.status === 'alive') setSuccessMessage(t('dashboard.status.alive') +": however, API test was not performed");
+        if (result.message.status.status === 'running') setSuccessMessage( t('settings.running', {
+                                                          containerName: getValueFromArrayOfObj(settings, 'containerName'), 
+                                                          DMS_API_PORT: getValueFromArrayOfObj(settings, 'DMS_API_PORT')}) 
+                                                        );
+        if (result.message.status.status === 'api_gen') setErrorMessage(t('dashboard.status.api_gen') +": "+ result.message.status.error);
+        if (result.message.status.status === 'api_miss') setErrorMessage(t('dashboard.status.api_miss') +": "+ result.message.status.error);
+        if (result.message.status.status === 'api_error') setErrorMessage(t('dashboard.status.api_error') +": "+ result.message.status.error);
+        if (result.message.status.status === 'api_unset') setErrorMessage(t('dashboard.status.api_unset') +": "+ result.message.status.error);
+
+      } else setErrorMessage(result.message);
+      
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerStatus'), error.message);
+      setErrorMessage('api.errors.fetchServerStatus', error.message);
+    }
+  };
+
+
   const handleDMS_API_KEYregen = async (e) => {
     // e.preventDefault();
     setErrorMessage(null);
@@ -171,6 +235,8 @@ function FormContainerAdd() {
         [name]: null,
       });
     }
+
+    readyForTest
   };
 
   const validateFormContainerAdd = () => {
@@ -180,9 +246,10 @@ function FormContainerAdd() {
     if (!settings.find(item => item['name'] == 'containerName') || !settings.find(item => item['name'] == 'containerName').value.length) {
       errors.containerName = 'settings.containerNameRequired';
     }
-    // if (settings.setupPath.length == 0) {
-    if (!settings.find(item => item['name'] == 'setupPath') || !settings.find(item => item['name'] == 'setupPath').value.length) {
-      errors.setupPath = 'settings.setupPathRequired';
+
+    // if (settings.protocol.length == 0) {
+    if (!settings.find(item => item['name'] == 'protocol') || !settings.find(item => item['name'] == 'protocol').value.length) {
+      errors.protocol = 'settings.protocolRequired';
     }
 
     // if (settings.DMS_API_PORT.length == 0) {
@@ -192,10 +259,18 @@ function FormContainerAdd() {
         || (Number(settings.find(item => item['name'] == 'DMS_API_PORT').value) < 1)
         || (Number(settings.find(item => item['name'] == 'DMS_API_PORT').value) > 65535)
       ) {
-      errors.setupPath = 'settings.setupPathRequired';
+      errors.DMS_API_PORT = 'settings.DMS_API_PORTRequired';
     }
 
-    // TODO: setupPath: maybe add an api call to execInContainer/execCommand to test if exist?
+    // if (settings.DMS_API_KEY.length == 0) {
+    if (!settings.find(item => item['name'] == 'DMS_API_KEY') || !settings.find(item => item['name'] == 'DMS_API_KEY').value.length) {
+      errors.DMS_API_KEY = 'settings.DMS_API_KEYRequired';
+    }
+
+    // if (settings.setupPath.length == 0) {
+    if (!settings.find(item => item['name'] == 'setupPath') || !settings.find(item => item['name'] == 'setupPath').value.length) {
+      errors.setupPath = 'settings.setupPathRequired';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -214,13 +289,14 @@ function FormContainerAdd() {
     }
 
     try {
+
+      debugLog('ddebug --------------------------saveSettings ---------------------------')
       const result = await saveSettings(
         getValueFromArrayOfObj(settings, 'containerName'),
         settings,
       );
       if (result.success) {
         setSubmissionSettings('success');
-        setSuccessMessage('settings.settingsSaved');
 
         // switch to this new container to trigger fetchSettings and confirm all was saved properly
         // UNLESS containerName is already set, indeed
@@ -228,6 +304,13 @@ function FormContainerAdd() {
 
         // however, we do pull scopes again to refresh the select field list
         fetchScopes();
+
+        // reminder to setup DMS compose
+        setSuccessMessage(t('settings.DMS_API_KEYregened', {
+          containerName:getValueFromArrayOfObj(settings, 'containerName'),
+          DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY'),
+          DMS_API_PORT:getValueFromArrayOfObj(settings, 'DMS_API_PORT'),
+        }));
         
       } else setErrorMessage(result.message);
       
@@ -285,6 +368,7 @@ function FormContainerAdd() {
               options={DMSs}
               placeholder="common.container"
               helpText="settings.DMSHelp"
+              required
             />
           </Card>
         </Col>
@@ -292,6 +376,27 @@ function FormContainerAdd() {
 
       <Row>
         <form onSubmit={handleSubmitSettings} className="form-wrapper">
+          <FormField
+            type="text"
+            id="containerName"
+            name="containerName"
+            label="settings.containerName"
+            value={getValueFromArrayOfObj(settings, 'containerName')}
+            onChange={handleChangeSettings}
+            placeholder="dms"
+            error={formErrors.containerName}
+            helpText="settings.containerNameHelp"
+            required
+          >
+            <Button
+              variant="info"
+              icon="send"
+              title={t('common.ping')}
+              onClick={() => handlePingTest()}
+              disabled={!getValueFromArrayOfObj(settings, 'containerName')}
+            />
+          </FormField>
+
           <SelectField
             id="protocol"
             name="protocol"
@@ -305,28 +410,15 @@ function FormContainerAdd() {
           />
 
           <FormField
-            type="text"
-            id="containerName"
-            name="containerName"
-            label="settings.containerName"
-            value={getValueFromArrayOfObj(settings, 'containerName')}
+            type="number"
+            id="DMS_API_PORT"
+            name="DMS_API_PORT"
+            label="settings.DMS_API_PORT"
+            value={getValueFromArrayOfObj(settings, 'DMS_API_PORT')}
             onChange={handleChangeSettings}
-            placeholder="dms"
-            error={formErrors.containerName}
-            helpText="settings.containerNameHelp"
-            required
-          />
-
-          <FormField
-            type="text"
-            id="setupPath"
-            name="setupPath"
-            label="settings.setupPath"
-            value={getValueFromArrayOfObj(settings, 'setupPath')}
-            onChange={handleChangeSettings}
-            placeholder="/usr/local/bin/setup"
-            error={formErrors.setupPath}
-            helpText="settings.setupPathHelp"
+            placeholder="settings.DMS_API_PORTdefault"
+            error={formErrors.DMS_API_PORT}
+            helpText="settings.DMS_API_PORTHelp"
             required
           />
         
@@ -351,39 +443,49 @@ function FormContainerAdd() {
             <Button
               variant="outline-secondary"
               icon="question-circle"
-              title={t('common.DMS_API_KEYregenedHelp')}
-              onClick={() => {setSuccessMessage(t('settings.DMS_API_KEYregened', {DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY')}))}}
+              title={t('settings.DMS_API_KEYregenedHelp')}
+              onClick={() => setSuccessMessage(t('settings.DMS_API_KEYregened', {
+                containerName:getValueFromArrayOfObj(settings, 'containerName'),
+                DMS_API_KEY:getValueFromArrayOfObj(settings, 'DMS_API_KEY'),
+                DMS_API_PORT:getValueFromArrayOfObj(settings, 'DMS_API_PORT'),
+              })) }
             />
             <Button
               variant="outline-secondary"
               icon="clipboard-plus"
               title={t('common.copy')}
-              onClick={() => {navigator.clipboard.writeText(getValueFromArrayOfObj(settings, 'DMS_API_KEY'))}}
+              onClick={() => navigator.clipboard.writeText(getValueFromArrayOfObj(settings, 'DMS_API_KEY')) }
             />
           </FormField>
         
           <FormField
-            type="number"
-            id="DMS_API_PORT"
-            name="DMS_API_PORT"
-            label="settings.DMS_API_PORT"
-            value={getValueFromArrayOfObj(settings, 'DMS_API_PORT')}
-            onChange={handleChangeSettings}
-            placeholder="settings.DMS_API_PORTdefault"
-            error={formErrors.DMS_API_PORT}
-            helpText="settings.DMS_API_PORTHelp"
-            required
-          />
-        
-          <FormField
             type="text"
+            id="setupPath"
+            name="setupPath"
+            label="settings.setupPath"
+            value={getValueFromArrayOfObj(settings, 'setupPath')}
+            onChange={handleChangeSettings}
+            placeholder="/usr/local/bin/setup"
+            error={formErrors.setupPath}
+            helpText="settings.setupPathHelp"
+            required
+          >
+            <Button
+              variant="info"
+              icon="hdd-network"
+              title={t('settings.apiTest')}
+              onClick={() => handleAPITest()}
+              disabled={!getValueFromArrayOfObj(settings, 'setupPath')}
+            />
+          </FormField>
+        
+          <SelectField
             id="dnsProvider"
             name="dnsProvider"
             label="settings.dnsProvider"
             value={getValueFromArrayOfObj(settings, 'dnsProvider')}
             onChange={handleChangeSettings}
-            placeholder="CloudFlare"
-            error={formErrors.dnsProvider}
+            options={dnsProviders}
             helpText="settings.dnsProviderHelp"
           />
         

@@ -1,4 +1,8 @@
+import { exec as execCb } from 'node:child_process';
 import fs from 'node:fs';
+import net from 'node:net';
+import { promisify } from 'node:util';
+const exec = promisify(execCb);
 
 // const Docker = require('dockerode');
 // const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -75,7 +79,7 @@ export const execSetup = async (setupCommand, targetDict, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
-  debugLog(`Executing setup command: ${command}`);
+  debugLog(`Executing setup command: ${setupCommand}`);
   return execCommand(command, targetDict, ...rest);
 };
 
@@ -84,7 +88,7 @@ export const execCommand = async (command, targetDict, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
-  const result = await execInContainerAPI(command, targetDict.message, ...rest);
+  const result = await execInContainerAPI(command, targetDict, ...rest);
   // debugLog('ddebug result', result)
   return result;
 };
@@ -156,45 +160,123 @@ async function execInContainer(command, containerName) {
 
 
 /**
+ * Executes a checkPort connect to a server
+ * @param {object} targetDict with protocol, host, port, Authorization
+ * @return {Promise<object>} with returncode, stdout and stderr
+ */
+export const checkPort = async (targetDict) => {
+  return new Promise((resolve) => {
+
+    try {
+      const socket = new net.Socket();
+      socket.setTimeout((targetDict?.timeout || 0.3) * 1000);   // we don't accept less then 300ms reply time
+
+      // Attempt to connect to the specified host and port
+      socket.connect(targetDict.port, targetDict.host, () => {
+        socket.end(); // Close the connection immediately after success
+        resolve({success: true, message: 'running'});
+      });
+
+      socket.on('error', () => {
+        socket.destroy();
+        resolve({success: false, message: 'error'});
+      });
+
+      // Handle 'timeout' events
+      socket.on('timeout', () => {
+        socket.destroy();
+        resolve({success: false, message: 'timeout'});
+      });
+
+      return {success: true, message: 'running'};
+
+    } catch (error) {
+      errorLog('error:', error.message);
+      return {success: false, message: error.message};
+    }
+  });
+}
+
+
+/**
+ * Executes a ping to a server
+ * @param {string} host
+ * @return {Promise<object>} with returncode, stdout and stderr
+ */
+export const ping = async (host) => {
+
+  try {
+    const { stdout, stderr } = await exec(`ping -q -c 1 -A ${host}`);
+    // debugLog(`stdout: ${stdout}`);
+    if (stderr) {
+      errorLog(`stderr: ${stderr}`);
+      return {success: false, message: stderr};
+    }
+
+    return {success: true, message: stdout};
+
+  } catch (error) {
+    errorLog('error:', error.message);
+    return {success: false, message: error.message};
+  }
+
+}
+
+
+/**
  * Executes a command in the docker-mailserver container through an http API
  * @param {string} command Command to execute
- * @param {object} targetDict with protocol, host, port, Authorization
- * @return {Promise<string>} stdout from the command
+ * @param {object} targetDict with protocol, host, port, Authorization and maybe timeout
+ * @return {Promise<object>} with returncode, stdout and stderr
  */
 export const execInContainerAPI = async (command, targetDict, ...rest) => {
   
+  let result;
   try {
-    if (targetDict && Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) return {
-      returncode: 99,
-      stderr: 'execInContainerAPI missing targetDict with 4 keys: protocol, host, port, Authorization',
-    };
-
-    const jsonData = Object.assign({}, 
-      {
-        command: command,
-        timeout: 1,
-      },
-      ...rest);
-
-    debugLog(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`)
-    const response = await postJsonToApi(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`, jsonData, targetDict.Authorization)
-    // debugLog('ddebug response',response)
-
-    if ('error' in response) {
-      errorLog('response:', response);
+    if (!targetDict || (targetDict && Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) ) {
       return {
         returncode: 99,
-        stderr: response.error.toString('utf8'),
+        stderr: 'targetDict needs 4 keys: protocol, host, port, Authorization',
       };
-      
+    };
+
+    result = await checkPort(targetDict);
+    // debugLog('ddebug checkPort result',result)   // { success: false, message: 'running' } // whyyyyyyyyyyyyy
+    if (result.success) {
+
+      const jsonData = Object.assign({}, 
+        {
+          command: command,
+          timeout: (targetDict?.timeout || 1),
+        },
+        ...rest);
+
+      debugLog(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`)
+      const response = await postJsonToApi(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`, jsonData, targetDict.Authorization)
+      // debugLog('ddebug response',response)
+
+      if ('error' in response) {
+        errorLog('response:', response);
+        return {
+          returncode: 99,
+          stderr: response.error.toString('utf8'),
+        };
+        
+      } else {
+        successLog('response:', response);
+        return {
+          returncode: response.returncode,
+          stdout: response.stdout.toString('utf8'),
+          stderr: response.stderr.toString('utf8'),
+        };
+      }
     } else {
-      successLog('response:', response);
       return {
-        returncode: response.returncode,
-        stdout: response.stdout.toString('utf8'),
-        stderr: response.stderr.toString('utf8'),
+        returncode: 99,
+        stderr: checkPort.message,
       };
     }
+
   } catch (error) {
     errorLog('error:', error.message);
     return {
@@ -212,7 +294,7 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
  */
 export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
   // debugLog('ddebug apiUrl', apiUrl)
-  // debugLog('ddebug live.DMS_API_KEY', live.DMS_API_KEY)
+  // debugLog('ddebug DMS_API_KEY', DMS_API_KEY)
   // debugLog('ddebug jsonData', jsonData)
   
   try {

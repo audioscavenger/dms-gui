@@ -1,86 +1,118 @@
-I work on this solo, until someone finds an interest like I do. Not claiming I can get to the level of complexity `Mailu` admin UI offers, but the goal is to have some usability.
+This project is a GUI for DMS email server, just like the admin container of Mailu.
 
-The `setup` offered by DMS is quite good tbh, and sufficient for 90% of your daily operations. But sometimes a quick glance at a modern dashboard is also beneficial.
+I work on this solo, until someone finds an interest in it.
 
-The primary goals are:
+This GUI relies on a simple python API to execute `system` and `setup` commands inside the DMS container. This architecture is modular enough, allowing to add other mail servers like Poste.io in the future.
+
+# Primary goals:
 
 1. [x] kick start the project: **done**, thanks to dunajdev and Claude
 2. [x] refactor, fix all the bugs, document and define scope: **done/WIP**
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
-5. [x] add a login page
-6. [ ] add a Profile page and ability to change mailbox passwords
-7. [ ] add DNS entries page
-8. [ ] add DKIM (re)gen option somewhere, maybe Accounts? with subsection by domain?
-9. [ ] Ultimate goal: add DNS push entries with custom cloudflare API or octoDNS
+5. [x] add a login page  **done**
+6. [ ] add a Profile page and ability to change mailbox passwords  **partial**
+7. [ ] add Domains+DNS+DKIM entries page
+8. [ ] add DNS push entries with custom cloudflare API or octoDNS
+9. [ ] add Backup/Import menu entries
 
-After (7) my life will be complete and I won't need to work on this anymore :D
+After (9) my life will be complete and I won't need to work on this anymore ever :D
 
 ## BUGS:
 
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
-* [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore
-* [ ] - frontend/Logins: saving email modification produces NotFoundError: Node.insertBefore: Child to insert before is not a child of this node
+* [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data
+* [ ] - frontend/Logins: cannot save email/username update, but ut works from the Logins page, why?
 * [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
 
-## TODO:
+## chores:
+
+* [ ] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
+* [ ] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
+* [ ] - translation: there seems to be lots of messages unused throughout the project
+* [ ] - chore: there gotta be a way to embedd transforms in fields we push to DB likealways stringify roles etc
+
+# TODO:
 
 The **done** list versions is in reverse order, as you want to see the most recents firt.
 
 The TODO list rank is in order, as you naturally read from top to bottom and therefore, the most difficult ones are at the top.
 
+## Design
 
-### chores:
+### NavBar:
+* [ ] - save user's lang in logins table?
 
-* [ ] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
-* [ ] - chore/frontend: api.js and plenty other files could also use translate for their error messages
-* [ ] - chore/translation: what are all those cannot* messages? no module uses them
-* [ ] - chore/frontend: move all error messages into translation
-* [ ] - chore/frontend: add auth bearer token for APIs and /docs
-* [ ] - chore: add more comments and beautify navigation pane with ASCII art
-* [ ] - chore: refactoring in progress as advised by @polarathene
-* [ ] - chore: add auto-refresh + option
-* [ ] - chore: add refresh all on start after Login + option
-* [ ] - chore: how are we going the let users with multiple roles update each mailbox's password?
-* [ ] - chore: there gotta be a way to embedd transforms in fields we push to DB likealways stringify roles etc
+### LeftMenu:
+* [ ] - refactor LeftSidebar to be collapsible and extend main container
+* [ ] - add entry to rspamd page when RSPAMD=1
+* [ ] - add entry to snappymail when said variable is detected
+* [ ] - add entry to Backups page
+* [ ] - add entry to Imports page
 
-### frontend:
+### Profile:
+* [ ] - show controlled mailboxes as a disabled select
+* [ ] - add extra/external email to logins for pw recovery, this will solve the cannot change email address canandrum on Profile page
+* [ ] - make sure non-admin users can modify aliases _only_ for the mailboxes they control
 
-* [ ] - frontend/pages: add proxy to rspamd page
-* [ ] - frontend/pages: add link to snappymail when said variable is detected
-* [ ] - frontend/pages: refactor Column definitions for accounts/alias/* table and load them from individual files
-* [ ] - frontend/Dashboard:  add current hacking attempts
-* [ ] - frontend/Settings: add option to not confirm deletions in handleDelete and others
-* [ ] - frontend/Dashboard: where do we display Health/StartedAt etc?
-* [ ] - frontend/App: refactor Sidebar to be collapsible, as it is the actual menu; certainly need to rewrite the homepage entirely
-* [ ] - frontend/Logins: provide a way for users to change their profile email and password
-* [ ] - frontend/Logins: why can't I change the email directly in the email field?
-* [ ] - frontend/backups.js: add file
-* [ ] - frontend/imports.js: add file
-* [ ] - frontend/Logins: also ProtectedRoute: get isAdmin isActive and roles to deny login and not display certain pages
-* [ ] - frontend/Backups: add page
-* [ ] - frontend/Imports: add page
-* [ ] - frontend/Domains: add FormDNS or page
+### Dashboard:
+* [ ] - add statistics about hacking attempts
 
-### backend:
-* [ ] - backend/accounts: why have a frontend option to create login if we auto-create them each time we pull accounts? make up your mind
-* [ ] - backend/logins: changePassword calls to accounts for isAccount=1
+### Domains:
+* [ ] - start with a DataTable page of domains and see where we go
+* [ ] - add dkim modules and exec calls
+* [ ] - add DNS entries mechanics
+
+### Logins:
+* [ ] - find a way to offer mailbox changePassword for logins with multiple mailbox roles
+* [ ] - handle each mailbox's password vs each login user, they are different
+
+### Accounts:
+* [x] - do we keep auto create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
+* [ ] - each account must have either a linked login, or a login with that role must exist
+* [ ] - how easy is it to detect if an account without linked login is in a role for another login?
+* [ ] - how about we always create logins for each account, but let admins disable them as they attache roles to some users?
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
-* [ ] - backend: mutate the common data transform functions as Class from Array() and Object() objects
-* [ ] - backend: mutate the String with data transform/validation functions as Class
-* [ ] - backend/domains: add dkim modules and exec calls
-* [-] - backend/settings: pullServerEnvs should also look for quota? --> nope, api call dump config
-* [ ] - backend/settings: pull compress method and maybe statistics on the dashboard?
-* [ ] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
-* [ ] - backend/accounts: switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead
-* [ ] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516
-* [ ] - backend: explore python API idea as seen here https://github.com/Mailu/Mailu/blob/master/core/dovecot/start.py
+* [ ] - pull compress/indexing method and maybe statistics on the dashboard?
+* [ ] - switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
+* [ ] - add folders resubscribe option somehow, which is needed after import anyways
+
+### Settings:
+* [ ] - we should definitely offer a first-time global scan after the first DMS entry is added
+
+### Backups:
+* [ ] - start working on this
+
+### Imports:
+* [ ] - start working on mailbox imports, with 2 mbox formats: /domain/user like DMS vs /user@domain like Mailu
+
+## build:
+- [dms-gui](https://github.com/audioscavenger/dms-gui)
+- [hub.docker](https://hub.docker.com/repositories/audioscavenger)
+
+alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
+
+docker login -u audioscavenger
+
+docker image rm audioscavenger/dms-gui:v1.4.0 && docker container prune -f && docker image prune -f
+
+docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
+
+docker push audioscavenger/dms-gui --all-tags
 
 
-### history:
+## history:
 
-* [ ] - frontend/Profile: add managed mailboxes rendered table to change Dovecot passwords
+* [x] v1.4.3 - translation: updated bunch of related messages
+* [x] v1.4.3 - frontend/Dashboard: updated the new bunch of status codes
+* [x] v1.4.3 - frontend/Settings: add API test to setupPath field entry
+* [x] v1.4.3 - frontend/Settings: add ping test to dms field entry
+* [x] v1.4.3 - backend/settings: saveSettings correctly calls initAPI when all settings are saved properly and all valid
+* [x] v1.4.3 - backend/settings: getServerStatus now clearly shows the actual error: dns down, ping down, API key missing, not gen, mismatch or unset, etc
+* [x] v1.4.3 - backend/settings: transmit ping error to Dashboard
+* [x] v1.4.3 - backend: added checkPort test to dms
+* [x] v1.4.3 - backend: added ping test to dms
 * [x] v1.4.2 - release
 * [x] 1.4.1 - backend/account: bugfix in addLogin, roles must be stringified
 * [x] 1.4.1 - frontend/Profile: cannot update user's email or username anymore, or it works every other time, solution: disable this ability
@@ -416,6 +448,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] - frontend/pages: refactor validate*Form and load them from individual files
 * [-] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001 - so what
 * [-] - backend: get rid of the common.js?
+* [-] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516 - nope
+* [x] - backend: explore python API idea as seen here https://github.com/Mailu/Mailu/blob/master/core/dovecot/start.py - yay
+* [-] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
+* [-] - backend/settings: pullServerEnvs should also look for quota? --> nope, api call dump config
+* [-] - frontend/Dashboard: where do we display Health/StartedAt etc? - don't care and don't use docker.sock anymore
 
 
 ## Misc
@@ -486,6 +523,86 @@ octodns-sync      --config-file=/app/config/octodns.cloudflare.yaml --doit
 
 octodns-sync --version
   # octoDNS 1.13.0
+-->
+
+<!--
+## upgrade commands:
+# docker exec -it dms-gui sh
+# cd /app/backend
+# /app/backend # npm version
+    # {
+      # 'dms-gui-backend': '1.0.4',
+      # npm: '11.6.0',
+      # node: '24.9.0',
+      # acorn: '8.15.0',
+      # ada: '3.2.7',
+      # amaro: '1.1.2',
+      # ares: '1.34.5',
+      # brotli: '1.1.0',
+      # cjs_module_lexer: '2.1.0',
+      # cldr: '47.0',
+      # icu: '77.1',
+      # llhttp: '9.3.0',
+      # modules: '137',
+      # napi: '10',
+      # nbytes: '0.1.1',
+      # ncrypto: '0.0.1',
+      # nghttp2: '1.66.0',
+      # openssl: '3.5.3',
+      # simdjson: '3.13.0',
+      # simdutf: '6.4.0',
+      # sqlite: '3.50.4',
+      # tz: '2025b',
+      # undici: '7.16.0',
+      # unicode: '16.0',
+      # uv: '1.51.0',
+      # uvwasi: '0.0.23',
+      # v8: '13.6.233.10-node.27',
+      # zlib: '1.3.1-470d3a2',
+      # zstd: '1.5.7'
+    # }
+
+# docker exec -it dms-gui sh
+# npm install -g npm-check-updates
+# npm install -g npm
+
+# cd /app/backend
+# npx npm-check-updates -u
+# npm install
+# npm audit fix
+    # Upgrading /app/backend/package.json
+    # [====================] 10/10 100%
+
+     # axios       ^1.8.4  →  ^1.12.2
+     # dockerode   ^4.0.2  →   ^4.0.8
+     # dotenv     ^16.4.7  →  ^17.2.2
+     # express    ^4.21.2  →   ^5.1.0
+     # nodemon     ^3.1.9  →  ^3.1.10
+     # prettier     3.5.3  →    3.6.2
+
+# cd /app/frontend
+# npx npm-check-updates -u
+# npm install
+# npm audit fix
+    # [====================] 21/21 100%
+
+     # @babel/core                       ^7.26.10  →   ^7.28.4
+     # @babel/preset-env                  ^7.26.9  →   ^7.28.3
+     # @babel/preset-react                ^7.26.3  →   ^7.27.1
+     # axios                               ^1.8.4  →   ^1.12.2
+     # bootstrap                           ^5.3.3  →    ^5.3.8
+     # bootstrap-icons                    ^1.11.3  →   ^1.13.1
+     # html-webpack-plugin                 ^5.6.3  →    ^5.6.4
+     # i18next                            ^24.2.3  →   ^25.5.2
+     # i18next-browser-languagedetector    ^8.0.4  →    ^8.2.0
+     # prettier                             3.5.3  →     3.6.2
+     # react                              ^19.1.0  →   ^19.1.1
+     # react-bootstrap                    ^2.10.9  →  ^2.10.10
+     # react-dom                          ^19.1.0  →   ^19.1.1
+     # react-i18next                      ^15.4.1  →   ^16.0.0
+     # react-router-dom                    ^7.4.1  →    ^7.9.3
+     # webpack                            ^5.98.0  →  ^5.101.3
+     # webpack-dev-server                  ^5.2.1  →    ^5.2.2
 
 -->
 

@@ -12,10 +12,12 @@ import {
   debugLog,
   errorLog,
   execCommand,
+  execSetup,
   infoLog,
+  ping,
   successLog,
   warnLog,
-  writeFile
+  writeFile,
 } from './backend.mjs';
 import {
   processTopData,
@@ -157,7 +159,9 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
       result = dbRun(sql.settings.insert.setting, jsonArrayOfObjectsScoped); // jsonArrayOfObjects = [{name:name, value:value, scope:scope}, ..]
       if (result.success) {
         successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
-        return { success: true };
+
+        // now (re) generate API scripts
+        result = initAPI(containerName);
         
       }
       return result;
@@ -176,22 +180,22 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
 };
 
 
-// Function to get server status from DMS
-export const getServerStatus = async containerName => {
+// Function to get server status from DMS, you can add some extra test like ping or execSetup
+export const getServerStatus = async (containerName, test=undefined) => {
   if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  debugLog(`for ${containerName}`);
+  debugLog(`for ${containerName} (${test})`);
 
-  var status = {
+  let result, results;
+  let status = {
     status: {
-      status: 'missing',
-      StartedAt: '',
-      FinishedAt: '',
-      Health: '',
+      status: 'stopped',
+      error: null,
     },
     resources: {
       cpuUsage: 0,
       memoryUsage: 0,
       diskUsage: 0,
+      error: null,
     },
   };
 
@@ -218,70 +222,110 @@ export const getServerStatus = async containerName => {
   try {
     const targetDict = getTargetDict(containerName);
 
-    // const [result_cpu, result_mem] = await Promise.all([
-      // execCommand(cpu_Usage, targetDict),
-      // execCommand(memory_Usage, targetDict),
-    // ]);
-    
-    const [result_top, result_disk] = await Promise.all([
-      execCommand(top_cmd, targetDict),
-      execCommand(disk_cmd, targetDict, {timeout: 5}),
-    ]);
-    
-    // debugLog('processTopData', processTopData(result_top.stdout))
-    if (!result_top.returncode) {
-      const topJson = await processTopData(result_top.stdout);
-      
-      // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
-      // debugLog('processTopData', processTopData(result_top.stdout));
-      // {
-        // top: {
-          // time: '04:16:04',
-          // up_days: '36',
-          // load_average: [ '0.08', '0.07', '0.02' ]
-        // },
-        // tasks: {
-          // total: '31',
-          // running: '1',
-          // sleeping: '30',
-          // stopped: '0',
-          // zombie: '0'
-        // },
-        // cpu: {
-          // us: '0.0',
-          // sy: '100.0',
-          // ni: '0.0',
-          // id: '0.0',
-          // wa: '0.0',
-          // hi: '0.0',
-          // si: '0.0',
-          // st: '0.0'
-        // },
-        // mem: {
-          // total: '4413.7',
-          // used: '1305.2',
-          // free: '272.5',
-          // buff_cache: '3134.2'
-        // },
-      // }
-      
-      // status.resources.cpuUsage = result_cpu.stdout;
-      // status.resources.memoryUsage = result_mem.stdout;
-      
-      status.status.status = "running";
-      status.resources.cpuUsage = Number(topJson.cpu.us) + Number(topJson.cpu.sy);
-      status.resources.memoryUsage = 100 * Number(topJson.mem.used) / Number(topJson.mem.total);
+    result = await ping(containerName);
+    if (result.success) {
+      status.status.status = "alive";
+      if (test == 'ping') return {success: true, message: status};
+
+      if (targetDict?.Authorization) {
+
+        results = await execSetup('help', targetDict);
+        if (!results.returncode) {
+          status.status.status = "running";
+
+        } else {
+          if (results.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
+          if (results.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
+          if (results.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
+          status.status.error = results.stderr;
+          return {success: false, message: status};
+        }
+
+        if (test == 'execSetup' && !results.returncode) {
+          return {success: true, message: status};
+        }
+
+        const [result_top, result_disk] = await Promise.all([
+          execCommand(top_cmd, targetDict),
+          execCommand(disk_cmd, targetDict, {timeout: 5}),
+        ]);
+        
+        // debugLog('processTopData', processTopData(result_top.stdout))
+        if (!result_top.returncode) {
+          const topJson = await processTopData(result_top.stdout);
+          
+          // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
+          // debugLog('processTopData', processTopData(result_top.stdout));
+          // {
+            // top: {
+              // time: '04:16:04',
+              // up_days: '36',
+              // load_average: [ '0.08', '0.07', '0.02' ]
+            // },
+            // tasks: {
+              // total: '31',
+              // running: '1',
+              // sleeping: '30',
+              // stopped: '0',
+              // zombie: '0'
+            // },
+            // cpu: {
+              // us: '0.0',
+              // sy: '100.0',
+              // ni: '0.0',
+              // id: '0.0',
+              // wa: '0.0',
+              // hi: '0.0',
+              // si: '0.0',
+              // st: '0.0'
+            // },
+            // mem: {
+              // total: '4413.7',
+              // used: '1305.2',
+              // free: '272.5',
+              // buff_cache: '3134.2'
+            // },
+          // }
+          
+          // status.resources.cpuUsage = result_cpu.stdout;
+          // status.resources.memoryUsage = result_mem.stdout;
+          
+          status.resources.cpuUsage = Number(topJson.cpu.us) + Number(topJson.cpu.sy);
+          status.resources.memoryUsage = 100 * Number(topJson.mem.used) / Number(topJson.mem.total);
+          
+        } else {
+          errorLog(result_top.stderr);
+          status.resources.error = result_top.stderr;     // transmit actual error to frontend
+          if (result_top.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
+          if (result_top.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
+          if (result_top.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
+        }
+
+        if (!result_disk.returncode) {
+          status.resources.diskUsage = Number(result_disk.stdout);
+        } else {
+          errorLog(result_disk.stderr);
+          status.resources.error = result_disk.stderr;    // transmit actual error to frontend
+          if (result_top.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
+          if (result_top.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
+          if (result_top.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
+        }
+
+      } else {
+        status.status.status = "api_gen";   // API key has not been generated yet
+      }
       
     } else {
-      errorLog(result_top.stderr);
+      status.status.error = result.message;   // transmit actual error to frontend
+
+      if (result?.message && result.message.match(/bad address/)) {
+        status.status.status = "missing";   // dns error or container not created
+      } else {
+        status.status.status = "stopped";
+      }
     }
 
-    if (!result_disk.returncode) {
-      status.resources.diskUsage = Number(result_disk.stdout);
-    } else {
-      errorLog(result_disk.stderr);
-    }
-    
+    // remote server being down is not a measure of failure
     return {success: true, message: status};
     
   } catch (error) {
@@ -304,11 +348,8 @@ debugLog(`for ${containerName}`);
 
 var status = {
   status: {
-    status: 'missing',
-    Error: '',
-    StartedAt: '',
-    FinishedAt: '',
-    Health: '',
+    status: 'loading',
+    error: undefined,
   },
   resources: {
     cpuUsage: 0,
@@ -1051,21 +1092,39 @@ export const initAPI = async (containerName, dms_api_key_param) => {
   let result, dms_api_key_new;
   try {
     
-    // check if exist in db
+    // get what key is in db
     result = await getSetting(containerName, 'DMS_API_KEY');
     if (result.success) dms_api_key_db = result.message;
     debugLog(`dms_api_key_db=`, dms_api_key_db);
 
-    // replace key
-    if (dms_api_key_param && dms_api_key_param != 'regen') {
-      dms_api_key_new = dms_api_key_param;
-      debugLog(`replacing dms_api_key by`, dms_api_key_new);
+    // replace key when key is passed
+    if (dms_api_key_param) {
+
+      // regen is passed
+      if (dms_api_key_param == 'regen') {
+        dms_api_key_new = containerName + "-" + crypto.randomUUID();
+        debugLog(`dms_api_key_new=regen`, dms_api_key_new);
+
+      // use key vparam passed
+      } else {
+        dms_api_key_new = dms_api_key_param;
+        debugLog(`dms_api_key_new=param`, dms_api_key_new);
+      }
     }
 
-    // nothing passed, nothing in db
-    if (!dms_api_key_new && !dms_api_key_db) {
-      dms_api_key_new = containerName + "-" + crypto.randomUUID();
-      debugLog(`regen dms_api_key_new=`, dms_api_key_new);
+    // nothing passed
+    if (!dms_api_key_new) {
+
+      // but key exist in db
+      if (dms_api_key_db) {
+        dms_api_key_new = dms_api_key_db;
+        debugLog(`regen dms_api_key_new=dms_api_key_db`, dms_api_key_new);
+
+      // and key is not in db: generate
+      } else {
+        dms_api_key_new = containerName + "-" + crypto.randomUUID();
+        debugLog(`generate dms_api_key_new=`, dms_api_key_new);
+      }
     }
 
     // save key in db
@@ -1096,7 +1155,6 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 export const createAPIfiles = async (containerName) => {
   try {
     for (const file of Object.values(env.userPatchesAPI)) {
-      // writeFile(file.path, file.content.replace(/{live.DMS_API_KEY}/, live.DMS_API_KEY));
       writeFile(file.path, file.content);
     }
     return {success: true, message: 'API files created'};
