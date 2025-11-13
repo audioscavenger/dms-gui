@@ -13,6 +13,8 @@ export const env = {
   TZ: process.env.TZ || 'UTC',
 
   // internals of dms-gui
+  FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // for cors if you really are crazy with this sort of security
+  API_URL  : process.env.API_URL || '/api',               // for cors too
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
   DATABASE: process.env.DATABASE || '/app/config/dms-gui.sqlite3',
 

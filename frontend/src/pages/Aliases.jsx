@@ -250,7 +250,7 @@ const Aliases = () => {
   
   return (
     <div>
-      <h2 className="mb-4">{Translate('aliases.title')}</h2>
+      <h2 className="mb-4">{Translate('aliases.title')} {t('common.for', {what:containerName})}</h2>
       
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />

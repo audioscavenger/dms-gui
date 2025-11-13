@@ -34,6 +34,7 @@ import {
   Card,
   Translate
 } from '../components/index.jsx';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM
 import FormContainerAdd from './FormContainerAdd';
@@ -43,6 +44,7 @@ import ServerInfos from './ServerInfos';
 const Settings = () => {
   // const passwordFormRef = useRef(null);
   const { t } = useTranslation();
+  const [containerName] = useLocalStorage("containerName");
 
   // this is how to handle data coming from a child form
   /*
@@ -74,7 +76,7 @@ const Settings = () => {
   // https://icons.getbootstrap.com/
   const settingTabs = [
     { id: 1, title: "settings.titleContainerAdd", icon: "house-add",  content: FormContainerAdd(),  },
-    { id: 2, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:'dms'}) },
+    { id: 2, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:containerName}) },
     { id: 3, title: "settings.titleContainers",   icon: "houses-fill",content: <></>,                  },
   ];
 

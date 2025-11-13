@@ -147,13 +147,13 @@ export const getLogins = async credentials => {
 };
 
 
-export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, roles=[]) => {
+export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, favorite, roles=[]) => {
 
   try {
-    debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, roles);
+    debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, favorite, roles);
     
     const { salt, hash } = await hashPassword(password);
-    const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, roles:JSON.stringify(roles) });
+    const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, favorite:favorite, roles:JSON.stringify(roles) });
     if (result.success) {
       successLog(`Saved login ${username}:${mailbox}`);
       

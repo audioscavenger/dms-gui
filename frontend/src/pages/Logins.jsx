@@ -24,6 +24,7 @@ import {
   deleteLogin,
   updateLogin,
   getAccounts,
+  getScopes,
 } from '../services/api.mjs';
 
 import {
@@ -43,6 +44,7 @@ const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
+  const [DMSs, setDMSs] = useState([]);
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
@@ -81,6 +83,7 @@ const Logins = () => {
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
+    favorite: '',
     roles: [],
   });
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
@@ -131,6 +134,7 @@ const Logins = () => {
       setSuccessMessage(null);
       
       await Promise.all([
+        fetchScopes(),
         fetchAccounts(),
         fetchLogins(),
       ]);
@@ -147,9 +151,11 @@ const Logins = () => {
   const fetchAccounts = async () => {
     
     try {
+      debugLog('ddebug containerName',containerName)
       const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getAccounts(containerName),
       ]);
+        debugLog('accountsData',accountsData)
 
       if (accountsData.success) {
         // Prepare account options for the select field
@@ -160,6 +166,7 @@ const Logins = () => {
 
         let mailboxes = (pluck(accountsData.message, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
         setRolesAvailable(mailboxes);
+        debugLog('mailboxes',mailboxes)
 
       } else setErrorMessage(accountsData.message);
 
@@ -194,6 +201,31 @@ const Logins = () => {
       setLoading(false);
     }
   };
+
+
+  const fetchScopes = async () => {
+    
+    debugLog(`fetchScopes call getScopes()`);
+    try {
+      const [scopesData] = await Promise.all([
+        getScopes(),
+      ]);
+
+      if (scopesData.success) {
+        // this will be all containers in db except dms-gui
+        console.debug('fetchScopes: scopesData', scopesData);   // [ {value:'containerName'}, .. ]
+ 
+        // update selector list
+        setDMSs(scopesData.message.map(scope => { return { ...scope, label:scope.value } }));   // duplicate value as label for the select field
+
+      } else setErrorMessage(scopesData.message);
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
+      setErrorMessage('api.errors.fetchSettings');
+    }
+  };
+
 
   const handleNewLoginInputChange = (e) => {
     debugLog(newLoginformData);
@@ -319,6 +351,7 @@ const Logins = () => {
         newLoginformData.isAdmin,
         newLoginformData.isAccount,
         newLoginformData.isActive,
+        newLoginformData.favorite,
         newLoginformData.roles,
         [],
       );
@@ -333,6 +366,7 @@ const Logins = () => {
           isAdmin: 0,
           isAccount: 0,
           isActive: 1,
+          favorite: '',
           roles: [],
         });
         fetchAll(); // Refresh the logins list
@@ -762,6 +796,19 @@ const Logins = () => {
         disabled={newLoginformData.isAdmin}
       />
 
+      <SelectField
+        id="favorite"
+        name="favorite"
+        label="logins.favorite"
+        value={containerName}
+        onChange={handleNewLoginInputChange}
+        options={DMSs}
+        placeholder="logins.favoriteRequired"
+        error={newLoginFormErrors.favorite}
+        helpText="logins.favoriteRequired"
+        required
+      />
+
       {newLoginformData.isAccount && (
         <SelectField
           id="mailbox"
@@ -772,7 +819,7 @@ const Logins = () => {
           options={accountOptions}
           placeholder="accounts.mailboxRequired"
           error={newLoginFormErrors.mailbox}
-          helpText="accounts.mailboxRequired"
+          helpText="accounts.mailboxHelp"
           required
         />
       ) || (

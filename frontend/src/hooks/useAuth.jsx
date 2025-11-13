@@ -10,6 +10,7 @@ import {
 } from '../services/api.mjs';
 
 export const AuthProvider = ({ children }) => {
+  const [containerName, setContainerName] = useLocalStorage("containerName");
   const [user, setUser] = useLocalStorage("user", null);
   // const [user, setUser] = useLocalStorage("accessToken", null);    // with JWT
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
     
     console.debug('ddebug setUser(user)', user);
     setUser(user);
+    setContainerName(user.favorite);
     
     // console.debug('ddebug navigate /');
     navigate(to);
@@ -27,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
   // call this function to sign out logged in user
   const logout = async (to="/login") => {
-    console.debug('ddebug /logout');
+    // console.debug('ddebug /logout');
     // setUser(null);
     logoutUser();
     window.localStorage.clear();

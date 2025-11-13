@@ -78,10 +78,47 @@ const options = {
 const oasDefinition = swaggerJsdoc(options);
 
 
-// Middleware
-app.use(cors());
+// cors manual way
+// app.use(function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//   next();
+// });
+
+// cors the react way https://expressjs.com/en/resources/middleware/cors.html
+debugLog('env.API_URL',env.API_URL)
+debugLog('env.FRONTEND_URL',env.FRONTEND_URL)
+// const allowedOrigins = [
+//   env.API_URL,              // Development
+//   env.FRONTEND_URL,         // Production from docker    // another shit to maintain
+// ];
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     // Allow requests with no origin (mobile apps, etc.)
+//     if (!origin) return callback(null, true);
+    
+//     if (allowedOrigins.indexOf(origin) !== -1) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+//   allowedHeaders: ['Content-Type', 'Authorization', Accept-Language'] X-Requested-With
+// };
+const corsOptions = {
+  origin: true,       // reflect the request origin, as defined by req.header('Origin')
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
+
+// app.options('*', cors()) // include pre-flight across-the-board before other routes
 
 // Parser
 // https://www.codemzy.com/blog/parse-booleans-express-query-params
@@ -125,7 +162,7 @@ app.set('query parser', function (str) {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/status/:containerName', async (req, res) => {
+app.get('/api/status/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -152,7 +189,7 @@ app.get('/api/status/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/infos', async (req, res) => {
+app.get('/api/infos', async (req, res, next) => {
   try {
     const infos = await getNodeInfos();
     res.json(infos);
@@ -198,7 +235,7 @@ app.get('/api/infos', async (req, res) => {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/envs/:containerName', async (req, res) => {
+app.get('/api/envs/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -241,7 +278,7 @@ app.get('/api/envs/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to retrieve accounts
  */
-app.get('/api/accounts/:containerName', async (req, res) => {
+app.get('/api/accounts/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -295,7 +332,7 @@ app.get('/api/accounts/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to create account
  */
-app.post('/api/accounts/:containerName', async (req, res) => {
+app.post('/api/accounts/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -348,7 +385,7 @@ app.post('/api/accounts/:containerName', async (req, res) => {
  *       500:
  *         description: See error message
  */
-app.put('/api/doveadm/:containerName/:command/:mailbox', async (req, res) => {
+app.put('/api/doveadm/:containerName/:command/:mailbox', async (req, res, next) => {
   try {
     const { containerName, command, mailbox } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -392,7 +429,7 @@ app.put('/api/doveadm/:containerName/:command/:mailbox', async (req, res) => {
  *       500:
  *         description: Unable to delete account
  */
-app.delete('/api/accounts/:containerName/:mailbox', async (req, res) => {
+app.delete('/api/accounts/:containerName/:mailbox', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -449,7 +486,7 @@ app.delete('/api/accounts/:containerName/:mailbox', async (req, res) => {
  *       500:
  *         description: Unable to update account
  */
-app.patch('/api/accounts/:containerName/:mailbox/update', async (req, res) => {
+app.patch('/api/accounts/:containerName/:mailbox/update', async (req, res, next) => {
   try {
     const { containerName, mailbox } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -492,7 +529,7 @@ app.patch('/api/accounts/:containerName/:mailbox/update', async (req, res) => {
  *       500:
  *         description: Unable to retrieve aliases
  */
-app.get('/api/aliases/:containerName', async (req, res) => {
+app.get('/api/aliases/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -545,7 +582,7 @@ app.get('/api/aliases/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to create alias
  */
-app.post('/api/aliases/:containerName', async (req, res) => {
+app.post('/api/aliases/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -601,7 +638,7 @@ app.post('/api/aliases/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to delete alias
  */
-app.delete('/api/aliases/:containerName', async (req, res) => {
+app.delete('/api/aliases/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -649,7 +686,7 @@ app.delete('/api/aliases/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to retrieve settings
  */
-app.get('/api/settings/:containerName', async (req, res) => {
+app.get('/api/settings/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -679,7 +716,7 @@ app.get('/api/settings/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to retrieve scopes
  */
-app.get('/api/scopes', async (req, res) => {
+app.get('/api/scopes', async (req, res, next) => {
   try {
     const scopes = await getScopes();
     res.json(scopes);
@@ -727,7 +764,7 @@ app.get('/api/scopes', async (req, res) => {
  *       500:
  *         description: Unable to save settings
  */
-app.post('/api/settings/:containerName', async (req, res) => {
+app.post('/api/settings/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -764,7 +801,7 @@ app.post('/api/settings/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to retrieve roles
  */
-app.get('/api/roles/:credential', async (req, res) => {
+app.get('/api/roles/:credential', async (req, res, next) => {
   try {
     const { credential } = req.params;
     if (!credential) return res.status(400).json({ error: 'credential is required' });
@@ -803,7 +840,7 @@ app.get('/api/roles/:credential', async (req, res) => {
  *       500:
  *         description: Unable to retrieve logins
  */
-app.post('/api/logins', async (req, res) => {
+app.post('/api/logins', async (req, res, next) => {
   try {
     const { credentials } = req.body;
     debugLog('ddebug req.body', credentials);
@@ -872,14 +909,14 @@ app.post('/api/logins', async (req, res) => {
  *       500:
  *         description: Unable to save Login
  */
-app.put('/api/logins', async (req, res) => {
+app.put('/api/logins', async (req, res, next) => {
   try {
-    const { mailbox, username, password, email, isAdmin, isAccount, isActive, roles } = req.body;
+    const { mailbox, username, password, email, isAdmin, isAccount, isActive, favorite, roles } = req.body;
     if (!mailbox)     return res.status(400).json({ error: 'mailbox is missing' });
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, roles);
+    const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, favorite, roles);
     res.status(201).json(result);
     
   } catch (error) {
@@ -892,7 +929,7 @@ app.put('/api/logins', async (req, res) => {
 // https://swagger.io/docs/specification/v3_0/data-models/data-types/#objects
 /**
  * @swagger
- * /api/logins/{mailbox}/update:
+ * /api/logins/{mailbox}:
  *   patch:
  *     summary: Update a login data
  *     description: Update the data for an existing login account
@@ -927,6 +964,9 @@ app.put('/api/logins', async (req, res) => {
  *               isActive:
  *                 type: integer
  *                 description: de/activate login account
+ *               favorite:
+ *                 type: string
+ *                 description: New mailbox for the login account
  *     responses:
  *       200:
  *         description: Data updated successfully
@@ -935,16 +975,16 @@ app.put('/api/logins', async (req, res) => {
  *       500:
  *         description: Unable to update login
  */
-app.patch('/api/logins/:mailbox/update', async (req, res) => {
+app.patch('/api/logins/:mailbox', async (req, res, next) => {
   try {
     const { mailbox } = req.params;
     if (!mailbox) {
       return res.status(400).json({ error: 'mailbox is required' });
     }
 
-    debugLog('ddebug index PATCH /api/logins/${mailbox}/update req.body', req.body);
+    debugLog('ddebug index PATCH /api/logins/${mailbox} req.body', req.body);
     const result = await updateDB('logins', mailbox, req.body);
-    debugLog(`index PATCH /api/logins/${mailbox}/update`, result)
+    debugLog(`index PATCH /api/logins/${mailbox}`, result)
     res.json(result);
     
   } catch (error) {
@@ -977,7 +1017,7 @@ app.patch('/api/logins/:mailbox/update', async (req, res) => {
  *       500:
  *         description: Unable to delete login
  */
-app.delete('/api/logins/:mailbox', async (req, res) => {
+app.delete('/api/logins/:mailbox', async (req, res, next) => {
   try {
     const { mailbox } = req.params;
     if (!mailbox) {
@@ -1024,7 +1064,7 @@ app.delete('/api/logins/:mailbox', async (req, res) => {
  *       500:
  *         description: Unable to validate credentials
  */
-app.post('/api/loginUser', async (req, res) => {
+app.post('/api/loginUser', async (req, res, next) => {
   try {
     const { credential, password } = req.body;
     if (!credential)  return res.status(400).json({ error: 'credential is missing' });
@@ -1077,7 +1117,7 @@ app.post('/api/loginUser', async (req, res) => {
  *       500:
  *         description: Unable to logout
  */
-app.post('/api/logout', async (req, res) => {
+app.post('/api/logout', async (req, res, next) => {
   try {
     res.clearCookie('jwt', { 
       httpOnly: true, 
@@ -1123,7 +1163,7 @@ app.post('/api/logout', async (req, res) => {
  *       500:
  *         description: Unable to retrieve domains
  */
-app.get('/api/domains/:containerName/:domain', async (req, res) => {
+app.get('/api/domains/:containerName/:domain', async (req, res, next) => {
   try {
     const { containerName, domain } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
@@ -1170,7 +1210,7 @@ app.get('/api/domains/:containerName/:domain', async (req, res) => {
  *       500:
  *         description: Unable to count table
  */
-app.get('/api/getCount/:table/:containerName', async (req, res) => {
+app.get('/api/getCount/:table/:containerName', async (req, res, next) => {
   try {
     const { table, containerName } = req.params;
     if (!table) return res.status(400).json({ error: 'table is required' });
@@ -1218,7 +1258,7 @@ app.get('/api/getCount/:table/:containerName', async (req, res) => {
  *       500:
  *         description: Unable to generate DMS_API_KEY
  */
-app.post('/api/initAPI/:containerName', async (req, res) => {
+app.post('/api/initAPI/:containerName', async (req, res, next) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });

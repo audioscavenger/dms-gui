@@ -232,7 +232,7 @@ const Dashboard = () => {
         />
       </div>
 
-      <h2 className="mb-4">{t("dashboard.title", {containerName: containerName})}</h2>
+      <h2 className="mb-4">{Translate('dashboard.title')} {t('common.for', {what:containerName})}</h2>
       <AlertMessage type="danger" message={errorMessage} />
 
       <Row>

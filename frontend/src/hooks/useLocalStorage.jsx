@@ -13,7 +13,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
       const value = window.localStorage.getItem(keyName);
       
       if (value) {
-        console.debug(`ddebug 1 return window.localStorage.getItem(${keyName})=`, value);
+        // console.debug(`ddebug 1 return window.localStorage.getItem(${keyName})=`, value);
         // without JWT: "user":         '{"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}'
         // with    JWT: "accessToken":  null
         
@@ -27,7 +27,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
         // console.debug(`ddebug 2 window.localStorage.setItem(${keyName}, JSON.stringify(${JSON.stringify(defaultValue)}))`);
         // window.localStorage.setItem(keyName, JSON.stringify(defaultValue));
         
-        console.debug(`ddebug 2 window.localStorage.removeItem(${keyName})`);
+        // console.debug(`ddebug 2 window.localStorage.removeItem(${keyName})`);
         window.localStorage.removeItem(keyName);
         
         return defaultValue;
@@ -41,7 +41,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
   
   const setValue = (newValue) => {
     try {
-      console.debug(`ddebug 4 window.localStorage.setItem(${keyName}), ${JSON.stringify(newValue)}`, newValue);
+      // console.debug(`ddebug 4 window.localStorage.setItem(${keyName}), ${JSON.stringify(newValue)}`, newValue);
       // without JWT: user, {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
       // with    JWT: user, { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
 
@@ -52,7 +52,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
       console.log(error.message);
     }
     
-  console.debug(`ddebug 5 setStoredValue(newValue)`, newValue);
+  // console.debug(`ddebug 5 setStoredValue(newValue)`, newValue);
   setStoredValue(newValue);
   };
   return [storedValue, setValue];

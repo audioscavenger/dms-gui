@@ -23,6 +23,7 @@ import {
 import {
   getLogins,
   updateLogin,
+  getScopes,
 } from '../services/api.mjs';
 
 import {
@@ -31,13 +32,17 @@ import {
   FormField,
   LoadingSpinner,
   Translate,
+  SelectField,
 } from '../components/index.jsx';
 
 
 const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const [containerName] = useLocalStorage("containerName");
+  const [DMSs, setDMSs] = useState([]);
+
+  const { user, setUser } = useAuth();
   const { logout } = useAuth();
 
   // Common states -------------------------------------------------
@@ -47,15 +52,17 @@ const Profile = () => {
   const [selectedLogin, setSelectedLogin] = useState(null);
   
   // State for new login inputs ----------------------------------
-  const [loginFormData, setloginFormData] = useState({
-    mailbox: '',
-    username: '',
-    email: '',
-    isAdmin: 0,
-    isAccount: 0,
-    isActive: 1,
-    roles: [],
-  });
+  // const [loginFormData, setloginFormData] = useState({
+  //   username: '',
+  //   email: '',
+  //   isAdmin: 0,
+  //   isAccount: 0,
+  //   isActive: 1,
+  //   favorite: '',
+  //   roles: [],
+  //   mailbox: '',
+  // });
+  const [loginFormData, setloginFormData] = useState(user);
   const [loginFormErrors, setloginFormErrors] = useState({});
 
   // State for password change modal -------------------------------
@@ -71,21 +78,27 @@ const Profile = () => {
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchProfile();
+    setLoading(true);
+    fetchScopes();
+    // fetchProfile();
+    setLoading(false);
   }, []);
 
   const fetchProfile = async () => {
     
     try {
-      setLoading(true);
+      // setLoading(true);
       setErrorMessage(null);
       setSuccessMessage(null);
 
-      // setloginFormData({
-        // ...loginFormData,
-        // ...user
-      // });
+      // this does not need to be fetched lol
+      setloginFormData({
+        ...loginFormData,
+        ...user
+      });
 
+      // so much work for what...
+      /*
       const userData = await getLogins([user.mailbox, user.username]);  // user.mailbox was maybe altered in Logins page, let's pull with both options
       debugLog('userData', userData);
       if (userData.success) {
@@ -97,23 +110,49 @@ const Profile = () => {
         // update profile form with fresh data, we use the first entry in userData as there will be 2 identical ones
         setloginFormData({
           ...loginFormData,
-          ...userData.message[0]
+          ...userData.message[0],
         });
 
       } else setErrorMessage(userData.message);
+        */
 
       
     } catch (error) {
       errorLog(t('api.errors.fetchProfile'), error);
       setErrorMessage('api.errors.fetchProfile');
       
-    } finally {
-      setLoading(false);
+    // } finally {
+    //   setLoading(false);
     }
   };
 
+
+  const fetchScopes = async () => {
+    
+    debugLog(`fetchScopes call getScopes()`);
+    try {
+      const [scopesData] = await Promise.all([
+        getScopes(),
+      ]);
+
+      if (scopesData.success) {
+        // this will be all containers in db except dms-gui
+        debugLog('fetchScopes: scopesData', scopesData);   // [ {value:'containerName'}, .. ]
+ 
+        // update selector list
+        setDMSs(scopesData.message.map(scope => { return { ...scope, label:scope.value } }));   // duplicate value as label for the select field
+
+      } else setErrorMessage(scopesData.message);
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchSettings'), error);
+      setErrorMessage('api.errors.fetchSettings');
+    }
+  };
+
+
   const handleLoginInputChange = (e) => {
-    debugLog(loginFormData);
+    debugLog('loginFormData',loginFormData);
     const { name, value } = e.target;
     
     setloginFormData({
@@ -134,11 +173,15 @@ const Profile = () => {
   const validateloginForm = () => {
     const errors = {};
 
-    if (!loginFormData.username.trim()) {
-      errors.username = 'logins.usernameRequired';
-    } else if (!regexUsername.test(loginFormData.username)) {
-      errors.username = 'logins.usernameInvalid';
+    if (!loginFormData.favorite.trim()) {
+      errors.favorite = 'logins.favoriteRequired';
     }
+
+    // if (!loginFormData.username.trim()) {
+    //   errors.username = 'logins.usernameRequired';
+    // } else if (!regexUsername.test(loginFormData.username)) {
+    //   errors.username = 'logins.usernameInvalid';
+    // }
 
     // this is done by react
     // if (!loginFormData.mailbox.trim()) {
@@ -159,7 +202,8 @@ const Profile = () => {
   };
 
 
-  const handleLoginSave = async () => {
+  const handleLoginSave = async (e) => {
+    e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -171,15 +215,21 @@ const Profile = () => {
       
       // send only the editedData from id: {mailbox:newEmail, username:newValue, email:newEmail, roles:[whatever]}
       // ATTENTION the key field=mailbox must come last or else subsequent db updates will fail when you modify it!
+      // moveKeyToLast(loginFormData, 'mailbox')  // no need for that, we just init loginFormData with mailbox last!
       debugLog('ddebug loginFormData', loginFormData)
+      // const result = await updateLogin(
+      //   user.mailbox,
+      //   loginFormData,
+      // );
+
+      // how about we push only the fields we want? like, the only fields the users can modify? hm??
       const result = await updateLogin(
         user.mailbox,
-        moveKeyToLast(loginFormData, 'mailbox')
+        {email:loginFormData.email, favorite:loginFormData.favorite},
       );
       if (result.success) {
-        // TODO: handle individual change failure
-        
-        setSuccessMessage(t('logins.saved', {username:login.mailbox}));
+        setUser(loginFormData);
+        setSuccessMessage(t('logins.saved', {username:user.mailbox}));
         
       } else setErrorMessage(result.message);
       
@@ -260,7 +310,7 @@ const Profile = () => {
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
-        setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.username}));
+        setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.mailbox}));
         handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result.message);
@@ -272,7 +322,7 @@ const Profile = () => {
   };
 
 
-  if (!user) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -306,6 +356,19 @@ const Profile = () => {
           error={loginFormErrors.isAccount}
           isChecked={loginFormData.isAccount && !loginFormData.isAdmin}
           disabled
+        />
+
+        <SelectField
+          id="favorite"
+          name="favorite"
+          label="logins.favorite"
+          value={loginFormData.favorite}
+          onChange={handleLoginInputChange}
+          options={DMSs}
+          placeholder="logins.favoriteRequired"
+          error={loginFormErrors.favorite}
+          helpText="logins.favoriteRequired"
+          required
         />
 
         {!loginFormData.isAccount && (

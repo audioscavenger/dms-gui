@@ -104,6 +104,11 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
+* [ ] 1.4.7 - linked mailbox users can now change their mailbox password
+* [x] 1.4.6 - Increase CORS security
+* [x] 1.4.6 - clear distinction between external email address, mailbox (to login as) and linked mailboxes
+* [x] 1.4.6 - db update: we must save favorite container in each user login or bad shit happens on the frontend: db, logins, and addLogin, Login pages
+* [x] 1.4.6 - frontend/Logins: bugfix: mailboxes list would not load because containerName is unset => fix logins db again
 * [x] 1.4.5 - frontend/Settings: bugfix: choosing a containerName now fetch settings
 * [x] 1.4.5 - db update: logins now have an external email field for password recovery
 * [x] v1.4.4 - release
@@ -308,7 +313,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [x] 1.0.15 - had to REdevelop logger() with colors, YET AGAIN
 * [x] 1.0.15 - backend/db: init the db on start
 * [x] 1.0.15 - backend/db: automated patch upgrade of db
-* [x] 1.0.15 - backend/db: proper error handling for dbOpen, dbRun, dbGet, dbAll, dbInit, dbUpdate
+* [x] 1.0.15 - backend/db: proper error handling for dbOpen, dbRun, dbGet, dbAll, dbInit, dbUpgrade
 * [x] 1.0.15 - backend/env: handle versions with a "v" and keep only the numbers
 * [x] 1.0.15 - frontend/Settings/logins: test getLogins, addLogin
 * [x] 1.0.15 - frontend/Settings/logins: do not bring password back in as they are salted

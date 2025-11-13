@@ -101,40 +101,42 @@ settings: {
 
 logins: {
       
-  keys:   {password:'string', mailbox:'string', username:'string', email:'string', isAdmin:'number', isActive:'number', isAccount:'number', roles:'object'},
+  id:     'mailbox',
+  keys:   {password:'string', mailbox:'string', username:'string', email:'string', isAdmin:'number', isActive:'number', isAccount:'number', favorite:'string', roles:'object'},
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1`,
-    admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isAdmin = 1`,
+    login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1`,
+    admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
     roles:    `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
     salt:     `SELECT salt from logins WHERE mailbox = ?`,
     hash:     `SELECT hash from logins WHERE mailbox = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
     isActive: {
-      login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
-      logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1`,
-      admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
+      login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
+      logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1`,
+      admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
       roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
       count: {
         admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
       },
     },
     isInactive: {
-      login:    `SELECT mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
-      logins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0`,
-      admins:   `SELECT id, mailbox, username, email, isAdmin, isActive, isAccount, roles from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
+      login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
+      logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0`,
+      admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
       roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
     },
   },
   
   insert: {
-    login:    `REPLACE INTO logins          (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @roles)`,
-    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, roles) VALUES (@mailbox, @username, @email, @isAccount, @roles)`,
+    login:    `REPLACE INTO logins          (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, favorite, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @favorite, @roles)`,
+    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
   },
   
   update: {
+    password: `UPDATE logins set salt=@salt, hash=@hash WHERE mailbox = ?`,
     mailbox: {
       undefined: {
         desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
@@ -144,8 +146,6 @@ logins: {
         fail:   "Cannot change mailbox from a mailbox-linked user.",
       },
     },
-    username: `UPDATE logins set username = @username WHERE mailbox = ?`,
-    password: `UPDATE logins set salt=@salt, hash=@hash WHERE mailbox = ?`,
     isAdmin: {
       0: {
         desc:   "refuse to demote the last admin",
@@ -192,7 +192,6 @@ logins: {
         pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE mailbox = ?`,
       },
     },
-    roles:      `UPDATE logins set roles = @roles WHERE (mailbox = @mailbox OR username = @username)`,
   },
   
   delete: {
@@ -218,6 +217,7 @@ logins: {
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1,
           isAccount BIT DEFAULT 0,
+          favorite  TEXT DEFAULT '',
           roles     TEXT DEFAULT '[]'
           );
           INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
@@ -261,6 +261,12 @@ logins: {
         `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
         `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 'dms-gui', ${env.isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.4.6',
+      patches: [
+        `ALTER TABLE logins ADD favorite    TEXT DEFAULT ''`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -642,7 +648,7 @@ export const dbInit = () => {
   DB.close()
 
   try {
-    dbUpdate();
+    dbUpgrade();
     
   } catch (error) {
     errorLog(error.message);
@@ -652,7 +658,7 @@ export const dbInit = () => {
 };
 
 
-export const dbUpdate = () => {
+export const dbUpgrade = () => {
   debugLog(`start`);
 
   dbOpen();
@@ -767,7 +773,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
   try {
     debugLog(`for ${credential}`);
     // const login = dbGet(sql[table].select.saltHash, credential, credential);  // this worked perfectly until we switched to ES6
-    const login = dbGet(sql[table].select.saltHash, {email:credential, mailbox:credential, username:credential });
+    const login = dbGet(sql[table].select.saltHash, {mailbox:credential, username:credential });
     const saltHash = (login.success) ? login.message : false;
     // console.log('saltHash',saltHash);
 
@@ -851,6 +857,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
   let result, scopedValues, value2test, testResult;
+  let messages = [];
   try {
     if (!sql[table]) {
       throw new Error(`unknown table ${table}`);
@@ -880,19 +887,21 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
         // objects must be saved as JSON
         } else if (typeof value == 'object') {
           result = dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
-          successLog(`Updated ${table} ${id} with ${key}=${value}`);
-          return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
+          if (result.success) {
+            messages.push(`Updated ${table} ${id} with ${key}=${value}`);
+            successLog(`Updated ${table} ${id} with ${key}=${value}`);
+          } else messages.push(result.message);
         
         // other sqlite3 valid types and we can test specific scenarios
         } else {
           
-          // check if the sql is defined for the key to update
+          // add named scope to the scopedValues, even if not used in the query it won't fail
+          // scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
+          scopedValues = {[key]:value, scope:scope};    // always add scope even when undefined, why care? it's failproof
+            
+          // check if we have specifics before updating this key
           if (sql[table].update[key]) {
-            
-            // add named scope to the scopedValues, even if not used in the query it won't fail
-            // scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
-            scopedValues = {[key]:value, scope:scope};    // always add scope even when undefined, why care? it's failproof
-            
+              
             // is there a test for THAT value or ANY values?
             if (sql[table].update[key][value] || sql[table].update[key][undefined]) {
               
@@ -906,34 +915,48 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
               // compare the result in the check function
               if (sql[table].update[key][value2test].check(testResult.message)) {
                 
-                // we pass the test
+                // we pass the test, apply update
                 result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
-                successLog(`Updated ${table} ${id} with ${key}=${value}`);
-                return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
+                if (result.success) {
+                  messages.push(`Updated ${table} ${id} with ${key}=${value}`);
+                  successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                } else messages.push(result.message);
                 
               } else {
                 // we do not pass the test
                 errorLog(sql[table].update[key][value2test].fail);
-                return { success: false, message: sql[table].update[key][value2test].fail};
+                // return { success: false, message: sql[table].update[key][value2test].fail};
+                messages.push(sql[table].update[key][value2test].fail);
               }
               
-            // no test, update the db with new value
+            // no test for any value of key, update the db with new value
             } else {
               result = dbRun(sql[table].update[key], scopedValues, id);
-              successLog(`Updated ${table} ${id} with ${key}=${value}`);
-              return { success: true, message: `Updated ${table} ${id} with ${key}=${value}`};
+              if (result.success) {
+                messages.push(`Updated ${table} ${id} with ${key}=${value}`);
+                successLog(`Updated ${table} ${id} with ${key}=${value}`);
+              } else messages.push(result.message);
             }
             
           } else {
-            errorLog(`sql[${table}].update is missing [${key}]`);
-            return { success: false, message: `sql[${table}].update is missing [${key}]`};
+            // errorLog(`sql[${table}].update is missing [${key}]`);
+            // return { success: false, message: `sql[${table}].update is missing [${key}]`};
+
+            result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].id} = ?`, scopedValues, id);
+            if (result.success) {
+              messages.push(`Updated ${table} ${id} with ${key}=${value}`);
+              successLog(`Updated ${table} ${id} with ${key}=${value}`);
+            } else messages.push(result.message);
           }
           
         }
         
-      } else errorLog(`typeof ${value} for ${key} is not ${sql[table].keys[key]}`)
+      } else {
+        errorLog(`typeof ${value} for ${key} is not ${sql[table].keys[key]}`);
+        messages.push(`typeof ${value} for ${key} is not ${sql[table].keys[key]}`);
+      }
     }
-    return { success: true, message: 'Login updated successfully' };
+    return { success: true, message: messages.join ("; ") };
     
   } catch (error) {
     errorLog(error.message);
@@ -1048,7 +1071,7 @@ export const getTargetDict = (containerName) => {
 //   sql,
 //   dbOpen,
 //   dbInit,
-//   dbUpdate,
+//   dbUpgrade,
 //   dbRun,
 //   dbGet,
 //   dbAll,
