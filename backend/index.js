@@ -2,6 +2,7 @@ import {
   debugLog,
   errorLog,
   infoLog,
+  killMe,
 } from './backend.mjs';
 import {
   env
@@ -12,6 +13,7 @@ import {
   dbGet,
   dbInit,
   deleteEntry,
+  refreshTokens,
   updateDB,
 } from './db.mjs';
 
@@ -63,6 +65,14 @@ import qs from 'qs';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 const app = express();
+
+// https://github.com/ncb000gt/node-cron
+import cron from 'node-cron';
+if (env.DMSGUI_CRON) {
+  cron.schedule(env.DMSGUI_CRON, () => {
+      killMe();
+  });
+};
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -995,10 +1005,9 @@ async (req, res) => {
 app.get('/api/scopes', 
   authenticateToken, 
   requireActive, 
-  requireAdmin, 
 async (req, res) => {
   try {
-    const scopes = await getScopes();
+    const scopes = await getScopes((req.user.isAdmin) ? undefined : req.user.roles);
     res.json(scopes);
     
   } catch (error) {
@@ -1523,7 +1532,7 @@ app.post('/api/refresh', async (req, res) => {
 app.post('/api/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from database
-    result = updateDB('logins', req.user.mailbox, {refreshToken:null});
+    result = updateDB('logins', req.user.mailbox, {refreshToken:"null"});
 
     // Clear cookies
     res.clearCookie('accessToken');
@@ -1696,6 +1705,38 @@ async (req, res) => {
 });
 
 
+// Endpoint for rebooting this container
+/**
+ * @swagger
+ * /api/kill:
+ *   post:
+ *     summary: reboot this container
+ *     description: reboot this container
+ *     responses:
+ *       200:
+ *         description: true
+ *       401:
+ *         description: access denied
+ *       500:
+ *         description: Unable to restart container
+ */
+app.post('/api/kill', 
+  authenticateToken, 
+  requireActive, 
+  requireAdmin, 
+async (req, res) => {
+  try {
+    
+    const result = await killMe();
+    res.json(result);
+    
+  } catch (error) {
+    errorLog(`index /api/kill: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // ============================================
 // GLOBAL ERROR HANDLER
 // ============================================
@@ -1716,8 +1757,8 @@ app.use((err, req, res, next) => {
 app.listen(env.PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
-  dbInit();
-
+  dbInit();         // apply patches etc
+  refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 });
 
 
@@ -1735,7 +1776,7 @@ app.listen(env.PORT_NODEJS, async () => {
 ✅ Frontend axios configured with withCredentials: true
 ✅ httpOnly cookies prevent XSS attacks
 
-ADDITIONAL RECOMMENDATIONS:
+more ideas:
 1. Add rate limiting to prevent brute force attacks
 2. Consider re-verifying admin status from DB for critical operations
 3. Add logging for all admin actions (audit trail)

@@ -114,6 +114,10 @@ tr .MuiChip-root  {
 
 .cursor-pointer {cursor: pointer;}
 
+.top-right {
+  top: 1rem;
+  right: 1rem;
+}
 
 /* -------------------- DataTable -------------------- */
 /* --- Highlight animation --- */

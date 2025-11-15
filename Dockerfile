@@ -52,7 +52,7 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.4.7
+ARG DMSGUI_VERSION=1.4.8
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
@@ -73,6 +73,11 @@ COPY --from=backend-builder /app/backend /app/backend
 # Copy frontend build from frontend-builder
 COPY --from=frontend-builder /app/frontend/dist /app/frontend
 
+# this only detects changes in /backend and does not recompile the frontend. useless
+# https://www.metered.ca/blog/how-to-restart-your-node-js-apps-automatically-with-nodemon/
+# COPY nodemon.json ./
+# RUN npm install -g nodemon
+
 # Copy Nginx configuration - nope, what for? use a reverse proxy!
 RUN mkdir -p /run/nginx
 
@@ -84,7 +89,7 @@ COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Expose port for the application
-EXPOSE 3001
+# EXPOSE 3001
 
 # Start Nginx and Node.js OR just node itself when slim is used for main stage
 # CMD ["node", "/app/backend/index.js"]

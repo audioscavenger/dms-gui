@@ -263,7 +263,7 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
         };
         
       } else {
-        successLog('response:', response);
+        successLog('command:', command);
         return {
           returncode: response.returncode,
           stdout: response.stdout.toString('utf8'),
@@ -542,6 +542,12 @@ export const formatDMSError = async (errorMsg, error) => {
   
   errorMsg = `${errorMsg}: ${splitErrorClean}`;
   return errorMsg;
+};
+
+
+export const killMe = async (errorcode=0) => {
+  warnLog('--------------------------- REBOOT NOW ---------------------------');
+  await exec(`kill -9 $(pgrep "master process nginx")`);
 };
 
 

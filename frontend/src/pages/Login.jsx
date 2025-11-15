@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 // import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
@@ -51,7 +51,7 @@ import {
 
 // function Login() {
 export const Login = () => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
 
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
@@ -142,6 +142,9 @@ export const Login = () => {
             />
             
           </form>
+
+          <a href="#" class="float-end">{t("logins.forgotPassword")}</a>
+
           <br />
           <AlertMessage type="danger" message={errorMessage} />
           

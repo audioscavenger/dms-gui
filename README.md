@@ -157,6 +157,21 @@ All is optional, as they will be superseeded by the ones defined and saved withi
 - `DEBUG`: Node.js environment: (*production or development)
 - `DMS_API_KEY`: format is that of a uuid, must be defined in DMS environment too
 - `DMS_API_PORT`: must be exposed in DMS compose too, defaults to 8888
+- `DMSGUI_CRON`: to alter the daily container restart set at 11PM: format is cron: 
+  ```
+                                        ┌────────────── second (optional)
+                                        │ ┌──────────── minute
+                                        │ │ ┌────────── hour
+                                        │ │ │  ┌──────── day of month
+                                        │ │ │  │ ┌────── month
+                                        │ │ │  │ │ ┌──── day of week
+                                        │ │ │  │ │ │
+                                        │ │ │  │ │ │
+                                       "* * 23 * * *"
+```
+
+
+
 
 The ones you should never alter unless you want to develop:
 

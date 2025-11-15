@@ -423,4 +423,17 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 };
 
 
+// kill will reboot this container
+export const kill = async () => {
+  
+  try {
+    const response = await api.post(`/kill`);
+    return response.data;
+  } catch (error) {
+    errorLog(error.message);
+    throw error;
+  }
+};
+
+
 export default api;

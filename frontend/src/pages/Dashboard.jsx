@@ -7,6 +7,7 @@ import {
 
 import {
   getServerStatus,
+  kill,
 } from '../services/api.mjs';
 import {
   AlertMessage,
@@ -15,12 +16,14 @@ import {
   Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 const Dashboard = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
   
   const [status, setServerStatus] = useState({
@@ -129,7 +132,19 @@ const Dashboard = () => {
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
             isLoading={isStatusLoading}
-          />
+          >
+          {user.isAdmin &&
+            <Button
+              variant="danger"
+              size="sm"
+              icon="recycle"
+              title={t('dashboard.rebootMe')}
+              className="position-absolute top-right shadow"
+              onClick={() => kill()}
+            />
+          }
+          </DashboardCard>
+
         </Col>
         <Col md={3} className="mb-3">
           <DashboardCard

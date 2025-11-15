@@ -53,20 +53,31 @@ export const env = {
   // doveadm API port, possible to especially with dovecot 2.4, but not used and likely never will
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),
 
+  // enable a daily restart of the container with this simple trick: default is 11PM
+  //                                       ┌────────────── second (optional)
+  //                                       │ ┌──────────── minute
+  //                                       │ │ ┌────────── hour
+  //                                       │ │ │  ┌──────── day of month
+  //                                       │ │ │  │ ┌────── month
+  //                                       │ │ │  │ │ ┌──── day of week
+  //                                       │ │ │  │ │ │
+  //                                       │ │ │  │ │ │
+  //                                       * * *  * * *
+  DMSGUI_CRON: process.env.DMSGUI_CRON || '* * 23 * * *',
 }
 
-// we don't set any defaults here, as they will override whatever users set
-export var live = {
-  // Docker container name for docker-mailserver
-  DMS_CONTAINER: process.env.DMS_CONTAINER,
-  containers: {},   // used to hold the DMS Docker.containers but we don't use docker.sock anymore
+// we don't set any defaults here, as they will override whatever users set // cancelled, we only use the db
+// export var live = {
+  // // Docker container name for docker-mailserver  // cancelled
+  // DMS_CONTAINER: process.env.DMS_CONTAINER,
+  // containers: {},   // used to hold the DMS Docker.containers but we don't use docker.sock anymore
 
 
-  // DMS API key and port we need, to execute commands in DMS container; must be in DMS environement too
-  DMS_API_KEY: process.env.DMS_API_KEY,
-  DMS_API_PORT: process.env.DMS_API_PORT,
+  // // DMS API key and port we need, to execute commands in DMS container; must be in DMS environement too // cancelled
+  // DMS_API_KEY: process.env.DMS_API_KEY,
+  // DMS_API_PORT: process.env.DMS_API_PORT,
 
-}
+// };
 
 /*
   sh: {

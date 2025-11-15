@@ -11,7 +11,6 @@ import {
 } from './backend.mjs';
 import {
   env,
-  live
 } from './env.mjs';
 
 import Database from 'better-sqlite3';
@@ -88,14 +87,14 @@ settings: {
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${env.isImmutable})`,
       ],
     },
-    { DB_VERSION: '1.2.4',
-      patches: [
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${env.isImmutable})`,
-      ],
-    },
+    // { DB_VERSION: '1.2.4',
+    //   patches: [
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${env.isImmutable})`,
+    //   ],
+    // },
   ],
 },
 
@@ -149,10 +148,13 @@ logins: {
   insert: {
     login:    `REPLACE INTO logins          (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, favorite, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @favorite, @roles)`,
     fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
+    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
   },
   
   update: {
     password: `UPDATE logins set salt=@salt, hash=@hash WHERE mailbox = ?`,
+    refreshToken: `UPDATE logins set refreshToken = NULL WHERE mailbox = ?`,
+    refreshTokens: `UPDATE logins set refreshToken = NULL`,
     mailbox: {
       undefined: {
         desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
@@ -173,7 +175,7 @@ logins: {
       1: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
         test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND mailbox = ?`,
-        check:  function(result) { return true; },
+        check:  function() { return true; },
         pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE mailbox = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
@@ -189,7 +191,7 @@ logins: {
       undefined: {
         desc:   "no test",
         test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND mailbox = ?`,
-        check:  function(result) { return true; },
+        check:  function() { return true; },
         pass:   `UPDATE logins set isActive = @isActive WHERE mailbox = ?`,
       },
     },
@@ -204,7 +206,7 @@ logins: {
       1: {
         desc:   "not a test, just flipping login to isAccount also flips isAdmin to 0",
         test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND mailbox = ?`,
-        check:  function(result) { return true; },
+        check:  function() { return true; },
         pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE mailbox = ?`,
       },
     },
@@ -379,12 +381,12 @@ accounts: {
           COMMIT;`,
   
   patch: [
-    { DB_VERSION: '1.1.3',
-      patches: [
-        `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${env.isImmutable})`,
-      ],
-    },
+    // { DB_VERSION: '1.1.3',
+    //   patches: [
+    //     `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${env.isImmutable})`,
+    //   ],
+    // },
   ],
 },
 
@@ -474,12 +476,12 @@ domains: {
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${env.isImmutable})`,
       ],
     },
-    { DB_VERSION: '1.1.3',
-      patches: [
-        `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${env.isImmutable})`,
-      ],
-    },
+    // { DB_VERSION: '1.1.3',
+    //   patches: [
+    //     `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${env.isImmutable})`,
+    //   ],
+    // },
   ],
 },
 
@@ -1069,6 +1071,29 @@ export const deleteEntry = async (table, id, key, scope) => {
       return { success: false, message: `sql[${table}].delete is missing [${key}]`};
     }
     
+  } catch (error) {
+    errorLog(error.message);
+    throw new Error(error.message);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+};
+
+
+export const refreshTokens = async (credentials) => {
+
+  try {
+    
+    let result = dbRun(sql.logins.update.refreshTokens, credentials);
+    if (result.success) {
+      successLog(`tokens refreshed:`, credentials || '*');
+      return {success: true, message: `tokens refreshed:`};
+      
+    } else return result;
+
   } catch (error) {
     errorLog(error.message);
     throw new Error(error.message);

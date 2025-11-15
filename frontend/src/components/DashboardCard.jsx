@@ -11,6 +11,7 @@ import {
 /**
  * Dashboard card component using react-bootstrap
  * @param {Object} props Component props
+ * @param {Object} props.children
  * @param {string} props.title Card title (translation key)
  * @param {string} props.icon Bootstrap icon class name (without 'bi-' prefix)
  * @param {string|number} props.value Value to display
@@ -33,6 +34,7 @@ const DashboardCard = ({
   className = null,
   href = null,
   translate = true,
+  children,
   ...rest
 }) => {
   // const { t } = useTranslation();
@@ -63,6 +65,7 @@ const DashboardCard = ({
             : <p className="card-text">{value}</p>
           
         )}
+        {children}
       </RBCard.Body>
     </RBCard>
   );

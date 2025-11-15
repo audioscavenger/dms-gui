@@ -41,26 +41,26 @@ const LeftSidebar = () => {
   return (
     <>
     <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
-      <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
-        <i className="bi bi-speedometer2 me-2"></i>
-        <span> {Translate('dashboard.sidebar')}</span>
-      </Nav.Link>
+      {user && (
+      <>
+        <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
+          <i className="bi bi-speedometer2 me-2"></i>
+          <span> {Translate('dashboard.sidebar')}</span>
+        </Nav.Link>
       
-      {(user?.isAdmin) && (
         <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
           <i className="bi bi-inboxes-fill me-2"></i>
           <span> {Translate('accounts.sidebar')}</span>
         </Nav.Link>
+      
+        <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
+          <i className="bi bi-arrow-left-right me-2"></i>
+          <span> {Translate('aliases.sidebar')}</span>
+        </Nav.Link>
+      </>
       )}
       
-      {(user) && (
-      <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
-        <i className="bi bi-arrow-left-right me-2"></i>
-        <span> {Translate('aliases.sidebar')}</span>
-      </Nav.Link>
-      )}
-      
-      {(user?.isAdmin) && (
+      {(user && user.isAdmin) && (
       <>
         <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
           <i className="bi bi-person-lock me-2"></i>

@@ -8,6 +8,10 @@ export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(3
 cd /app/backend
 node index.js &
 
+# this only detects changes in /backend and does not recompile the frontend. useless
+# https://www.metered.ca/blog/how-to-restart-your-node-js-apps-automatically-with-nodemon/
+# nodemon index.js &
+
 # Wait a moment to ensure backend is starting up
 sleep 2
 

@@ -104,9 +104,13 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
-* [ ] 1.4.  - frontend/Settings: pulls everything when submitting new DMS
-* [ ] 1.4.7 - linked mailbox users can now change their mailbox password
-* [ ] 1.4.7 - many api res still return res.json(result) instead of res.json({success: true, message:result})
+* [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS
+* [ ] 1.4. - linked mailbox users can now change their mailbox password
+* [ ] 1.4. - many api res still return res.json(result) instead of res.json({success: true, message:result})
+* [x] 1.4.8 - upgraded all modules
+* [x] 1.4.8 - frontend/Settings: introduce restart dms-gui button and added killMe(errorcode)
+* [x] 1.4.8 - introduce DMSGUI_CRON=`* * 23 * * *` to alter the daily container restart set at 11PM
+* [x] 1.4.8 - npm install --save node-cron
 * [x] 1.4.7 - security: backend actually checks for user roles and whatnot
 * [x] 1.4.7 - added refreshToken column to logins table
 * [x] 1.4.7 - Okay I gave up asking questions no one answers on discord and stack, and used Claude to help me craft the jwt token tests and error handling
