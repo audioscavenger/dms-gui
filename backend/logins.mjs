@@ -42,35 +42,26 @@ import {
 } from './db.mjs';
 
 
-// this returns an array
-export const getRoles = async credential => {
-
-  try {
-    
-    let roles = await dbGet(sql.logins.select.roles, {mailbox: credential, username: credential});
-    if (roles.success) {
-      return {success: true, message: JSON.parse(roles.message)};
-      
-    }
-    return roles;
-    
-  } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
-    // TODO: we should return smth to the index API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-};
-
-
 // this returns an objects
-export const getLogin = async credential => {
+export const getLogin = async (credential, guess=false) => {
+  
+  let login = {success:false, message: 'invalid credential: neither string nor object'};
   try {
     
-    let login = dbGet(sql.logins.select.login, {mailbox: credential, username: credential});
+    // we expect either an object like {id:id}|{mailbox:mailbox}|{username:username}
+    // or a string: mailbox == what's in the id keay of that table
+    if (typeof credential == "string") {
+      
+      // guessLogin should only be used for login purposes, and takes a string
+      if (guess) {
+        login = dbGet(sql.logins.select.loginGuess, {mailbox: credential, username: credential});
+      } else {
+        login = dbGet(sql.logins.select.login, {[sql.logins.id]: credential});
+      }
+
+    } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
+      login = dbGet(sql.logins.select.loginObj.replace("{key}", Object.keys(credential)[0]), credential);
+    }
     if (login.success) {
       
       debugLog(`ddebug login=`, login);
@@ -96,32 +87,33 @@ export const getLogin = async credential => {
 };
 
 
-// this returns an array of objects, credentials is either mailbox or username, or array of those
+// this returns an array of objects, credentials is either mailbox or username, or array of those, or an object like {id:id}|{mailbox:mailbox}|{username:username}, or array of those
 export const getLogins = async credentials => {
-  if (typeof credentials == "string") return getLogin(credentials);
+  if (credentials && !Array.isArray(credentials)) return getLogin(credentials);
 
-  let result, results;
+  let result;
   let logins = [];
   try {
     
     debugLog(`credentials=`, credentials);
     if (Array.isArray(credentials) && credentials.length) {
-      // roles come already parsed from getLogin, we stop at the first we find
+      
+      // roles come already parsed from getLogin
       logins = await Promise.all(
         credentials.map(async (credential) => {
           const login = await getLogin(credential);
           if (login.success) return login.message;
         })
       );
+      infoLog(`Found ${logins.length} entries in logins for`, credentials);
+
       if (logins.length) {
-        infoLog(`Found ${logins.length} entries in logins for`, credentials);
-        
         // now remove all undefined entries
         logins = logins.filter(element => element !== undefined);
       }
       
     } else {
-      result = await dbAll(sql.logins.select.logins);
+      result = dbAll(sql.logins.select.logins);
       if (result.success) {
         // now JSON.parse roles as it's stored stringified in the db
         logins = result.message.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
@@ -134,6 +126,37 @@ export const getLogins = async credentials => {
     
     return {success: true, message: logins};
     // {success: true, message: [ {mailbox: mailbox, username: username, email: email, isActive:1, ..}, ..] }
+    
+  } catch (error) {
+    errorLog(error.message);
+    throw new Error(error.message);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+};
+
+
+// this returns an array
+export const getRoles = async credential => {
+
+  let roles = {success:false};
+  try {
+    
+    // we expect either an object {id:id} or {id:id}|{mailbox:mailbox}|{username:username}
+    // or a string: mailbox == what's in the id keay of that table
+    if (typeof credential == "string") {
+      roles = dbGet(sql.logins.select.roles, {[sql.logins.id]: credential});
+    } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
+      roles = dbGet(sql.logins.select.rolesObj.replace("{key}", Object.keys(credential)[0]), credential);
+    }
+    if (roles.success) {
+      return {success: true, message: JSON.parse(roles.message)};
+      
+    }
+    return roles;
     
   } catch (error) {
     errorLog(error.message);
@@ -175,8 +198,9 @@ export const addLogin = async (mailbox, username, password, email, isAdmin=0, is
 // loginUser will not throw an error an attacker can exploit
 export const loginUser = async (credential, password) => {
   
+  let login = {success: false};
   try {
-    let login = await getLogin(credential);
+    login = await getLogin(credential, true);
 
     if (login.success) {
       if (login.message.isActive) {
@@ -217,10 +241,9 @@ export const loginUser = async (credential, password) => {
 export const getRolesFromRoles = async containerName => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
-  debugLog(`start`);
   try {
     
-    let roles = await dbAll(sql.roles.select.roles, {scope:containerName});
+    let roles = dbAll(sql.roles.select.roles, {scope:containerName});
     if (roles.success) {
       debugLog(`pulled ${roles.message.length} roles`);
       

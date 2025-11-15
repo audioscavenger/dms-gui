@@ -138,10 +138,10 @@ NODE_ENV=production
 ## Debugging
 DEBUG=true
 
-## SECRET_KEY = secret for salting the cookies, regenerated during container start, inside the container
-## SECRET_KEY cannot be defined anywhere else then during container start, and is secret as the name suggests
+## JWT_SECRET = secret for salting the cookies, regenerated during container start, inside the container
+## JWT_SECRET cannot be defined anywhere else then during container start, and is secret as the name suggests
 ## how long before rotation of the secret: yet to be handled
-SECRET_KEY_EXPIRY=1h
+ACCESS_TOKEN_EXPIRY=1h
 
 ## utility paths for internal database
 DMSGUI_CONFIG_PATH=/app/config

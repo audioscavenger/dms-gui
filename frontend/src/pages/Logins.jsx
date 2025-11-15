@@ -694,6 +694,7 @@ const Logins = () => {
     { 
       key: 'roles',
       label: 'logins.roles',
+      noSort: true,
       render: (login) => (
         <>
           <Autocomplete

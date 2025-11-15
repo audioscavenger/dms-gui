@@ -25,6 +25,7 @@ import {
 
 import {
   dbAll,
+  dbCount,
   dbGet,
   dbRun,
   getTargetDict,
@@ -197,6 +198,12 @@ export const getServerStatus = async (containerName, test=undefined) => {
       diskUsage: 0,
       error: null,
     },
+    db: {
+      logins: 0,
+      accounts: 0,
+      aliases: 0,
+      error: null,
+    },
   };
 
   // const cpu_Usage    = "top -bn1 | awk '/Cpu/ { print $2}'"
@@ -221,6 +228,15 @@ export const getServerStatus = async (containerName, test=undefined) => {
 
   try {
     const targetDict = getTargetDict(containerName);
+
+    result = dbCount('logins', containerName);
+    if (result.success) status.db.logins = result.message;
+
+    result = dbCount('accounts', containerName);
+    if (result.success) status.db.accounts = result.message;
+
+    result = dbCount('aliases', containerName);
+    if (result.success) status.db.aliases = result.message;
 
     result = await ping(containerName);
     if (result.success) {

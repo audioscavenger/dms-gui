@@ -97,7 +97,7 @@ const Profile = () => {
         ...user
       });
 
-      // so much work for what...
+      // so much work for what... plus the need to check if user can pull each login in the list? pfffff
       /*
       const userData = await getLogins([user.mailbox, user.username]);  // user.mailbox was maybe altered in Logins page, let's pull with both options
       debugLog('userData', userData);

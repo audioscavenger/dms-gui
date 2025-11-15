@@ -25,7 +25,7 @@ import {
 } from './db.mjs';
 
 
-export const getAliases = async (containerName, refresh) => {
+export const getAliases = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : refresh;
   
@@ -47,6 +47,8 @@ export const getAliases = async (containerName, refresh) => {
           warnLog(`db aliases seems empty:`, aliases);
         }
       }
+
+      if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'destination', roles);
       return result;
     }
     
@@ -76,6 +78,8 @@ export const getAliases = async (containerName, refresh) => {
       if (!result.success) {
         errorLog(result.message);
       }
+
+      if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
       return {success: true, message: aliases};
     }
     return result;

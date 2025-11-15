@@ -45,7 +45,7 @@ import {
 } from './db.mjs';
 
 
-export const getAccounts = async (containerName, refresh) => {
+export const getAccounts = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : refresh;
   
@@ -54,7 +54,7 @@ export const getAccounts = async (containerName, refresh) => {
   try {
     
     if (!refresh) {
-      result = await dbAll(sql.accounts.select.accounts, {scope:containerName});
+      result = dbAll(sql.accounts.select.accounts, {scope:containerName});
       if (result.success) {
         
         // we could read DB_Logins and it is valid
@@ -66,8 +66,9 @@ export const getAccounts = async (containerName, refresh) => {
           
         } else warnLog(`db accounts seems empty:`, result.message);
 
+        if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
         return {success: true, message: accounts};
-        
+
       } else errorLog(result.message);
       
       return result;
@@ -80,36 +81,40 @@ export const getAccounts = async (containerName, refresh) => {
       // [{ mailbox: 'a@b.com', storage: {} }, .. ]
       infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
 
-      // now add the domain item
+      // now add the domain item, st
       accounts = result.message.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
 
-      // update list to add storage
-      let accountsList = accounts.map(account => { return {
+      // create a dupe with stringified storage and scope for saving in db
+      let accounts2save = accounts.map(account => { return {
         ...account, 
-        storage: JSON.stringify(account?.storage), scope:containerName }; 
+        storage: JSON.stringify(account?.storage), 
+        scope:containerName 
+        }; 
       });
       // now save accounts in db
-      result = dbRun(sql.accounts.insert.fromDMS, accountsList);
+      result = dbRun(sql.accounts.insert.fromDMS, accounts2save);
       if (result.success) {
         
-        // add extra fields, exclude isAdmin and isActive, in case it already exists
-        let loginsList = accounts.map(account => { return {
+        // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
+        let logins2create = accounts.map(account => { return {
           mailbox:account.mailbox, 
           username:account.mailbox, 
           email:account.mailbox, 
           isAccount:1, 
           favorite:containerName, 
           roles:JSON.stringify([account.mailbox]), 
-          scope:containerName }; 
+          scope:containerName
+          }; 
         });
-        // now save isAccount logins in db
-        result = dbRun(sql.logins.insert.fromDMS, loginsList);
+        // now save those linked logins in db
+        result = dbRun(sql.logins.insert.fromDMS, logins2create);
         if (!result.success) errorLog(result.message);
         
       } else errorLog(result.message);
       
+      if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
       return {success: true, message: accounts};
-      
+
     } else errorLog(result.message);
     
     return result;

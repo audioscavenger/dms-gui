@@ -104,7 +104,15 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
+* [ ] 1.4.  - frontend/Settings: pulls everything when submitting new DMS
 * [ ] 1.4.7 - linked mailbox users can now change their mailbox password
+* [ ] 1.4.7 - many api res still return res.json(result) instead of res.json({success: true, message:result})
+* [x] 1.4.7 - security: backend actually checks for user roles and whatnot
+* [x] 1.4.7 - added refreshToken column to logins table
+* [x] 1.4.7 - Okay I gave up asking questions no one answers on discord and stack, and used Claude to help me craft the jwt token tests and error handling
+* [x] 1.4.7 - Accounts now show associated login usernames based off logins.mailbox match; itshould be roles, really
+* [x] 1.4.7 - npm add cookie-parser express-jwt - npm remove axios
+* [x] 1.4.7 - frontend/Logins: disable sorting for roles, it crashes and I refuse to deal with that
 * [x] 1.4.6 - Increase CORS security
 * [x] 1.4.6 - clear distinction between external email address, mailbox (to login as) and linked mailboxes
 * [x] 1.4.6 - db update: we must save favorite container in each user login or bad shit happens on the frontend: db, logins, and addLogin, Login pages
@@ -156,7 +164,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [x] 1.3.3 - frontend/Profile: logout user if they changed their email and email in Logins page
 * [x] 1.3.3 - frontend: cleaned up all catch errors removing error.response.data.error
 * [x] 1.3.2 - backend: tried accessToken+localStorage, now switched to HTTP-Only cookie, but still use localStorage for user roles etc
-* [x] 1.3.2 - docker/start.sh: implement random SECRET_KEY generation on start of container
+* [x] 1.3.2 - docker/start.sh: implement random JWT_SECRET generation on start of container
 * [x] 1.3.2 - backend/index: implement JWT token
 * [x] 1.3.2 - frontend: npm add jwt-decode
 * [x] 1.3.2 - backend: npm add jsonwebtoken

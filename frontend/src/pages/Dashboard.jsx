@@ -4,19 +4,15 @@ import { useTranslation } from 'react-i18next';
 import {
   errorLog,
 } from '../../frontend.mjs';
-import {
-  reduxArrayOfObjByValue,
-} from '../../../common.mjs';
 
 import {
   getServerStatus,
-  getCount,
-  getSettings,
 } from '../services/api.mjs';
 import {
   AlertMessage,
   DashboardCard,
   Button,
+  Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -37,36 +33,15 @@ const Dashboard = () => {
       memoryUsage: 0,
       diskUsage: 0,
     },
+    db: {
+      logins: 0,
+      accounts: 0,
+      aliases: 0,
+    },
   });
-  const [accountsCount, setAccountsCount] = useState(0);
-  const [aliasesCount, setAliasesCount] = useState(0);
-  const [loginsCount, setLoginsCount] = useState(0);
   
   const [isStatusLoading, setStatusLoading] = useState(true);
-  const [isAccountsLoading, setAccountsLoading] = useState(true);
-  const [isAliasesLoading, setAliasesLoading] = useState(true);
-  const [isLoginsLoading, setLoginsLoading] = useState(true);
-  
   const [errorMessage, setErrorMessage] = useState(null);
-
-  // const { logout } = useAuth();
-  // const { user } = useAuth();
-  // const handleLogout = () => {
-    // logout();
-  // };
-  // /*
-            // {(user) &&
-              // <Button
-              // variant="secondary"
-              // onClick={handleLogout}
-              // text="login.logout"
-              // />
-            // }
-  // */
-
-  useEffect(() => {
-    fetchContainerName();
-  }, []);
 
   useEffect(() => {
     fetchAll();
@@ -77,36 +52,8 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchAll = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
-    
+  const fetchAll = async () => {
     fetchDashboard();
-    fetchLogins();
-    fetchAccounts(refresh);
-    fetchAliases(refresh);
-    
-  };
-
-  const fetchContainerName = async () => {
-    
-    try {
-      const [settingsData] = await Promise.all([
-        getSettings(containerName),
-      ]);
-      
-      const dmsData = reduxArrayOfObjByValue(settingsData, 'name', 'containerName')    // [ {name:'containerName', value:'dms'}, .. ]
-      if (dmsData.success) {
-
-        if (!containerName) setContainerName(dmsData.message[0]?.value);
-        setErrorMessage(null);
-        
-      } else setErrorMessage(dmsData.message);
-      
-    } catch (error) {
-      errorLog(t('api.errors.fetchSettings'), error);
-      setErrorMessage('api.errors.fetchSettings');
-      
-    }
   };
 
   const fetchDashboard = async () => {
@@ -130,72 +77,6 @@ const Dashboard = () => {
       setStatusLoading(false);
     }
   };
-
-  const fetchAccounts = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
-    
-    try {
-      setAccountsLoading(true);
-
-      const count = await getCount('accounts', containerName);
-      if (count.success) {
-        setAccountsCount(count.message);
-        setErrorMessage(null);
-      
-      } else setErrorMessage(count.message);
-      
-    } catch (error) {
-      errorLog(t('api.errors.fetchAccounts'), error);
-      setErrorMessage('api.errors.fetchAccounts');
-      
-    } finally {
-      setAccountsLoading(false);
-    }
-  };
-
-  const fetchAliases = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
-    
-    try {
-      setAliasesLoading(true);
-
-      const count = await getCount('aliases', containerName);
-      if (count.success) {
-        setAliasesCount(count.message);
-        setErrorMessage(null);
-      
-      } else setErrorMessage(count.message);
-      
-    } catch (error) {
-      errorLog(t('api.errors.fetchfetchAliases'), error);
-      setErrorMessage('api.errors.fetchfetchAliases');
-      
-    } finally {
-      setAliasesLoading(false);
-    }
-  };
-
-  const fetchLogins = async () => {
-    
-    try {
-      setLoginsLoading(true);
-
-      const count = await getCount('logins');
-      if (count.success) {
-        setLoginsCount(count.message);
-        setErrorMessage(null);
-      
-      } else setErrorMessage(count.message);
-      
-    } catch (error) {
-      errorLog(t('api.errors.fetchLogins'), error);
-      setErrorMessage('api.errors.fetchLogins');
-      
-    } finally {
-      setLoginsLoading(false);
-    }
-  };
-
 
   const getStatusColor = () => {
     if (status.status.status === 'loading') return 'secondary';
@@ -286,9 +167,9 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.logins"
             icon="person-lock"
-            iconColor={isLoginsLoading ? "secondary" : "success"}
-            isLoading={isLoginsLoading}
-            value={loginsCount}
+            iconColor={isStatusLoading ? "secondary" : "success"}
+            isLoading={isStatusLoading}
+            value={status.db.logins}
             href="/logins"
           />
         </Col>
@@ -296,9 +177,9 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.mailboxAccounts"
             icon="inboxes-fill"
-            iconColor={isAccountsLoading ? "secondary" : "success"}
-            isLoading={isAccountsLoading}
-            value={accountsCount}
+            iconColor={isStatusLoading ? "secondary" : "success"}
+            isLoading={isStatusLoading}
+            value={status.db.accounts}
             href="/accounts"
           />
         </Col>
@@ -306,9 +187,9 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.aliases"
             icon="arrow-left-right"
-            iconColor={isAliasesLoading ? "secondary" : "success"}
-            isLoading={isAliasesLoading}
-            value={aliasesCount}
+            iconColor={isStatusLoading ? "secondary" : "success"}
+            isLoading={isStatusLoading}
+            value={status.db.aliases}
             href="/aliases"
           />
         </Col>

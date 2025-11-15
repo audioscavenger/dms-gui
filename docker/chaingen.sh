@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bash needed for PIPESTATUS array
+# generate TLSA entries for smtp and imap
 
 extract() {
   case "$4" in

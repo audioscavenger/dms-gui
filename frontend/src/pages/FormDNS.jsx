@@ -45,7 +45,7 @@ function FormDomains() {
 
     await Promise.all([
       fetchSettings(),
-      fetchDomains();
+      fetchDomains(),
     ]);
 
     setLoading(false);

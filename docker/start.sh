@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# SECRET_KEY for JWT tokens
-export SECRET_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+# JWT secrets for tokens
+export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
 # Start the backend server in the background
 cd /app/backend

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
-import { useAuth } from '../hooks/useAuth';
 
 import {
   debugLog,
@@ -32,11 +31,13 @@ import {
   Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 const Aliases = () => {
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
   const { user } = useAuth();
+
   const [isLoading, setLoading] = useState(true);
   
   const [aliases, setAliases] = useState([]);

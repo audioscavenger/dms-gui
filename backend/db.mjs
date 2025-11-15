@@ -100,19 +100,35 @@ settings: {
 },
 
 logins: {
-      
+
   id:     'mailbox',
-  keys:   {password:'string', mailbox:'string', username:'string', email:'string', isAdmin:'number', isActive:'number', isAccount:'number', favorite:'string', roles:'object'},
+  keys:   {
+    mailbox:'string', 
+    username:'string', 
+    email:'string', 
+    salt:'string', 
+    hash:'string', 
+    isAdmin:'number', 
+    isActive:'number', 
+    isAccount:'number', 
+    favorite:'string', 
+    refreshToken:'string', 
+    roles:'object',
+  },
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND mailbox = @mailbox`,
+    loginObj:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
+    loginGuess: `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
     logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1`,
     admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND mailbox = @mailbox`,
+    rolesObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
     salt:     `SELECT salt from logins WHERE mailbox = ?`,
     hash:     `SELECT hash from logins WHERE mailbox = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
+    refreshToken: `SELECT * FROM logins WHERE id = ? AND refreshToken = @refreshToken`,
     isActive: {
       login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
       logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1`,
@@ -210,14 +226,15 @@ logins: {
           CREATE TABLE logins (
           id        INTEGER PRIMARY KEY,
           mailbox   TEXT NOT NULL UNIQUE,
-          email     TEXT DEFAULT '',
           username  TEXT NOT NULL UNIQUE,
-          salt      TEXT DEFAULT '',
-          hash      TEXT DEFAULT '',
+          email     TEXT,
+          salt      TEXT,
+          hash      TEXT,
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1,
           isAccount BIT DEFAULT 0,
-          favorite  TEXT DEFAULT '',
+          favorite  TEXT,
+          refreshToken  TEXT,
           roles     TEXT DEFAULT '[]'
           );
           INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
@@ -265,8 +282,14 @@ logins: {
     },
     { DB_VERSION: '1.4.6',
       patches: [
-        `ALTER TABLE logins ADD favorite    TEXT DEFAULT ''`,
+        `ALTER TABLE logins ADD favorite    TEXT`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 'dms-gui', ${env.isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.4.7',
+      patches: [
+        `ALTER TABLE logins ADD refreshToken    TEXT`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 'dms-gui', ${env.isImmutable})`,
       ],
     },
   ],
@@ -306,11 +329,19 @@ roles: {
 
 accounts: {
       
-  keys: {password:'string', storage:'object', domain:'string'},
+  id:     'mailbox',
+  keys:   {
+    mailbox:'string', 
+    domain:'string',
+    salt:'string',
+    hash:'string',
+    storage:'object', 
+    scope:'string', 
+  },
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = @scope`,
-    accounts: `SELECT mailbox, domain, storage FROM accounts WHERE 1=1 AND scope = @scope ORDER BY domain, mailbox`,
+    accounts: `SELECT a.mailbox mailbox, a.domain domain, a.storage storage, l.username login FROM accounts a LEFT JOIN logins l on l.mailbox = a.mailbox WHERE 1=1 AND a.scope = @scope ORDER BY a.domain, a.mailbox`,
     mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope`,
     mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ?`,
     byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND domain = ?`,
@@ -337,9 +368,9 @@ accounts: {
           CREATE TABLE accounts (
           id        INTEGER PRIMARY KEY,
           mailbox   TEXT NOT NULL,
-          domain    TEXT DEFAULT '',
-          salt      TEXT DEFAULT '',
-          hash      TEXT DEFAULT '',
+          domain    TEXT,
+          salt      TEXT,
+          hash      TEXT,
           storage   TEXT DEFAULT '{}',
           scope     TEXT NOT NULL,
           UNIQUE (mailbox, scope)
@@ -359,7 +390,13 @@ accounts: {
 
 aliases: {
       
-  keys: {source:'string', destination:'string', regex:'number'},
+  id:     'source',
+  keys:   {
+    source:'string', 
+    destination:'string', 
+    regex:'number',
+    scope:'string',
+  },
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND scope = @scope`,
@@ -384,7 +421,7 @@ aliases: {
           source      TEXT NOT NULL,
           destination TEXT NOT NULL,
           regex       BIT DEFAULT 0,
-          scope       NOT NULL,
+          scope       TEXT NOT NULL,
           UNIQUE (source, scope)
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
@@ -394,7 +431,15 @@ aliases: {
 
 domains: {
       
-  keys: {dkim:'string', keytype:'string', keysize:'string', path:'string'},
+  id:     'domain',
+  keys:   {
+    domain:'string', 
+    dkim:'string', 
+    keytype:'string', 
+    keysize:'number', 
+    path:'string',
+    scope:'string',
+  },
   scope:  true,
   select: {
     count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = @scope`,
@@ -414,7 +459,7 @@ domains: {
           domain    TEXT NOT NULL UNIQUE,
           dkim      TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
           keytype   TEXT DEFAULT 'rsa',
-          keysize   TEXT DEFAULT '2048',
+          keysize   TEXT DEFAULT 2048,
           path      TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
           scope     TEXT NOT NULL
           );

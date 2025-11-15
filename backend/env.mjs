@@ -44,9 +44,11 @@ export const env = {
   DMS_CONFIG_PATH: ((process.env.DMS_CONFIG_PATH) ? process.env.DMS_CONFIG_PATH : '/tmp/docker-mailserver'),
   DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'), // hardcoded in DMS
 
-  // JWT SECRET_KEY generated when container starts
-  SECRET_KEY: process.env.SECRET_KEY,
-  SECRET_KEY_EXPIRY: process.env.SECRET_KEY_EXPIRY,
+  // JWT_SECRET and JWT_SECRET_REFRESH generated when container starts
+  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_SECRET_REFRESH: process.env.JWT_SECRET_REFRESH,
+  ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '1h',
+  REFRESH_TOKEN_EXPIRY : process.env.ACCESS_TOKEN_EXPIRY || '7d',
 
   // doveadm API port, possible to especially with dovecot 2.4, but not used and likely never will
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),

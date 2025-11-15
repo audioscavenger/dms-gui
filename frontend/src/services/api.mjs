@@ -21,8 +21,12 @@ const api = axios.create({
   },
 });
 
+// ============================================
+// FRONTEND: Axios Setup with Bearer token
+// ============================================
 // Security with Bearer token
 // api.interceptors.request.use((config) => {
+  // const { origin } = new URL(config.url);
   // const token = localStorage.getItem('accessToken'); // Or retrieve from state
   // if (token) {
     // config.headers.Authorization = `Bearer ${token}`;
@@ -31,8 +35,93 @@ const api = axios.create({
 // });
 
 
+// ============================================
+// FRONTEND: Axios Setup with Auto-Refresh
+// ============================================
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
+// Response interceptor with automatic token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const errorCode = error.response?.data?.code;
+
+    // If access token expired, try to refresh
+    if (errorCode === 'TOKEN_EXPIRED' && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue this request while refresh is in progress
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          return api(originalRequest);
+        }).catch((err) => {
+          return Promise.reject(err);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Call refresh endpoint
+        await api.post('/refresh');
+        
+        isRefreshing = false;
+        processQueue(null);
+        
+        // Retry the original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        isRefreshing = false;
+        processQueue(refreshError);
+        
+        // Refresh failed - redirect to login
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // Handle other errors
+    switch (errorCode) {
+      case 'NO_TOKEN':
+      case 'INVALID_TOKEN':
+      case 'NO_REFRESH_TOKEN':
+      case 'INVALID_REFRESH_TOKEN':
+      case 'REFRESH_TOKEN_EXPIRED':
+        window.location.href = '/login';
+        break;
+      
+      case 'FORBIDDEN':
+        console.error('Permission denied');
+        break;
+      
+      case 'ACCOUNT_INACTIVE':
+        alert('Your account is inactive. Please contact support.');
+        break;
+      
+      default:
+        console.error('API Error:', error.response?.data?.error || 'Unknown error');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Server status API
-// export const getServerStatus = async () => {
 export const getServerStatus = async (containerName, test=undefined) => {
   if (!containerName) return {};
   const params = {};

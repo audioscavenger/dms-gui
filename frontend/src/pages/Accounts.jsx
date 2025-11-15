@@ -29,6 +29,7 @@ import {
   Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 import { useRef } from 'react';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
@@ -38,6 +39,7 @@ const Accounts = () => {
   const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
+  const { user } = useAuth();
 
   const [accounts, setAccounts] = useState([]);
   const [dnsProvider, setDnsProvider] = useState({});
@@ -100,8 +102,8 @@ const Accounts = () => {
 
       if (dnsProviderData.success) {
         setDnsProvider(dnsProviderData.message);
-        
-      } else setErrorMessage(dnsProviderData.message);
+      } 
+      // } else setErrorMessage(dnsProviderData.message);   // getSettings is now an isAdmin requirement
 
       if (DOVECOT_FTSdata.success) {
         setDOVECOT_FTS(DOVECOT_FTSdata.message);
@@ -393,7 +395,7 @@ const Accounts = () => {
       render: (account) => (
         <>
           <span>{account.domain}</span>
-          {(dnsProvider) && (
+          {(dnsProvider && user.isAdmin) && (
           <Button
             variant="info"
             size="sm"
@@ -409,6 +411,10 @@ const Accounts = () => {
     { 
       key: 'mailbox',
       label: 'accounts.mailbox',
+    },
+    { 
+      key: 'login',
+      label: 'logins.login',
     },
     {
       key: 'storage',
@@ -446,14 +452,16 @@ const Accounts = () => {
             onClick={() => handleChangePassword(account)}
             className="me-2"
           />
-          <Button
-            variant="danger"
-            size="sm"
-            icon="trash"
-            title={t('accounts.confirmDelete', { mailbox: account.mailbox })}
-            onClick={() => handleDelete(account.mailbox)}
-            className="me-2"
-          />
+          {user.isAdmin &&
+            <Button
+              variant="danger"
+              size="sm"
+              icon="trash"
+              title={t('accounts.confirmDelete', { mailbox: account.mailbox })}
+              onClick={() => handleDelete(account.mailbox)}
+              className="me-2"
+            />
+          }
           {(DOVECOT_FTS) && (
           <Button
             variant="warning"
@@ -553,9 +561,9 @@ const Accounts = () => {
   );
   
   const accountTabs = [
-  { id: 1, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
-  { id: 2, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount },
+    { id: 1, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
   ];
+  if (user.isAdmin) accountTabs.push({ id: 2, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount });
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not
   // icons: https://icons.getbootstrap.com/

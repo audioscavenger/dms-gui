@@ -5,8 +5,6 @@ import { Link } from 'react-router-dom';
 import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 // import { useTranslation } from 'react-i18next';
 
 import {
@@ -14,6 +12,8 @@ import {
   ButtonLanguage,
   Translate,
 } from './index.jsx';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const Navbar = ({
   translate = true,
