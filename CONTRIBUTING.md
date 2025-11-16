@@ -111,6 +111,8 @@ docker push audioscavenger/dms-gui --all-tags
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] v1.5.3 - release
+* [x] 1.5.2 - bugfix in docker-compose example
 * [x] 1.5.2 - bugfix in frontend
 * [x] 1.5.2 - bugfix in deleteAlias and getAliases
 * [x] 1.5.2 - bugfix in deleteEntry

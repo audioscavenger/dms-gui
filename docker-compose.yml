@@ -2,8 +2,17 @@
 ---
 services:
   # Combined frontend and backend service
+  # dms:
+    # <your dms container stuff>
+    # ...
+  
   dms-gui:
-    build: .
+    # logging:
+      # driver: journald
+      # options:
+        # tag: dms
+
+    image: audioscavenger/dms-gui:latest
     container_name: dms-gui
     hostname: dms-gui
     restart: unless-stopped
