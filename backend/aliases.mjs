@@ -28,7 +28,7 @@ import {
 
 export const getAliases = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
-  refresh = (refresh === undefined) ? false : refresh;
+  refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
   let aliases = [];
   let regexes = [];
@@ -43,6 +43,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
         // we could read DB_Logins and it is valid
         if (result.message.length) {
           infoLog(`Found ${result.message.length} entries in aliases`);
+          result.message = result.message.map(alias => { return { ...alias, source: (alias.regex) ? JSON.parse(alias.source) : alias.source}; });
           
         } else {
           warnLog(`db aliases seems empty:`, aliases);
@@ -304,10 +305,12 @@ export const deleteAlias = async (containerName, source, destination) => {
   try {
     const targetDict = getTargetDict(containerName);
 
+    // this is normal email format
     if (source.match(regexEmailStrict)) {
-      debugLog(`Deleting alias: ${source}`);
+      debugLog(`Deleting alias: ${source} -> ${destination}`);
       
       results = await execSetup(`alias del ${source} ${destination}`, targetDict);
+      debugLog(`------------------------------- Alias deleted results:`, results);
       if (!results.returncode) {
         result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
@@ -323,30 +326,32 @@ export const deleteAlias = async (containerName, source, destination) => {
         return { success: false, message: ErrorMsg };
       }
     
-    // this is a regex
+    // this is regex
     } else {
       debugLog(`Deleting alias regex: ${source}`);
       
-      let command = `grep -Fv "${source} ${destination}" ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
+      let command = `grep -Fv '${source} ${destination}' ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
       results = await execCommand(command, targetDict);
+      debugLog(`------------------------------- Alias regex deleted results:`, results);
       if (!results.returncode) {
+        successLog(`Alias regex deleted: ${source}`);
         
-        // reload postfix
-        command = `postfix reload`;
-        results = await execCommand(command, targetDict);
-        if (!results.returncode) {
-          
-          const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);
-          if (result.success) {
-            successLog(`Alias regex deleted: ${source}`);
-            return { success: true, message: `Alias regex deleted: ${source}` };
+        const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);
+        if (result.success) {
+          successLog(`Alias entry deleted: ${source}`);
+
+          // reload postfix
+          command = `postfix reload`;
+          results = await execCommand(command, targetDict);
+          if (!results.returncode) {
             
+            successLog(`postfix reloaded`);
+            return result;
           }
-          return result;
+          errorLog(results.stderr);
+          return { success: false, message: results.stderr };
           
-        }
-        errorLog(results.stderr);
-        return { success: false, message: results.stderr };
+        } else  return result;
         
       }
       errorLog(results.stderr);

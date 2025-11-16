@@ -686,7 +686,7 @@ const Logins = () => {
         <Button
           variant={(login.isAccount) ? "warning" : "info"}
           size="xs"
-          icon={(login.isAccount) ? "person" : "inbox"}
+          icon={(login.isAccount) ? "heartbreak" : "link-45deg"}
           title={(login.isAccount) ? t('logins.unlinkAccount', { username: login.username}) : t('logins.linkAccount', { username: login.username})}
           onClick={() => handleLoginFlipBit(login, 'isAccount')}
           className="me-2 float-end"

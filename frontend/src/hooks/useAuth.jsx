@@ -10,7 +10,8 @@ import {
 } from '../services/api.mjs';
 
 export const AuthProvider = ({ children }) => {
-  const [containerName, setContainerName] = useLocalStorage("containerName");
+  const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
+  const [containerName, setContainerName] = useLocalStorage("containerName", null);
   const [user, setUser] = useLocalStorage("user", null);
   const navigate = useNavigate();
 
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     // console.debug('ddebug setUser(user)', user);
     setUser(user);
     setContainerName(user.favorite);
+    setIsDEMO(user?.isDEMO);
     
     // console.debug('ddebug navigate /');
     navigate(to);

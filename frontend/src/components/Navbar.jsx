@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
+import { useNavigate } from 'react-router-dom';
 // import { useTranslation } from 'react-i18next';
 
 import {
@@ -12,7 +13,7 @@ import {
   ButtonLanguage,
   Translate,
 } from './index.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
 const Navbar = ({
@@ -22,6 +23,7 @@ const Navbar = ({
   // const { t } = useTranslation();
   const { logout } = useAuth();
   const { user } = useAuth();
+  const [isDEMO] = useLocalStorage("isDEMO");
   
   const navigate = useNavigate();
   
@@ -42,7 +44,7 @@ const Navbar = ({
       <Container fluid>
         <RBNavbar.Brand as={Link} to="/">
           <i className="bi bi-envelope-fill me-2"></i>
-          {Translate('app.title')}
+          {Translate(isDEMO ? 'app.titleDemo' : 'app.title')}
         </RBNavbar.Brand>
         <RBNavbar.Toggle aria-controls="navbarNav" />
         <RBNavbar.Collapse id="navbarNav">

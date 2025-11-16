@@ -193,7 +193,7 @@ const Profile = () => {
         {username:loginFormData.username, email:loginFormData.email, favorite:loginFormData.favorite},
       );
       if (result.success) {
-        login(loginFormData);
+        login(loginFormData); // reset new values for that user in frontend state
         setSuccessMessage(t('logins.saved', {username:user.mailbox}));
         
       } else setErrorMessage(result.message);

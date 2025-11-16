@@ -49,7 +49,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
       // window.localStorage.setItem(keyName, newValue?.accessToken);
       
     } catch (error) {
-      console.log(error.message);
+      console.error(error.message);
     }
     
   // console.debug(`ddebug 5 setStoredValue(newValue)`, newValue);

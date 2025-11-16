@@ -23,7 +23,7 @@ import Col from 'react-bootstrap/Col'; // Import Col
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [containerName] = useLocalStorage("containerName");
   
   const [status, setServerStatus] = useState({
@@ -79,6 +79,12 @@ const Dashboard = () => {
     } finally {
       setStatusLoading(false);
     }
+  };
+
+  const rebootMe = async () => {
+    
+    kill();
+    logout();
   };
 
   const getStatusColor = () => {
@@ -140,7 +146,7 @@ const Dashboard = () => {
               icon="recycle"
               title={t('dashboard.rebootMe')}
               className="position-absolute top-right shadow"
-              onClick={() => kill()}
+              onClick={() => rebootMe()}
             />
           }
           </DashboardCard>

@@ -167,6 +167,7 @@ async function execInContainer(command, containerName) {
 export const checkPort = async (targetDict) => {
   return new Promise((resolve) => {
 
+    if (env.isDEMO) return {success: true, message: 'running'};
     try {
       const socket = new net.Socket();
       socket.setTimeout((targetDict?.timeout || 0.3) * 1000);   // we don't accept less then 300ms reply time
@@ -205,6 +206,7 @@ export const checkPort = async (targetDict) => {
  */
 export const ping = async (host) => {
 
+  if (env.isDEMO) return {success: true, message: "mock response"};
   try {
     const { stdout, stderr } = await exec(`ping -q -c 1 -A ${host}`);
     // debugLog(`stdout: ${stdout}`);
@@ -231,6 +233,7 @@ export const ping = async (host) => {
  */
 export const execInContainerAPI = async (command, targetDict, ...rest) => {
   
+  if (env.isDEMO) return {returncode:0, stdout:"mock response"};
   let result;
   try {
     if (!targetDict || (targetDict && Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) ) {
@@ -545,9 +548,14 @@ export const formatDMSError = async (errorMsg, error) => {
 };
 
 
-export const killMe = async (errorcode=0) => {
+export const killMe = async (backend=false, errorcode=0) => {
+  if (env.isDEMO && backend) {
+    exec(`cp /app/config/dms-gui-sample.sqlite3 /app/config/dms-gui-demo.sqlite3`);
+    successLog('--------------------------- RESET DATABASE ---------------------------');
+  }
   warnLog('--------------------------- REBOOT NOW ---------------------------');
-  await exec(`kill -9 $(pgrep "master process nginx")`);
+  if (!env.isDEMO || backend) exec(`sleep 1 && kill -9 $(pgrep "master process nginx")`);
+  return {success: true, message: "reboot initiated"};
 };
 
 

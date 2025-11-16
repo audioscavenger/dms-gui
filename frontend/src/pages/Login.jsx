@@ -46,6 +46,7 @@ import {
   FormField,
   Card,
 } from '../components/index.jsx';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
 
@@ -56,6 +57,7 @@ export const Login = () => {
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
   const [firstRun, setFirstRun] = useState(false);
+  const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO");
   
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -75,7 +77,11 @@ export const Login = () => {
     // debugLog('ddebug isFirstRun result', result);
     
     // if we can login with the default user, display first run welcome message
-    if (result.success) {
+    if (result?.isDEMO || isDEMO) {
+      setFirstRun(true);
+      setIsDEMO(true);
+      setSuccessMessage('logins.isDEMO');
+    } else if (result.success) {
       setFirstRun(true);
       setSuccessMessage('logins.isFirstRun');
     }

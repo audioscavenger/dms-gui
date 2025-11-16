@@ -25,6 +25,7 @@ After (9) my life will be complete and I won't need to work on this anymore ever
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data
 * [ ] - frontend/Logins: Invalid DOM property `class`. Did you mean `className`?
 * [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
+* [ ] - backend/accounts: delete account still fails to delete aliases
 
 ## chores:
 
@@ -91,6 +92,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ## build:
 - [dms-gui](https://github.com/audioscavenger/dms-gui)
+- [wiki](https://github.com/audioscavenger/dms-gui)
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
 alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
@@ -109,6 +111,10 @@ docker push audioscavenger/dms-gui --all-tags
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] 1.5.2 - bugfix in frontend
+* [x] 1.5.2 - bugfix in deleteAlias and getAliases
+* [x] 1.5.2 - bugfix in deleteEntry
+* [x] 1.5.2 - added demo data as dms-gui-example.sqlite3 and new variable `DEMO=true` that uses dms-gui-demo.sqlite3 reset when container restarts
 * [x] 1.5.1 - minor README updates
 * [x] v1.5.0 - release
 * [x] 1.4.9 - backend: a ton of bugfixes

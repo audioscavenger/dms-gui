@@ -4,6 +4,9 @@
 export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
+# use demo database
+[ "$isDEMO" = "true" ] && cp /app/config/dms-gui-sample.sqlite3 /app/config/dms-gui-demo.sqlite3
+
 # Start the backend server in the background
 cd /app/backend
 node index.js &

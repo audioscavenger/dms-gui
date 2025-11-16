@@ -16,7 +16,7 @@ export const env = {
   FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // for cors if you really are crazy with this sort of security
   API_URL  : process.env.API_URL || '/api',               // for cors too
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
-  DATABASE: process.env.DATABASE || '/app/config/dms-gui.sqlite3',
+  DATABASE: (process.env.isDEMO === 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
 
   // some selectors in the DKIM UI
   DKIM_KEYTYPES: ['rsa','ed25519'],
@@ -55,16 +55,23 @@ export const env = {
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),
 
   // enable a daily restart of the container with this simple trick: default is 11PM
-  //                                       ┌────────────── second (optional)
-  //                                       │ ┌──────────── minute
-  //                                       │ │ ┌────────── hour
-  //                                       │ │ │  ┌──────── day of month
-  //                                       │ │ │  │ ┌────── month
-  //                                       │ │ │  │ │ ┌──── day of week
-  //                                       │ │ │  │ │ │
-  //                                       │ │ │  │ │ │
-  //                                       * * *  * * *
-  DMSGUI_CRON: process.env.DMSGUI_CRON || '* 1 23 * * *',
+  //                                              ┌────────────── second (optional)
+  //                                              │ ┌──────────── minute
+  //                                              │ │ ┌────────── hour
+  //                                              │ │ │  ┌──────── day of month
+  //                                              │ │ │  │ ┌────── month
+  //                                              │ │ │  │ │ ┌──── day of week
+  //                                              │ │ │  │ │ │
+  //                                              │ │ │  │ │ │
+  //                                              * * *  * * *
+  DMSGUI_CRON: (process.env.isDEMO === 'true') ? '6 7 *  * * *' : (process.env.DMSGUI_CRON || '* 1 23 * * *'),
+
+  // DEMO will activate a mock database and disable all refresh options
+  isDEMO : (process.env.isDEMO === 'true') ? true : false,
+  github : 'https://github.com/audioscavenger/dms-gui',
+  wiki : 'https://github.com/audioscavenger/dms-gui',
+  dockerhub : 'https://hub.docker.com/repositories/audioscavenger',
+
 }
 
 // we don't set any defaults here, as they will override whatever users set // cancelled, we only use the db

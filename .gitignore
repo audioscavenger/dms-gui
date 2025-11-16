@@ -11,6 +11,7 @@ node_modules/
 
 # Environment variables
 !.dms-gui.env.example
+!.dms-gui-example.sqlite3
 
 # Logs
 logs

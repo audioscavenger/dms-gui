@@ -94,7 +94,6 @@ const Aliases = () => {
         // add color column for regex aliases
         let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
           ...alias, 
-          source: (alias.regex) ? JSON.parse(alias.source) : alias.source,
           color:  (alias.regex) ? "text-info" : "",
           }; });
         setAliases(aliasesDataFormatted);

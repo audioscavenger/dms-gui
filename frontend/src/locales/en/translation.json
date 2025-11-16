@@ -1,9 +1,10 @@
 {
   "app": {
+    "titleDemo": "Docker-Mailserver GUI demo server",
     "title": "Docker-Mailserver GUI"
   },
   "navbar": {
-    "documentation": "Documentation"
+    "documentation": "DMS Wiki"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -52,6 +53,7 @@
     "isActive": "Is active and can log in?",
     "isAdmin": "Admin?",
     "isFirstRun": "WELCOME TO <a href=\"https://github.com/audioscavenger/dms-gui\">dms-gui</a>!<br />This is the first time you access this page.<br />1️⃣ Default login is <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ Go to <a href=\"logins\">Logins</a> and change the password.<br /> 3️⃣ Finally, create a DMS container and API key in <a href=\"settings\">Settings</a>.",
+    "isDEMO": "WELCOME TO <a href=\"https://github.com/audioscavenger/dms-gui\">dms-gui</a>!<br />This is a <strong>demo server</strong>, rebooted every hour.<br />1️⃣ Default login is <strong>admin</strong> and password=<strong>changeme</strong><br />2️⃣ You can create another DMS container and API key in <a href=\"settings\">Settings</a>, and play with current users.",
     "linkAccount": "Link {{username}} to its mailbox: password handled by DMS",
     "login": "Login",
     "loginCreated": "Login created successfully!",

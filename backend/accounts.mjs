@@ -27,7 +27,10 @@
 import {
   reduxArrayOfObjByValue,
 } from '../common.mjs';
-import { deleteAlias } from './aliases.mjs';
+import {
+  deleteAlias,
+  getAliases,
+} from './aliases.mjs';
 import {
   debugLog,
   errorLog,
@@ -38,6 +41,9 @@ import {
   successLog,
   warnLog,
 } from './backend.mjs';
+import {
+  env
+} from './env.mjs';
 
 import {
   dbAll,
@@ -51,7 +57,7 @@ import {
 
 export const getAccounts = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
-  refresh = (refresh === undefined) ? false : refresh;
+  refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
   let result;
   let accounts = [];
@@ -276,19 +282,23 @@ export const deleteAccount = async (containerName, mailbox) => {
     // dms setup could take who know how long when mailbox is large
     targetDict.timeout = 60;
     results = await execSetup(`email del -y ${mailbox}`, targetDict);
+    debugLog('ddebug execSetup',results)
     if (!results.returncode) {
       successLog(`Mailbox Account deleted: ${mailbox}`);
       
-      result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
+      result = await deleteEntry('accounts', mailbox, 'mailbox', containerName);
+      debugLog('ddebug deleteEntry',result)
       if (result.success) {
         successLog(`db entry deleted: ${mailbox}`);
 
         // now delete aliases too
-        result = getAliases(containerName, false, [mailbox]);
+        result = await getAliases(containerName, false, [mailbox]);
+        debugLog('ddebug getAliases',result)
         if (result.success && result.message.length) {
 
           for (const alias of result.message) {
-            result = deleteAlias(containerName, alias.source, alias.destination); 
+            result = await deleteAlias(containerName, alias.source, alias.destination);
+            debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
             if (result.success) {
               successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
             } else warnLog(`alias delete failed: ${alias.source} -> ${alias.destination}`);

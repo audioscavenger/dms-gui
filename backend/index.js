@@ -61,18 +61,11 @@ import cors from 'cors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 // import jwt from 'express-jwt';
+import cron from 'node-cron';
 import qs from 'qs';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 const app = express();
-
-// https://github.com/ncb000gt/node-cron
-import cron from 'node-cron';
-if (env.DMSGUI_CRON) {
-  cron.schedule(env.DMSGUI_CRON, () => {
-      killMe();
-  });
-};
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -1318,11 +1311,14 @@ app.post('/api/loginUser', async (req, res, next) => {
     if (!password)    return res.status(400).json({ error: 'password is missing' });
 
     const user = await loginUser(credential, password);
+    if (env.isDEMO) user.isDEMO = true;
+    if (env.debug) user.debug = true;
     // debugLog('user', user);
     
     if (user.success) {
+      if (env.isDEMO) user.message.isDEMO = true;
       if (test) {
-        res.json({success: true});  // just return true, not real login
+        res.json({success: true, isDEMO:env.isDEMO});  // just return true, not real login
 
       } else {
         // Generate tokens
@@ -1651,8 +1647,8 @@ app.post('/api/kill',
 async (req, res) => {
   try {
     
-    const result = await killMe();
-    res.json(result);
+    const result = killMe();    // no await
+    res.json({success:true, message: result?.message});
     
   } catch (error) {
     errorLog(`index /api/kill: ${error.message}`);
@@ -1683,6 +1679,15 @@ app.listen(env.PORT_NODEJS, async () => {
   debugLog('🐞 debug mode is ENABLED');
   dbInit();         // apply patches etc
   refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
+
+  // https://github.com/ncb000gt/node-cron    // internal crontan
+  debugLog('DMSGUI_CRON',env.DMSGUI_CRON)
+  if (env.DMSGUI_CRON) {
+    cron.schedule(env.DMSGUI_CRON, () => {
+        const result = killMe(true);    // no await
+    });
+  };
+
 });
 
 

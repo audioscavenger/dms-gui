@@ -270,6 +270,10 @@ export const getServerStatus = async (containerName, test=undefined) => {
           return {success: true, message: status};
         }
 
+        if (env.isDEMO) {
+          return {success: true, message: status};
+        }
+
         const [result_top, result_disk] = await Promise.all([
           execCommand(top_cmd, targetDict),
           execCommand(disk_cmd, targetDict, {timeout: 5}),
@@ -277,7 +281,7 @@ export const getServerStatus = async (containerName, test=undefined) => {
         
         // debugLog('processTopData', processTopData(result_top.stdout))
         if (!result_top.returncode) {
-          const topJson = await processTopData(result_top.stdout);
+          const topJson = processTopData(result_top.stdout);
           
           // BUG: uptime is that of the host... to get container uptime in hours: $(( ( $(cut -d' ' -f22 /proc/self/stat) - $(cut -d' ' -f22 /proc/1/stat) ) / 100 / 3600 ))
           // debugLog('processTopData', processTopData(result_top.stdout));
@@ -941,7 +945,7 @@ export const getServerEnv = async (containerName, name) => {
   
   try {
 
-    const env = await dbGet(sql.settings.select.env, {scope:containerName}, name);
+    const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
     return {success: true, message: env?.value};
     
   } catch (error) {
@@ -958,7 +962,7 @@ export const getServerEnv = async (containerName, name) => {
 
 export const getServerEnvs = async (containerName, refresh, name) => {
   if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  refresh = (refresh === undefined) ? true : refresh;
+  refresh = (refresh === undefined) ? true : (env.isDEMO ? false : refresh);
   
   if (!refresh) {
     if (name) return getServerEnv(containerName, name);
@@ -966,7 +970,7 @@ export const getServerEnvs = async (containerName, refresh, name) => {
     debugLog(`refresh=${refresh} for ${containerName}`);
     try {
       
-      const result = await dbAll(sql.settings.select.envs, {scope:containerName});
+      const result = dbAll(sql.settings.select.envs, {scope:containerName});
       if (result.success) {
         const envs = result.message;
         debugLog(`envs: (${typeof envs})`, envs);

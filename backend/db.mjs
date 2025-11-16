@@ -177,7 +177,7 @@ logins: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
         test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND mailbox = ?`,
         check:  function() { return true; },
-        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0 WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0, isActive = 1 WHERE mailbox = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
     },
@@ -842,7 +842,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
     //   } else return reject(`username ${credential} not found`);
     // });
     if (saltHash && Object.keys(saltHash).length) {
-      console.log('Object.keys(saltHash).length',Object.keys(saltHash).length);
+      debugLog('Object.keys(saltHash).length=', Object.keys(saltHash).length);
       if (saltHash.salt && saltHash.hash) {
         const { salt, hash } = await hashPassword(password, saltHash.salt);
         return saltHash.hash === hash;
@@ -1023,6 +1023,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
 export const deleteEntry = async (table, id, key, scope) => {
   debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
 
+  let result, testResult;
   try {
     
     // check if the sql is defined for the key to delete
@@ -1039,14 +1040,14 @@ export const deleteEntry = async (table, id, key, scope) => {
         let value2test = (sql[table].delete[key][id]) ? value : undefined;
         
         // there is a test for THAT value and now we check with id in mind
-        const testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
+        testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
         debugLog(`there is a test for ${table}.${key}=${value2test} and check(${testResult.message})=${sql[table].delete[key][value2test].check(testResult.message)}`);
         
         // compare the result in the check function
         if (sql[table].delete[key][value2test].check(testResult.message)) {
           
           // we pass the test
-          const result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
+          result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
           if (result.success) {
             successLog(`Entry deleted: ${id}`);
             return {success: true, message: `Entry deleted: ${id}`};
@@ -1061,7 +1062,7 @@ export const deleteEntry = async (table, id, key, scope) => {
         
       } else {
         // no test
-        const result = dbRun(sql[table].delete[key], scopedValues, id);
+        result = dbRun(sql[table].delete[key], scopedValues, id);
         if (result.success) {
           successLog(`Entry deleted: ${id}`);
           return {success: true, message: `Entry deleted: ${id}`};
@@ -1073,7 +1074,7 @@ export const deleteEntry = async (table, id, key, scope) => {
       errorLog(`sql[${table}].delete is missing [${key}]`);
       return { success: false, message: `sql[${table}].delete is missing [${key}]`};
     }
-    
+
   } catch (error) {
     errorLog(error.message);
     throw new Error(error.message);
