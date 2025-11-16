@@ -11,7 +11,7 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
 5. [x] add a login page  **done**
-6. [ ] add a Profile page and ability to change mailbox passwords  **partial**
+6. [x] add a Profile page and ability to change mailbox passwords  **done**
 7. [ ] add Domains+DNS+DKIM entries page
 8. [ ] add DNS push entries with custom cloudflare API or octoDNS
 9. [ ] add Backup/Import menu entries
@@ -64,6 +64,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - start with a DataTable page of domains and see where we go
 * [ ] - add dkim modules and exec calls
 * [ ] - add DNS entries mechanics
+* [ ] - explore [ DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
 
 ### Logins:
 * [ ] - find a way to offer mailbox changePassword for logins with multiple mailbox roles
@@ -96,7 +97,7 @@ alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up -
 
 docker login -u audioscavenger
 
-docker image rm audioscavenger/dms-gui:v1.4.2 && docker container prune -f && docker image prune -f
+docker image rm audioscavenger/dms-gui:v1.4.4 && docker container prune -f && docker image prune -f
 
 docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 
@@ -108,6 +109,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] 1.5.1 - minor README updates
 * [x] v1.5.0 - release
 * [x] 1.4.9 - backend: a ton of bugfixes
 * [x] 1.4.9 - backend/accounts: bugfix: added -y to delete account as command would stall otherwise
