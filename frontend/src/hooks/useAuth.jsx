@@ -12,14 +12,13 @@ import {
 export const AuthProvider = ({ children }) => {
   const [containerName, setContainerName] = useLocalStorage("containerName");
   const [user, setUser] = useLocalStorage("user", null);
-  // const [user, setUser] = useLocalStorage("accessToken", null);    // with JWT
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
   // const login = async (username, to="/") => {
   const login = async (user, to="/") => {
     
-    console.debug('ddebug setUser(user)', user);
+    // console.debug('ddebug setUser(user)', user);
     setUser(user);
     setContainerName(user.favorite);
     
@@ -33,7 +32,8 @@ export const AuthProvider = ({ children }) => {
     // setUser(null);
     logoutUser();
     window.localStorage.clear();
-    navigate(to, { replace: true });
+    // navigate(to, { replace: true }); // To get rig of menus and navbar profile, we need to reload, not navigate
+    window.location.replace(to);
   };
 
   const value = useMemo(

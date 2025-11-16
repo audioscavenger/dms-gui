@@ -11,11 +11,11 @@ export const ProtectedRoute = ({
   isAdmin = false,
   ...rest // Pass any other props
 }) => {
-  console.debug('ddebug ProtectedRoute children', children);
+  // console.debug('ddebug ProtectedRoute children', children);
   // { "$$typeof": Symbol("react.transitional.element"), type: Dashboard(), key: "dashboard", props: {}, _owner: {…}, _store: {…}, … }
 
   const { user } = useAuth();
-  console.debug('ddebug ProtectedRoute user', user);
+  // console.debug('ddebug ProtectedRoute user', user);
   
   // user is not authenticated, no access
   if (!user) return <Navigate to="/login" {...rest} />;

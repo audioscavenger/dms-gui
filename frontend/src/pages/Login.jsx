@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 // import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
@@ -47,6 +46,7 @@ import {
   FormField,
   Card,
 } from '../components/index.jsx';
+import { useAuth } from '../hooks/useAuth';
 
 
 // function Login() {
@@ -70,9 +70,9 @@ export const Login = () => {
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
     
-    debugLog('ddebug isFirstRun loginUser(admin)');
-    const result = await loginUser('admin', 'changeme');
-    debugLog('ddebug isFirstRun result', result);
+    // debugLog('ddebug isFirstRun loginUser(admin)');
+    const result = await loginUser('admin', 'changeme', true);
+    // debugLog('ddebug isFirstRun result', result);
     
     // if we can login with the default user, display first run welcome message
     if (result.success) {
@@ -90,7 +90,7 @@ export const Login = () => {
     // if (credential === "admin" && password === "password") {
     // const result = await loginUser(credential, password)
     const result = await loginUser(credential, password)
-    console.debug('ddebug loginUser result=', result.message);
+    // console.debug('ddebug loginUser result=', result.message);
     // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
     // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
     

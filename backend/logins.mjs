@@ -27,6 +27,7 @@
 import {
   debugLog,
   errorLog,
+  execCommand,
   infoLog,
   successLog,
   warnLog,
@@ -36,6 +37,7 @@ import {
   dbAll,
   dbGet,
   dbRun,
+  getTargetDict,
   hashPassword,
   sql,
   verifyPassword,
@@ -64,7 +66,6 @@ export const getLogin = async (credential, guess=false) => {
     }
     if (login.success) {
       
-      debugLog(`ddebug login=`, login);
       if (login.message && Object.keys(login.message).length) {
         infoLog(`Found login=`, login.message);
 
@@ -198,29 +199,59 @@ export const addLogin = async (mailbox, username, password, email, isAdmin=0, is
 // loginUser will not throw an error an attacker can exploit
 export const loginUser = async (credential, password) => {
   
-  let login = {success: false};
+  let login, isValid, results, message;
   try {
     login = await getLogin(credential, true);
 
     if (login.success) {
       if (login.message.isActive) {
-        const isValid = await verifyPassword(credential, password, 'logins');
-        debugLog('ddebug isValid',isValid)
-        
-        if (isValid) {
-          successLog(`User ${credential} logged in successfully.`);
+        if (login.message.isAccount) {
+          if (login.message.favorite) {
+            const targetDict = getTargetDict(login.message.favorite);
+            targetDict.timeout = 3;
+            let command = `doveadm auth test ${login.message.mailbox} "${password}"`;
+            results = await execCommand(command, targetDict);
+            if (!results.returncode) {
+              successLog(`${credential} logged in successfully`);
+              
+            } else {
+              message = `${credential} password invalid`;
+              warnLog(message);
+              login.message = message;
+              login.success = false;
+            }
+
+          }else {
+            message = `${credential} does not have a favorite container yet`;
+            errorLog(message);
+            login.success = false;
+            login.message = message;
+          }
           
         } else {
-          warnLog(`User ${credential} invalid password.`);
-          login.success = false;
+          isValid = await verifyPassword(credential, password, 'logins');
+          if (isValid) {
+            successLog(`User ${credential} logged in successfully`);
+            
+          } else {
+            message = `User ${credential} password invalid`;
+            warnLog(message);
+            login.message = message;
+            login.success = false;
+          }
         }
       } else {
-        warnLog(`User ${credential} is inactive.`);
+        message = `User ${credential} is inactive`;
+        warnLog(message);
+        login.message = message;
         login.success = false;
       }
     } else {
-      warnLog(`User ${credential} not found.`);
+      message = `${credential} does not exist`;
+      warnLog(message);
+      login.message = message;
     }
+
     return login;
     
   } catch (error) {

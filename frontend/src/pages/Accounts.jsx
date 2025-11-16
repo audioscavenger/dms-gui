@@ -38,8 +38,8 @@ import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
 const Accounts = () => {
   const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
-  const [containerName] = useLocalStorage("containerName");
   const { user } = useAuth();
+  const [containerName] = useLocalStorage("containerName");
 
   const [accounts, setAccounts] = useState([]);
   const [dnsProvider, setDnsProvider] = useState({});
@@ -49,7 +49,6 @@ const Accounts = () => {
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [selectedAccount, setSelectedAccount] = useState(null);
   
   // State for new account inputs ----------------------------------
   const [newAccountformData, setNewAccountFormData] = useState({
@@ -61,6 +60,7 @@ const Accounts = () => {
   const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
 
   // State for password change modal -------------------------------
+  const [selectedAccount, setSelectedAccount] = useState(null);
   const passwordFormRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordFormData, setPasswordFormData] = useState({
@@ -82,7 +82,7 @@ const Accounts = () => {
   }, []);
 
   const fetchAccounts = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
+    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
     
     try {
       setLoading(true);
@@ -102,8 +102,9 @@ const Accounts = () => {
 
       if (dnsProviderData.success) {
         setDnsProvider(dnsProviderData.message);
-      } 
-      // } else setErrorMessage(dnsProviderData.message);   // getSettings is now an isAdmin requirement
+
+      }
+      // } else setErrorMessage(dnsProviderData.message); // fails silently
 
       if (DOVECOT_FTSdata.success) {
         setDOVECOT_FTS(DOVECOT_FTSdata.message);
@@ -395,7 +396,7 @@ const Accounts = () => {
       render: (account) => (
         <>
           <span>{account.domain}</span>
-          {(dnsProvider && user.isAdmin) && (
+          {(dnsProvider && user.isAdmin == 1) && (
           <Button
             variant="info"
             size="sm"
@@ -452,7 +453,7 @@ const Accounts = () => {
             onClick={() => handleChangePassword(account)}
             className="me-2"
           />
-          {user.isAdmin &&
+          {user.isAdmin == 1 &&
             <Button
               variant="danger"
               size="sm"

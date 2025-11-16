@@ -44,13 +44,15 @@ import {
   LoadingSpinner,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 
 const ServerInfos = () => {
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
-  const [isLoading, setLoading] = useState(true);
+  const { user } = useAuth();
 
+  const [isLoading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
@@ -65,7 +67,7 @@ const ServerInfos = () => {
 
 
   const fetchAll = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
+    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
     debugLog(`fetchAll refresh=(${refresh})`);
     setLoading(true);
 
@@ -99,7 +101,7 @@ const ServerInfos = () => {
   };
 
   const fetchServerEnvs = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
+    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
     debugLog(`fetchServerEnvs call getServerEnvs(${containerName}, ${refresh})`);
     
     try {
@@ -129,7 +131,7 @@ const ServerInfos = () => {
   ];
 
 
-  if (isLoading && !infos && !settings) {
+  if (isLoading && !infos && !settings || !user.isAdmin) {
     return <LoadingSpinner />;
   }
 

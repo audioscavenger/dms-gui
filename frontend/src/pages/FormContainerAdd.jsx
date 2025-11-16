@@ -29,10 +29,13 @@ import {
   SelectField,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 function FormContainerAdd() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [containerName, setContainerName] = useLocalStorage("containerName");
+
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
   const [readyForTest, setReadyForTest] = useState(false);
@@ -350,7 +353,7 @@ function FormContainerAdd() {
 
 
   // if (isLoading && !settings && !Object.keys(settings).length) {
-  if (isLoading && !settings.length) {
+  if (isLoading && !settings.length || !user.isAdmin) {
     return <LoadingSpinner />;
   }
   

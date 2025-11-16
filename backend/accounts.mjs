@@ -1,29 +1,33 @@
 // import {
-  // regexColors,
-  // regexPrintOnly,
-  // regexFindEmailRegex,
-  // regexFindEmailStrict,
-  // regexFindEmailLax,
-  // regexEmailRegex,
-  // regexEmailStrict,
-  // regexEmailLax,
-  // regexMatchPostfix,
-  // regexUsername,
-  // funcName,
-  // fixStringType,
-  // arrayOfStringToDict,
-  // obj2ArrayOfObj,
-  // reduxArrayOfObjByKey,
-  // reduxArrayOfObjByValue,
-  // reduxPropertiesOfObj,
-  // mergeArrayOfObj,
-  // getValueFromArrayOfObj,
-  // getValuesFromArrayOfObj,
-  // pluck,
-  // byteSize2HumanSize,
-  // humanSize2ByteSize,
-  // moveKeyToLast,
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailRegex,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+//   getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
 // } from '../common.mjs'
+import {
+  reduxArrayOfObjByValue,
+} from '../common.mjs';
+import { deleteAlias } from './aliases.mjs';
 import {
   debugLog,
   errorLog,
@@ -53,67 +57,65 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
   let accounts = [];
   try {
     
-    if (!refresh) {
-      result = dbAll(sql.accounts.select.accounts, {scope:containerName});
-      if (result.success) {
-        
-        // we could read DB_Logins and it is valid
-        if (result.message.length) {
-          infoLog(`Found ${result.message.length} entries in accounts`);
-          
-          // now JSON.parse storage as it's stored stringified in the db
-          accounts = result.message.map(account => { return { ...account, storage: JSON.parse(account?.storage) }; });
-          
-        } else warnLog(`db accounts seems empty:`, result.message);
-
-        if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
-        return {success: true, message: accounts};
-
-      } else errorLog(result.message);
-      
-      return result;
-      // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
-    }
-    
     // refresh
-    result = await pullAccountsFromDMS(containerName);
-    if (result.success) {
-      // [{ mailbox: 'a@b.com', storage: {} }, .. ]
-      infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
-
-      // now add the domain item, st
-      accounts = result.message.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
-
-      // create a dupe with stringified storage and scope for saving in db
-      let accounts2save = accounts.map(account => { return {
-        ...account, 
-        storage: JSON.stringify(account?.storage), 
-        scope:containerName 
-        }; 
-      });
-      // now save accounts in db
-      result = dbRun(sql.accounts.insert.fromDMS, accounts2save);
+    if (refresh) {
+      result = await pullAccountsFromDMS(containerName);
       if (result.success) {
-        
-        // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
-        let logins2create = accounts.map(account => { return {
-          mailbox:account.mailbox, 
-          username:account.mailbox, 
-          email:account.mailbox, 
-          isAccount:1, 
-          favorite:containerName, 
-          roles:JSON.stringify([account.mailbox]), 
-          scope:containerName
+        // [{ mailbox: 'a@b.com', storage: {} }, .. ]
+        infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
+
+        // now add the domain item, st
+        accounts = result.message.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
+
+        // create a dupe with stringified storage and scope for saving in db
+        let accounts2save = accounts.map(account => { return {
+          ...account, 
+          storage: JSON.stringify(account?.storage), 
+          scope:containerName 
           }; 
         });
-        // now save those linked logins in db
-        result = dbRun(sql.logins.insert.fromDMS, logins2create);
-        if (!result.success) errorLog(result.message);
+        // now save accounts in db
+        result = dbRun(sql.accounts.insert.fromDMS, accounts2save);
+        if (result.success) {
+          
+          // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
+          let logins2create = accounts.map(account => { return {
+            mailbox:account.mailbox, 
+            username:account.mailbox, 
+            email:account.mailbox, 
+            isAccount:1, 
+            favorite:containerName, 
+            roles:JSON.stringify([account.mailbox]), 
+            scope:containerName
+            }; 
+          });
+          // now save those linked logins in db
+          result = dbRun(sql.logins.insert.fromDMS, logins2create);
+          if (!result.success) errorLog(result.message);
+          
+        } else errorLog(result.message);
         
+        if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
+
       } else errorLog(result.message);
+    }
+    
+    // now pull accounts from the db as we need to associated logins for the DataTable
+    result = dbAll(sql.accounts.select.accounts, {scope:containerName});
+    if (result.success) {
       
+      // we could read DB_Logins and it is valid
+      if (result.message.length) {
+        infoLog(`Found ${result.message.length} entries in accounts`);
+        
+        // now JSON.parse storage as it's stored stringified in the db
+        accounts = result.message.map(account => { return { ...account, storage: JSON.parse(account?.storage) }; });
+        
+      } else warnLog(`db accounts seems empty:`, result.message);
+
       if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
       return {success: true, message: accounts};
+      // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
 
     } else errorLog(result.message);
     
@@ -217,6 +219,8 @@ export const pullAccountsFromDMS = async containerName => {
 };
 
 // Function to add a new mailbox account
+// it create both an account and a login with password in the db, but for isAccout linked users, will never be used
+// TODO: do we want to save passwords also in accounts table? for what purpose?
 export const addAccount = async (containerName, mailbox, password, createLogin=1) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
   let result;
@@ -265,18 +269,34 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
 export const deleteAccount = async (containerName, mailbox) => {
   if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
 
+  let result, results;
   try {
     const targetDict = getTargetDict(containerName);
 
-    debugLog(`Deleting mailbox account: ${mailbox}`);
-    const results = await execSetup(`email del ${mailbox}`, targetDict);
+    // dms setup could take who know how long when mailbox is large
+    targetDict.timeout = 60;
+    results = await execSetup(`email del -y ${mailbox}`, targetDict);
     if (!results.returncode) {
+      successLog(`Mailbox Account deleted: ${mailbox}`);
       
-      const result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
+      result = deleteEntry('accounts', mailbox, 'mailbox', containerName);
       if (result.success) {
-        successLog(`Account deleted: ${mailbox}`);
+        successLog(`db entry deleted: ${mailbox}`);
+
+        // now delete aliases too
+        result = getAliases(containerName, false, [mailbox]);
+        if (result.success && result.message.length) {
+
+          for (const alias of result.message) {
+            result = deleteAlias(containerName, alias.source, alias.destination); 
+            if (result.success) {
+              successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
+            } else warnLog(`alias delete failed: ${alias.source} -> ${alias.destination}`);
+          }
+        }
         
       } else warnLog(`Failed to delete Account: ${mailbox}`, result.message);
+
       return result;
       
     } else {

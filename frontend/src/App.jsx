@@ -53,7 +53,7 @@ function App() {
                 <Route path="/login"      element={                        <Login          />} />
                 <Route path="/dashboard"  element={<ProtectedRoute        ><Dashboard key="dashboard" /></ProtectedRoute>} />
                 <Route path="/logins"     element={<ProtectedRoute isAdmin><Logins    key="logins"    /></ProtectedRoute>} />
-                <Route path="/accounts"   element={<ProtectedRoute isAdmin><Accounts  key="accounts"  /></ProtectedRoute>} />
+                <Route path="/accounts"   element={<ProtectedRoute        ><Accounts  key="accounts"  /></ProtectedRoute>} />
                 <Route path="/aliases"    element={<ProtectedRoute        ><Aliases   key="aliases"   /></ProtectedRoute>} />
                 <Route path="/settings"   element={<ProtectedRoute isAdmin><Settings  key="settings"  /></ProtectedRoute>} />
                 <Route path="/profile"    element={<ProtectedRoute        ><Profile   key="profile"   /></ProtectedRoute>} />

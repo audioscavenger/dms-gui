@@ -34,7 +34,7 @@ export const useLocalStorage = (keyName, defaultValue=undefined) => {
       }
       
     } catch (error) {
-      console.error(`ddebug error 3 return = ${defaultValue}`, error.message);   // null
+      // console.error(`ddebug error 3 return = ${defaultValue}`, error.message);   // null
       return defaultValue;
     }
   });

@@ -97,14 +97,23 @@ export const getSettings = async (containerName, name) => {
 
 
 // this returns all scopes from settings
-export const getScopes = async () => {
+export const getScopes = async (roles=[]) => {
 
+  let result;
   try {
-    const result = await dbAll(sql.settings.select.scopes);
+    // for users, we only provide container scopes their roles are in
+    if (!roles.length) {
+      result = await dbAll(sql.settings.select.scopes);
+
+    } else {
+      // if you know of a better way, let me know
+      result = await dbAll(sql.accounts.select.scopes.replace("?", Array(roles.length).fill("?").join(",")), roles);
+      debugLog(result);
+    }
     if (result.success) {
       if (result.message.length) {
         infoLog(`Found ${result.message.length} entries in scopes`);
-      
+
       } else {
         warnLog(`db scopes seems empty:`, result.message);
       }

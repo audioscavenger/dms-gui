@@ -15,13 +15,13 @@ import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
-import {
-  regexUsername,
-  moveKeyToLast,
-} from '../../../common.mjs';
+// import {
+//   regexUsername,
+//   moveKeyToLast,
+// } from '../../../common.mjs';
 
 import {
-  getLogins,
+  updateAccount,
   updateLogin,
   getScopes,
 } from '../services/api.mjs';
@@ -39,33 +39,22 @@ import {
 const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
+  const { user, login } = useAuth();
   const [containerName] = useLocalStorage("containerName");
-  const [DMSs, setDMSs] = useState([]);
 
-  const { user, setUser } = useAuth();
-  const { logout } = useAuth();
+  const [DMSs, setDMSs] = useState([]);
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [selectedLogin, setSelectedLogin] = useState(null);
   
   // State for new login inputs ----------------------------------
-  // const [loginFormData, setloginFormData] = useState({
-  //   username: '',
-  //   email: '',
-  //   isAdmin: 0,
-  //   isAccount: 0,
-  //   isActive: 1,
-  //   favorite: '',
-  //   roles: [],
-  //   mailbox: '',
-  // });
   const [loginFormData, setloginFormData] = useState(user);
   const [loginFormErrors, setloginFormErrors] = useState({});
 
   // State for password change modal -------------------------------
+  const [selectedLogin, setSelectedLogin] = useState(null);
   const passwordFormRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordFormData, setPasswordFormData] = useState({
@@ -80,51 +69,27 @@ const Profile = () => {
   useEffect(() => {
     setLoading(true);
     fetchScopes();
-    // fetchProfile();
+    // fetchProfile();  // nah we use localStorage user, even if hacked, the backend takes care of it
     setLoading(false);
   }, []);
 
-  const fetchProfile = async () => {
+  // const fetchProfile = async () => {
     
-    try {
-      // setLoading(true);
-      setErrorMessage(null);
-      setSuccessMessage(null);
+  //   try {
+  //     setErrorMessage(null);
+  //     setSuccessMessage(null);
 
-      // this does not need to be fetched lol
-      setloginFormData({
-        ...loginFormData,
-        ...user
-      });
+  //     // this does not need to be fetched lol
+  //     setloginFormData({
+  //       ...loginFormData,
+  //       ...user
+  //     });
 
-      // so much work for what... plus the need to check if user can pull each login in the list? pfffff
-      /*
-      const userData = await getLogins([user.mailbox, user.username]);  // user.mailbox was maybe altered in Logins page, let's pull with both options
-      debugLog('userData', userData);
-      if (userData.success) {
-        if (!userData.message.length) logout();                       // user not found, localStorage was altered or corrupt, logout!
-        
-        debugLog('ddebug user', user);
-        debugLog('ddebug userData', userData.message);
-        
-        // update profile form with fresh data, we use the first entry in userData as there will be 2 identical ones
-        setloginFormData({
-          ...loginFormData,
-          ...userData.message[0],
-        });
-
-      } else setErrorMessage(userData.message);
-        */
-
-      
-    } catch (error) {
-      errorLog(t('api.errors.fetchProfile'), error);
-      setErrorMessage('api.errors.fetchProfile');
-      
-    // } finally {
-    //   setLoading(false);
-    }
-  };
+  //   } catch (error) {
+  //     errorLog(t('api.errors.fetchProfile'), error);
+  //     setErrorMessage('api.errors.fetchProfile');
+  //   }
+  // };
 
 
   const fetchScopes = async () => {
@@ -216,7 +181,7 @@ const Profile = () => {
       // send only the editedData from id: {mailbox:newEmail, username:newValue, email:newEmail, roles:[whatever]}
       // ATTENTION the key field=mailbox must come last or else subsequent db updates will fail when you modify it!
       // moveKeyToLast(loginFormData, 'mailbox')  // no need for that, we just init loginFormData with mailbox last!
-      debugLog('ddebug loginFormData', loginFormData)
+      // debugLog('ddebug loginFormData', loginFormData)
       // const result = await updateLogin(
       //   user.mailbox,
       //   loginFormData,
@@ -225,10 +190,10 @@ const Profile = () => {
       // how about we push only the fields we want? like, the only fields the users can modify? hm??
       const result = await updateLogin(
         user.mailbox,
-        {email:loginFormData.email, favorite:loginFormData.favorite},
+        {username:loginFormData.username, email:loginFormData.email, favorite:loginFormData.favorite},
       );
       if (result.success) {
-        setUser(loginFormData);
+        login(loginFormData);
         setSuccessMessage(t('logins.saved', {username:user.mailbox}));
         
       } else setErrorMessage(result.message);
@@ -305,10 +270,21 @@ const Profile = () => {
     }
 
     try {
-      const result = await updateLogin(
-        selectedLogin.mailbox,
-        { password: passwordFormData.newPassword }
-      );
+      let result;
+      if (selectedLogin.isAccount) {
+        result = await updateAccount(
+          containerName,
+          selectedLogin.mailbox,
+          { password: passwordFormData.newPassword }
+        );
+      
+      // normal dms-gui account
+      } else {
+        result = await updateLogin(
+          selectedLogin.mailbox,
+          { password: passwordFormData.newPassword }
+        );
+      }
       if (result.success) {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.mailbox}));
         handleClosePasswordModal(); // Close the modal
@@ -322,7 +298,7 @@ const Profile = () => {
   };
 
 
-  if (isLoading) {
+  if (isLoading && !selectedLogin) {
     return <LoadingSpinner />;
   }
 
@@ -398,7 +374,6 @@ const Profile = () => {
           error={loginFormErrors.username}
           helpText="logins.usernameHelp"
           required
-          disabled
         />
 
         <FormField
@@ -443,11 +418,12 @@ const Profile = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
+            {Translate('password.changePassword')} - {selectedLogin?.username}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {!selectedLogin?.isAdmin && !selectedLogin?.isAccount && <AlertMessage type="info" message={t('password.notMailbox')} />}
           {selectedLogin && ( // Ensure selectedLogin exists before rendering form
             <form onSubmit={handleSubmitPasswordChange} ref={passwordFormRef}>
               <FormField

@@ -99,9 +99,9 @@ const Dashboard = () => {
     return `dashboard.status.${status.status.status}`;
   };
 
-  // if (isLoading && !status && !Object.keys(status).length) {
-    // return <LoadingSpinner />;
-  // }
+  if (!user) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div>
@@ -133,7 +133,7 @@ const Dashboard = () => {
             badgeText={getStatusText()}
             isLoading={isStatusLoading}
           >
-          {user.isAdmin &&
+          {user?.isAdmin == 1 &&
             <Button
               variant="danger"
               size="sm"
@@ -175,6 +175,7 @@ const Dashboard = () => {
         </Col>
       </Row>{' '}
       
+      {user?.isAccount != 1 &&
       <Row>
         {' '}
         {/* Use Row component */}
@@ -208,7 +209,8 @@ const Dashboard = () => {
             href="/aliases"
           />
         </Col>
-      </Row>{' '}
+      </Row>
+      }
       {/* Close second Row */}
     </div>
   );

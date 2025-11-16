@@ -38,12 +38,15 @@ import {
   Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 
 const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
+
   const [DMSs, setDMSs] = useState([]);
 
   // Common states -------------------------------------------------
@@ -151,7 +154,7 @@ const Logins = () => {
   const fetchAccounts = async () => {
     
     try {
-      debugLog('ddebug containerName',containerName)
+      // debugLog('ddebug containerName',containerName)
       const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getAccounts(containerName),
       ]);
@@ -606,7 +609,7 @@ const Logins = () => {
   };
 
 
-  if (isLoading) {
+  if (isLoading || !user?.isAdmin) {
     return <LoadingSpinner />;
   }
 

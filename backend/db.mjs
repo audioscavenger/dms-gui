@@ -100,6 +100,7 @@ settings: {
 
 logins: {
 
+  desc:   "password in the the list of keys even tho it's not a column",
   id:     'mailbox',
   keys:   {
     mailbox:'string', 
@@ -113,6 +114,7 @@ logins: {
     favorite:'string', 
     refreshToken:'string', 
     roles:'object',
+    password:'string',
   },
   scope:  false,
   select: {
@@ -146,9 +148,8 @@ logins: {
   },
   
   insert: {
-    login:    `REPLACE INTO logins          (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, favorite, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @favorite, @roles)`,
-    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
-    fromDMS:  `INSERT OR IGNORE INTO logins (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
+    login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, favorite, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @favorite, @roles)`,
+    fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
   },
   
   update: {
@@ -331,6 +332,7 @@ roles: {
 
 accounts: {
       
+  desc:   "password in the the list of keys even tho it's not a column",
   id:     'mailbox',
   keys:   {
     mailbox:'string', 
@@ -339,6 +341,7 @@ accounts: {
     hash:'string',
     storage:'object', 
     scope:'string', 
+    password:'string',
   },
   scope:  true,
   select: {
@@ -350,6 +353,7 @@ accounts: {
     salt:     `SELECT salt from accounts WHERE mailbox = ?`,
     hash:     `SELECT hash from accounts WHERE mailbox = ?`,
     saltHash: `SELECT salt, hash FROM accounts WHERE (mailbox = @mailbox)`,
+    scopes:   `SELECT DISTINCT scope as value FROM accounts WHERE mailbox IN (?)`,
   },
   
   insert: {
@@ -486,7 +490,8 @@ domains: {
 },
 
 };
-// password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
+// TypeError: SQLite3 can only bind numbers, strings, bigints, buffers, and null
+
 
 
 export const dbOpen = () => {
@@ -546,7 +551,9 @@ export const dbRun = (sql, params={}, ...anonParams) => {
       } else {
         debugLog(`DB.transaction("${sql}").run(${JSON.stringify(params)})`);
         insertMany = DB.transaction((params) => {
-          for (const param of params) DB.prepare(sql).run(param);
+          for (const param of params) {
+            DB.prepare(sql).run(param);
+          }
         });
         result = insertMany(params);
       }
@@ -863,7 +870,7 @@ export const changePassword = async (table, id, password, containerName) => {
       const targetDict = getTargetDict(containerName);
 
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
-      results = await execSetup(`email update ${id} password`, targetDict);
+      results = await execSetup(`email update ${id} "${password}"`, targetDict);
       if (!results.returncode) {
         
         debugLog(`Updating password for ${id} in ${table} with scope=${containerName}...`);
@@ -917,7 +924,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
     // keep only keys defined as updatable
     let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
     if (!validDict || Object.keys(validDict).length == 0) {
-      errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)}`); // only dump stuff in container log
+      errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)} not in`,sql[table].keys); // only dump stuff in container log
       throw new Error(`jsonDict is invalid`);
     }
     
@@ -931,20 +938,16 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
         if (key == 'password') {
           return changePassword(table, id, value, scope);
           
-        // objects must be saved as JSON
-        } else if (typeof value == 'object') {
-          result = dbRun(sql[table].update[key], {[key]:JSON.stringify(value)}, id);
-          if (result.success) {
-            messages.push(`Updated ${table} ${id} with ${key}=${value}`);
-            successLog(`Updated ${table} ${id} with ${key}=${value}`);
-          } else messages.push(result.message);
-        
         // other sqlite3 valid types and we can test specific scenarios
         } else {
           
           // add named scope to the scopedValues, even if not used in the query it won't fail
           // scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
-          scopedValues = {[key]:value, scope:scope};    // always add scope even when undefined, why care? it's failproof
+          if (typeof value == 'object') {
+            scopedValues = {[key]:JSON.stringify(value), scope:scope};
+          } else {
+            scopedValues = {[key]:value, scope:scope};
+          }
             
           // check if we have specifics before updating this key
           if (sql[table].update[key]) {
@@ -1120,6 +1123,7 @@ export const getTargetDict = (containerName) => {
         host:           getValueFromArrayOfObj(result.message, 'containerName'),
         port:           getValueFromArrayOfObj(result.message, 'DMS_API_PORT'),
         Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
+        timeout:        env.execTimeout,
       }
       
       // if (targetDict && Object.keys(targetDict).length == 4) return {success: true, message: targetDict}; // what?? no

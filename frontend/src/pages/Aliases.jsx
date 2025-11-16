@@ -72,7 +72,7 @@ const Aliases = () => {
   }, []);
 
   const fetchAliases = async (refresh) => {
-    refresh = (refresh === undefined) ? false : refresh;
+    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
     debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
     
     try {
@@ -142,7 +142,7 @@ const Aliases = () => {
   const validateForm = () => {
     const errors = {};
     
-    // with FormField type="text" we don;t need any of that, but since we deal with regex...
+    // with FormField type="text" we don't need any of that, but since we deal with regex...
     
     let matchEmailStrict = formData.source.trim().match(regexEmailStrict);
     let matchEmailRegex = formData.source.trim().match(regexEmailRegex);
@@ -151,18 +151,22 @@ const Aliases = () => {
 
     if (!formData.source.trim()) {
       errors.source = 'aliases.sourceRequired';
+      setErrorMessage(errors.source);
     } else if (!matchEmailStrict && !matchEmailRegex) {
       errors.source = 'aliases.invalidSource';
+      setErrorMessage(errors.source);
     }
 
     if (!formData.destination.trim()) {
       errors.destination = 'aliases.destinationRequired';
+      setErrorMessage(errors.destination);
     }
 
     // Also test if source domain exist in domains when it's a mailbox match
-    // I can't see how to test for regex as the domain part can be regex too
+    // I can't see how to really test for regex as the domain part can be regex too but let's do our best
     if (matchEmailStrict && !pluck(accounts, 'domain').includes(matchEmailStrict[2])) {
       errors.source = 'aliases.invalidSourceDomain';
+      setErrorMessage(errors.source);
     }
 
     setFormErrors(errors);

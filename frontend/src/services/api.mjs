@@ -246,11 +246,11 @@ export const deleteLogin = async mailbox => {
   }
 };
 
-export const loginUser = async (credential, password) => {
+export const loginUser = async (credential, password, test=false) => {
   if (!credential) return false;
   if (!password) return false;
   try {
-    const response = await api.post(`/loginUser`, { credential, password });
+    const response = await api.post(`/loginUser`, { credential, password, test });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -323,7 +323,7 @@ export const updateAccount = async (containerName, mailbox, jsonDict) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   if (!mailbox) return {success: false, message: 'mailbox is required'};
   try {
-    const response = await api.patch(`/accounts/${containerName}/${mailbox}/update`, jsonDict); // jsonDict = {password:password}
+    const response = await api.patch(`/accounts/${containerName}/${mailbox}`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);

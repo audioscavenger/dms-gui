@@ -48,10 +48,12 @@ const LeftSidebar = () => {
           <span> {Translate('dashboard.sidebar')}</span>
         </Nav.Link>
       
-        <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
-          <i className="bi bi-inboxes-fill me-2"></i>
-          <span> {Translate('accounts.sidebar')}</span>
-        </Nav.Link>
+        {user.isAccount == 0 && (
+          <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
+            <i className="bi bi-inboxes-fill me-2"></i>
+            <span> {Translate('accounts.sidebar')}</span>
+          </Nav.Link>
+        )}
       
         <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
           <i className="bi bi-arrow-left-right me-2"></i>
@@ -60,7 +62,7 @@ const LeftSidebar = () => {
       </>
       )}
       
-      {(user && user.isAdmin) && (
+      {(user && user.isAdmin == 1) && (
       <>
         <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
           <i className="bi bi-person-lock me-2"></i>

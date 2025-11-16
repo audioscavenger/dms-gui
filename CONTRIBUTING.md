@@ -23,11 +23,12 @@ After (9) my life will be complete and I won't need to work on this anymore ever
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
 * [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data
-* [ ] - frontend/Logins: cannot save email/username update, but ut works from the Logins page, why?
+* [ ] - frontend/Logins: Invalid DOM property `class`. Did you mean `className`?
 * [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
 
 ## chores:
 
+* [ ] - unify all frontend errors with {success:false, message, and unified error codes}
 * [ ] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
 * [ ] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
 * [ ] - translation: there seems to be lots of messages unused throughout the project
@@ -104,9 +105,23 @@ docker push audioscavenger/dms-gui --all-tags
 
 ## history:
 
-* [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS
-* [ ] 1.4. - linked mailbox users can now change their mailbox password
-* [ ] 1.4. - many api res still return res.json(result) instead of res.json({success: true, message:result})
+* [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
+* [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
+
+* [x] 1.4.9 - backend: a ton of bugfixes
+* [x] 1.4.9 - backend/accounts: bugfix: added -y to delete account as command would stall otherwise
+* [x] 1.4.9 - backend/accounts: delete account also delete all aliases
+* [x] 1.4.9 - frontend: users can finally add their own aliases
+* [x] 1.4.9 - backend: bugfix: changePassword was hard coded as "password".... silly mistake
+* [x] 1.4.9 - backend: account changePassword actually changes dovecot password
+* [x] 1.4.9 - linked mailbox users now login with dovecot only
+* [x] 1.4.9 - linked mailbox users can now change their mailbox password
+* [x] 1.4.9 - frontend: non admins have a warning that changing mailbox password is under Accounts
+* [x] 1.4.9 - frontend: non admins have access to Accounts but not isAccount users
+* [x] 1.4.9 - frontend: bugfix with all those 0 when !user.isAdmin
+* [x] 1.4.9 - security: some calls for non admins fail silently instead of spitting a 403
+* [x] 1.4.9 - logout actually works now, window.location.replace instead of navigate
+* [x] 1.4.9 - getScopes now takes roles to spit out only containers associated with roles
 * [x] 1.4.8 - upgraded all modules
 * [x] 1.4.8 - frontend/Settings: introduce restart dms-gui button and added killMe(errorcode)
 * [x] 1.4.8 - introduce DMSGUI_CRON=`* * 23 * * *` to alter the daily container restart set at 11PM

@@ -247,7 +247,7 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
       const jsonData = Object.assign({}, 
         {
           command: command,
-          timeout: (targetDict?.timeout || 1),
+          timeout: (targetDict?.timeout || env.execTimeout),
         },
         ...rest);
 
