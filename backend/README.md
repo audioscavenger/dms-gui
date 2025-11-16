@@ -27,7 +27,7 @@ npm start
 Configure the `.dms-gui.env` file with the appropriate environment variables:
 
 ```
-## Docker-Mailserver Configuration: all is handled byREact.
+## dms-gui Configuration: all is handled byREact.
 ## React is incompatible with environment set variables
 ## Only the defaults used in dms-gui will be mentionned here.
 ## Don't set those variables as they will not be read
@@ -64,6 +64,7 @@ It's a very small size and classic React structure. Most has been factored but s
 
 ```
 dms-gui/
+├── common.js                   # Shared functions
 ├── backend/                    # Backend API
 │   ├── env.js                  # Environment variables
 │   ├── backend.js              # backend functions
@@ -90,23 +91,34 @@ dms-gui/
 └── README.md                   # Docker setup documentation
 ```
 
-## Available endpoints
+## Available endpoints (non exhaustive)
 
 - `GET /api/status` - Server status
 - `GET /api/infos` - Server environment
 - `GET /api/settings` - Get settings
+- `GET /api/scopes` - Get all scopes in settings table
+- `GET /api/roles` - Get a login's roles
+- `POST /api/envs` - Get DMS environment
 - `POST /api/settings` - Save settings
-- `GET /api/logins` - Get admin credentials
-- `POST /api/logins` - Save admin credentials
+- `POST /api/logins` - Get login
+- `PUT /api/logins` - Add login
+- `PATCH /api/logins` - Update a login
+- `DELETE /api/logins` - delete login
 - `POST /api/loginUser` - login user true/false
+- `POST /api/logout` - logout
 
-- `GET /api/accounts` - List email accounts [?refresh=true]
+- `PUT /api/doveadm` - send doveadm commands
+- `GET /api/accounts` - List email accounts
 - `POST /api/accounts` - Add a new account
-- `DELETE /api/accounts/:email` - Delete an account
-- `DELETE /api/accounts/:email/password` - Update account password
-- `GET /api/aliases` - List aliases [?refresh=true]
+- `DELETE /api/accounts` - Delete an account
+- `PATCH /api/accounts` - Update account password
+- `GET /api/aliases` - List aliases
 - `POST /api/aliases` - Add a new alias
-- `DELETE /api/aliases/:source/:destination` - Delete an alias
+- `DELETE /api/aliases` - Delete an alias
+- `GET /api/domains` - Get domain(s)
+
+- `GET /api/getCount` - Get row count from a table
+- `POST /api/initAPI` - Create DMS API files and key
 
 The parsing of queries is done with [qs](https://www.npmjs.com/package/qs), a querystring parsing and stringifying library with some added security.
 
@@ -121,7 +133,7 @@ OAS description of all API endpoints is available at https://dms.domain.com/docs
 curl -sSL https://dms.domain.com/api/status
 ```
 
-Result:
+Result (outdated):
 
 ```json
 {

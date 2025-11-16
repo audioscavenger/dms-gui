@@ -64,7 +64,7 @@ export const env = {
   //                                       │ │ │  │ │ │
   //                                       │ │ │  │ │ │
   //                                       * * *  * * *
-  DMSGUI_CRON: process.env.DMSGUI_CRON || '* * 23 * * *',
+  DMSGUI_CRON: process.env.DMSGUI_CRON || '* 1 23 * * *',
 }
 
 // we don't set any defaults here, as they will override whatever users set // cancelled, we only use the db

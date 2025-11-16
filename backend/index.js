@@ -280,10 +280,11 @@ async (req, res) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
+    const test = ('test' in req.query) ? req.query.test : undefined;
 
-    const status = await getServerStatus(containerName, req.query?.test);
+    const status = await getServerStatus(containerName, test);
     res.json(status);
-    
+
   } catch (error) {
     errorLog(`index /api/status: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
@@ -364,6 +365,7 @@ async (req, res) => {
     const name = ('name' in req.query) ? req.query.name : undefined;
     const envs = await getServerEnvs(containerName, refresh, name);
     res.json(envs);
+
   } catch (error) {
     errorLog(`index /api/envs: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });

@@ -3,6 +3,8 @@
 
 A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
 
+It can handle multiple DMS instances, and potentially other mail servers like Poste.io with a little bit of extra work.
+
 ## Features
 
 - 🔐 Login page, crypto-secure hashed passwords, HTTP-Only cookies
@@ -19,9 +21,34 @@ A graphical user interface for managing DMS ([Docker-Mailserver](https://github.
 - 🌐 Multilingual support (English, Polish)
 - 👌 Cutting edge Node.JS v24
 
-HHow does dms-gui interact with DMS? Simply, by executing `system` and `doveadm` commands inside DMS, through a python API. API script is generated from dms-gui and must be mounted as a volume in DMS compose, along with the exposed port. You don't need to alter `user-patches.sh` at all. 
 
-API Access security is handled with a key generated from dms-gui itself.
+### FAQ
+* [x] How does dms-gui interact with DMS?
+> Simply, by executing `system` and `doveadm` commands inside DMS, through a python API. 
+
+* [x] How does dms-gui execute commands in DMS?
+> Python API script and its loader are generated from dms-gui, and then mounted as a single volume in DMS compose, along with the exposed port. You don't need to alter `user-patches.sh` at all. The API script is conveniently placed in a folder that is mouted in DMS: `./config/dms-gui/`.
+
+* [x] How secure is this API?
+> API Access security is handled with a key generated from dms-gui itself. The key is sent in query header of the http calls. Since the DMS API port is exposed on the docker network only, no one else has access to it.
+
+* [x] How about login security?
+> Top notch: best practice for React has been followed: HTTPonly cookies and backend verification of credentials, zero trust of the frontend.
+
+* [x] Tell me more about security?
+> Two 32 bits secrets are generated when container starts: one for generateToken (valid 1h) and the other for refreshToken (valid 7 days). Refresh tokens are saved in the db for each logins and invalidated when container restarts, since the secrets have changed.
+
+* [x] Security really bothers me, anything more?
+> Yes, the container relies on node-cron and restarts daily at 11PM to regenerate new secret keys. You can alter the schedule with the environment variable `DMSGUI_CRON`.
+
+* [x] How about password security?
+> Standard practice: passwords are stored in a local sqlite3 db as separate salt and hash. We only force users to use 8+ characters.
+
+* [x] Can a linked mailbox user hack their way into admin or unauthorized commands?
+> No, their credentials are set in the HTTPonly cookie and the backend only relies on its values to determine what's allowed.
+
+* [x] Can a user do path transversal or sql injections or anything to exploit this portal?
+> No, sql commands are stored in a dictionary and no module executes sql commands directly. All is variabilized and checked for integrity both on the frontend and the backend. Routes are indeed protected following Rect best practices. If you trust React, that's what you get.
 
 ### Login page
 
@@ -67,7 +94,7 @@ Creating accounts from here currently calls the DMS `setup` via `docker.sock`, b
 
 ### Aliases
 
-Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`file. Soon ported to an API call.
+Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`file.
 
 ![Aliases](/assets/dms-gui-Aliases.webp)
 
@@ -117,61 +144,61 @@ If you want to develop/pull requests and test, see README.docker.md and each REA
 Rename `./config/dms-gui/.dms-gui.env.example` as `./config/dms-gui/.dms-gui.env` and update for your own environment:
 
 ```
-## Docker-Mailserver Configuration: all is handled byREact.
-## React is incompatible with environment set variables
+###############################################################################
+## dms-gui Configuration: all is handled by React.
+## React is incompatible with environment variables as it relies on a database.
 ## Only the defaults used in dms-gui will be mentionned here.
-## Don't set those variables as they will not be read
-## DMS_CONTAINER=dms
-## DMS_SETUP_SCRIPT=/usr/local/bin/setup
-## DMS_API_KEY=uuid set in dms-gui
-## DMS_API_PORT=8888
-
-## Optional: Dev Environment
+## Don't set those variables as they will not be read nor used.
+# DMS_CONTAINER=dms
+# DMS_SETUP_SCRIPT=/usr/local/bin/setup
+# DMS_API_KEY=uuid set in dms-gui
+# DMS_API_PORT=8888
 # PORT_NODEJS=3001
 # API_URL=http://localhost:3001
+# DOVEADM_PORT=8080
+###############################################################################
+## JWT_SECRET = secret for salting the cookies, regenerated during container start, before starting node
+## JWT_SECRET_REFRESH = secret for salting the refresh cookies, regenerated during container start, before starting node
+## Those keys cannot be defined anywhere else then during container start, and are secret as the name suggests
+###############################################################################
+
+## Optional: Dev Environment
 # NODE_ENV=development
 NODE_ENV=production
 
 ## Debugging
-DEBUG=true
+# DEBUG=true
 
-## JWT_SECRET = secret for salting the cookies, regenerated during container start, inside the container
-## JWT_SECRET cannot be defined anywhere else then during container start, and is secret as the name suggests
-## how long before rotation of the secret: yet to be handled
+## how long before rotation of the secrets:
 ACCESS_TOKEN_EXPIRY=1h
+REFRESH_TOKEN_EXPIRY=7d
 
 ## utility paths for internal database
 DMSGUI_CONFIG_PATH=/app/config
 DATABASE=${DMSGUI_CONFIG_PATH}/dms-gui.sqlite3
 
-## possible and lots of new calls available with dovecot 2.4, but will likely never be used
-# DOVEADM_PORT=8080
+## Override the daily restart of the container, with this simple trick: default is 11PM
+## The container must restart regularly to regenerate the secret keys. Security first.
+##           ┌────────────── second (optional)
+##           │ ┌──────────── minute
+##           │ │ ┌────────── hour
+##           │ │ │  ┌──────── day of month
+##           │ │ │  │ ┌────── month
+##           │ │ │  │ │ ┌──── day of week
+##           │ │ │  │ │ │
+##           │ │ │  │ │ │
+##           * * *  * * *
+DMSGUI_CRON="* 1 23 * * *"
 ```
 
 ### Environment Variables
 
 All is optional, as they will be superseeded by the ones defined and saved within dms-gui:
 
-- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-- `DMS_SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
 - `DEBUG`: Node.js environment: (*production or development)
-- `DMS_API_KEY`: format is that of a uuid, must be defined in DMS environment too
-- `DMS_API_PORT`: must be exposed in DMS compose too, defaults to 8888
-- `DMSGUI_CRON`: to alter the daily container restart set at 11PM: format is cron: 
-  ```
-                                        ┌────────────── second (optional)
-                                        │ ┌──────────── minute
-                                        │ │ ┌────────── hour
-                                        │ │ │  ┌──────── day of month
-                                        │ │ │  │ ┌────── month
-                                        │ │ │  │ │ ┌──── day of week
-                                        │ │ │  │ │ │
-                                        │ │ │  │ │ │
-                                       "* * 23 * * *"
-```
-
-
-
+- `ACCESS_TOKEN_EXPIRY`: lifetime of the generated HTTPonly token
+- `REFRESH_TOKEN_EXPIRY`: lifetime of the generated HTTPonly refresh token
+- `DMSGUI_CRON`: crontab format for daily restarts
 
 The ones you should never alter unless you want to develop:
 
@@ -179,6 +206,12 @@ The ones you should never alter unless you want to develop:
 - `API_URL`: defaults to `http://localhost:3001`
 - `NODE_ENV`: Node.js environment: (*production or development)
 
+Listed for history, not used anymore:
+
+- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
+- `DMS_SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
+- `DMS_API_KEY`: format is that of a uuid, must be defined in DMS environment too
+- `DMS_API_PORT`: must be exposed in DMS compose too, defaults to 8888
 
 ## Language Support
 
@@ -196,7 +229,9 @@ There are two ways to deploy using Docker:
 ### Option 1: Docker Compose with dms + proxy (Recommended)
 
 #### Compose for dms + dms-gui
+
 Sample extract from `docker-compose.yml`, rename `dms` to the actual name of your docker-Mailserver container!
+
 ```yaml
 ---
 services:
@@ -206,7 +241,7 @@ services:
     environment:
       DMS_API_KEY: adc71d05-f777-4f18-95b4-41da9432fe64 # key generated by you or dms-gui
       DMS_API_PORT: 8888                                # optional
-      PYTHONUNBUFFERED: 1                               # optional: enable api logging in dms compose
+      PYTHONUNBUFFERED: 1                               # optional: enable API logging in dms compose
     expose:
       - "8888"                                          # local python cgi API
     volumes:
@@ -340,7 +375,7 @@ For detailed Docker setup instructions, please refer to:
 - [README.docker.md](README.docker.md) - Detailed Docker setup guide
 - [README.dockerhub.md](README.dockerhub.md) - Docker Hub specific information
 
-## Available endpoints
+## Available endpoints (non exhaustive)
 
 - `GET /api/status` - Server status
 - `GET /api/infos` - Server environment
@@ -349,8 +384,8 @@ For detailed Docker setup instructions, please refer to:
 - `GET /api/roles` - Get a login's roles
 - `POST /api/envs` - Get DMS environment
 - `POST /api/settings` - Save settings
-- `POST /api/logins` - Get login
-- `PUT /api/logins` - Add login
+- `GET /api/logins` - Get login
+- `POST /api/logins` - Add login
 - `PATCH /api/logins` - Update a login
 - `DELETE /api/logins` - delete login
 - `POST /api/loginUser` - login user true/false
@@ -364,10 +399,11 @@ For detailed Docker setup instructions, please refer to:
 - `GET /api/aliases` - List aliases
 - `POST /api/aliases` - Add a new alias
 - `DELETE /api/aliases` - Delete an alias
-- `GET /api/domains` - Get domain(s)
+- `GET /api/domains` - Get domains detected
 
-- `GET /api/getCount` - Get row count from a table
+- `POST /api/getCount` - Get row count from a table
 - `POST /api/initAPI` - Create DMS API files and key
+- `POST /api/kill` - Reboot dms-gui
 
 
 ### Swagger API docs
@@ -388,7 +424,7 @@ OAS description of all API endpoints is available at:
 curl -sSL https://dms.domain.com/api/status
 ```
 
-Result:
+Result (outdated):
 
 ```json
 {
@@ -416,7 +452,7 @@ Formatted logging with colors, that actually helps!
 
 Absolutely unnecessary, but this project uses [Prettier](https://prettier.io/) for consistent code formatting. Configuration is defined in the root `.prettierrc.json` file.
 
-Formatting was automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensured that all committed code adheres to the defined style guide.
+Formatting was automatically applied to staged files before each commit using [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged). This ensured that all committed code adheres to the defined style guide. I gave up using this as VScode does a fantastic job.
 
 ### Manual Formatting
 

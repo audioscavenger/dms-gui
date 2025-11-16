@@ -108,6 +108,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] v1.5.0 - release
 * [x] 1.4.9 - backend: a ton of bugfixes
 * [x] 1.4.9 - backend/accounts: bugfix: added -y to delete account as command would stall otherwise
 * [x] 1.4.9 - backend/accounts: delete account also delete all aliases
@@ -124,7 +125,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [x] 1.4.9 - getScopes now takes roles to spit out only containers associated with roles
 * [x] 1.4.8 - upgraded all modules
 * [x] 1.4.8 - frontend/Settings: introduce restart dms-gui button and added killMe(errorcode)
-* [x] 1.4.8 - introduce DMSGUI_CRON=`* * 23 * * *` to alter the daily container restart set at 11PM
+* [x] 1.4.8 - introduce DMSGUI_CRON=`* 1 23 * * *` to alter the daily container restart set at 11PM
 * [x] 1.4.8 - npm install --save node-cron
 * [x] 1.4.7 - security: backend actually checks for user roles and whatnot
 * [x] 1.4.7 - added refreshToken column to logins table
