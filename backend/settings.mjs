@@ -1,11 +1,13 @@
 import {
   arrayOfStringToDict,
+  getValueFromArrayOfObj,
   jsonFixTrailingCommas,
   obj2ArrayOfObj,
-  reduxPropertiesOfObj
+  reduxPropertiesOfObj,
 } from '../common.mjs';
 import {
-  env
+  env,
+  userPatchesAPI
 } from './env.mjs';
 
 import {
@@ -37,14 +39,14 @@ import path from 'path';
 
 // returns a string
 export const getSetting = async (containerName, name) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  if (!name.length)               return {success: false, message: 'name is required'};
+  if (!containerName) return {success: false, message: 'scope=containerName is required'};
+  if (!name)          return {success: false, message: 'name is required'};
 
   try {
     
-    const result = await dbGet(sql.settings.select.setting, {scope:containerName}, name);
+    const result = dbGet(sql.settings.select.setting, {scope:containerName}, name);
     if (result.success) {
-      return {success: true, message: result?.value};
+      return {success: true, message: result.message?.value}; // success is true also when no result is returned
     }
     return result;
     
@@ -67,7 +69,7 @@ export const getSettings = async (containerName, name) => {
   
   try {
     
-    const result = await dbAll(sql.settings.select.settings, {scope:containerName});
+    const result = dbAll(sql.settings.select.settings, {scope:containerName});
     if (result.success) {
       
       // we could read DB_Logins and it is valid
@@ -103,11 +105,11 @@ export const getScopes = async (roles=[]) => {
   try {
     // for users, we only provide container scopes their roles are in
     if (!roles.length) {
-      result = await dbAll(sql.settings.select.scopes);
+      result = dbAll(sql.settings.select.scopes);
 
     } else {
       // if you know of a better way, let me know
-      result = await dbAll(sql.accounts.select.scopes.replace("?", Array(roles.length).fill("?").join(",")), roles);
+      result = dbAll(sql.accounts.select.scopes.replace("?", Array(roles.length).fill("?").join(",")), roles);
       debugLog(result);
     }
     if (result.success) {
@@ -171,7 +173,8 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
         successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
 
         // now (re) generate API scripts
-        result = initAPI(containerName);
+        const DMS_API_KEY = getValueFromArrayOfObj(jsonArrayOfObjectsScoped, 'DMS_API_KEY');
+        if (DMS_API_KEY) result = initAPI(containerName, DMS_API_KEY);
         
       }
       return result;
@@ -259,10 +262,15 @@ export const getServerStatus = async (containerName, test=undefined) => {
           status.status.status = "running";
 
         } else {
-          if (results.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
-          if (results.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
-          if (results.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
-          status.status.error = results.stderr;
+          if (results.stderr) {
+            if (results.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
+            if (results.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
+            if (results.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
+            status.status.error = results.stderr;
+          } else {
+            status.status.status = 'api_error';
+            status.status.error = 'unknown';
+          }
           return {success: false, message: status};
         }
 
@@ -1166,7 +1174,9 @@ export const initAPI = async (containerName, dms_api_key_param) => {
     // regen API files
     debugLog(`Regenerate API scripts for ${containerName}...`);
     result = await createAPIfiles(containerName);
-    if (!result.success) return {success: false, message: result.message};
+    if (result.success) return {success: true, message: dms_api_key_new};
+    
+    return {success: false, message: result.message};
 
   } catch (error) {
     errorLog(error.message);
@@ -1185,8 +1195,9 @@ export const createAPIfiles = async (containerName) => {
   if (env.isDEMO) return {success: true, message: 'API files created'};
 
   try {
-    for (const file of Object.values(env.userPatchesAPI)) {
+    for (const file of Object.values(userPatchesAPI)) {
       writeFile(file.path, file.content);
+      debugLog('created file.path:',file.path)
     }
     return {success: true, message: 'API files created'};
     

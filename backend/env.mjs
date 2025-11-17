@@ -49,7 +49,7 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_SECRET_REFRESH: process.env.JWT_SECRET_REFRESH,
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '1h',
-  REFRESH_TOKEN_EXPIRY : process.env.ACCESS_TOKEN_EXPIRY || '7d',
+  REFRESH_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '7d',
 
   // doveadm API port, possible to especially with dovecot 2.4, but not used and likely never will
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),
@@ -65,6 +65,8 @@ export const env = {
   //                                              │ │ │  │ │ │
   //                                              * * *  * * *
   DMSGUI_CRON: (process.env.isDEMO === 'true') ? '6 7 *  * * *' : (process.env.DMSGUI_CRON || '* 1 23 * * *'),
+
+  LOG_COLORS: (process.env.LOG_COLORS === 'false') ? false : true,
 
   // DEMO will activate a mock database and disable all refresh options
   isDEMO : (process.env.isDEMO === 'true') ? true : false,

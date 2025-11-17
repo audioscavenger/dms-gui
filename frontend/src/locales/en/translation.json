@@ -4,7 +4,9 @@
     "title": "Docker-Mailserver GUI"
   },
   "navbar": {
-    "documentation": "DMS Wiki"
+    "downloadMe": "Download me!",
+    "documentation": "DMS Wiki",
+    "rebootIn": "Rebooting in:"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -80,6 +82,7 @@
     "usernameInvalid": "username contains invalid characters",
     "usernameRequired": "username is required",
     "welcome": "Welcome",
+    "welcomeDEMO": "Welcome on the dms-gui DEMO server",
     "title": "Logins Page"
   },
   "accounts": {

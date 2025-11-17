@@ -611,7 +611,7 @@ export const dbCount = (table, containerName) => {
       debugLog(`DB.prepare("${sql[table].select.count}").get()`);
       result = DB.prepare(sql[table].select.count).get();
     }
-    infoLog(`success:`, result);
+    debugLog(`success:`, result);
     
     return {success: true, message: result.count};
 

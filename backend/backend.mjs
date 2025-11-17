@@ -19,7 +19,7 @@ import {
 
 
 // const log = require('log-utils');   // https://www.npmjs.com/package/log-utils
-export const color = {
+export const color = (env.LOG_COLORS) ? {
   end: '\x1B[0m',
   k: '\x1B[30m',
   r: '\x1B[31m',
@@ -34,14 +34,37 @@ export const color = {
   REV: '\x1B[3m',
   UND: '\x1B[4m',
   HGL: '\x1B[5m',
+  kLOW: '\x1B[90m',
+} : {
+  end: '',
+  k: '',
+  r: '',
+  g: '',
+  y: '',
+  b: '',
+  m: '',
+  c: '',
+  w: '',
+  HIG: '',
+  LOW: '',
+  REV: '',
+  UND: '',
+  HGL: '',
 }
-export const ICON = {
+export const ICON = (env.LOG_COLORS) ? {
   success:  '\x1B[92m✔️\x1B[39m ',
   error:    '\x1B[31m❌\x1B[39m ',
   warn:     '\x1B[33m🔺\x1B[39m',
   info:     '\x1B[36m💬\x1B[39m',
   debug:    '\x1B[35m🔎\x1B[39m',
+} : {
+  success:  '✔️ ',
+  error:    '❌ ',
+  warn:     '🔺',
+  info:     '💬',
+  debug:    '🔎',
 }
+
 export const LEVEL = {
   success:  color.g+color.LOW+'[SUCCESS]'+color.end,
   error:    color.r+color.LOW+'[ERROR] '+color.end,
@@ -60,7 +83,7 @@ export const LEVEL = {
 // });
 export const logger = async (level, message='', ...data) => {
   // console[level](`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level]+color.end, color.LOW+funcName(4)+color.end, message, data);
-  console.log(`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, ...data, color.end);
+  console.log(`[${color.kLOW}${(new Date).toLocaleTimeString()}${color.end}`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, ...data, color.end);
 };
 
 export const successLog = async (message, ...data) => { logger('success', message, ...data) };

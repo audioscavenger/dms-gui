@@ -62,6 +62,8 @@ export const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
+  const { user } = useAuth();
+  const { logout } = useAuth();
   const { login } = useAuth();
   
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -71,21 +73,27 @@ export const Login = () => {
 
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
-    
+
+    // since we are redirected here from the api when dms-gui has restarted with fresh secret keys, we need to logout first
+    if (user) logout();
+
     // debugLog('ddebug isFirstRun loginUser(admin)');
     const result = await loginUser('admin', 'changeme', true);
     // debugLog('ddebug isFirstRun result', result);
     
     // if we can login with the default user, display first run welcome message
-    if (result?.isDEMO || isDEMO) {
+    
+    if (result.success) {
       setFirstRun(true);
-      setIsDEMO(true);
-      setSuccessMessage('logins.isDEMO');
-    } else if (result.success) {
-      setFirstRun(true);
-      setSuccessMessage('logins.isFirstRun');
-    }
 
+      if (result?.isDEMO || isDEMO) {
+        setIsDEMO(true);
+        setSuccessMessage('logins.isDEMO');
+      } else {
+        setIsDEMO(false);
+        setSuccessMessage('logins.isFirstRun');
+      }
+    }
   };
 
   const handleLogin = async (e) => {
@@ -115,7 +123,7 @@ export const Login = () => {
     <Row className="align-items-center justify-content-center vh-100">
       <Col md={6}>{' '}
 
-        <Card title="logins.welcome" icon="person-lock" collapsible="false">{' '}
+        <Card title={isDEMO ? 'logins.welcomeDEMO' : 'logins.welcome'} icon="person-lock" collapsible="false">{' '}
           <AlertMessage type="success" message={successMessage} />
 
           <form onSubmit={handleLogin}>

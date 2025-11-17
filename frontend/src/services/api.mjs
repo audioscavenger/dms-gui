@@ -5,7 +5,6 @@ import {
   errorLog
 } from '../../frontend.mjs';
 
-
 // Fallback to '/api' if environment variable is not available
 const API_URL =
   (typeof process !== 'undefined' &&
@@ -102,6 +101,7 @@ api.interceptors.response.use(
       case 'NO_REFRESH_TOKEN':
       case 'INVALID_REFRESH_TOKEN':
       case 'REFRESH_TOKEN_EXPIRED':
+      case 'ERR_BAD_REQUEST':
         window.location.href = '/login';
         break;
       
