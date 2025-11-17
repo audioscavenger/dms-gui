@@ -27,7 +27,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 
 | dms     | dms-gui | x86_64 | aarch64 | details |
 |---------|---------|--------|---------|---------|
-| v15.1.0 | v1.5 | ✔️ | ❌ | dovecot 2.3 |
+| v15.1.0 | v1.5 | ✔️ | ✔️ | dovecot 2.3 |
 | v16?    | ❌ | ❌ | ❌ | dovecot 2.4 |
 
 
@@ -46,7 +46,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 > Sure, it's in the `/backend/env.js` file.
 
 * [x] How about login security?
-> Top notch: best practice for React has been followed: HTTPonly cookies and backend verification of credentials, zero trust of the frontend.
+> Top notch: best practice for React has been followed: CORS same-domain Strict + HTTPonly cookies + backend verification of credentials, zero trust of the frontend.
 
 * [x] Tell me more about security?
 > Two 32 bits secrets are generated when container starts: one for generateToken (valid 1h) and the other for refreshToken (valid 7 days). Refresh tokens are saved in the db for each logins and invalidated when container restarts, since the secrets have changed.
@@ -64,6 +64,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 > No, sql commands are stored in a dictionary and no module executes sql commands directly. All is variabilized and checked for integrity both on the frontend and the backend. Routes are indeed protected following Rect best practices. If you trust React, that's what you get.
 
 * [x] What do users have access to, in this portal?
+
 | type         | Profile | Dashboard | Accounts | Aliases | Logins | Settings | Backups | Imports |
 | -------------|-----------|---------|----------|---------|----------|----------|---------|---------|
 | admins       | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
@@ -288,7 +289,7 @@ services:
       - dms
     
     # Use this environment file or the environment section, or both:
-    # Note
+    # Note: the file is placed under DMS own config folder; if using another one you will need to mount both the api.conf and api.py files in DMS
     env_file: ./config/dms-gui/.dms-gui.env
     
     environment:
