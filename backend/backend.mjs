@@ -36,18 +36,18 @@ export const color = {
   HGL: '\x1B[5m',
 }
 export const ICON = {
-  success:  '\x1B[92m✔️\x1B[39m',
-  error:    '\x1B[31m❌\x1B[39m',
+  success:  '\x1B[92m✔️\x1B[39m ',
+  error:    '\x1B[31m❌\x1B[39m ',
   warn:     '\x1B[33m🔺\x1B[39m',
   info:     '\x1B[36m💬\x1B[39m',
   debug:    '\x1B[35m🔎\x1B[39m',
 }
 export const LEVEL = {
   success:  color.g+color.LOW+'[SUCCESS]'+color.end,
-  error:    color.r+color.LOW+'[ERROR]  '+color.end,
-  warn:     color.y+color.LOW+'[WARN]   '+color.end,
-  info:     color.k+color.HIG+'[INFO]   '+color.end,
-  debug:    color.k+color.HIG+'[DEBUG]  '+color.end,
+  error:    color.r+color.LOW+'[ERROR] '+color.end,
+  warn:     color.y+color.LOW+'[WARN]  '+color.end,
+  info:     color.k+color.HIG+'[INFO]  '+color.end,
+  debug:    color.k+color.HIG+'[DEBUG] '+color.end,
 }
 
 // ['debug','log','info','warn','error'].forEach((method, level)=>{
@@ -550,7 +550,7 @@ export const formatDMSError = async (errorMsg, error) => {
 
 export const killMe = async (backend=false, errorcode=0) => {
   if (env.isDEMO && backend) {
-    exec(`cp /app/config/dms-gui-sample.sqlite3 /app/config/dms-gui-demo.sqlite3`);
+    exec(`cp /app/config/dms-gui-example.sqlite3 /app/config/dms-gui-demo.sqlite3`);
     successLog('--------------------------- RESET DATABASE ---------------------------');
   }
   warnLog('--------------------------- REBOOT NOW ---------------------------');

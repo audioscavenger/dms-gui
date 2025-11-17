@@ -1043,7 +1043,7 @@ export const saveServerEnvs = async (containerName, jsonArrayOfObjects) => {  //
 // Function to get dms-gui server infos
 export const getNodeInfos = async () => {
   return {success: true, message: [
-    { name: 'env.DMSGUI_VERSION', value: env.DMSGUI_VERSION },
+    { name: 'DMSGUI_VERSION', value: env.DMSGUI_VERSION },
     { name: 'HOSTNAME', value: env.HOSTNAME },
     { name: 'TZ', value: env.TZ },
     { name: 'NODE_VERSION', value: process.version },
@@ -1182,6 +1182,8 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 
 // TODO: add containerName somewhere in path or file name
 export const createAPIfiles = async (containerName) => {
+  if (env.isDEMO) return {success: true, message: 'API files created'};
+
   try {
     for (const file of Object.values(env.userPatchesAPI)) {
       writeFile(file.path, file.content);

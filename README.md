@@ -7,6 +7,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 
 ## Features
 
+- 🌐 Multi-arch: x86_64 (amd64) + aarch64 (arm64)
 - 🔐 Login page, crypto-secure hashed passwords, HTTP-Only cookies
 - 📊 Dashboard with server status information
 - 👥 User management with roles for their mailboxes
@@ -22,7 +23,16 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 - 👌 Cutting edge Node.JS v24
 
 
+## Compatibility Chart
+
+| dms     | dms-gui | x86_64 | aarch64 | details |
+|---------|---------|--------|---------|---------|
+| v15.1.0 | v1.5 | ✔️ | ❌ | dovecot 2.3 |
+| v16?    | ❌ | ❌ | ❌ | dovecot 2.4 |
+
+
 ### FAQ
+
 * [x] How does dms-gui interact with DMS?
 > Simply, by executing `system` and `doveadm` commands inside DMS, through a python API. 
 
@@ -31,6 +41,9 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 
 * [x] How secure is this API?
 > API Access security is handled with a key generated from dms-gui itself. The key is sent in query header of the http calls. Since the DMS API port is exposed on the docker network only, no one else has access to it.
+
+* [x] I don't trust you, can I see the python code for this API?
+> Sure, it's in the `/backend/env.js` file.
 
 * [x] How about login security?
 > Top notch: best practice for React has been followed: HTTPonly cookies and backend verification of credentials, zero trust of the frontend.
@@ -49,6 +62,19 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 
 * [x] Can a user do path transversal or sql injections or anything to exploit this portal?
 > No, sql commands are stored in a dictionary and no module executes sql commands directly. All is variabilized and checked for integrity both on the frontend and the backend. Routes are indeed protected following Rect best practices. If you trust React, that's what you get.
+
+* [x] What do users have access to, in this portal?
+| type         | Profile | Dashboard | Accounts | Aliases | Logins | Settings | Backups | Imports |
+| -------------|-----------|---------|----------|---------|----------|----------|---------|---------|
+| admins       | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| users        | ✔️ | ✔️ | partial | partial | ❌ | ❌ | partial | ❌ |
+| linked users | ✔️ | partial | ❌ | partial | ❌ | ❌ | partial | ❌ |
+
+* [x] Can normal users change their password?
+> Yes, users can change both their dms-gui password and each of the mailboxes they control. Linked users can only change the mailbox password, and are authenticated by dovecot as well.
+
+* [x] Can users reset their forgotten password?
+> Not yet, it's coming.
 
 ### Login page
 

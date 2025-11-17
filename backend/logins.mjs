@@ -67,7 +67,7 @@ export const getLogin = async (credential, guess=false) => {
     if (login.success) {
       
       if (login.message && Object.keys(login.message).length) {
-        infoLog(`Found login=`, login.message);
+        infoLog(`Found login ${credential}:`, {isAdmin:login.message.isAdmin, isActive:login.message.isActive, isAccount:login.message.isAccount, roles:login.message.roles});
 
         // now JSON.parse roles as it's stored stringified in the db
         login.message.roles = (login.message?.roles) ? JSON.parse(login.message.roles) : [];

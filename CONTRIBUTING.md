@@ -96,14 +96,22 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
 alias buildup='docker buildx build -t dms-gui-24-alpine . && docker-compose up --build --force-recreate'
-
 docker login -u audioscavenger
+docker image rm audioscavenger/dms-gui:v1.5.4 && docker container prune -f && docker image prune -f
+<!-- docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
+docker push audioscavenger/dms-gui --all-tags -->
 
-docker image rm audioscavenger/dms-gui:v1.4.4 && docker container prune -f && docker image prune -f
+<!-- https://medium.com/@life-is-short-so-enjoy-it/docker-how-to-build-and-push-multi-arch-docker-images-to-docker-hub-64dea4931df9 -->
+docker buildx create          --name multiarch --node multiarch --platform linux/arm64/v8 --driver=docker-container ssh://root@oracle01:22
+docker buildx create --append --name multiarch --node multiarch --platform linux/amd64          --driver=docker-container --use --bootstrap
+docker buildx ls
+<!-- NAME/NODE       DRIVER/ENDPOINT              STATUS    BUILDKIT   PLATFORMS
+multiarch*      docker-container
+ \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
+default         docker
+ \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
+docker buildx build --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
-docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
-
-docker push audioscavenger/dms-gui --all-tags
 
 
 ## history:
@@ -111,6 +119,7 @@ docker push audioscavenger/dms-gui --all-tags
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] v1.5.4 - release multi-arch x86_64 (amd64) + aarch64 (arm64)
 * [x] v1.5.3 - release
 * [x] 1.5.2 - bugfix in docker-compose example
 * [x] 1.5.2 - bugfix in frontend

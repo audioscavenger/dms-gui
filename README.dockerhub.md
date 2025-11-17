@@ -7,6 +7,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 
 ## Features
 
+- 🌐 Multi-arch: x86_64 (amd64) + aarch64 (arm64)
 - 🔐 Login page, crypto-secure hashed passwords, HTTP-Only cookies
 - 📊 Dashboard with server status information
 - 👥 User management with roles for their mailboxes
@@ -22,7 +23,16 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 - 👌 Cutting edge Node.JS v24
 
 
+## Compatibility Chart
+
+| dms     | dms-gui | x86_64 | aarch64 | details |
+|---------|---------|--------|---------|---------|
+| v15.1.0 | v1.5 | ✔️ | ❌ | dovecot 2.3 |
+| v16?    | ❌ | ❌ | ❌ | dovecot 2.4 |
+
+
 ### FAQ
+
 * [x] How does dms-gui interact with DMS?
 > Simply, by executing `system` and `doveadm` commands inside DMS, through a python API. 
 
@@ -32,7 +42,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 * [x] How secure is this API?
 > API Access security is handled with a key generated from dms-gui itself. The key is sent in query header of the http calls. Since the DMS API port is exposed on the docker network only, no one else has access to it.
 
-* [x] I don;t trust you, can I see the python code for this API?
+* [x] I don't trust you, can I see the python code for this API?
 > Sure, it's in the `/backend/env.js` file.
 
 * [x] How about login security?
