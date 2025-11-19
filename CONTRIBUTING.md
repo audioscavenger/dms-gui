@@ -65,7 +65,19 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - start with a DataTable page of domains and see where we go
 * [ ] - add dkim modules and exec calls
 * [ ] - add DNS entries mechanics
-* [ ] - explore [ DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
+
+  Domains page be like:
+  * domain name
+  * number of accounts and aliases ?
+  * A status and modal button
+  * MX status and modal button
+  * dkim status and modal button
+  * spf status and modal button
+  * TLSA status and modal button
+  * SRV status and modal button
+  * TXT status and modal button
+  * SpamHaus/am I blacklisted sort of status
+  * DNS modal button: display 1 domain entries as table with push/pull all or individual entries
 
 ### Logins:
 * [ ] - find a way to offer mailbox changePassword for logins with multiple mailbox roles
@@ -97,7 +109,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 alias buildup='docker-compose up --build --force-recreate'
 docker login -u audioscavenger
-docker image rm audioscavenger/dms-gui:v1.5.4 && docker container prune -f && docker image prune -f
+<!-- we don't need to delete local releases anymore are they can only be pushed directly without cache, in multiarch -->
+<!-- docker container prune -f && docker image prune -f && docker image rm audioscavenger/dms-gui:v1.5.4 -->
 <!-- docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
 docker push audioscavenger/dms-gui --all-tags -->
 
@@ -110,6 +123,7 @@ multiarch*      docker-container
  \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
 default         docker
  \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
+docker container prune -f && docker image prune -f
 docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
 
@@ -119,6 +133,14 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
+* [x] 1.5.8 - design decision: dnsProvider is a per domain thing, and should be attached in domains table not settings
+* [x] 1.5.8 - design decision: DNS will be handled by `ghcr.io/stackexchange/dnscontrol` with cherry on the cake, it relies on JS config files
+* [x] 1.5.8 - research [DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
+* [x] 1.5.8 - research [DNSConfig](https://pkg.go.dev/github.com/StackExchange/dnscontrol/models#DNSConfig)
+* [x] 1.5.8 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
+* [x] 1.5.8 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
+* [x] 1.5.8 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
+* [x] v1.5.7 - bugfix in Settings: cannot change DMS
 * [x] v1.5.6 - bugfix release
 * [x] 1.5.5 - introduce LOG_COLORS to disable backend log colors
 * [x] 1.5.5 - frontend/Login: bugfix: we force logout users when they access /login otherwise they would be partially logged out when refresh keys regenerate

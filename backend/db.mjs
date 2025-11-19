@@ -69,7 +69,7 @@ settings: {
   
   init:   `BEGIN TRANSACTION;
           CREATE  TABLE settings (
-          id      INTEGER PRIMARY KEY,
+          id      INTEGER PRIMARY KEY AUTOINCREMENT,
           name    TEXT NOT NULL,
           value   TEXT NOT NULL,
           scope   TEXT NOT NULL,
@@ -227,7 +227,7 @@ logins: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE logins (
-          id        INTEGER PRIMARY KEY,
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL UNIQUE,
           username  TEXT NOT NULL UNIQUE,
           email     TEXT,
@@ -320,7 +320,7 @@ roles: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE roles (
-          id        INTEGER PRIMARY KEY,
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
           username  TEXT NOT NULL,
           mailbox     TEXT NOT NULL,
           scope     TEXT NOT NULL
@@ -372,7 +372,7 @@ accounts: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE accounts (
-          id        INTEGER PRIMARY KEY,
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL,
           domain    TEXT,
           salt      TEXT,
@@ -423,7 +423,7 @@ aliases: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE aliases (
-          id          INTEGER PRIMARY KEY,
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
           source      TEXT NOT NULL,
           destination TEXT NOT NULL,
           regex       BIT DEFAULT 0,
@@ -444,6 +444,7 @@ domains: {
     keytype:'string', 
     keysize:'number', 
     path:'string',
+    provider:'string',
     scope:'string',
   },
   scope:  true,
@@ -459,14 +460,19 @@ domains: {
     domain:   `REPLACE INTO domains (domain, dkim, keytype, keysize, path, scope) VALUES (@domain, @dkim, @keytype, @keysize, @path, @scope)`,
   },
   
+  delete: {
+    domain:   `DELETE FROM domains WHERE 1=1 AND scope = @scope AND domain = ?`,
+  },
+  
   init:  `BEGIN TRANSACTION;
           CREATE TABLE domains (
-          id        INTEGER PRIMARY KEY,
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
           domain    TEXT NOT NULL UNIQUE,
           dkim      TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
           keytype   TEXT DEFAULT 'rsa',
           keysize   TEXT DEFAULT 2048,
           path      TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
+          provider  TEXT,
           scope     TEXT NOT NULL
           );
           INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
@@ -486,9 +492,70 @@ domains: {
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${env.isImmutable})`,
     //   ],
     // },
+    { DB_VERSION: '1.5.7',
+      patches: [
+        `ALTER TABLE domains ADD provider   TEXT`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 'dms-gui', ${env.isImmutable})`,
+      ],
+    },
   ],
 },
 
+dns: {
+      
+  desc:   'dns entries, with SRV priority/weight/port being use also for TLSA usage/selector/type, MX, CERT type/tag/algo, and DNSKEY flag/protocol/algo',
+  id:     'domain',
+  keys:   {
+    domain:'string', 
+    name:'string', 
+    type:'string', 
+    ttl:'number', 
+    priority:'number', 
+    weight:'number', 
+    port:'number', 
+    data:'string',
+    CF_PROXY_ON:'number',
+  },
+  scope:  true,
+  select: {
+    count:    `SELECT COUNT(*) count FROM dns WHERE 1=1 AND domain = @domain`,
+    dns:      `SELECT * FROM dns WHERE 1=1 AND domain = @domain`,
+    byT:      `SELECT * FROM dns WHERE 1=1 AND domain = @domain AND type = ?`,
+    byName:   `SELECT * FROM dns WHERE 1=1 AND domain = @domain AND name = ?`,
+    byNameT:  `SELECT * FROM dns WHERE 1=1 AND domain = @domain AND name = ? AND type = ?`,
+    byNameTP: `SELECT * FROM dns WHERE 1=1 AND domain = @domain AND name = ? AND type = ? AND priority = ?`,
+  },
+  
+  insert: {
+    entry:      `REPLACE INTO dns (domain, name, type, ttl, priority, data, CF_PROXY_ON) VALUES (@domain, @name, @type, @ttl, @priority, @data, @CF_PROXY_ON)`,
+    entryFull:  `REPLACE INTO dns (domain, name, type, ttl, priority, weight, port, data, CF_PROXY_ON) VALUES (@domain, @name, @type, @ttl, @priority, @weight, @port, @data, @CF_PROXY_ON)`,
+    CF_PROXY_ON:`REPLACE INTO dns (domain, name, type, priority, CF_PROXY_ON) VALUES (@domain, @name, @type, @priority, @CF_PROXY_ON)`,
+  },
+  
+  delete: {
+    all:        `DELETE FROM dns`,
+    byDomain:   `DELETE FROM dns WHERE 1=1 AND domain = @domain`,
+    entry:      `DELETE FROM dns WHERE 1=1 AND domain = @domain AND name = @name AND type = @type AND priority = @priority`,
+  },
+  
+  init:  `BEGIN TRANSACTION;
+          CREATE TABLE dns (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          domain      TEXT NOT NULL UNIQUE,
+          name        TEXT NOT NULL,
+          type        TEXT NOT NULL,
+          priority    INTEGER,
+          weight      INTEGER,
+          port        INTEGER,
+          data        TEXT NOT NULL,
+          ttl         INTEGER DEFAULT 1,
+          CF_PROXY_ON BIT DEFAULT 0,
+          UNIQUE (domain, name, type, priority)
+          );
+          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_dns', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          COMMIT;`,
+  
+},
 };
 // TypeError: SQLite3 can only bind numbers, strings, bigints, buffers, and null
 

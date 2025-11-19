@@ -253,23 +253,39 @@ command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/user-patches-api.py
 // command=/usr/bin/python3 /tmp/docker-mailserver/user-patches-api.py
 
 
-
-// all undeclared variable are exported as is
-// module.exports={
-  // debug,
-  // DMSGUI_VERSION,
-  // DMSGUI_DESCRIPTION,
-  // HOSTNAME,
-  // NODE_ENV,
-  // PORT_NODEJS,
-  // TZ,
-  // DMS_CONTAINER,
-  // DMSGUI_CONFIG_PATH,
-  // DB_Accounts,
-  // DB_Aliases,
-  // DB_Settings,
-  // DB_Infos,
-  // DB_Logins,
-  // DATABASE,
-// }
-
+export const dnscontrol =
+{
+  "azure_private_dns_main": {
+    "desc": "https://docs.dnscontrol.org/provider/azure_private_dns",
+    "TYPE": "AZURE_PRIVATE_DNS",
+    "SubscriptionID": "AZURE_PRIVATE_SUBSCRIPTION_ID",
+    "ResourceGroup": "AZURE_PRIVATE_RESOURCE_GROUP",
+    "TenantID": "AZURE_PRIVATE_TENANT_ID",
+    "ClientID": "AZURE_PRIVATE_CLIENT_ID",
+    "ClientSecret": "AZURE_PRIVATE_CLIENT_SECRET"
+  },
+  "cloudflare": {
+    "desc": "https://docs.dnscontrol.org/provider/cloudflareapi",
+    "TYPE": "CLOUDFLAREAPI",
+    "accountid": "your-cloudflare-account-id",
+    "apitoken": "your-cloudflare-api-token"
+  },
+  "oracle": {
+    "desc": "https://docs.dnscontrol.org/provider/cloudflareapi",
+    "TYPE": "ORACLE",
+    "compartment": "$ORACLE_COMPARTMENT",
+    "fingerprint": "$ORACLE_FINGERPRINT",
+    "private_key": "$ORACLE_PRIVATE_KEY",
+    "region": "$ORACLE_REGION",
+    "tenancy_ocid": "$ORACLE_TENANCY_OCID",
+    "user_ocid": "$ORACLE_USER_OCID"
+  },
+  "r53_main": {
+    "desc": "https://docs.dnscontrol.org/provider/route53",
+    "TYPE": "ROUTE53",
+    "DelegationSet": "optional-delegation-set-id",
+    "KeyId": "your-aws-key",
+    "SecretKey": "your-aws-secret-key",
+    "Token": "optional-sts-token"
+  },
+}

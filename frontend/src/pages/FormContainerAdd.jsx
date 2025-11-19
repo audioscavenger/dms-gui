@@ -335,15 +335,14 @@ function FormContainerAdd() {
     try {
       
       if (value) {
-        if (result.success) {
-          setContainerName(value);
-          fetchSettings(value); // Refresh the settings
 
-          // only reset errors, we still wantto see the successful saved settings message as this change will be triggered when saving a new container
-          setErrorMessage(null);
+        setContainerName(value);
+        fetchSettings(value); // Refresh the settings
+
+        // only reset errors, we still wantto see the successful saved settings message as this change will be triggered when saving a new container
+        setErrorMessage(null);
           
-        } else setErrorMessage(result.message);
-      }
+      } else setErrorMessage(result.message);
       
     } catch (error) {
       errorLog(t('api.errors.saveSettings'), error);
