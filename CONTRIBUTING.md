@@ -133,13 +133,15 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
-* [x] 1.5.8 - design decision: dnsProvider is a per domain thing, and should be attached in domains table not settings
-* [x] 1.5.8 - design decision: DNS will be handled by `ghcr.io/stackexchange/dnscontrol` with cherry on the cake, it relies on JS config files
-* [x] 1.5.8 - research [DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
-* [x] 1.5.8 - research [DNSConfig](https://pkg.go.dev/github.com/StackExchange/dnscontrol/models#DNSConfig)
-* [x] 1.5.8 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
-* [x] 1.5.8 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
-* [x] 1.5.8 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
+* [x] 1.5.99 - design decision: dnsProvider is a per domain thing, and should be attached in domains table not settings
+* [x] 1.5.99 - design decision: DNS will be handled by `ghcr.io/stackexchange/dnscontrol` with cherry on the cake, it relies on JS config files
+* [x] 1.5.99 - research [DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
+* [x] 1.5.99 - research [DNSConfig](https://pkg.go.dev/github.com/StackExchange/dnscontrol/models#DNSConfig)
+* [x] 1.5.99 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
+* [x] 1.5.99 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
+* [x] 1.5.99 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
+* [ ] 1.5.8 - 
+* [x] 1.5.8 - added encrypt and decrypt functions, with matching new variables in .dms-gui.env.example
 * [x] v1.5.7 - bugfix in Settings: cannot change DMS
 * [x] v1.5.6 - bugfix release
 * [x] 1.5.5 - introduce LOG_COLORS to disable backend log colors

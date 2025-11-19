@@ -890,8 +890,9 @@ async (req, res) => {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const name = ('name' in req.query) ? req.query.name : undefined;
+    const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
-    const settings = (req.user.isAdmin) ? await getSettings(containerName, name) : {success:false, message:'Permission denied'};    // fails silently
+    const settings = (req.user.isAdmin) ? await getSettings(containerName, name, encrypted) : {success:false, message:'Permission denied'};    // fails silently
     res.json(settings);
     
   } catch (error) {
@@ -974,8 +975,10 @@ async (req, res) => {
   try {
     const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-    
-    const result = await saveSettings(containerName, req.body);     // req.body = [{name:name, value:value}, ..]
+
+    const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
+
+    const result = await saveSettings(containerName, req.body, encrypted);     // req.body = [{name:name, value:value}, ..]
     res.status(201).json(result);
     
   } catch (error) {
@@ -1677,8 +1680,10 @@ app.use((err, req, res, next) => {
 app.listen(env.PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
-  dbInit();         // apply patches etc
-  refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
+
+  if (!env.AES_SECRET) {
+    errorLog(`AES_SECRET has not been set. Example to create it: "openssl rand -hex 32"`);
+  }
 
   // https://github.com/ncb000gt/node-cron    // internal crontan
   debugLog('DMSGUI_CRON',env.DMSGUI_CRON)
@@ -1687,6 +1692,9 @@ app.listen(env.PORT_NODEJS, async () => {
         const result = killMe(true);    // no await
     });
   };
+
+  dbInit();         // apply patches etc
+  refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
 });
 

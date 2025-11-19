@@ -160,10 +160,11 @@ export const getNodeInfos = async () => {
   }
 };
 
-export const getSettings = async (containerName, name) => {
+export const getSettings = async (containerName, name, encrypted=false) => {
   if (!containerName) return [];
-  const params = {};
+  const params = {encrypted:encrypted};
   if (name !== undefined) params.name = name;
+
   try {
     debugLog(api.get(`/settings/${containerName}`, params));
     const response = await api.get(`/settings/${containerName}`, {params});
@@ -184,12 +185,13 @@ export const getScopes = async () => {
   }
 };
 
-export const saveSettings = async (containerName, jsonArrayOfObjects) => {
+export const saveSettings = async (containerName, jsonArrayOfObjects, encrypted=false) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
+  const params = {encrypted:encrypted};
   
   try {
-    debugLog(api.post(`/settings/${containerName}`, jsonArrayOfObjects));
-    const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects);   // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    debugLog(api.post(`/settings/${containerName} + ${params}`, jsonArrayOfObjects));
+    const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects, {params});   // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return response.data;
   } catch (error) {
     errorLog(error.message);

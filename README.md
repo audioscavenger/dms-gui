@@ -200,6 +200,18 @@ NODE_ENV=production
 ACCESS_TOKEN_EXPIRY=1h
 REFRESH_TOKEN_EXPIRY=7d
 
+## encryption options:
+## IV_LEN is the length of the unique Initialization Vector (IV) = random salt used for encryption and hashing
+IV_LEN=16
+## HASH_LEN is the length of the hashed keys for passwords
+HASH_LEN=64
+## encrypted data secret key, that one is set in the environment as well but shall never change
+AES_SECRET=
+## encrypted data algorithm
+AES_ALGO=aes-256-cbc
+## AES_HASH is the used to hash the secret key
+AES_HASH=sha512
+
 ## utility paths for internal database
 DMSGUI_CONFIG_PATH=/app/config
 DATABASE=${DMSGUI_CONFIG_PATH}/dms-gui.sqlite3

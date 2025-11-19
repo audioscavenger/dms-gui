@@ -38,7 +38,7 @@ import {
 import path from 'path';
 
 // returns a string
-export const getSetting = async (containerName, name) => {
+export const getSetting = async (containerName, name, encrypted=false) => {
   if (!containerName) return {success: false, message: 'scope=containerName is required'};
   if (!name)          return {success: false, message: 'name is required'};
 
@@ -46,7 +46,7 @@ export const getSetting = async (containerName, name) => {
     
     const result = dbGet(sql.settings.select.setting, {scope:containerName}, name);
     if (result.success) {
-      return {success: true, message: result.message?.value}; // success is true also when no result is returned
+      return {success: true, message: (encrypted ? decrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
     }
     return result;
     
@@ -63,20 +63,28 @@ export const getSetting = async (containerName, name) => {
 
 
 // this returns an array of objects
-export const getSettings = async (containerName, name) => {
+export const getSettings = async (containerName, name, encrypted=false) => {
   if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  if (name) return getSetting(containerName, name);
+  if (name) return getSetting(containerName, name, encrypted);
   
+  let result, settings;
   try {
     
-    const result = dbAll(sql.settings.select.settings, {scope:containerName});
+    result = dbAll(sql.settings.select.settings, {scope:containerName});
     if (result.success) {
       
       // we could read DB_Logins and it is valid
       if (result.message.length) {
         infoLog(`Found ${result.message.length} entries in settings`);
         debugLog('settings', result.message)
-      
+
+        // decryption where needed
+        settings = result.message.map(setting => { return {
+          ...setting,
+          value: (encrypted) ? decrypt(setting.value) : setting.value,
+          }; 
+        }); 
+
       } else {
         warnLog(`db settings seems empty:`, result.message);
       }
@@ -142,7 +150,7 @@ export const getScopes = async (roles=[]) => {
 // ... the value for containerName will always be decided and come from the frontend
 // ... the value for DMS_API_KEY   will always be dependent on containerName from the frontend
 // ... the value for DMS_API_PORT  will always be dependent on containerName from the frontend
-export const saveSettings = async (containerName, jsonArrayOfObjects) => {
+export const saveSettings = async (containerName, jsonArrayOfObjects, encrypted=false) => {
   if (!containerName)             return {success: false, message: 'scope=containerName is required'};
   if (!jsonArrayOfObjects.length) return {success: false, message: 'values=jsonArrayOfObjects is required'};
   let result;
@@ -160,7 +168,12 @@ export const saveSettings = async (containerName, jsonArrayOfObjects) => {
     // live.DMS_CONTAINER = containerName;    // TODO: this is not where we should switch DMS containers
     
     // scope all settings for that container, wh
-    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return { ...setting, scope:containerName }; });
+    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return {
+        ...setting,
+        value: (encrypted) ? encrypt(setting.value) : setting.value,
+        scope:containerName,
+      }; 
+    });
     
     // first we start with the (new?) global DMS name; the new live.DMS_API_KEY is saved by initAPI itself
     // let result = dbRun(sql.settings.insert.setting, {name:'containerName', value:containerName, scope:'dms-gui'});

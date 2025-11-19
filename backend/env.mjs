@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '/app/config/.dms-gui.env' });
+import crypto from 'node:crypto';
 
+dotenv.config({ path: '/app/config/.dms-gui.env' });
 export const env = {
   debug: (process.env.DEBUG === 'true') ? true : false,
 
@@ -45,11 +46,28 @@ export const env = {
   DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'), // hardcoded in DMS
   execTimeout: 4,
 
-  // JWT_SECRET and JWT_SECRET_REFRESH generated when container starts
+  // JWT_SECRET and JWT_SECRET_REFRESH regenerated when container starts, and will invalidates all sessions
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_SECRET_REFRESH: process.env.JWT_SECRET_REFRESH,
+  // ACCESS_TOKEN_EXPIRY and REFRESH_TOKEN_EXPIRY control the behavior of the /loginUser and /refresh API
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '1h',
   REFRESH_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '7d',
+
+  // IV_LEN is the length of the unique Initialization Vector (IV) = random salt used for encryption and hashing
+  IV_LEN: Number(process.env.IV_LEN) || 16,
+  // HASH_LEN is the length of the hashed keys for passwords
+  HASH_LEN: Number(process.env.HASH_LEN) || 64,
+  // encrypted data secret key, that one is set in the environment as well but shall never change
+  // generate it once and for all with node or openssl:
+  // // openssl rand -hex 32
+  // // node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  AES_SECRET: process.env.AES_SECRET,
+  // encrypted data algorithm
+  AES_ALGO: process.env.AES_ALGO || 'aes-256-cbc',
+  // AES_HASH is the used to hash the secret key
+  AES_HASH: process.env.AES_HASH || 'sha512',
+  // Derive a 256-bit key from your secretKey
+  AES_KEY: crypto.createHash(process.env.AES_HASH || 'sha512').update(process.env.AES_SECRET).digest('hex').substring(0, 32),
 
   // doveadm API port, possible to especially with dovecot 2.4, but not used and likely never will
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),

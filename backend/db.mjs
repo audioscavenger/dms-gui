@@ -227,7 +227,7 @@ logins: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE logins (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          id        TEXT PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL UNIQUE,
           username  TEXT NOT NULL UNIQUE,
           email     TEXT,
@@ -877,10 +877,35 @@ export const dbUpgrade = () => {
 // ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
 
 
+// Function to generate a new IV for each encryption
+function generateIv() {
+  return crypto.randomBytes(env.IV_LEN); // 16 bytes for AES-256-CBC
+}
+
+function encrypt(data) {
+  const iv = generateIv();
+  const cipher = crypto.createCipheriv(env.AES_ALGO, Buffer.from(key), iv);
+  let encrypted = cipher.update(data, 'utf-8', 'hex');
+  encrypted += cipher.final('hex');
+  // Combine IV and encrypted data for storage
+  return iv.toString('hex') + encrypted;
+}
+
+function decrypt(encryptedData) {
+  const ivLength = env.IV_LEN * 2; // env.IV_LEN bytes * 2 for hex representation
+  const iv = Buffer.from(encryptedData.slice(0, ivLength), 'hex');
+  const ciphertext = encryptedData.slice(ivLength);
+  const decipher = crypto.createDecipheriv(env.AES_ALGO, Buffer.from(key), iv);
+  let decrypted = decipher.update(ciphertext, 'hex', 'utf-8');
+  decrypted += decipher.final('utf-8');
+  return decrypted;
+}
+
 export const hashPassword = async (password, salt) => {
   return new Promise((resolve, reject) => {
-    salt = (salt) ? salt: crypto.randomBytes(16).toString('hex'); // Generate a random 16-byte salt
-    crypto.scrypt(password, salt, 64, (error, derivedKey) => { // 64 is the key length
+    salt = (salt) ? salt: generateIv().toString('hex'); // Generate a random 16-byte salt
+    // debugLog(`ddebug env.HASH_LEN=${env.HASH_LEN} (${typeof env.HASH_LEN})`);
+    crypto.scrypt(password, salt, env.HASH_LEN, (error, derivedKey) => { // env.HASH_LEN is the key length, 64 by default
       if (error) return reject(error);
       resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
     });
@@ -909,9 +934,11 @@ export const verifyPassword = async (credential, password, table='logins') => {
     //   } else return reject(`username ${credential} not found`);
     // });
     if (saltHash && Object.keys(saltHash).length) {
-      debugLog('Object.keys(saltHash).length=', Object.keys(saltHash).length);
+      // debugLog('Object.keys(saltHash).length=', Object.keys(saltHash).length);
       if (saltHash.salt && saltHash.hash) {
         const { salt, hash } = await hashPassword(password, saltHash.salt);
+        // debugLog(`ddebug saltHash.salt = ${saltHash.salt} == ${salt} salt?`);
+        // debugLog(`ddebug password ${password} hash=${hash} == ${saltHash.hash} saltHash.hash?`);
         return saltHash.hash === hash;
       }
     }
@@ -974,7 +1001,7 @@ export const changePassword = async (table, id, password, containerName) => {
 
 
 // Function to update a table in the db; id can very well be an array as well
-export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = { column:value, .. }
+export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  // jsonDict = { column:value, .. }
   debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
 
   let result, scopedValues, value2test, testResult;
@@ -1033,6 +1060,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
               if (sql[table].update[key][value2test].check(testResult.message)) {
                 
                 // we pass the test, apply update
+                if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
                 result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
                 if (result.success) {
                   messages.push(`Updated ${table} ${id} with ${key}=${value}`);
@@ -1048,6 +1076,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
               
             // no test for any value of key, update the db with new value
             } else {
+              if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
               result = dbRun(sql[table].update[key], scopedValues, id);
               if (result.success) {
                 messages.push(`Updated ${table} ${id} with ${key}=${value}`);
@@ -1059,6 +1088,7 @@ export const updateDB = async (table, id, jsonDict, scope) => {  // jsonDict = {
             // errorLog(`sql[${table}].update is missing [${key}]`);
             // return { success: false, message: `sql[${table}].update is missing [${key}]`};
 
+            if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
             result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].id} = ?`, scopedValues, id);
             if (result.success) {
               messages.push(`Updated ${table} ${id} with ${key}=${value}`);
