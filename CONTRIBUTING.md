@@ -140,7 +140,10 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.99 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
 * [x] 1.5.99 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
 * [x] 1.5.99 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
-* [ ] 1.5.8 - 
+* [ ] 1.5.9 - 
+* [x] 1.5.9 - BREAKING CHANGE: DB_VERSION has its own plugin and schema, updated dbUpgrade()
+* [x] 1.5.9 - BREAKING CHANGE: all DB_VERSION instert and update are updated in sql
+* [x] 1.5.9 - BREAKING CHANGE: settings table has scope->configID + added new table config with scope: user or dms-gui
 * [x] 1.5.8 - added encrypt and decrypt functions, with matching new variables in .dms-gui.env.example
 * [x] v1.5.7 - bugfix in Settings: cannot change DMS
 * [x] v1.5.6 - bugfix release

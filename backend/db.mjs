@@ -45,6 +45,54 @@ export const sqlMatch = {
 // DB = new Database(buffer);
 
 export const sql = {
+config: {
+
+  scope:  true,
+  id:  'config',
+  keys:   {
+    config:'string', 
+    plugin:'string', 
+    schema:'string', 
+    scope:'string', 
+  },
+  select: {
+    count:    `SELECT COUNT(*) count from config`,
+    configs:  `SELECT * from config WHERE 1=1 AND scope = @scope`,
+    settings: `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
+    setting:  `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}   AND name = ?`,
+    envs:     `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable}`,
+    env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
+    scopes:   `SELECT DISTINCT config from config WHERE 1=1 AND plugin = 'mailserver'`,
+  },
+  
+  insert: {
+    config:   `REPLACE INTO config (config, plugin, schema, scope) VALUES (@config, @plugin, @schema, @scope)`,
+  },
+  
+  update: {
+    config:   `UPDATE config set config = @config, schema = @schema WHERE 1=1 AND plugin = @plugin AND scope = @scope AND config = ?)`,
+  },
+  
+  delete: {
+    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+  },
+  
+  init:   `BEGIN TRANSACTION;
+          CREATE    TABLE settings (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          config    TEXT NOT NULL,
+          plugin    TEXT NOT NULL,
+          schema    TEXT NOT NULL,
+          scope     TEXT NOT NULL,
+          UNIQUE    (config, plugin, schema)
+          );
+          INSERT           INTO config (config, plugin, schema, scope)      VALUES ('DB_VERSION', 'dms-gui', 'DB_VERSION', 'dms-gui');
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('config', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
+  
+},
+
 settings: {
 
   scope:  true,
@@ -68,33 +116,34 @@ settings: {
   },
   
   init:   `BEGIN TRANSACTION;
-          CREATE  TABLE settings (
-          id      INTEGER PRIMARY KEY AUTOINCREMENT,
-          name    TEXT NOT NULL,
-          value   TEXT NOT NULL,
-          scope   TEXT NOT NULL,
+          CREATE    TABLE settings (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      TEXT NOT NULL,
+          value     TEXT NOT NULL,
+          configID  TEXT NOT NULL,
           isMutable BIT DEFAULT ${env.isImmutable},
-          UNIQUE (name, scope)
+          UNIQUE    (name, configID)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
   patch: [
-    { DB_VERSION: '1.0.17',
+    { DB_VERSION: '1.5.9',
       patches: [
-        `ALTER TABLE settings ADD scope TEXT NOT NULL`,
-        `ALTER TABLE settings ADD isMutable BIT DEFAULT ${env.isImmutable}`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.0.17', 'dms-gui', ${env.isImmutable})`,
+        `DROP table settings`,
+        `BEGIN TRANSACTION;
+          CREATE    TABLE settings (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      TEXT NOT NULL,
+          value     TEXT NOT NULL,
+          configID  TEXT NOT NULL,
+          isMutable BIT DEFAULT ${env.isImmutable},
+          UNIQUE    (name, configID)
+          );
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
       ],
     },
-    // { DB_VERSION: '1.2.4',
-    //   patches: [
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('containerName', '${live.DMS_CONTAINER}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('setupPath', '${env.DMS_SETUP_SCRIPT}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('env.DMS_CONFIG_PATH', '${env.DMS_CONFIG_PATH}', '${live.DMS_CONTAINER}', ${env.isMutable})`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_settings', '1.2.4', 'dms-gui', ${env.isImmutable})`,
-    //   ],
-    // },
   ],
 },
 
@@ -241,7 +290,7 @@ logins: {
           roles     TEXT DEFAULT '[]'
           );
           INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('logins', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
   patch: [
@@ -250,7 +299,7 @@ logins: {
         `ALTER TABLE logins DROP COLUMN password;`,
         `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
         `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.1',
@@ -259,7 +308,7 @@ logins: {
         `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
         `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
         `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.6',
@@ -267,32 +316,32 @@ logins: {
         `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
         `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
         `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.1.9',
       patches: [
         `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.4.5',
       patches: [
         `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
         `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.4.6',
       patches: [
         `ALTER TABLE logins ADD favorite    TEXT`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 1, ${env.isImmutable})`,
       ],
     },
     { DB_VERSION: '1.4.7',
       patches: [
         `ALTER TABLE logins ADD refreshToken    TEXT`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 1, ${env.isImmutable})`,
       ],
     },
   ],
@@ -325,7 +374,7 @@ roles: {
           mailbox     TEXT NOT NULL,
           scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_roles', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('roles', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
 },
@@ -381,14 +430,14 @@ accounts: {
           scope     TEXT NOT NULL,
           UNIQUE (mailbox, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('accounts', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
   patch: [
     // { DB_VERSION: '1.1.3',
     //   patches: [
     //     `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 'dms-gui', ${env.isImmutable})`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
   ],
@@ -430,7 +479,7 @@ aliases: {
           scope       TEXT NOT NULL,
           UNIQUE (source, scope)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_aliases', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('aliases', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
 },
@@ -475,7 +524,7 @@ domains: {
           provider  TEXT,
           scope     TEXT NOT NULL
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('domains', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
   patch: [
@@ -483,19 +532,19 @@ domains: {
       patches: [
         `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
         `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 1, ${env.isImmutable})`,
       ],
     },
     // { DB_VERSION: '1.1.3',
     //   patches: [
     //     `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 'dms-gui', ${env.isImmutable})`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
     { DB_VERSION: '1.5.7',
       patches: [
         `ALTER TABLE domains ADD provider   TEXT`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 'dms-gui', ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 1, ${env.isImmutable})`,
       ],
     },
   ],
@@ -552,11 +601,13 @@ dns: {
           CF_PROXY_ON BIT DEFAULT 0,
           UNIQUE (domain, name, type, priority)
           );
-          INSERT OR IGNORE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_dns', '${env.DMSGUI_VERSION}', 'dms-gui', ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('dns', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
 },
 };
+
+// https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md
 // TypeError: SQLite3 can only bind numbers, strings, bigints, buffers, and null
 
 
@@ -787,10 +838,15 @@ export const dbUpgrade = () => {
   
   for (const [table, actions] of Object.entries(sql)) {
     try {
-      result = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
+      // INSERT           INTO config (config, plugin, schema, scope)      VALUES ('DB_VERSION', 'dms-gui', 'DB_VERSION', 'dms-gui');
+      // INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+      // so we have config = DB_VERSION, plugin = 'dms-gui', schema = 'DB_VERSION', scope = 'dms-gui', and a setting name = 'table' for each table
+      // env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
+      // result = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
+      result = dbGet(sql.config.select.env, {plugin:'dms-gui', schema:'DB_VERSION', scope:'dms-gui'}, ['DB_VERSION', table]);
       if (result.success) {
         db_version = (result.message) ? result.message.value : undefined;
-        debugLog(`DB_VERSION_${table}=`, db_version);
+        debugLog(`DB_VERSION ${table}=`, db_version);
         
       } else throw new Error(result.message);
       
@@ -803,10 +859,10 @@ export const dbUpgrade = () => {
       
       // column does not exist or smth like that... patch needed
       if (match.get.error) {
-        debugLog(`DB_VERSION_${table}= PATCH NEEDED`);
+        debugLog(`DB_VERSION ${table}= PATCH NEEDED`);
         
       } else {
-        errorLog(`DB_VERSION_${table}= ${error.code}: ${error.message}`);
+        errorLog(`DB_VERSION ${table}= ${error.code}: ${error.message}`);
         throw error;
       }
     }
@@ -827,16 +883,16 @@ export const dbUpgrade = () => {
           if (!db_version || db_version.localeCompare(patch.DB_VERSION, undefined, { numeric: true, sensitivity: 'base' }) == -1) {
             
             // patch.patches is a array of SQL lines to ADD or DROP columns etc
-            for (const [num, patchLine] of Object.entries(patch.patches)) {
+            for (const [newVersion, patchLine] of Object.entries(patch.patches)) {
               try {
                 result = dbRun(patchLine);
                 if (result.success) {
-                  successLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: success`);
+                  successLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: success`);
                 } else {
                   throw new Error(result.message);
                 }
                 
-              } catch (ererrorr) {
+              } catch (error) {
                 match = {
                   add: {
                     patch: patchLine.match(sqlMatch.add.patch),
@@ -850,14 +906,14 @@ export const dbUpgrade = () => {
                 
                 // ADD COLUMN already exists:
                 if (match.add.patch && match.add.error && match.add.patch[1].toUpperCase() == match.add.error[1].toUpperCase()) {
-                  infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
+                  infoLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: skip`);
                 
                 // DROP COLUMN does not exist:
                 } else if (match.drop.patch && match.drop.error && match.drop.patch[1].toUpperCase() == match.drop.error[1].toUpperCase()) {
-                  infoLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: skip`);
+                  infoLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: skip`);
                   
                 } else {
-                  errorLog(`${table}: patch ${num} from ${db_version} to ${patch.DB_VERSION}: ${error.code}: ${error.message}`);
+                  errorLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: ${error.code}: ${error.message}`);
                   throw error;
                 }
               }
@@ -1347,4 +1403,25 @@ export const getTargetDict = (containerName) => {
 // { name: 'containerName', value: 'dms' }
 // ]
 
+// warning: REPLACE changes and increments the row id
+// If you want to update an existing row without changing its primary key, you should use an UPDATE statement instead of REPLACE INTO.
+result = DB.prepare("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+  // { changes: 1, lastInsertRowid: 388 }
+  // { changes: 1, lastInsertRowid: 389 }
+  // { changes: 1, lastInsertRowid: 390 }
+DB.prepare("SELECT * from settings where scope = ?").all(['dmsss'])
+  // [
+  //   ...,
+  //   {
+  //     id: 391,
+  //     name: 'setupPath',
+  //     value: '/usr/local/bin/setup',
+  //     scope: 'dmsss',
+  //     isMutable: 1
+  //   }
+  // ]
+result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+  // { changes: 1, lastInsertRowid: 392 }   // UPDATE will not change the lastInsertRowid
+  // { changes: 1, lastInsertRowid: 392 }
+  // { changes: 1, lastInsertRowid: 392 }
 
