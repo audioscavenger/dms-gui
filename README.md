@@ -429,7 +429,7 @@ For detailed Docker setup instructions, please refer to:
 - `GET /api/status` - Server status
 - `GET /api/infos` - Server environment
 - `GET /api/settings` - Get settings
-- `GET /api/scopes` - Get all scopes in settings table
+- `GET /api/configs` - Get all config names in config table
 - `GET /api/roles` - Get a login's roles
 - `POST /api/envs` - Get DMS environment
 - `POST /api/settings` - Save settings

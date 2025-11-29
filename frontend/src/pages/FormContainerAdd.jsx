@@ -14,7 +14,7 @@ import {
 
 import {
   getServerStatus,
-  getScopes,
+  getConfigs,
   getSettings,
   saveSettings,
   initAPI,
@@ -47,15 +47,20 @@ function FormContainerAdd() {
   const [settings, setSettings] = useState([]);
 
   // selector fields
-  const [DMSs, setDMSs] = useState([]);
+  const [mailservers, setMailservers] = useState([]);
   const [protocols, setProtocols] = useState([
     {value: 'http', label: 'http'},
     {value: 'https', label: 'https'},
   ]);
 
-  const [dnsProviders, setDnsProviders] = useState([
-    {value: 'cloudflare', label: 'Cloudflare'},
+  const [schemas, setSchemas] = useState([
+    {value: 'dms', label: 'DMS'},
+    {value: 'poste', label: 'Poste.io'},
   ]);
+
+  // const [dnsProviders, setDnsProviders] = useState([
+  //   {value: 'cloudflare', label: 'Cloudflare'},
+  // ]);
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -72,33 +77,32 @@ function FormContainerAdd() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // const settingsData  = await fetchSettings();  // [ {name:name, value: value}, ..]
-    await fetchScopes();                    // [ {scope:name}, ..]
+    await fetchMailservers();
 
     setLoading(false);
 
   };
 
-  const fetchScopes = async () => {
+  const fetchMailservers = async () => {
     
-    debugLog(`fetchScopes call getScopes()`);
+    debugLog(`fetchMailservers call getConfigs('mailserver')`);
     try {
-      const [scopesData] = await Promise.all([
-        getScopes(),
+      const [mailserversData] = await Promise.all([
+        getConfigs('mailserver'),
       ]);
 
-      if (scopesData.success) {
+      if (mailserversData.success) {
         // this will be all containers in db except dms-gui
-        console.debug('fetchScopes: scopesData', scopesData);   // [ {value:'containerName'}, .. ]
+        console.debug('fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
  
         // update selector list
-        setDMSs(scopesData.message.map(scope => { return { ...scope, label:scope.value } }));   // duplicate value as label for the select field
+        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
         // set the current DMS containerName to the first value in the list if not already set
         // this action will (re)fetch form settings for that container scope
-        if (!containerName) setContainerName(scopesData.message[0]?.value);
+        if (!containerName) setContainerName(mailserversData.message[0]?.value);
         
-      } else setErrorMessage(scopesData.message);
+      } else setErrorMessage(mailserversData.message);
 
     } catch (error) {
       errorLog(t('api.errors.fetchSettings'), error);
@@ -111,8 +115,14 @@ function FormContainerAdd() {
     
     debugLog(`fetchSettings call getSettings(${container})`);
     try {
-      const [settingsData] = await Promise.all([
-        getSettings(container),
+        
+        const [settingsData] = await Promise.all([
+        getSettings(
+          'mailserver',
+          getValueFromArrayOfObj(mailservers, container, 'value', 'schema'),  // mailservers = [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+          'dms-gui',
+          container,
+        ),
       ]);
       // setSettings({
         // ...settings,
@@ -253,6 +263,11 @@ function FormContainerAdd() {
       errors.containerName = 'settings.containerNameRequired';
     }
 
+    // if (settings.schema.length == 0) {
+    if (!settings.find(item => item['name'] == 'schema') || !settings.find(item => item['name'] == 'schema').value.length) {
+      errors.schema = 'settings.schemaRequired';
+    }
+
     // if (settings.protocol.length == 0) {
     if (!settings.find(item => item['name'] == 'protocol') || !settings.find(item => item['name'] == 'protocol').value.length) {
       errors.protocol = 'settings.protocolRequired';
@@ -297,6 +312,9 @@ function FormContainerAdd() {
     try {
 
       const result = await saveSettings(
+        'mailserver',
+        getValueFromArrayOfObj(settings, 'schema'),
+        'dms-gui',
         getValueFromArrayOfObj(settings, 'containerName'),
         settings,
       );
@@ -308,7 +326,7 @@ function FormContainerAdd() {
         if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
 
         // however, we do pull scopes again to refresh the select field list
-        fetchScopes();
+        fetchMailservers();
 
         // reminder to setup DMS compose
         setSuccessMessage(t('settings.DMS_API_KEYregened', {
@@ -369,7 +387,7 @@ function FormContainerAdd() {
               name="DMS_CONTAINER"
               value={containerName}
               onChange={handleChangeDMS}
-              options={DMSs}
+              options={mailservers}
               placeholder="common.container"
               helpText="settings.DMSHelp"
               required
@@ -400,6 +418,18 @@ function FormContainerAdd() {
               disabled={!getValueFromArrayOfObj(settings, 'containerName')}
             />
           </FormField>
+
+          <SelectField
+            id="schema"
+            name="schema"
+            label="settings.schema"
+            value={getValueFromArrayOfObj(settings, 'schema')}
+            onChange={handleChangeSettings}
+            options={schemas}
+            placeholder="settings.schema"
+            helpText="settings.schemaHelp"
+            required
+          />
 
           <SelectField
             id="protocol"
@@ -482,16 +512,6 @@ function FormContainerAdd() {
               disabled={!getValueFromArrayOfObj(settings, 'setupPath')}
             />
           </FormField>
-        
-          <SelectField
-            id="dnsProvider"
-            name="dnsProvider"
-            label="settings.dnsProvider"
-            value={getValueFromArrayOfObj(settings, 'dnsProvider')}
-            onChange={handleChangeSettings}
-            options={dnsProviders}
-            helpText="settings.dnsProviderHelp"
-          />
         
           <Button type="submit" variant="primary" text="settings.saveButtonSettings" />
         </form>

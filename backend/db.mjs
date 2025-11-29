@@ -57,35 +57,38 @@ config: {
   },
   select: {
     count:    `SELECT COUNT(*) count from config`,
-    configs:  `SELECT * from config WHERE 1=1 AND scope = @scope`,
+    id:       `SELECT id from config WHERE 1=1 AND config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope`,
+    configs:  `SELECT config as value, plugin, schema, scope from config WHERE 1=1 AND plugin = @plugin AND schema = @schema AND (scope LIKE ?)`,
     settings: `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
     setting:  `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}   AND name = ?`,
     envs:     `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable}`,
     env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
-    scopes:   `SELECT DISTINCT config from config WHERE 1=1 AND plugin = 'mailserver'`,
   },
   
   insert: {
-    config:   `REPLACE INTO config (config, plugin, schema, scope) VALUES (@config, @plugin, @schema, @scope)`,
+    config:   `INSERT INTO config (config, plugin, schema, scope) VALUES (?, @plugin, @schema, @scope) RETURNING id`,
+    setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 1)`,
+    env:      `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 0)`,
   },
   
   update: {
-    config:   `UPDATE config set config = @config, schema = @schema WHERE 1=1 AND plugin = @plugin AND scope = @scope AND config = ?)`,
+    config:   `UPDATE config set config = @config, schema = @schema WHERE 1=1 AND plugin = @plugin AND scope = @scope AND config = ? RETURNING id)`,
   },
   
   delete: {
-    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
-    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+    config:   `DELETE from config WHERE 1=1 AND config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope`,
+    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope)`,
+    settings: `DELETE from settings WHERE 1=1 AND isMutable = ${env.isMutable}   AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope)`,
   },
   
   init:   `BEGIN TRANSACTION;
-          CREATE    TABLE settings (
+          CREATE    TABLE IF NOT EXISTS config (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           config    TEXT NOT NULL,
           plugin    TEXT NOT NULL,
           schema    TEXT NOT NULL,
           scope     TEXT NOT NULL,
-          UNIQUE    (config, plugin, schema)
+          UNIQUE    (config, plugin, schema, scope)
           );
           INSERT           INTO config (config, plugin, schema, scope)      VALUES ('DB_VERSION', 'dms-gui', 'DB_VERSION', 'dms-gui');
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('config', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
@@ -96,27 +99,27 @@ config: {
 settings: {
 
   scope:  true,
-  select: {
-    count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
-    settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
-    setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
-    envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
-    env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
-    scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName' AND scope NOT IN (SELECT DISTINCT id from logins)`,
-  },
+  // select: {
+  //   count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
+  //   settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
+  //   setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
+  //   envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+  //   env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+  //   scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName' AND scope NOT IN (SELECT DISTINCT id from logins)`,
+  // },
   
-  insert: {
-    setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)`,
-    env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
-  },
+  // insert: {
+  //   setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)`,
+  //   env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
+  // },
   
-  delete: {
-    envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
-    env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
-  },
+  // delete: {
+  //   envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+  //   env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+  // },
   
   init:   `BEGIN TRANSACTION;
-          CREATE    TABLE settings (
+          CREATE    TABLE IF NOT EXISTS settings (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           name      TEXT NOT NULL,
           value     TEXT NOT NULL,
@@ -132,7 +135,7 @@ settings: {
       patches: [
         `DROP table settings`,
         `BEGIN TRANSACTION;
-          CREATE    TABLE settings (
+          CREATE    TABLE IF NOT EXISTS settings (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           name      TEXT NOT NULL,
           value     TEXT NOT NULL,
@@ -140,7 +143,7 @@ settings: {
           isMutable BIT DEFAULT ${env.isImmutable},
           UNIQUE    (name, configID)
           );
-          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('DB_VERSION_settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
       ],
     },
@@ -275,7 +278,7 @@ logins: {
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE logins (
+          CREATE TABLE IF NOT EXISTS logins (
           id        TEXT PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL UNIQUE,
           username  TEXT NOT NULL UNIQUE,
@@ -284,7 +287,7 @@ logins: {
           hash      TEXT,
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1,
-          isAccount BIT DEFAULT 0,
+          isAccount BIT DEFAULT 1,
           favorite  TEXT,
           refreshToken  TEXT,
           roles     TEXT DEFAULT '[]'
@@ -294,56 +297,56 @@ logins: {
           COMMIT;`,
   
   patch: [
-    { DB_VERSION: '1.0.14',
-      patches: [
-        `ALTER TABLE logins DROP COLUMN password;`,
-        `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
-        `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.1.1',
-      patches: [
-        `ALTER TABLE logins DROP COLUMN password;`,
-        `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
-        `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-        `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.1.6',
-      patches: [
-        `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
-        `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
-        `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.1.9',
-      patches: [
-        `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.4.5',
-      patches: [
-        `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
-        `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.4.6',
-      patches: [
-        `ALTER TABLE logins ADD favorite    TEXT`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 1, ${env.isImmutable})`,
-      ],
-    },
-    { DB_VERSION: '1.4.7',
-      patches: [
-        `ALTER TABLE logins ADD refreshToken    TEXT`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 1, ${env.isImmutable})`,
-      ],
-    },
+    // { DB_VERSION: '1.0.14',
+    //   patches: [
+    //     `ALTER TABLE logins DROP COLUMN password;`,
+    //     `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
+    //     `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.1.1',
+    //   patches: [
+    //     `ALTER TABLE logins DROP COLUMN password;`,
+    //     `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
+    //     `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
+    //     `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.1.6',
+    //   patches: [
+    //     `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
+    //     `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
+    //     `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.1.9',
+    //   patches: [
+    //     `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.4.5',
+    //   patches: [
+    //     `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
+    //     `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.4.6',
+    //   patches: [
+    //     `ALTER TABLE logins ADD favorite    TEXT`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    // { DB_VERSION: '1.4.7',
+    //   patches: [
+    //     `ALTER TABLE logins ADD refreshToken    TEXT`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 1, ${env.isImmutable})`,
+    //   ],
+    // },
   ],
 },
 
@@ -368,7 +371,7 @@ roles: {
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE roles (
+          CREATE TABLE IF NOT EXISTS roles (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           username  TEXT NOT NULL,
           mailbox     TEXT NOT NULL,
@@ -381,7 +384,7 @@ roles: {
 
 accounts: {
       
-  desc:   "password in the the list of keys even tho it's not a column",
+  desc:   "password is in the the list of keys even tho it's not a column; scope = containerName; schema = type of container: dms, poste, etc",
   id:     'mailbox',
   keys:   {
     mailbox:'string', 
@@ -391,36 +394,38 @@ accounts: {
     storage:'object', 
     scope:'string', 
     password:'string',
+    schema:'string',
   },
   scope:  true,
   select: {
-    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = @scope`,
-    accounts: `SELECT a.mailbox mailbox, a.domain domain, a.storage storage, l.username login FROM accounts a LEFT JOIN logins l on l.mailbox = a.mailbox WHERE 1=1 AND a.scope = @scope ORDER BY a.domain, a.mailbox`,
-    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope`,
-    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ?`,
-    byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND domain = ?`,
-    salt:     `SELECT salt from accounts WHERE mailbox = ?`,
-    hash:     `SELECT hash from accounts WHERE mailbox = ?`,
-    saltHash: `SELECT salt, hash FROM accounts WHERE (mailbox = @mailbox)`,
-    scopes:   `SELECT DISTINCT scope as value FROM accounts WHERE mailbox IN (?)`,
+    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND scope = @scope AND schema = @schema`,
+    accounts: `SELECT a.mailbox mailbox, a.domain domain, a.storage storage, l.username login FROM accounts a LEFT JOIN logins l on l.mailbox = a.mailbox WHERE 1=1 AND a.scope = @scope AND schema = @schema ORDER BY a.domain, a.mailbox`,
+    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND schema = @schema`,
+    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ? AND schema = @schema`,
+    byDomain: `SELECT mailbox FROM accounts WHERE 1=1 AND scope = @scope AND domain = ? AND schema = @schema`,
+    salt:     `SELECT salt from accounts WHERE mailbox = ? AND schema = @schema`,
+    hash:     `SELECT hash from accounts WHERE mailbox = ? AND schema = @schema`,
+    saltHash: `SELECT salt, hash FROM accounts WHERE mailbox = @mailbox AND schema = @schema`,
+    scopes:   `SELECT DISTINCT scope as value FROM accounts WHERE mailbox IN (?) AND schema = @schema`,
+    configs:  `SELECT scope as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts WHERE mailbox IN (?) AND schema = @schema`,
   },
   
   insert: {
-    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, scope) VALUES (@mailbox, @domain, @storage, @scope)`,
-    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, scope) VALUES (@mailbox, @domain, @salt, @hash, @scope)`,
+    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, scope, schema) VALUES (@mailbox, @domain, @storage, @scope, @schema)`,
+    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, scope, schema) VALUES (@mailbox, @domain, @salt, @hash, @scope, @schema)`,
   },
   
   update: {
-    password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope = @scope AND mailbox = ?`,
-    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = @scope AND mailbox = ?`,
+    password: `UPDATE accounts set salt=@salt, hash=@hash WHERE scope = @scope AND mailbox = ? AND schema = @schema`,
+    storage:  `UPDATE accounts set storage = @storage WHERE 1=1 AND scope = @scope AND mailbox = ? AND schema = @schema`,
   },
   
   delete: {
-    mailbox:  `DELETE FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ?`,
+    mailbox:  `DELETE FROM accounts WHERE 1=1 AND scope = @scope AND mailbox = ? AND schema = @schema`,
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE accounts (
+          CREATE TABLE IF NOT EXISTS accounts (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL,
           domain    TEXT,
@@ -428,7 +433,8 @@ accounts: {
           hash      TEXT,
           storage   TEXT DEFAULT '{}',
           scope     TEXT NOT NULL,
-          UNIQUE (mailbox, scope)
+          schema    TEXT NOT NULL,
+          UNIQUE (mailbox, scope, schema)
           );
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('accounts', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
@@ -440,6 +446,25 @@ accounts: {
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
+    { DB_VERSION: '1.5.9',
+      patches: [
+        `DROP TABLE accounts`,
+        `BEGIN TRANSACTION;
+          CREATE TABLE IF NOT EXISTS accounts (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          mailbox   TEXT NOT NULL,
+          domain    TEXT,
+          salt      TEXT,
+          hash      TEXT,
+          storage   TEXT DEFAULT '{}',
+          scope     TEXT NOT NULL,
+          schema    TEXT NOT NULL,
+          UNIQUE (mailbox, scope, schema)
+          );
+          COMMIT;`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.5.9', 1, ${env.isImmutable})`,
+      ],
+    },
   ],
 },
 
@@ -471,7 +496,7 @@ aliases: {
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE aliases (
+          CREATE TABLE IF NOT EXISTS aliases (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           source      TEXT NOT NULL,
           destination TEXT NOT NULL,
@@ -493,7 +518,7 @@ domains: {
     keytype:'string', 
     keysize:'number', 
     path:'string',
-    provider:'string',
+    dnsProvider:'string',
     scope:'string',
   },
   scope:  true,
@@ -514,36 +539,54 @@ domains: {
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE domains (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
-          domain    TEXT NOT NULL UNIQUE,
-          dkim      TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
-          keytype   TEXT DEFAULT 'rsa',
-          keysize   TEXT DEFAULT 2048,
-          path      TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
-          provider  TEXT,
-          scope     TEXT NOT NULL
+          CREATE TABLE IF NOT EXISTS domains (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          domain      TEXT NOT NULL UNIQUE,
+          dkim        TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
+          keytype     TEXT DEFAULT 'rsa',
+          keysize     TEXT DEFAULT 2048,
+          path        TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
+          dnsProvider TEXT,
+          scope       TEXT NOT NULL
           );
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('domains', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
   patch: [
-    { DB_VERSION: '1.1.2',
-      patches: [
-        `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
-        `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 1, ${env.isImmutable})`,
-      ],
-    },
+    // { DB_VERSION: '1.1.2',
+    //   patches: [
+    //     `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
+    //     `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 1, ${env.isImmutable})`,
+    //   ],
+    // },
     // { DB_VERSION: '1.1.3',
     //   patches: [
     //     `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
-    { DB_VERSION: '1.5.7',
+    // { DB_VERSION: '1.5.7',
+    //   patches: [
+    //     `ALTER TABLE domains ADD provider   TEXT`,
+    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 1, ${env.isImmutable})`,
+    //   ],
+    // },
+    { DB_VERSION: '1.5.9',
       patches: [
-        `ALTER TABLE domains ADD provider   TEXT`,
+        `DROP table domains`,
+        `BEGIN TRANSACTION;
+          CREATE TABLE IF NOT EXISTS domains (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          domain      TEXT NOT NULL UNIQUE,
+          dkim        TEXT DEFAULT '${env.DKIM_SELECTOR_DEFAULT}',
+          keytype     TEXT DEFAULT 'rsa',
+          keysize     TEXT DEFAULT 2048,
+          path        TEXT DEFAULT '${env.DMS_CONFIG_PATH}/rspamd/dkim/${env.DKIM_KEYTYPE_DEFAULT}-${env.DKIM_KEYSIZE_DEFAULT}-${env.DKIM_SELECTOR_DEFAULT}-$domain.private.txt',
+          dnsProvider TEXT,
+          scope       TEXT NOT NULL
+          );
+          COMMIT;`,
         `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 1, ${env.isImmutable})`,
       ],
     },
@@ -588,7 +631,7 @@ dns: {
   },
   
   init:  `BEGIN TRANSACTION;
-          CREATE TABLE dns (
+          CREATE TABLE IF NOT EXISTS dns (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           domain      TEXT NOT NULL UNIQUE,
           name        TEXT NOT NULL,
@@ -1329,16 +1372,6 @@ export const getTargetDict = (containerName) => {
   //   hash: 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18'
   // }
 
-// env.DMSGUI_VERSION = (process.env.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.env.DMSGUI_VERSION.split("v")[1] : process.env.env.DMSGUI_VERSION;
-// sql=`BEGIN TRANSACTION;
-// CREATE TABLE IF NOT EXISTS logins (
-// username  TEXT NOT NULL UNIQUE PRIMARY KEY,
-// salt      TEXT NOT NULL,
-// hash      TEXT NOT NULL,
-// email     TEXT DEFAULT ''
-// );
-// REPLACE INTO envs VALUES ('DB_VERSION_logins', '${env.DMSGUI_VERSION}');
-// COMMIT;`
 // DB.prepare('SELECT username, email from logins').all()
 // DB.exec(sql)
 // DB.inTransaction
@@ -1421,7 +1454,9 @@ DB.prepare("SELECT * from settings where scope = ?").all(['dmsss'])
   //   }
   // ]
 result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
-  // { changes: 1, lastInsertRowid: 392 }   // UPDATE will not change the lastInsertRowid
-  // { changes: 1, lastInsertRowid: 392 }
-  // { changes: 1, lastInsertRowid: 392 }
+  // { changes: 1, lastInsertRowid: 0 }   // UPDATE + run will never return lastInsertRowid, but lastInsertRowid will be settothe last actual INSERT == wrong id
+result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope RETURNING id").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+  // { id: 393 }  // correct way for UPDATE: add RETURNING whatever and get -> not run
+
+`INSERT OR IGNORE INTO settings (name, value, scope) VALUES ('DKIM_PATH', 'xxx', 'dms') RETURNING id`
 

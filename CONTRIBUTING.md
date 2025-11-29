@@ -133,14 +133,17 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
-* [x] 1.5.99 - design decision: dnsProvider is a per domain thing, and should be attached in domains table not settings
-* [x] 1.5.99 - design decision: DNS will be handled by `ghcr.io/stackexchange/dnscontrol` with cherry on the cake, it relies on JS config files
-* [x] 1.5.99 - research [DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
-* [x] 1.5.99 - research [DNSConfig](https://pkg.go.dev/github.com/StackExchange/dnscontrol/models#DNSConfig)
-* [x] 1.5.99 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
-* [x] 1.5.99 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
-* [x] 1.5.99 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
-* [ ] 1.5.9 - 
+* [x] 1.5.10 - BREAKING CHANGE: rewrite all settings functions: saveServerEnvs, getServerEnvs, getServerEnv, saveServerEnvs, getSettings, getSetting, getScopes->getConfigs, saveSettings
+* [x] 1.5.10 - design decision: dnsProvider is a per domain thing, and should be attached in domains table, not settings
+* [x] 1.5.10 - design decision: DNS will be handled by `ghcr.io/stackexchange/dnscontrol` with cherry on the cake, it relies on JS config files
+* [x] 1.5.10 - research [DNS entries mechanics](https://github.com/StackExchange/dnscontrol)
+* [x] 1.5.10 - research [DNSConfig](https://pkg.go.dev/github.com/StackExchange/dnscontrol/models#DNSConfig)
+* [x] 1.5.10 - research [DLS language](https://docs.dnscontrol.org/language-reference/domain-modifiers/tlsa)
+* [x] 1.5.10 - research [Supported providers](https://docs.dnscontrol.org/provider/index)
+* [x] 1.5.10 - research [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
+* [x] 1.5.10 - renamed killMe as killContainer
+* [x] 1.5.10 - updated all @swagger definitions
+* [x] 1.5.9 - BREAKING CHANGE: renamed provider to dnsProvider in domains table == drop the table
 * [x] 1.5.9 - BREAKING CHANGE: DB_VERSION has its own plugin and schema, updated dbUpgrade()
 * [x] 1.5.9 - BREAKING CHANGE: all DB_VERSION instert and update are updated in sql
 * [x] 1.5.9 - BREAKING CHANGE: settings table has scope->configID + added new table config with scope: user or dms-gui

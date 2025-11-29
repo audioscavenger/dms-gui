@@ -11,7 +11,7 @@ import {
 
 import {
   getAccounts,
-  getSettings,
+  getDomains,
   getServerEnvs,
   addAccount,
   deleteAccount,
@@ -42,7 +42,6 @@ const Accounts = () => {
   const [containerName] = useLocalStorage("containerName");
 
   const [accounts, setAccounts] = useState([]);
-  const [dnsProvider, setDnsProvider] = useState({});
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   // Common states -------------------------------------------------
@@ -89,10 +88,9 @@ const Accounts = () => {
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      const [accountsData, dnsProviderData, DOVECOT_FTSdata] = await Promise.all([
+      const [accountsData, DOVECOT_FTSdata] = await Promise.all([
         getAccounts(containerName, refresh),
-        getSettings(containerName, 'dnsProvider'),
-        getServerEnvs(containerName, refresh, 'DOVECOT_FTS'),
+        getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
       ]);
 
       if (accountsData.success) {
@@ -100,19 +98,12 @@ const Accounts = () => {
         
       } else setErrorMessage(accountsData.message);
 
-      if (dnsProviderData.success) {
-        setDnsProvider(dnsProviderData.message);
-
-      }
-      // } else setErrorMessage(dnsProviderData.message); // fails silently
-
       if (DOVECOT_FTSdata.success) {
         setDOVECOT_FTS(DOVECOT_FTSdata.message);
         
       } else setErrorMessage(DOVECOT_FTSdata.message);
 
       debugLog('accountsData', accountsData);
-      debugLog('dnsProvider', dnsProvider);
       debugLog('DOVECOT_FTS', DOVECOT_FTS);
       
     } catch (error) {
@@ -396,15 +387,15 @@ const Accounts = () => {
       render: (account) => (
         <>
           <span>{account.domain}</span>
-          {(dnsProvider && user.isAdmin == 1) && (
-          <Button
-            variant="info"
-            size="sm"
-            icon="globe"
-            title={t('accounts.manageDNS')}
-            onClick={() => handleChangeDNS(account)}
-            className="me-2 float-end"
-          />
+          {user.isAdmin == 1 && (
+            <Button
+              variant="info"
+              size="sm"
+              icon="globe"
+              title={t('accounts.manageDNS')}
+              onClick={() => handleChangeDNS(account)}
+              className="me-2 float-end"
+            />
           )}
         </>
       ),

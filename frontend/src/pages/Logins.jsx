@@ -24,7 +24,7 @@ import {
   deleteLogin,
   updateLogin,
   getAccounts,
-  getScopes,
+  getConfigs,
 } from '../services/api.mjs';
 
 import {
@@ -137,7 +137,7 @@ const Logins = () => {
       setSuccessMessage(null);
       
       await Promise.all([
-        fetchScopes(),
+        fetchMailservers(),
         fetchAccounts(),
         fetchLogins(),
       ]);
@@ -206,22 +206,22 @@ const Logins = () => {
   };
 
 
-  const fetchScopes = async () => {
+  const fetchMailservers = async () => {
     
-    debugLog(`fetchScopes call getScopes()`);
+    debugLog(`fetchMailservers call getConfigs()`);
     try {
-      const [scopesData] = await Promise.all([
-        getScopes(),
+      const [mailserversData] = await Promise.all([
+        getConfigs('mailserver'),
       ]);
 
-      if (scopesData.success) {
+      if (mailserversData.success) {
         // this will be all containers in db except dms-gui
-        console.debug('fetchScopes: scopesData', scopesData);   // [ {value:'containerName'}, .. ]
+        console.debug('fetchMailservers: mailserversData', mailserversData);   // [ {value:'containerName'}, .. ]
  
         // update selector list
-        setDMSs(scopesData.message.map(scope => { return { ...scope, label:scope.value } }));   // duplicate value as label for the select field
+        setDMSs(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
-      } else setErrorMessage(scopesData.message);
+      } else setErrorMessage(mailserversData.message);
 
     } catch (error) {
       errorLog(t('api.errors.fetchSettings'), error);

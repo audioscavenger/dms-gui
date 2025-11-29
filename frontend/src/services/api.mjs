@@ -123,7 +123,8 @@ api.interceptors.response.use(
 
 // Server status API
 export const getServerStatus = async (containerName, test=undefined) => {
-  if (!containerName) return {};
+  if (!containerName) return {success: false, message: {}};
+
   const params = {};
   if (test !== undefined) params.test = test;
   try {
@@ -135,13 +136,14 @@ export const getServerStatus = async (containerName, test=undefined) => {
   }
 };
 
-export const getServerEnvs = async (containerName, refresh, name) => {
-  if (!containerName) return [];
+export const getServerEnvs = async (plugin, containerName, refresh, name) => {
+  if (!containerName) return {success: false, message: []};
+
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   if (name !== undefined) params.name = name;
   try {
-    const response = await api.get(`/envs/${containerName}`, {params});
+    const response = await api.get(`/envs/${plugin}/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -160,14 +162,15 @@ export const getNodeInfos = async () => {
   }
 };
 
-export const getSettings = async (containerName, name, encrypted=false) => {
-  if (!containerName) return [];
+export const getSettings = async (plugin, schema, scope, containerName, name, encrypted=false) => {
+  if (!containerName) return {success: false, message: []};
+
   const params = {encrypted:encrypted};
   if (name !== undefined) params.name = name;
 
   try {
-    debugLog(api.get(`/settings/${containerName}`, params));
-    const response = await api.get(`/settings/${containerName}`, {params});
+    debugLog(api.get(`/settingss/${plugin}/${schema}/${scope}/${containerName} + ${params}`));
+    const response = await api.get(`/settings/${plugin}/${schema}/${scope}/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -175,9 +178,13 @@ export const getSettings = async (containerName, name, encrypted=false) => {
   }
 };
 
-export const getScopes = async () => {
+export const getConfigs = async (plugin, schema, name) => {
   try {
-    const response = await api.get(`/scopes`);
+    let         path = `/configs/${plugin}`;
+    if (schema) path = `/configs/${plugin}/${schema}`;
+    if (name)   path = `/configs/${plugin}/${schema}/${name}`;
+
+    const response = await api.get(path);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -185,13 +192,13 @@ export const getScopes = async () => {
   }
 };
 
-export const saveSettings = async (containerName, jsonArrayOfObjects, encrypted=false) => {
+export const saveSettings = async (plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted=false) => {
   if (!containerName) return {success: false, message: 'containerName is required'};
   const params = {encrypted:encrypted};
   
   try {
-    debugLog(api.post(`/settings/${containerName} + ${params}`, jsonArrayOfObjects));
-    const response = await api.post(`/settings/${containerName}`, jsonArrayOfObjects, {params});   // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    debugLog(api.post(`/settings/${plugin}/${schema}/${scope}/${containerName} + ${params}`, jsonArrayOfObjects));
+    const response = await api.post(`/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, {params});   // jsonArrayOfObjects = [{name:name, value:value}, ..]
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -271,7 +278,8 @@ export const logoutUser = async () => {
 };
 
 export const getAccounts = async (containerName, refresh) => {
-  if (!containerName) return [];
+  if (!containerName) return {success: false, message: []};
+
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
@@ -335,7 +343,8 @@ export const updateAccount = async (containerName, mailbox, jsonDict) => {
 
 // export const getAliases = async (refresh) => {
 export const getAliases = async (containerName, refresh) => {
-  if (!containerName) return [];
+  if (!containerName) return {success: false, message: []};
+
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
@@ -374,7 +383,8 @@ export const deleteAlias = async (containerName, source, destination) => {
 };
 
 export const getDomains = async (containerName, name) => {
-  if (!containerName) return [];
+  if (!containerName) return {success: false, message: []};
+
   try {
     const response = await api.get(`/getDomains/${containerName}/${name}`);
     return response.data;
@@ -398,7 +408,8 @@ export const getCount = async (table, containerName) => {
 
 // TBD
 export const getRoles = async credential => {
-  if (!credential) return [];
+  if (!credential) return {success: false, message: []};
+
   try {
     const response = await api.get(`/roles/${credential}`);
     return response.data;

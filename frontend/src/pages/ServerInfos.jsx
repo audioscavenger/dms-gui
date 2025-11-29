@@ -106,7 +106,7 @@ const ServerInfos = () => {
     
     try {
       const [envsData] = await Promise.all([
-        getServerEnvs(containerName, refresh),
+        getServerEnvs('mailserver', containerName, refresh),
       ]);
 
       debugLog('envsData', envsData);

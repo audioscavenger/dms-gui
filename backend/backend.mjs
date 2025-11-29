@@ -571,17 +571,6 @@ export const formatDMSError = async (errorMsg, error) => {
 };
 
 
-export const killMe = async (backend=false, errorcode=0) => {
-  if (env.isDEMO && backend) {
-    exec(`cp /app/config/dms-gui-example.sqlite3 /app/config/dms-gui-demo.sqlite3`);
-    successLog('--------------------------- RESET DATABASE ---------------------------');
-  }
-  warnLog('--------------------------- REBOOT NOW ---------------------------');
-  if (!env.isDEMO || backend) exec(`sleep 1 && kill -9 $(pgrep "master process nginx")`);
-  return {success: true, message: "reboot initiated"};
-};
-
-
 /*
 // foolproof future where we can deal with multiple containers
 export const getContainer = containerName => {

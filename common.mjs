@@ -230,7 +230,7 @@ export const getValuesFromArrayOfObj = (array, propValues, keyName='name', keyVa
 
 
 // this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
-export const pluck = (array, keyValue, uniq=true, sorted=true) => {
+export const pluck = (array, keyValue='value', uniq=true, sorted=true) => {
   if (!Array.isArray(array)) return undefined;
   let values = array.map(item => item[keyValue]);
   let uniqValues = (uniq) ? [... new Set(values)] : values;

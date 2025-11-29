@@ -271,8 +271,8 @@ command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/user-patches-api.py
 // command=/usr/bin/python3 /tmp/docker-mailserver/user-patches-api.py
 
 
-// plugins define only the settings == isMutable=1 and not the environment where isMutable=0
-// They should be in their own table really
+// plugins are only for settings where isMutable=1 and not the environment where isMutable=0 or anything else
+// TODO: plugins and schemas should be in their own table really
 export const plugins =
 {
   "dms-gui": {
@@ -288,13 +288,48 @@ export const plugins =
     },
   },
 
+  // login: {
+  //   profile: {
+  //     mailbox:'mailbox',
+  //     username:'username',
+  //     email:'',
+  //     salt:'',
+  //     hash:'',
+  //     isAdmin:0,
+  //     isAccount:1,
+  //     isActive:1,
+  //     favorite:'', 
+  //     roles:[],
+  //   },
+
   mailserver: {
     dms: {
       containerName: "dms",
+      schema: "dms",
       protocol: "http",
       DMS_API_PORT: 8888,
       DMS_API_KEY: "DMS_API_KEY",
       setupPath: "/usr/local/bin/setup",
+    },
+    dmsEnv: {
+      DKIM_SELECTOR_DEFAULT: 'mail',
+      ENABLE_MTA_STS: 1,
+      ENABLE_RSPAMD: 1,
+      DMS_RELEASE: 'v15.1.0',
+      PERMIT_DOCKER: 'none',
+      DOVECOT_MAILBOX_FORMAT: 'maildir',
+      POSTFIX_MAILBOX_SIZE_LIMIT: 5242880000,
+      TZ: 'UTC',
+      DOVECOT_VERSION: '2.3.19.1',
+      DOVECOT_FTS_PLUGIN: 'xapian',
+      DOVECOT_FTS_AUTOINDEX: 'yes',
+      DOVECOT_QUOTA: 1,
+      DOVECOT_FTS: 1,
+      DOVECOT_FTS_XAPIAN: 1,
+      DOVECOT_ZLIB: 1,
+      DKIM_ENABLED: 'true',
+      DKIM_SELECTOR: 'dkim',
+      DKIM_PATH: '/tmp/docker-mailserver/rspamd/dkim/rsa-2048-$selector-$domain.private.txt'
     },
   },
 
@@ -332,5 +367,19 @@ export const plugins =
       "SecretKey": "your-aws-secret-key",
       "Token": "optional-sts-token"
     },
+  }
+}
+
+export const command = {
+  "dms-gui": {
+    "dms-gui": {
+      kill: `sleep 1 && kill -9 $(pgrep "master process nginx")`,
+    },
+  },
+
+  mailserver: {
+    dms: {
+      kill: `sleep 1 && kill -9 $(pgrep "supervisord")`,
+    }
   }
 }
