@@ -18,6 +18,8 @@ export const env = {
   API_URL  : process.env.API_URL || '/api',               // for cors too
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
   DATABASE: (process.env.isDEMO === 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
+  DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
+  DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo.sqlite3',
 
   // some selectors in the DKIM UI
   DKIM_KEYTYPES: ['rsa','ed25519'],
@@ -44,7 +46,10 @@ export const env = {
   DMS_SETUP_SCRIPT: ((process.env.DMS_SETUP_SCRIPT) ? process.env.DMS_SETUP_SCRIPT : '/usr/local/bin/setup'),
   DMS_CONFIG_PATH: ((process.env.DMS_CONFIG_PATH) ? process.env.DMS_CONFIG_PATH : '/tmp/docker-mailserver'),
   DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'), // hardcoded in DMS
-  execTimeout: 4,
+  protocol: "http",
+  port: 8888,
+  timeout: 4,
+  containerName: "dms",
 
   // JWT_SECRET and JWT_SECRET_REFRESH regenerated when container starts, and will invalidates all sessions
   JWT_SECRET: process.env.JWT_SECRET,
@@ -304,12 +309,23 @@ export const plugins =
 
   mailserver: {
     dms: {
-      containerName: "dms",
-      schema: "dms",
-      protocol: "http",
-      DMS_API_PORT: 8888,
-      DMS_API_KEY: "DMS_API_KEY",
-      setupPath: "/usr/local/bin/setup",
+      keys: {
+        containerName: "containerName",
+        protocol: "protocol",
+        host: "containerName",
+        port: "DMS_API_PORT",
+        Authorization: "DMS_API_KEY",
+        setupPath: "setupPath",
+        timeout: "timeout",
+      },
+      defaults: {
+        containerName: env.containerName,
+        protocol: env.protocol,
+        DMS_API_PORT: env.DMS_API_PORT,
+        DMS_API_KEY: env.DMS_API_KEY,
+        setupPath: env.DMS_SETUP_SCRIPT,
+        timeout: env.timeout,
+      },
     },
     dmsEnv: {
       DKIM_SELECTOR_DEFAULT: 'mail',
@@ -382,4 +398,4 @@ export const command = {
       kill: `sleep 1 && kill -9 $(pgrep "supervisord")`,
     }
   }
-}
+};

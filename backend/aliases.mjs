@@ -27,7 +27,7 @@ import {
 
 
 export const getAliases = async (containerName, refresh, roles=[]) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
   let aliases = [];
@@ -78,7 +78,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
       // now save aliases in db ----------------------
       result = dbRun(sql.aliases.insert.alias, aliases);
       if (!result.success) {
-        errorLog(result.message);
+        errorLog(result.error);
       }
 
       if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
@@ -101,13 +101,13 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
 
 // Function to retrieve aliases from DMS
 export const pullAliasesFromDMS = async containerName => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let aliases = [];
   const command = 'alias list';
   
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', 'dms', containerName);
 
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, targetDict);
@@ -120,7 +120,7 @@ export const pullAliasesFromDMS = async containerName => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return {success: false, message:ErrorMsg};
+      return {success: false, error:ErrorMsg};
     }
 
     return {success: true, message: aliases};
@@ -169,13 +169,13 @@ export const parseAliasesFromDMS = async stdout => {
 
 
 export const pullPostfixRegexFromDMS = async containerName => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let regexes = [];
   const command = `cat ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
   
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', 'dms', containerName);
 
     debugLog(`execSetup(${command})`);
     const results = await execCommand(command, targetDict);
@@ -187,7 +187,7 @@ export const pullPostfixRegexFromDMS = async containerName => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return {success: false, message: ErrorMsg};
+      return {success: false, error: ErrorMsg};
     }
     return {success: true, message: regexes};
     
@@ -230,12 +230,12 @@ export const parsePostfixRegexFromDMS = async stdout => {
 
 
 // Function to add an alias
-export const addAlias = async (containerName, source, destination) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+export const addAlias = async (schema, containerName, source, destination) => {
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
 
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
@@ -254,7 +254,7 @@ export const addAlias = async (containerName, source, destination) => {
       }
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, message: ErrorMsg };
+      return { success: false, error: ErrorMsg };
       
     // this is a regex
     } else {
@@ -279,11 +279,11 @@ export const addAlias = async (containerName, source, destination) => {
           
         }
         errorLog(results.stderr);
-        return { success: false, message: results.stderr };
+        return { success: false, error: results.stderr };
         
       }
       errorLog(results.stderr);
-      return { success: false, message: results.stderr };
+      return { success: false, error: results.stderr };
     }
     
   } catch (error) {
@@ -298,12 +298,12 @@ export const addAlias = async (containerName, source, destination) => {
 };
 
 // Function to delete an alias
-export const deleteAlias = async (containerName, source, destination) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+export const deleteAlias = async (schema, containerName, source, destination) => {
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
 
     // this is normal email format
     if (source.match(regexEmailStrict)) {
@@ -323,7 +323,7 @@ export const deleteAlias = async (containerName, source, destination) => {
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
         errorLog(ErrorMsg);
-        return { success: false, message: ErrorMsg };
+        return { success: false, error: ErrorMsg };
       }
     
     // this is regex
@@ -349,13 +349,13 @@ export const deleteAlias = async (containerName, source, destination) => {
             return result;
           }
           errorLog(results.stderr);
-          return { success: false, message: results.stderr };
+          return { success: false, error: results.stderr };
           
         } else  return result;
         
       }
       errorLog(results.stderr);
-      return { success: false, message: results.stderr };
+      return { success: false, error: results.stderr };
 
     }
     

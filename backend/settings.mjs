@@ -32,21 +32,26 @@ import {
   dbCount,
   dbGet,
   dbRun,
+  decrypt,
+  encrypt,
   getTargetDict,
   sql,
 } from './db.mjs';
 
 // const path = require('node:path');
+import exec from 'child_process';
 import path from 'path';
 
 // returns a string
 export const getSetting = async (plugin, schema, scope, containerName, name, encrypted=false) => {
-  if (!containerName) return {success: false, message: 'scope=containerName is required'};
-  if (!name)          return {success: false, message: 'name is required'};
+  debugLog(plugin, schema, scope, containerName, name, encrypted);
+  if (!containerName) return {success: false, error: 'scope=containerName is required'};
+  if (!name)          return {success: false, error: 'name is required'};
 
   try {
     
     // const result = dbGet(sql.settings.select.setting, {scope:containerName}, name);
+    // setting:  `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}   AND name = ?`,
     const result = dbGet(sql.config.select.setting, {plugin:plugin, schema:schema, scope:scope}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
       return {success: true, message: (encrypted ? decrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
@@ -67,7 +72,8 @@ export const getSetting = async (plugin, schema, scope, containerName, name, enc
 
 // this returns an array of objects
 export const getSettings = async (plugin, schema, scope, containerName, name, encrypted=false) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  debugLog(plugin, schema, scope, containerName, name, encrypted);
+  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
   if (name) return getSetting(plugin, schema, scope, containerName, name, encrypted);
   
   let result, settings;
@@ -75,7 +81,7 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
     
     // result = dbAll(sql.settings.select.settings, {scope:containerName});
     // settings: `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
-    result = dbAll(sql.config.select.settings, {plugin:plugin, schema:schema, scope:scope}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
+    result = dbAll(sql.config.select.settings, {plugin:plugin, schema:schema, scope:scope}, containerName); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
       
       // we could read DB_Logins and it is valid
@@ -94,7 +100,7 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
         warnLog(`db settings seems empty:`, result.message);
       }
       
-    } else errorLog(result.message);
+    } else errorLog(result.error);
     
     return result;
     // [ { name: 'containerName', value: 'dms' }, .. ]
@@ -113,15 +119,16 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
 
 // this returns all configs, and roles are either mailboxes or scopes==userIDs
 export const getConfigs = async (plugin, schema, roles=[], name) => {
+  debugLog(plugin, schema, roles, name);
 
   let result;
   try {
     // for admins
-    if (!roles.length) {
+    if (!roles || !roles.length) {
       if (schema) {
-        result = dbAll(sql.config.select.configs, ['%'], {plugin:plugin, schema:schema});
+        result = dbAll(sql.config.select.configs, {plugin:plugin, schema:schema}, "%");
       } else {
-        result = dbAll(sql.config.select.configs.replace('AND schema = @schema', ''), ['%'], {plugin:plugin});
+        result = dbAll(sql.config.select.configs.replace('AND schema = @schema', ''), {plugin:plugin}, "%");
       }
 
     // for non-admins, we only provide scoped values
@@ -135,24 +142,25 @@ export const getConfigs = async (plugin, schema, roles=[], name) => {
       } else {
         // `SELECT DISTINCT config as value from config WHERE 1=1 AND plugin = @plugin AND schema = @schema AND (scope LIKE ?)`
         if (schema) {
-          result = dbAll(sql.config.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), roles, {plugin:plugin, schema:schema});
+          result = dbAll(sql.config.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin, schema:schema}, roles);
         } else {
-          result = dbAll(sql.config.select.configs.replace('AND schema = @schema', '').replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), roles, {plugin:plugin});
+          result = dbAll(sql.config.select.configs.replace('AND schema = @schema', '').replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin}, roles);
         }
       }
     }
 
+    // debugLog('ddebug result', result);
     if (result.success) {
       if (name) result.message = reduxArrayOfObjByValue(result.message, 'value', name);
 
       if (result.message.length) {
-        infoLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=${scope}`);
+        infoLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=`, roles);
 
       } else {
-        warnLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=${scope}`);
+        warnLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=`, roles);
       }
       
-    } else errorLog(result.message);
+    } else errorLog(result.error);
     
     return result;
     // [ { value: 'containerName' }, .. ]
@@ -175,7 +183,8 @@ export const getConfigs = async (plugin, schema, roles=[], name) => {
 // ... the value for DMS_API_KEY   will always be dependent on containerName from the frontend
 // ... the value for DMS_API_PORT  will always be dependent on containerName from the frontend
 export const saveSettings = async (plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted=false) => {
-  if (!jsonArrayOfObjects.length) return {success: false, message: 'values=jsonArrayOfObjects is required'};
+  debugLog(plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted);
+  if (!jsonArrayOfObjects.length) return {success: false, error: 'values=jsonArrayOfObjects is required'};
 
   let result;
   try {
@@ -202,9 +211,9 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
     if (result.success) {
       successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
 
-      // now (re) generate API scripts
+      // now (re) generate API scripts if we are saving a new DMS_API_KEY
       const DMS_API_KEY = getValueFromArrayOfObj(jsonArrayOfObjectsScoped, 'DMS_API_KEY');
-      if (DMS_API_KEY) result = initAPI(containerName, DMS_API_KEY);
+      if (DMS_API_KEY) result = await initAPI(plugin, schema, containerName, DMS_API_KEY);
       
     }
     return result;
@@ -222,9 +231,9 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
 
 
 // Function to get server status from DMS, you can add some extra test like ping or execSetup
-export const getServerStatus = async (containerName, test=undefined) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  debugLog(`for ${containerName} (${test})`);
+export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
+  debugLog(plugin, schema, containerName, test, settings);
+  if (!containerName)             return {success: false, error: 'containerName is required'};
 
   let result, results;
   let status = {
@@ -267,15 +276,13 @@ export const getServerStatus = async (containerName, test=undefined) => {
      // 1899 root      20   0   24716  18048   9088 S   0.0   0.4   0:00.52 python3
 
   try {
-    const targetDict = getTargetDict(containerName);
-
     result = dbCount('logins', containerName);
     if (result.success) status.db.logins = result.message;
 
-    result = dbCount('accounts', containerName);
+    result = dbCount('accounts', containerName, schema);
     if (result.success) status.db.accounts = result.message;
 
-    result = dbCount('aliases', containerName);
+    result = dbCount('aliases', containerName, schema);
     if (result.success) status.db.aliases = result.message;
 
     result = await ping(containerName);
@@ -283,6 +290,7 @@ export const getServerStatus = async (containerName, test=undefined) => {
       status.status.status = "alive";
       if (test == 'ping') return {success: true, message: status};
 
+      const targetDict = getTargetDict(plugin, schema, containerName, settings);
       if (targetDict?.Authorization) {
 
         results = await execSetup('help', targetDict);
@@ -299,7 +307,7 @@ export const getServerStatus = async (containerName, test=undefined) => {
             status.status.status = 'api_error';
             status.status.error = 'unknown';
           }
-          return {success: false, message: status};
+          return {success: false, error: status};
         }
 
         if (test == 'execSetup' && !results.returncode) {
@@ -694,7 +702,7 @@ export const readDkimFile = async stdout => {
 
 
 // pulls entire doveconf and parse what we need
-export const pullDoveConf = async containerName => {
+export const pullDoveConf = async (schema, containerName) => {
 
 // TODO: add quotas
 // "quota_max_mail_size": "314M",
@@ -704,7 +712,7 @@ export const pullDoveConf = async containerName => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
     const command = `doveconf`;
 
     const results = await execCommand(command, targetDict);
@@ -741,7 +749,7 @@ let ftsMount = '';
 let envs = {};
 
 try {
-  const targetDict = getTargetDict(containerName);
+  const targetDict = getTargetDict(plugin, schema, containerName);
 
   containerInfo.Mounts.forEach( async (mount) => {
     debugLog(`found mount ${mount.Destination}`);
@@ -776,11 +784,11 @@ return envs;
 */
 
 
-export const pullDOVECOT = async containerName => {
+export const pullDOVECOT = async (schema, containerName) => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
     const command = `dovecot --version`;
 
     const results = await execCommand(command, targetDict);   // 2.3.19.1 (9b53102964)
@@ -806,7 +814,7 @@ debugLog(`start`);
 let envs = {};
 
 try {
-  const targetDict = getTargetDict(containerName);
+  const targetDict = getTargetDict(plugin, schema, containerName);
 
   const results = await execCommand(`doveconf mail_plugins`, targetDict);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
   if (!results.returncode) {
@@ -826,7 +834,7 @@ return envs;
 */
 
 
-export const pullDkimRspamd = async containerName => {
+export const pullDkimRspamd = async (schema, containerName) => {
 
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
@@ -834,7 +842,7 @@ export const pullDkimRspamd = async containerName => {
   const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
 
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
 
     results = await execCommand(command, targetDict);
     if (!results.returncode) {
@@ -871,11 +879,11 @@ export const pullDkimRspamd = async containerName => {
 
 
 // Function to pull server environment from API
-export const pullServerEnvs = async containerName => {
+export const pullServerEnvs = async (plugin, schema, containerName) => {
 
   var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict(plugin, schema, containerName);
     const command = `env`;
 
     // Get container instance
@@ -994,14 +1002,15 @@ try {
 */
 
 export const getServerEnv = async (plugin, schema, scope, containerName, name) => {
-  if (!containerName)             return {success: false, message: 'containerName is required'};
-  if (!name)                      return {success: false, message: 'name is required'};
+  debugLog(plugin, schema, scope, containerName, name);
+  if (!containerName)             return {success: false, error: 'containerName is required'};
+  if (!name)                      return {success: false, error: 'name is required'};
   
   try {
 
     // const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
     // env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
-    const env = dbGet(sql.settings.select.env, {plugin:plugin, schema:schema, scope:scope}, containerName, name);
+    const env = dbGet(sql.config.select.env, {plugin:plugin, schema:schema, scope:scope}, containerName, name);
     return {success: true, message: env?.value};
     
   } catch (error) {
@@ -1017,7 +1026,8 @@ export const getServerEnv = async (plugin, schema, scope, containerName, name) =
 
 
 export const getServerEnvs = async (plugin, schema, scope, containerName, refresh, name) => {
-  if (!containerName)             return {success: false, message: 'containerName is required'};
+  debugLog(plugin, schema, scope, containerName, refresh, name);
+  if (!containerName)             return {success: false, error: 'containerName is required'};
   refresh = (refresh === undefined) ? true : (env.isDEMO ? false : refresh);
   
   if (!refresh) {
@@ -1058,24 +1068,25 @@ export const getServerEnvs = async (plugin, schema, scope, containerName, refres
   
   // now refreshing by pulling data from DMS
   debugLog(`will pullServerEnvs for ${containerName}`);
-  const pulledEnv = await pullServerEnvs(containerName);
+  const pulledEnv = await pullServerEnvs(plugin, schema, containerName);
   infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
-    saveServerEnvs('mailserver', 'dmsEnv', 'dms-gui', containerName, pulledEnv);
+    saveServerEnvs(plugin, schema, scope, containerName, pulledEnv);
     return (name) ? await getServerEnv(containerName, name) : {success: true, message: pulledEnv};
     
   // unknown error
   } else {
     errorLog(`pullServerEnvs could not pull environment from ${containerName}`);
-    return {success: false, message: `pullServerEnvs could not pull environment from ${containerName}`};
+    return {success: false, error: `pullServerEnvs could not pull environment from ${containerName}`};
   }
 };
 
 
 export const saveServerEnvs = async (plugin, schema, scope, containerName, jsonArrayOfObjects) => {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  if (!jsonArrayOfObjects.length) return {success: false, message: 'values=jsonArrayOfObjects is required'};
+  debugLog(plugin, schema, scope, containerName, jsonArrayOfObjects);
+  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
+  if (!jsonArrayOfObjects.length) return {success: false, error: 'values=jsonArrayOfObjects is required'};
 
   let result;
   try {
@@ -1093,7 +1104,7 @@ export const saveServerEnvs = async (plugin, schema, scope, containerName, jsonA
 
   } catch (error) {
     errorLog(error.message);
-    return {success: false, message: error.message};
+    return {success: false, error: error.message};
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1106,6 +1117,7 @@ export const saveServerEnvs = async (plugin, schema, scope, containerName, jsonA
 // Function to get dms-gui server infos
 export const getNodeInfos = async () => {
   return {success: true, message: [
+    { name: 'debug', value: env.debug },
     { name: 'DMSGUI_VERSION', value: env.DMSGUI_VERSION },
     { name: 'HOSTNAME', value: env.HOSTNAME },
     { name: 'TZ', value: env.TZ },
@@ -1117,12 +1129,13 @@ export const getNodeInfos = async () => {
 
 
 export const getDomain = async (containerName, name) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
-  if (!name)                      return {success: false, message: 'name is required'};
+  debugLog(containerName, name);
+  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
+  if (!name)                      return {success: false, error: 'name is required'};
 
   try {
     
-    const domain = await dbGet(sql.settings.select.domain, {scope:containerName}, name);
+    const domain = dbGet(sql.domains.select.domain, {scope:containerName}, name);
     return {success: true, message: domain};
     
   } catch (error) {
@@ -1138,12 +1151,13 @@ export const getDomain = async (containerName, name) => {
 
 
 export const getDomains = async (containerName, name) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+  debugLog(containerName, name);
+  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
   if (name) return getDomain(containerName, name);
   
   try {
     
-    const domains = await dbAll(sql.domains.select.domains, {scope:containerName});
+    const domains = dbAll(sql.domains.select.domains, {scope:containerName});
     if (domains.success) {
       debugLog(`domains: domains (${typeof domains.message})`);
       
@@ -1176,16 +1190,18 @@ export const getDomains = async (containerName, name) => {
 // 3. if no dms_api_key_param and nothing in db, generate it
 // 4. if    dms_api_key_param == 'regen', regenerate it and save in db
 // 5. always create script and conf file at the end
-export const initAPI = async (containerName, dms_api_key_param) => {
-  if (!containerName)             return {success: false, message: 'scope=containerName is required'};
+export const initAPI = async (plugin, schema, containerName, dms_api_key_param) => {
+  debugLog(plugin, schema, containerName, dms_api_key_param);
+  if (!containerName)             return {success: false, error: 'containerName is required'};
 
-  debugLog(`Start with dms_api_key_param=`, dms_api_key_param);
+  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
   
   let result, dms_api_key_db, dms_api_key_new;
   try {
     
     // get what key is in db
-    result = await getSetting('dms', containerName, 'DMS_API_KEY');
+    // result = await getSetting('dms', containerName, 'DMS_API_KEY');
+    result = await getSetting(plugin, schema, 'dms-gui', containerName);
     if (result.success) dms_api_key_db = result.message;
     debugLog(`dms_api_key_db=`, dms_api_key_db);
 
@@ -1222,16 +1238,18 @@ export const initAPI = async (containerName, dms_api_key_param) => {
     // save key in db
     if (dms_api_key_new != dms_api_key_db) {
       debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
-      result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
-      if (!result.success) return {success: false, message: result.message};
+      // result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
+      // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 1)`,
+      result = dbRun(sql.config.insert.setting, {plugin:plugin, schema:schema, scope:'dms-gui', name:'DMS_API_KEY', value:dms_api_key_new}, containerName);
+      if (!result.success) return {success: true, message: dms_api_key_new, error: result.error}; // this error should only happen when testing new dms before it is saved
     }
 
     // regen API files
     debugLog(`Regenerate API scripts for ${containerName}...`);
-    result = await createAPIfiles(containerName);
+    result = await createAPIfiles();
     if (result.success) return {success: true, message: dms_api_key_new};
     
-    return {success: false, message: result.message};
+    return {success: false, error: result.error};
 
   } catch (error) {
     errorLog(error.message);
@@ -1246,7 +1264,7 @@ export const initAPI = async (containerName, dms_api_key_param) => {
 
 
 // TODO: add containerName somewhere in path or file name
-export const createAPIfiles = async (containerName) => {
+export const createAPIfiles = async () => {
   if (env.isDEMO) return {success: true, message: 'API files created'};
 
   try {
@@ -1258,39 +1276,39 @@ export const createAPIfiles = async (containerName) => {
     
   } catch (error) {
     errorLog(error.message);
-    return {success: false, message: error.message};
+    return {success: false, error: error.message};
   }
 };
 
 
-export const killContainer = async (container='dms-gui', schema='dms-gui', errorcode=0) => {
-  if (env.isDEMO && container == 'dms-gui') {
-    exec(`cp /app/config/dms-gui-example.sqlite3 /app/config/dms-gui-demo.sqlite3`);
-    successLog(`--------------------------- RESET ${container} DATABASE ---------------------------`);
+export const killContainer = async (plugin='dms-gui', schema='dms-gui', containerName='dms-gui', errorcode=0) => {
+  if (env.isDEMO && containerName == 'dms-gui') {
+    exec(`cp ${env.DATABASE_SAMPLE} ${DATABASE_SAMPLE_LIVE}`);
+    successLog(`--------------------------- RESET ${containerName} DATABASE ---------------------------`);
   }
   
   let result;
-  warnLog(`--------------------------- REBOOT ${container} NOW ---------------------------`);
+  warnLog(`--------------------------- REBOOT ${containerName} NOW ---------------------------`);
   if (!env.isDEMO) {
-    if (container == 'dms-gui') {
-      exec(env.command[container][schema].kill);
+    if (containerName == 'dms-gui') {
+      exec(command[plugin][schema].kill);
       return {success: true, message: "reboot initiated"};
 
     // reboot another container; first we check if it exists then do it
     } else {
     
-      result = getConfigs('mailserver', schema);
+      result = getConfigs(plugin, schema);
       if (result.success) {
         let containerNames = pluck(result.message, 'value');
-        if (containerNames.includes(container) && env.command.mailserver[schema]?.kill) {
+        if (containerNames.includes(containerName) && command[plugin][schema]?.kill) {
 
-          const targetDict = getTargetDict(containerName);
-          results = await execCommand(env.command.mailserver[schema].kill, targetDict);
-          if (results.returncode) return {success: false, message: results.stderr};
+          const targetDict = getTargetDict(plugin, schema, containerName);
+          results = await execCommand(command[plugin][schema].kill, targetDict);
+          if (results.returncode) return {success: false, error: results.stderr};
 
-        } else return {success: false, message: `kill command missing for mailserver schema=${schema}`};
+        } else return {success: false, error: `kill command missing for ${plugin} schema=${schema}`};
       }
-      return {success: false, message: `container ${container} not found`};
+      return {success: false, error: `container ${containerName} not found`};
     }
 
   }

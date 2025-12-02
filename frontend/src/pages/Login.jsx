@@ -77,7 +77,6 @@ export const Login = () => {
     // since we are redirected here from the api when dms-gui has restarted with fresh secret keys, we need to logout first
     if (user) logout();
 
-    // debugLog('ddebug isFirstRun loginUser(admin)');
     const result = await loginUser('admin', 'changeme', true);
     // debugLog('ddebug isFirstRun result', result);
     
@@ -101,8 +100,6 @@ export const Login = () => {
     
     // Here you would usually send a request to your backend to authenticate the user
     // For the sake of this example, we're using a mock authentication
-    // if (credential === "admin" && password === "password") {
-    // const result = await loginUser(credential, password)
     const result = await loginUser(credential, password)
     // console.debug('ddebug loginUser result=', result.message);
     // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}

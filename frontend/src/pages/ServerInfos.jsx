@@ -50,6 +50,7 @@ import { useAuth } from '../hooks/useAuth';
 const ServerInfos = () => {
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
   const { user } = useAuth();
 
   const [isLoading, setLoading] = useState(true);
@@ -92,7 +93,7 @@ const ServerInfos = () => {
         
         setErrorMessage(null);
       
-      } else setErrorMessage(infosData.message);
+      } else setErrorMessage(infosData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchServerInfos'), error);
@@ -102,11 +103,11 @@ const ServerInfos = () => {
 
   const fetchServerEnvs = async (refresh) => {
     refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
-    debugLog(`fetchServerEnvs call getServerEnvs(${containerName}, ${refresh})`);
+    debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${schema}, ${containerName}, ${refresh})`);
     
     try {
       const [envsData] = await Promise.all([
-        getServerEnvs('mailserver', containerName, refresh),
+        getServerEnvs('mailserver', schema, containerName, refresh),
       ]);
 
       debugLog('envsData', envsData);
@@ -115,7 +116,7 @@ const ServerInfos = () => {
         
         setErrorMessage(null);
       
-      } else setErrorMessage(envsData.message);
+      } else setErrorMessage(envsData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchServerEnvs'), error);

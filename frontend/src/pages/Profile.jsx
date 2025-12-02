@@ -41,6 +41,7 @@ const Profile = () => {
   const { t } = useTranslation();
   const { user, login } = useAuth();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
 
   const [DMSs, setDMSs] = useState([]);
 
@@ -107,7 +108,7 @@ const Profile = () => {
         // update selector list
         setDMSs(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
-      } else setErrorMessage(mailserversData.message);
+      } else setErrorMessage(mailserversData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchSettings'), error);
@@ -196,7 +197,7 @@ const Profile = () => {
         login(loginFormData); // reset new values for that user in frontend state
         setSuccessMessage(t('logins.saved', {username:user.mailbox}));
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(error.message);
@@ -289,7 +290,7 @@ const Profile = () => {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.mailbox}));
         handleClosePasswordModal(); // Close the modal
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);

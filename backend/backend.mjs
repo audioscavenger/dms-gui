@@ -67,10 +67,10 @@ export const ICON = (env.LOG_COLORS) ? {
 
 export const LEVEL = {
   success:  color.g+color.LOW+'[SUCCESS]'+color.end,
-  error:    color.r+color.LOW+'[ERROR] '+color.end,
-  warn:     color.y+color.LOW+'[WARN]  '+color.end,
-  info:     color.k+color.HIG+'[INFO]  '+color.end,
-  debug:    color.k+color.HIG+'[DEBUG] '+color.end,
+  error:    color.r+color.LOW+'[ERROR]  '+color.end,
+  warn:     color.y+color.LOW+'[WARN]   '+color.end,
+  info:     color.k+color.HIG+'[INFO]   '+color.end,
+  debug:    color.k+color.HIG+'[DEBUG]  '+color.end,
 }
 
 // ['debug','log','info','warn','error'].forEach((method, level)=>{
@@ -101,7 +101,8 @@ export const debugLog = async (message, ...data) => { if (env.debug) logger('deb
 export const execSetup = async (setupCommand, targetDict, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
-  const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
+  // const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
+  const command = `${targetDict.setupPath} ${setupCommand}`;
   debugLog(`Executing setup command: ${setupCommand}`);
   return execCommand(command, targetDict, ...rest);
 };
@@ -203,20 +204,20 @@ export const checkPort = async (targetDict) => {
 
       socket.on('error', () => {
         socket.destroy();
-        resolve({success: false, message: 'error'});
+        resolve({success: false, error: 'error'});
       });
 
       // Handle 'timeout' events
       socket.on('timeout', () => {
         socket.destroy();
-        resolve({success: false, message: 'timeout'});
+        resolve({success: false, error: 'timeout'});
       });
 
       return {success: true, message: 'running'};
 
     } catch (error) {
       errorLog('error:', error.message);
-      return {success: false, message: error.message};
+      return {success: false, error: error.message};
     }
   });
 }
@@ -235,14 +236,14 @@ export const ping = async (host) => {
     // debugLog(`stdout: ${stdout}`);
     if (stderr) {
       errorLog(`stderr: ${stderr}`);
-      return {success: false, message: stderr};
+      return {success: false, error: stderr};
     }
 
     return {success: true, message: stdout};
 
   } catch (error) {
     errorLog('error:', error.message);
-    return {success: false, message: error.message};
+    return {success: false, error: error.message};
   }
 
 }
@@ -267,13 +268,13 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
     };
 
     result = await checkPort(targetDict);
-    // debugLog('ddebug checkPort result',result)   // { success: false, message: 'running' } // whyyyyyyyyyyyyy
+    // debugLog('ddebug checkPort result',result)   // { success: false, error: 'running' } // whyyyyyyyyyyyyy
     if (result.success) {
 
       const jsonData = Object.assign({}, 
         {
           command: command,
-          timeout: (targetDict?.timeout || env.execTimeout),
+          timeout: (targetDict?.timeout || env.timeout),
         },
         ...rest);
 

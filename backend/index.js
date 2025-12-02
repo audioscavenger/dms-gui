@@ -2,7 +2,6 @@ import {
   debugLog,
   errorLog,
   infoLog,
-  killContainer,
 } from './backend.mjs';
 import {
   env
@@ -32,6 +31,7 @@ import {
   getServerStatus,
   getSettings,
   initAPI,
+  killContainer,
   saveSettings,
 } from './settings.mjs';
 
@@ -249,33 +249,56 @@ app.set('query parser', function (str) {
 
 /**
  * @swagger
- * /api/status/{containerName}:
+ * /api/status/{plugin}/{schema}/{containerName}:
  *   get:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
  *     parameters:
+ *       - in: path
+ *         name: plugin
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: plugin like mailserver or mailclient
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: plugin schema like dms or snappymail etc
  *       - in: path
  *         name: containerName
  *         required: true
  *         schema:
  *           type: string
  *         description: DMS containerName
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settings:
+ *                 type: array
+ *                 description: array of settings to build getTargetdict
  *     responses:
  *       200:
  *         description: Server status
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/status/:containerName', 
+app.get('/api/status/:plugin/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { plugin, schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const test = ('test' in req.query) ? req.query.test : undefined;
+    const { settings } = req.body;
 
-    const status = await getServerStatus(containerName, test);
+    const status = await getServerStatus(plugin, schema, containerName, test, settings);
     res.json(status);
 
   } catch (error) {
@@ -313,7 +336,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /api/envs/{plugin}/{containerName}:
+ * /api/envs/{plugin}/{schema}/{containerName}:
  *   get:
  *     summary: Get server envs
  *     description: Retrieve all the DMS envs we parsed or just one
@@ -324,6 +347,12 @@ async (req, res) => {
  *         schema:
  *           type: string
  *         description: plugin is server type among mailserver, mailclient, etc
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: plugin type like dms or poste
  *       - in: path
  *         name: containerName
  *         required: true
@@ -352,18 +381,17 @@ async (req, res) => {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/envs/:plugin/:containerName', 
+app.get('/api/envs/:plugin/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
-    if (!plugin) return res.status(400).json({ error: 'plugin is required' });
+    const { plugin, schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const refresh = ('refresh' in req.query) ? req.query.refresh   : false;
     const name = ('name' in req.query) ? req.query.name : undefined;
-    const envs = await getServerEnvs('mailserver', 'dmsEnv', 'dms-gui', containerName, refresh, name);
+    const envs = await getServerEnvs(plugin, schema, 'dms-gui', containerName, refresh, name);
     res.json(envs);
 
   } catch (error) {
@@ -538,7 +566,7 @@ async (req, res) => {
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(mailbox)) ? await doveadm(containerName, command, mailbox, req.body) : {success: false, message: 'Permission denied'};
+      result = (req.user.roles.includes(mailbox)) ? await doveadm(containerName, command, mailbox, req.body) : {success: false, error: 'Permission denied'};
     }
     res.json(result);
     
@@ -654,7 +682,7 @@ async (req, res) => {
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(mailbox)) ? await updateDB('accounts', mailbox, req.body, containerName) : {success: false, message: 'Permission denied'};
+      result = (req.user.roles.includes(mailbox)) ? await updateDB('accounts', mailbox, req.body, containerName) : {success: false, error: 'Permission denied'};
     }
     res.json(result);
     
@@ -962,13 +990,14 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve configs
  */
-app.get('/api/configs/:plugin/:schema/:name', 
+app.get('/api/configs/:plugin{/:schema}{/:name}', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
     const { plugin, schema, name } = req.params;
-    // for non-admins:  for mailserver plugin we send roles, for anything else we send user ID
+    // for non-admins:  for mailserver plugin we send scope=roles, for anything else we send scope=userID
+    debugLog(`getConfigs(${plugin}, ${schema}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
     const configs = await getConfigs(plugin, schema, (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id], name);
     res.json(configs);
     
@@ -1044,6 +1073,7 @@ async (req, res) => {
 
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
+    debugLog('ddebug containerName', JSON.stringify(containerName));
     const result = await saveSettings(plugin, schema, scope, containerName, req.body, encrypted);     // req.body = [{name:name, value:value}, ..]
     res.status(201).json(result);
     
@@ -1105,7 +1135,7 @@ async (req, res) => {
 // Endpoint for retrieving logins
 /**
  * @swagger
- * /api/logins:
+ * /api/getLogins:
  *   post:
  *     summary: Get logins
  *     description: Retrieve all or 1 logins
@@ -1125,18 +1155,19 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve logins
  */
-app.post('/api/logins', 
+app.post('/api/getLogins', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { credentials } = req.body;
-    const logins = await getLogins(credentials);
+    const { ids } = req.body;
+
+    const logins = await getLogins(ids);
     res.json(logins);
     
   } catch (error) {
-    errorLog(`index POST /api/logins: ${error.message}`);
+    errorLog(`index POST /api/getLogins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
     res.status(500).json({ error: error.message });
   }
@@ -1222,17 +1253,17 @@ async (req, res) => {
 // https://swagger.io/docs/specification/v3_0/data-models/data-types/#objects
 /**
  * @swagger
- * /api/logins/{mailbox}:
+ * /api/logins/{id}:
  *   patch:
  *     summary: Update a login data
  *     description: Update the data for an existing login account
  *     parameters:
  *       - in: path
- *         name: mailbox
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: mailbox address of the login account to update
+ *         description: id of the login account to update
  *     requestBody:
  *       required: true
  *       content:
@@ -1264,29 +1295,29 @@ async (req, res) => {
  *       200:
  *         description: Data updated successfully
  *       400:
- *         description: mailbox or data are required
+ *         description: id or data are required
  *       500:
  *         description: Unable to update login
  */
-app.patch('/api/logins/:mailbox', 
+app.patch('/api/logins/:id', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { mailbox } = req.params;
-    if (!mailbox) {
-      return res.status(400).json({ error: 'mailbox is required' });
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'id is required' });
     }
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await updateDB('logins', mailbox, req.body);
+      result = await updateDB('logins', id, req.body);
 
     } else {
-      result = (mailbox == req.user.mailbox) ? await updateDB('logins', mailbox, req.body) : {success:false, message: 'Permission denied'};
+      result = (id == req.user.id) ? await updateDB('logins', id, req.body) : {success:false, message: 'Permission denied'};
     }
-    debugLog(`index PATCH /api/logins/${mailbox}`, result)
+    debugLog(`index PATCH /api/logins/${id}`, result)
     res.json(result);
     
   } catch (error) {
@@ -1300,36 +1331,36 @@ async (req, res) => {
 // Endpoint for deleting a login account
 /**
  * @swagger
- * /api/logins/{mailbox}:
+ * /api/logins/{id}:
  *   delete:
  *     summary: Delete a login account
  *     description: Delete a login account from dms-gui
  *     parameters:
  *       - in: path
- *         name: mailbox
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: mailbox of the account to delete
+ *         description: id of the account to delete
  *     responses:
  *       200:
  *         description: Login deleted successfully
  *       400:
- *         description: mailbox is required
+ *         description: id is required
  *       500:
  *         description: Unable to delete login
  */
-app.delete('/api/logins/:mailbox', 
+app.delete('/api/logins/:id', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { mailbox } = req.params;
-    if (!mailbox) {
-      return res.status(400).json({ error: 'mailbox is required' });
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'id is required' });
     }
-    const result = await deleteEntry('logins', mailbox, 'mailbox');
+    const result = await deleteEntry('logins', id, 'mailbox');
     res.json(result);
     
   } catch (error) {
@@ -1397,7 +1428,7 @@ app.post('/api/loginUser', async (req, res, next) => {
         // debugLog('refreshToken', refreshToken);
 
         // Store refresh token in database
-        updateDB('logins', user.message.mailbox, {refreshToken:refreshToken});
+        updateDB('logins', user.message.id, {refreshToken:refreshToken});
 
         // HTTP-Only Cookies (for Refresh Tokens):
         res.cookie('accessToken', accessToken, { 
@@ -1521,7 +1552,7 @@ app.post('/api/refresh', async (req, res) => {
 app.post('/api/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from database
-    updateDB('logins', req.user.mailbox, {refreshToken:"null"});
+    updateDB('logins', req.user.id, {refreshToken:"null"});
 
     // Clear cookies
     res.clearCookie('accessToken');
@@ -1557,7 +1588,7 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
  *           type: string
  *         description: DMS containerName
  *       - in: path
- *         name: name
+ *         name: domain
  *         required: false
  *         default: undefined
  *         schema:
@@ -1571,7 +1602,7 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
  *       500:
  *         description: Unable to retrieve domains
  */
-app.get('/api/domains/:containerName/:domain', 
+app.get('/api/domains/:containerName{/:domain}', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
@@ -1618,7 +1649,7 @@ async (req, res) => {
  *       500:
  *         description: Unable to count table
  */
-app.get('/api/getCount/:table/:containerName', 
+app.get('/api/getCount/:table{/:containerName}', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
@@ -1641,11 +1672,23 @@ async (req, res) => {
 // Endpoint for pushing/getting DMS_API_KEY
 /**
  * @swagger
- * /api/initAPI/{containerName}:
+ * /api/initAPI/{plugin}/{schema}/{containerName}:
  *   post:
  *     summary: Provide or regenerate DMS_API_KEY
  *     description: Provide or regenerate DMS_API_KEY + API scripts
  *     parameters:
+ *       - in: path
+ *         name: plugin
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: type of container to reboot
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: subtype of containerName to reboot
  *       - in: path
  *         name: containerName
  *         required: true
@@ -1670,17 +1713,17 @@ async (req, res) => {
  *       500:
  *         description: Unable to generate DMS_API_KEY
  */
-app.post('/api/initAPI/:containerName', 
+app.post('/api/initAPI/:plugin/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { plugin, schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const { dms_api_key_param } = req.body;
     
-    const dms_api_key_response = await initAPI(containerName, dms_api_key_param);
+    const dms_api_key_response = await initAPI(plugin, schema, containerName, dms_api_key_param);
     res.json(dms_api_key_response);
     
   } catch (error) {
@@ -1693,17 +1736,29 @@ async (req, res) => {
 // Endpoint for rebooting this container
 /**
  * @swagger
- * /api/kill/{containerName}:
+ * /api/killContainer/{plugin}/{schema}/{containerName}:
  *   post:
  *     summary: reboot this container
  *     description: reboot this container
  *     parameters:
  *       - in: path
+ *         name: plugin
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: type of container to reboot
+ *       - in: path
+ *         name: schema
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: subtype of containerName to reboot
+ *       - in: path
  *         name: containerName
  *         required: false
  *         schema:
  *           type: string
- *         description: DMS containerName to reboot
+ *         description: containerName to reboot
  *     responses:
  *       200:
  *         description: true
@@ -1712,19 +1767,19 @@ async (req, res) => {
  *       500:
  *         description: Unable to restart container
  */
-app.post('/api/kill/:containerName', 
+app.post('/api/killContainer{/:plugin}{/:schema}{/:containerName}', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { plugin, schema, containerName } = req.params;
     
-    const result = killContainer(containerName);    // no await
+    const result = killContainer(plugin, schema, containerName);
     res.json({success:true, message: result?.message});
     
   } catch (error) {
-    errorLog(`index /api/kill: ${error.message}`);
+    errorLog(`index /api/killContainer: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1759,7 +1814,7 @@ app.listen(env.PORT_NODEJS, async () => {
   debugLog('DMSGUI_CRON',env.DMSGUI_CRON)
   if (env.DMSGUI_CRON) {
     cron.schedule(env.DMSGUI_CRON, () => {
-        const result = killContainer('dms-gui', true);    // no await
+        killContainer('dms-gui', 'dms-gui', 'dms-gui');    // no await
     });
   };
 

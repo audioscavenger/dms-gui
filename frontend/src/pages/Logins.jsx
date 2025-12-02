@@ -46,6 +46,7 @@ const Logins = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
 
   const [DMSs, setDMSs] = useState([]);
 
@@ -171,7 +172,7 @@ const Logins = () => {
         setRolesAvailable(mailboxes);
         debugLog('mailboxes',mailboxes)
 
-      } else setErrorMessage(accountsData.message);
+      } else setErrorMessage(accountsData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
@@ -194,7 +195,7 @@ const Logins = () => {
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);
 
-      } else setErrorMessage(loginsData.message);
+      } else setErrorMessage(loginsData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchLogins'), error);
@@ -374,7 +375,7 @@ const Logins = () => {
         });
         fetchAll(); // Refresh the logins list
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.addLogin'), error.message);
@@ -424,7 +425,7 @@ const Logins = () => {
           setSuccessMessage('logins.loginDeleted');
           fetchAll(); // Refresh the logins list
           
-        } else setErrorMessage(result.message);
+        } else setErrorMessage(result?.error);
         
       } catch (error) {
         errorLog(t('api.errors.deleteLogin'), error.message);
@@ -465,7 +466,7 @@ const Logins = () => {
         // setSuccessMessage(t('logins.updated', {username:login.mailbox}));  // no need for that, the table will reflect the changes
         fetchLogins();
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.updateLogin'), error.message);
@@ -510,7 +511,7 @@ const Logins = () => {
 
         setSuccessMessage(t('logins.saved', {username:login.mailbox}));
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
         errorLog(t('api.errors.updateLogin'), error.message);
@@ -591,7 +592,7 @@ const Logins = () => {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.username}));
         handleClosePasswordModal(); // Close the modal
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);

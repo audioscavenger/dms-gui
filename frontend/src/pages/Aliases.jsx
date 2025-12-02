@@ -36,6 +36,7 @@ import { useAuth } from '../hooks/useAuth';
 const Aliases = () => {
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
   const { user } = useAuth();
 
   const [isLoading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ const Aliases = () => {
       if (accountsData.success) {
         setAccounts(accountsData.message);
         debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
-      } else setErrorMessage(accountsData.message);
+      } else setErrorMessage(accountsData?.error);
       
       if (aliasesData.success) {
         // add color column for regex aliases
@@ -99,7 +100,7 @@ const Aliases = () => {
         setAliases(aliasesDataFormatted);
         debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
         
-      } else setErrorMessage(aliasesData.message);
+      } else setErrorMessage(aliasesData?.error);
       
 
     } catch (error) {
@@ -191,7 +192,7 @@ const Aliases = () => {
         fetchAliases(true); // Refresh the aliases list
         setSuccessMessage('aliases.aliasCreated');
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.addAlias'), error.message);
@@ -210,7 +211,7 @@ const Aliases = () => {
           fetchAliases(true); // Refresh the aliases list
           setSuccessMessage('aliases.aliasDeleted');
           
-        } else setErrorMessage(result.message);
+        } else setErrorMessage(result?.error);
         
       } catch (error) {
         errorLog(t('api.errors.deleteAlias'), error.message);

@@ -45,6 +45,7 @@ const Settings = () => {
   // const passwordFormRef = useRef(null);
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
 
   // this is how to handle data coming from a child form
   /*

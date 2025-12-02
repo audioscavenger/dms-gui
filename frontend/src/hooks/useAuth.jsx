@@ -12,6 +12,7 @@ import {
 export const AuthProvider = ({ children }) => {
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
   const [containerName, setContainerName] = useLocalStorage("containerName", null);
+  const [schema, setSchema] = useLocalStorage("schema");
   const [user, setUser] = useLocalStorage("user", null);
   const navigate = useNavigate();
 
@@ -22,6 +23,7 @@ export const AuthProvider = ({ children }) => {
     // console.debug('ddebug setUser(user)', user);
     setUser(user);
     setContainerName(user.favorite);
+    setSchema('dms');
     setIsDEMO(user?.isDEMO);
     
     // console.debug('ddebug navigate /');

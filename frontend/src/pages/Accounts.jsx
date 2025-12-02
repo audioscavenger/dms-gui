@@ -40,6 +40,7 @@ const Accounts = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
 
   const [accounts, setAccounts] = useState([]);
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
@@ -90,18 +91,18 @@ const Accounts = () => {
       
       const [accountsData, DOVECOT_FTSdata] = await Promise.all([
         getAccounts(containerName, refresh),
-        getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
+        getServerEnvs('mailserver', schema, containerName, refresh, 'DOVECOT_FTS'),
       ]);
 
       if (accountsData.success) {
         setAccounts(accountsData.message);
         
-      } else setErrorMessage(accountsData.message);
+      } else setErrorMessage(accountsData?.error);
 
       if (DOVECOT_FTSdata.success) {
         setDOVECOT_FTS(DOVECOT_FTSdata.message);
         
-      } else setErrorMessage(DOVECOT_FTSdata.message);
+      } else setErrorMessage(DOVECOT_FTSdata?.error);
 
       debugLog('accountsData', accountsData);
       debugLog('DOVECOT_FTS', DOVECOT_FTS);
@@ -179,7 +180,7 @@ const Accounts = () => {
         fetchAccounts(true); // Refresh the accounts list
         setSuccessMessage('accounts.accountCreated');
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.addAccount'), error.message);
@@ -196,7 +197,7 @@ const Accounts = () => {
           fetchAccounts(true); // Refresh the accounts list
           setSuccessMessage('accounts.accountDeleted');
           
-        } else setErrorMessage(result.message);
+        } else setErrorMessage(result?.error);
         
       } catch (error) {
         errorLog(t('api.errors.deleteAccount'), error.message);
@@ -215,7 +216,7 @@ const Accounts = () => {
         // setSuccessMessage('accounts.doveadmExecuted');
         setSuccessMessage(result.message);
       
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.doveadm'), error.message);
@@ -299,7 +300,7 @@ const Accounts = () => {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedAccount.mailbox}));
         handleClosePasswordModal(); // Close the modal
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);

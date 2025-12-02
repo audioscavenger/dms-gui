@@ -35,6 +35,7 @@ function FormContainerAdd() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [containerName, setContainerName] = useLocalStorage("containerName");
+  const [schema, setSchema] = useLocalStorage("schema");
 
   const [isLoading, setLoading] = useState(true);
   const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
@@ -79,6 +80,9 @@ function FormContainerAdd() {
 
     await fetchMailservers();
 
+    // we also preset the schema and protocol values, as the values would never be set until the user change them
+    setSettings([{name: 'schema', value:schemas[0].value}, {name: 'protocol', value:protocols[0].value}]);
+
     setLoading(false);
 
   };
@@ -93,27 +97,30 @@ function FormContainerAdd() {
 
       if (mailserversData.success) {
         // this will be all containers in db except dms-gui
-        console.debug('fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+        debugLog('fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
  
         // update selector list
         setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
-
+        
         // set the current DMS containerName to the first value in the list if not already set
         // this action will (re)fetch form settings for that container scope
-        if (!containerName) setContainerName(mailserversData.message[0]?.value);
+        // if (!containerName) setContainerName(mailserversData.message[0]?.value);   // nope
+
+        // if (!containerName) setContainerName(user?.favorite);        // better but not good
+        // if (!schema) setSchema(mailserversData.message[0]?.schema);  // no, how do you get a schema paired to settings, from a containerName coming from user?
         
-      } else setErrorMessage(mailserversData.message);
+      } else setErrorMessage(mailserversData?.error);
 
     } catch (error) {
-      errorLog(t('api.errors.fetchSettings'), error);
-      setErrorMessage('api.errors.fetchSettings');
+      errorLog(t('api.errors.fetchConfigs'), error);
+      setErrorMessage('api.errors.fetchConfigs');
     }
   };
 
 
   const fetchSettings = async (container) => {
     
-    debugLog(`fetchSettings call getSettings(${container})`);
+    debugLog(`fetchSettings call getSettings('mailserver', ${container}, ${getValueFromArrayOfObj(mailservers, container, 'value', 'schema')}, 'dms-gui', ${container})`);
     try {
         
         const [settingsData] = await Promise.all([
@@ -135,8 +142,9 @@ function FormContainerAdd() {
         console.debug(`fetchAll: settingsData for ${container}`, settingsData);
  
         setSettings(settingsData.message);  // reset settings to what's coming from the db
+        setSchema(getValueFromArrayOfObj(settingsData, 'schema'));
 
-      } else setErrorMessage(settingsData.message);
+      } else setErrorMessage(settingsData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchSettings'), error);
@@ -152,14 +160,14 @@ function FormContainerAdd() {
 
     try {
       
-      const result = await getServerStatus(getValueFromArrayOfObj(settings, 'containerName'), 'ping');
+      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'ping');
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
         if (result.message.status.status === 'stopped') setErrorMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
         if (result.message.status.status === 'alive') setSuccessMessage(t('dashboard.status.alive'));
 
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.ping'), error.message);
@@ -179,7 +187,8 @@ function FormContainerAdd() {
         return;
       }
 
-      const result = await getServerStatus(getValueFromArrayOfObj(settings, 'containerName'), 'execSetup');
+      // the backend does not have this new dms in db yet, so we must send also the settings to help getTargetDict
+      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
@@ -194,7 +203,7 @@ function FormContainerAdd() {
         if (result.message.status.status === 'api_error') setErrorMessage(t('dashboard.status.api_error') +": "+ result.message.status.error);
         if (result.message.status.status === 'api_unset') setErrorMessage(t('dashboard.status.api_unset') +": "+ result.message.status.error);
 
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.fetchServerStatus'), error.message);
@@ -211,7 +220,7 @@ function FormContainerAdd() {
     try {
       
       debugLog('regen API key for containerName=', getValueFromArrayOfObj(settings, 'containerName'))
-      const result = await initAPI(getValueFromArrayOfObj(settings, 'containerName'), 'regen');
+      const result = await initAPI('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'regen');
 
       if (result.success) {
         const DMS_API_KEY = result.message;
@@ -220,12 +229,14 @@ function FormContainerAdd() {
         // debugLog('initAPI', result)
         // debugLog('DMS_API_KEY', DMS_API_KEY)
 
-        if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+        // the 2 below should only be set on save
+        // if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+        // if (!schema)        setSchema(getValueFromArrayOfObj(settings, 'schema'));
         setSettings(mergeArrayOfObj(settings, [{name: 'DMS_API_KEY', value: DMS_API_KEY}], 'name'));
         
         setSuccessMessage(t('settings.DMS_API_KEYregened', {DMS_API_KEY: DMS_API_KEY}));
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.DMS_API_KEYregen'), error.message);
@@ -252,7 +263,7 @@ function FormContainerAdd() {
       });
     }
 
-    readyForTest
+    return readyForTest
   };
 
   const validateFormContainerAdd = () => {
@@ -262,16 +273,19 @@ function FormContainerAdd() {
     if (!settings.find(item => item['name'] == 'containerName') || !settings.find(item => item['name'] == 'containerName').value.length) {
       errors.containerName = 'settings.containerNameRequired';
     }
+    debugLog('ddebug',1)
 
     // if (settings.schema.length == 0) {
     if (!settings.find(item => item['name'] == 'schema') || !settings.find(item => item['name'] == 'schema').value.length) {
       errors.schema = 'settings.schemaRequired';
     }
+    debugLog('ddebug',2)
 
     // if (settings.protocol.length == 0) {
     if (!settings.find(item => item['name'] == 'protocol') || !settings.find(item => item['name'] == 'protocol').value.length) {
       errors.protocol = 'settings.protocolRequired';
     }
+    debugLog('ddebug',3)
 
     // if (settings.DMS_API_PORT.length == 0) {
     if (!settings.find(item => item['name'] == 'DMS_API_PORT') 
@@ -282,16 +296,31 @@ function FormContainerAdd() {
       ) {
       errors.DMS_API_PORT = 'settings.DMS_API_PORTRequired';
     }
+    debugLog('ddebug',4)
 
     // if (settings.DMS_API_KEY.length == 0) {
     if (!settings.find(item => item['name'] == 'DMS_API_KEY') || !settings.find(item => item['name'] == 'DMS_API_KEY').value.length) {
       errors.DMS_API_KEY = 'settings.DMS_API_KEYRequired';
     }
+    debugLog('ddebug',5)
 
     // if (settings.setupPath.length == 0) {
     if (!settings.find(item => item['name'] == 'setupPath') || !settings.find(item => item['name'] == 'setupPath').value.length) {
       errors.setupPath = 'settings.setupPathRequired';
     }
+    debugLog('ddebug',6)
+
+    // if (settings.timeout.length == 0) {
+    if (!settings.find(item => item['name'] == 'timeout') 
+        || !settings.find(item => item['name'] == 'timeout').value.length
+        || !Number(settings.find(item => item['name'] == 'timeout').value)
+        || (Number(settings.find(item => item['name'] == 'timeout').value) < 1)
+        || (Number(settings.find(item => item['name'] == 'timeout').value) > 60)
+      ) {
+      errors.timeout = 'settings.timeoutRequired';
+    }
+    debugLog('ddebug',7)
+    debugLog('ddebug errors',errors)
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -311,6 +340,7 @@ function FormContainerAdd() {
 
     try {
 
+      debugLog(`saveSettings( mailserver, ${getValueFromArrayOfObj(settings, 'schema')}, dms-gui, ${getValueFromArrayOfObj(settings, 'containerName')})`, settings);
       const result = await saveSettings(
         'mailserver',
         getValueFromArrayOfObj(settings, 'schema'),
@@ -335,7 +365,7 @@ function FormContainerAdd() {
           DMS_API_PORT:getValueFromArrayOfObj(settings, 'DMS_API_PORT'),
         }));
         
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       setSubmissionSettings('error');
@@ -355,12 +385,13 @@ function FormContainerAdd() {
       if (value) {
 
         setContainerName(value);
-        fetchSettings(value); // Refresh the settings
+        // fetchSettings(value); // Refresh the settings is done by useEffect on containerName change
+        // setSchema(getValueFromArrayOfObj(settings, 'schema'));  // that should be done during fetchSettings and also dependent on useEffect
 
         // only reset errors, we still wantto see the successful saved settings message as this change will be triggered when saving a new container
         setErrorMessage(null);
           
-      } else setErrorMessage(result.message);
+      } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.saveSettings'), error);
@@ -373,6 +404,7 @@ function FormContainerAdd() {
   if (isLoading && !settings.length || !user.isAdmin) {
     return <LoadingSpinner />;
   }
+  
   
   return (
     <>
@@ -398,6 +430,18 @@ function FormContainerAdd() {
 
       <Row>
         <form onSubmit={handleSubmitSettings} className="form-wrapper">
+          <SelectField
+            id="schema"
+            name="schema"
+            label="settings.schema"
+            value={getValueFromArrayOfObj(settings, 'schema') || schemas[0].value}
+            onChange={handleChangeSettings}
+            options={schemas}
+            placeholder="settings.schema"
+            helpText="settings.schemaHelp"
+            required
+          />
+
           <FormField
             type="text"
             id="containerName"
@@ -420,22 +464,10 @@ function FormContainerAdd() {
           </FormField>
 
           <SelectField
-            id="schema"
-            name="schema"
-            label="settings.schema"
-            value={getValueFromArrayOfObj(settings, 'schema')}
-            onChange={handleChangeSettings}
-            options={schemas}
-            placeholder="settings.schema"
-            helpText="settings.schemaHelp"
-            required
-          />
-
-          <SelectField
             id="protocol"
             name="protocol"
             label="settings.protocol"
-            value={getValueFromArrayOfObj(settings, 'protocol')}
+            value={getValueFromArrayOfObj(settings, 'protocol') || protocols[0].value}
             onChange={handleChangeSettings}
             options={protocols}
             placeholder="common.protocol"
@@ -491,6 +523,19 @@ function FormContainerAdd() {
               onClick={() => navigator.clipboard.writeText(getValueFromArrayOfObj(settings, 'DMS_API_KEY')) }
             />
           </FormField>
+        
+          <FormField
+            type="number"
+            id="timeout"
+            name="timeout"
+            label="settings.timeout"
+            value={getValueFromArrayOfObj(settings, 'timeout')}
+            onChange={handleChangeSettings}
+            placeholder="settings.timeoutdefault"
+            error={formErrors.timeout}
+            helpText="settings.timeoutHelp"
+            required
+          />
         
           <FormField
             type="text"

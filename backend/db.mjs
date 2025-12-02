@@ -11,6 +11,7 @@ import {
 } from './backend.mjs';
 import {
   env,
+  plugins,
 } from './env.mjs';
 
 import Database from 'better-sqlite3';
@@ -45,6 +46,60 @@ export const sqlMatch = {
 // DB = new Database(buffer);
 
 export const sql = {
+settings: {
+
+  scope:  true,
+  // select: {
+  //   count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
+  //   settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
+  //   setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
+  //   envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+  //   env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+  //   scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName' AND scope NOT IN (SELECT DISTINCT id from logins)`,
+  // },
+  
+  // insert: {
+  //   setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)`,
+  //   env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
+  // },
+  
+  // delete: {
+  //   envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
+  //   env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
+  // },
+  
+  init:   `BEGIN TRANSACTION;
+          CREATE    TABLE IF NOT EXISTS settings (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      TEXT NOT NULL,
+          value     TEXT NOT NULL,
+          configID  TEXT NOT NULL,
+          isMutable BIT DEFAULT ${env.isImmutable},
+          UNIQUE    (name, configID)
+          );
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
+  
+  patch: [
+    { DB_VERSION: '1.5.12',
+      patches: [
+        `DROP table settings`,
+        `BEGIN TRANSACTION;
+          CREATE    TABLE IF NOT EXISTS settings (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      TEXT NOT NULL,
+          value     TEXT NOT NULL,
+          configID  TEXT NOT NULL,
+          isMutable BIT DEFAULT ${env.isImmutable},
+          UNIQUE    (name, configID)
+          );
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
+      ],
+    },
+  ],
+},
+
 config: {
 
   scope:  true,
@@ -96,64 +151,10 @@ config: {
   
 },
 
-settings: {
-
-  scope:  true,
-  // select: {
-  //   count:    `SELECT COUNT(*) count from settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
-  //   settings: `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
-  //   setting:  `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope AND name = ?`,
-  //   envs:     `SELECT name, value from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
-  //   env:      `SELECT value       from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
-  //   scopes:   `SELECT DISTINCT value from settings WHERE 1=1 AND isMutable = ${env.isMutable} AND name = 'containerName' AND scope NOT IN (SELECT DISTINCT id from logins)`,
-  // },
-  
-  // insert: {
-  //   setting:  `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)`,
-  //   env:      `REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 0)`,
-  // },
-  
-  // delete: {
-  //   envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope`,
-  //   env:      `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND scope = @scope AND name = ?`,
-  // },
-  
-  init:   `BEGIN TRANSACTION;
-          CREATE    TABLE IF NOT EXISTS settings (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
-          name      TEXT NOT NULL,
-          value     TEXT NOT NULL,
-          configID  TEXT NOT NULL,
-          isMutable BIT DEFAULT ${env.isImmutable},
-          UNIQUE    (name, configID)
-          );
-          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
-          COMMIT;`,
-  
-  patch: [
-    { DB_VERSION: '1.5.9',
-      patches: [
-        `DROP table settings`,
-        `BEGIN TRANSACTION;
-          CREATE    TABLE IF NOT EXISTS settings (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
-          name      TEXT NOT NULL,
-          value     TEXT NOT NULL,
-          configID  TEXT NOT NULL,
-          isMutable BIT DEFAULT ${env.isImmutable},
-          UNIQUE    (name, configID)
-          );
-          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
-          COMMIT;`,
-      ],
-    },
-  ],
-},
-
 logins: {
 
   desc:   "password in the the list of keys even tho it's not a column",
-  id:     'mailbox',
+  id:     'id',
   keys:   {
     mailbox:'string', 
     username:'string', 
@@ -171,32 +172,17 @@ logins: {
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND mailbox = @mailbox`,
+    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND id = @id`,
     loginObj:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
     loginGuess: `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
     logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1`,
     admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND mailbox = @mailbox`,
+    roles:    `SELECT roles from logins WHERE 1=1 AND id = @id`,
     rolesObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
-    salt:     `SELECT salt from logins WHERE mailbox = ?`,
-    hash:     `SELECT hash from logins WHERE mailbox = ?`,
+    salt:     `SELECT salt from logins WHERE id = ?`,
+    hash:     `SELECT hash from logins WHERE id = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
     refreshToken: `SELECT * FROM logins WHERE id = ? AND refreshToken = @refreshToken`,
-    isActive: {
-      login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
-      logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1`,
-      admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 1 AND (mailbox = @mailbox OR username = @username)`,
-      count: {
-        admins:   `SELECT COUNT(*) count from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      },
-    },
-    isInactive: {
-      login:    `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
-      logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0`,
-      admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isActive = 0 AND isAdmin = 1`,
-      roles:    `SELECT roles from logins WHERE 1=1 AND isActive = 0 AND (mailbox = @mailbox OR username = @username)`,
-    },
   },
   
   insert: {
@@ -205,73 +191,73 @@ logins: {
   },
   
   update: {
-    password: `UPDATE logins set salt=@salt, hash=@hash WHERE mailbox = ?`,
-    refreshToken: `UPDATE logins set refreshToken = NULL WHERE mailbox = ?`,
+    password: `UPDATE logins set salt=@salt, hash=@hash WHERE id = ?`,
+    refreshToken: `UPDATE logins set refreshToken = NULL WHERE id = ?`,
     refreshTokens: `UPDATE logins set refreshToken = NULL`,
     mailbox: {
       undefined: {
         desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
-        test:   `SELECT COUNT(mailbox) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND mailbox = ?`,
+        test:   `SELECT COUNT(mailbox) count from logins WHERE 1=1 AND (isAdmin = 1 OR isAccount = 0) AND id = ?`,
         check:  function(result) { return result.count == 1; },
-        pass:   `UPDATE logins set mailbox = @mailbox WHERE mailbox = ?`,
+        pass:   `UPDATE logins set mailbox = @mailbox WHERE id = ?`,
         fail:   "Cannot change mailbox from a mailbox-linked user.",
       },
     },
     isAdmin: {
       0: {
         desc:   "refuse to demote the last admin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND mailbox IS NOT ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND id IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `UPDATE logins set isAdmin = @isAdmin WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isAdmin = @isAdmin WHERE id = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
       1: {
         desc:   "not a test, just flipping login to isAdmin also flips isAccount to 0",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND mailbox = ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND id = ?`,
         check:  function() { return true; },
-        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0, isActive = 1 WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isAdmin = @isAdmin, isAccount = 0, isActive = 1 WHERE id = ?`,
         fail:   "Cannot demote the last admin, how will you administer dms-gui?",
       },
     },
     isActive: {
       0: {
         desc:   "refuse to deactivate the last admin",
-        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND mailbox IS NOT ?`,
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND isActive = 1 AND isAdmin = 1 AND id IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `UPDATE logins set isActive = @isActive WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isActive = @isActive WHERE id = ?`,
         fail:   "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
       undefined: {
         desc:   "no test",
-        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND mailbox = ?`,
+        test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND id = ?`,
         check:  function() { return true; },
-        pass:   `UPDATE logins set isActive = @isActive WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isActive = @isActive WHERE id = ?`,
       },
     },
     isAccount: {
       0: {
         desc:   "refuse to be isAccount when isAdmin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND mailbox = ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND id = ?`,
         check:  function(result) { return result.count == 0; },
-        pass:   `UPDATE logins set isAccount = @isAccount WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isAccount = @isAccount WHERE id = ?`,
         fail:   "Cannot make an admin also a linked account, it's one or the other",
       },
       1: {
         desc:   "not a test, just flipping login to isAccount also flips isAdmin to 0",
-        test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND mailbox = ?`,
+        test:   `SELECT COUNT(isAccount) count from logins WHERE 1=1 AND id = ?`,
         check:  function() { return true; },
-        pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE mailbox = ?`,
+        pass:   `UPDATE logins set isAccount = @isAccount, isAdmin = 0 WHERE id = ?`,
       },
     },
   },
   
   delete: {
-    mailbox: {
+    id: {
       undefined: {
         desc:   "refuse to delete last admin",
-        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND mailbox IS NOT ?`,
+        test:   `SELECT COUNT(isAdmin) count from logins WHERE 1=1 AND isAdmin = 1 AND id IS NOT ?`,
         check:  function(result) { return result.count > 0; },
-        pass:   `DELETE from logins WHERE 1=1 AND mailbox = ?`,
+        pass:   `DELETE from logins WHERE 1=1 AND id = ?`,
         fail:   "Cannot delete the last admin, how will you administer dms-gui?",
       },
     },
@@ -279,7 +265,7 @@ logins: {
   
   init:  `BEGIN TRANSACTION;
           CREATE TABLE IF NOT EXISTS logins (
-          id        TEXT PRIMARY KEY AUTOINCREMENT,
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL UNIQUE,
           username  TEXT NOT NULL UNIQUE,
           email     TEXT,
@@ -352,6 +338,7 @@ logins: {
 
 roles: {
       
+  desc:  "TODO: delete this table",
   scope:  true,
   select: {
     roles:    `SELECT username, mailbox from roles WHERE 1=1 AND scope = @scope`,
@@ -446,7 +433,7 @@ accounts: {
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
-    { DB_VERSION: '1.5.9',
+    { DB_VERSION: '1.5.12',
       patches: [
         `DROP TABLE accounts`,
         `BEGIN TRANSACTION;
@@ -572,7 +559,7 @@ domains: {
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 1, ${env.isImmutable})`,
     //   ],
     // },
-    { DB_VERSION: '1.5.9',
+    { DB_VERSION: '1.5.12',
       patches: [
         `DROP table domains`,
         `BEGIN TRANSACTION;
@@ -738,7 +725,7 @@ export const dbRun = (sql, params={}, ...anonParams) => {
   } catch (error) {
     infoLog(`${error.code}: ${error.message}`);
     dbOpen()
-    return {success: false, message: error.message}
+    return {success: false, error: error.message}
     // throw error;
   }
 };
@@ -760,18 +747,17 @@ export const dbRun = (sql, params={}, ...anonParams) => {
 // error.message=duplicate column name: salt
 
 
-export const dbCount = (table, containerName) => {
+export const dbCount = (table, scope, schema) => {
   
   let result;
+  let params={};
   try {
     
-    if (sql[table].scope) {
-      debugLog(`DB.prepare("${sql[table].select.count}").get({scope:${containerName}})`);
-      result = DB.prepare(sql[table].select.count).get({scope:containerName});
-    } else {
-      debugLog(`DB.prepare("${sql[table].select.count}").get()`);
-      result = DB.prepare(sql[table].select.count).get();
-    }
+    if (sql[table].scope) params.scope = scope;
+    if (schema)           params.schema = schema;
+
+    debugLog(`DB.prepare("${sql[table].select.count}").get(${JSON.stringify(params)})`);
+    result = DB.prepare(sql[table].select.count).get(params);
     debugLog(`success:`, result);
     
     return {success: true, message: result.count};
@@ -779,7 +765,7 @@ export const dbCount = (table, containerName) => {
   } catch (error) {
     errorLog(error.message);
     dbOpen();
-    return {success: false, message: error.message}
+    return {success: false, error: error.message}
     // throw error;
   }
 };
@@ -807,7 +793,7 @@ export const dbGet = (sql, params={}, ...anonParams) => {
   } catch (error) {
     errorLog(error.message);
     dbOpen();
-    return {success: false, message: error.message}
+    return {success: false, error: error.message}
     // throw error;
   }
 };
@@ -821,20 +807,22 @@ export const dbAll = (sql, params={}, ...anonParams) => {
   let result;
   try {
     if (anonParams.length) {
-      debugLog(`DB.prepare("${sql}").all(${anonParams}, ${JSON.stringify(params)})`);
+      debugLog(`DB.prepare("${sql}").all(${JSON.stringify(anonParams)}, ${JSON.stringify(params)})`);
       result = DB.prepare(sql).all(params, anonParams);
       
     } else {
       debugLog(`DB.prepare("${sql}").all(${JSON.stringify(params)})`);
       result = DB.prepare(sql).all(params);
     }
+    // debugLog('ddebug result',result);
     return {success: true, message: result};
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
   } catch (error) {
+    debugLog('ddebug error.message',error.message);
     errorLog(error.message);
     dbOpen();
-    return {success: false, message: error.message}
+    return {success: false, error: error.message}
     // throw error;
   }
 };
@@ -886,7 +874,7 @@ export const dbUpgrade = () => {
       // so we have config = DB_VERSION, plugin = 'dms-gui', schema = 'DB_VERSION', scope = 'dms-gui', and a setting name = 'table' for each table
       // env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
       // result = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
-      result = dbGet(sql.config.select.env, {plugin:'dms-gui', schema:'DB_VERSION', scope:'dms-gui'}, ['DB_VERSION', table]);
+      result = dbGet(sql.config.select.env, {plugin:'dms-gui', schema:'DB_VERSION', scope:'dms-gui'}, 'DB_VERSION', table);
       if (result.success) {
         db_version = (result.message) ? result.message.value : undefined;
         debugLog(`DB_VERSION ${table}=`, db_version);
@@ -977,20 +965,20 @@ export const dbUpgrade = () => {
 
 
 // Function to generate a new IV for each encryption
-function generateIv() {
+export const generateIv = () => {
   return crypto.randomBytes(env.IV_LEN); // 16 bytes for AES-256-CBC
-}
+};
 
-function encrypt(data) {
+export const encrypt = data => {
   const iv = generateIv();
   const cipher = crypto.createCipheriv(env.AES_ALGO, Buffer.from(key), iv);
   let encrypted = cipher.update(data, 'utf-8', 'hex');
   encrypted += cipher.final('hex');
   // Combine IV and encrypted data for storage
   return iv.toString('hex') + encrypted;
-}
+};
 
-function decrypt(encryptedData) {
+export const decrypt = encryptedData => {
   const ivLength = env.IV_LEN * 2; // env.IV_LEN bytes * 2 for hex representation
   const iv = Buffer.from(encryptedData.slice(0, ivLength), 'hex');
   const ciphertext = encryptedData.slice(ivLength);
@@ -998,7 +986,7 @@ function decrypt(encryptedData) {
   let decrypted = decipher.update(ciphertext, 'hex', 'utf-8');
   decrypted += decipher.final('utf-8');
   return decrypted;
-}
+};
 
 export const hashPassword = async (password, salt) => {
   return new Promise((resolve, reject) => {
@@ -1052,7 +1040,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
 
 
 // Function to update a password in a table
-export const changePassword = async (table, id, password, containerName) => {
+export const changePassword = async (table, id, password, schema, containerName) => {
   let result, results;
 
   try {
@@ -1060,7 +1048,7 @@ export const changePassword = async (table, id, password, containerName) => {
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
-      const targetDict = getTargetDict(containerName);
+      const targetDict = getTargetDict('mailserver', schema, containerName);
 
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
       results = await execSetup(`email update ${id} "${password}"`, targetDict);
@@ -1074,7 +1062,7 @@ export const changePassword = async (table, id, password, containerName) => {
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
         errorLog(ErrorMsg);
-        return { success: false, message: ErrorMsg };
+        return { success: false, error: ErrorMsg };
       }
       
     } else {
@@ -1169,7 +1157,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               } else {
                 // we do not pass the test
                 errorLog(sql[table].update[key][value2test].fail);
-                // return { success: false, message: sql[table].update[key][value2test].fail};
+                // return { success: false, error: sql[table].update[key][value2test].fail};
                 messages.push(sql[table].update[key][value2test].fail);
               }
               
@@ -1185,7 +1173,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             
           } else {
             // errorLog(`sql[${table}].update is missing [${key}]`);
-            // return { success: false, message: `sql[${table}].update is missing [${key}]`};
+            // return { success: false, error: `sql[${table}].update is missing [${key}]`};
 
             if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
             result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].id} = ?`, scopedValues, id);
@@ -1253,7 +1241,7 @@ export const deleteEntry = async (table, id, key, scope) => {
         } else {
           // we do not pass the test
           errorLog(sql[table].delete[key][value2test].fail);
-          return { success: false, message: sql[table].delete[key][value2test].fail};
+          return { success: false, error: sql[table].delete[key][value2test].fail};
         }
         
       } else {
@@ -1268,7 +1256,7 @@ export const deleteEntry = async (table, id, key, scope) => {
       
     } else {
       errorLog(`sql[${table}].delete is missing [${key}]`);
-      return { success: false, message: `sql[${table}].delete is missing [${key}]`};
+      return { success: false, error: `sql[${table}].delete is missing [${key}]`};
     }
 
   } catch (error) {
@@ -1306,32 +1294,49 @@ export const refreshTokens = async (credentials) => {
 };
 
 
-export const getTargetDict = (containerName) => {
+export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
   
   let result;
   try {
-    debugLog(`dbAll(sql.settings.select.settings, {scope:${containerName}})`);
-    result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
-    
-    // if (result.message.length >= 4) {
-      // limit results to protocol, host, port, and also Authorization
+    if (settings.length) {
       let targetDict = {
-        protocol:       getValueFromArrayOfObj(result.message, 'protocol'),
-        host:           getValueFromArrayOfObj(result.message, 'containerName'),
-        port:           getValueFromArrayOfObj(result.message, 'DMS_API_PORT'),
-        Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
-        timeout:        env.execTimeout,
+        containerName:  getValueFromArrayOfObj(settings, 'containerName'),
+        protocol:       getValueFromArrayOfObj(settings, 'protocol'),
+        host:           getValueFromArrayOfObj(settings, 'containerName'),
+        port:           getValueFromArrayOfObj(settings, 'DMS_API_PORT'),
+        Authorization:  getValueFromArrayOfObj(settings, 'DMS_API_KEY'),
+        setupPath:      getValueFromArrayOfObj(settings, 'setupPath'),
+        timeout:        getValueFromArrayOfObj(settings, 'timeout'),
       }
-      
-      // if (targetDict && Object.keys(targetDict).length == 4) return {success: true, message: targetDict}; // what?? no
       return targetDict;
-    // }
-    // return {success: false, message: 'missing values from this container'};
+
+    } else {
+      // debugLog(`dbAll(${sql.settings.select.settings}, {scope:${containerName}})`);
+      // result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
+      // `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
+      debugLog(`dbAll(${sql.config.select.settings}, {plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ${containerName})`);
+      result = dbAll(sql.config.select.settings, {plugin:'mailserver', schema:'dms', scope:'dms-gui'}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
+      
+      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys) ) {
+        // limit results to protocol, host, port, and also Authorization
+        let targetDict = {
+          containerName:  getValueFromArrayOfObj(result.message, 'containerName'),
+          protocol:       getValueFromArrayOfObj(result.message, 'protocol'),
+          host:           getValueFromArrayOfObj(result.message, 'containerName'),
+          port:           getValueFromArrayOfObj(result.message, 'DMS_API_PORT'),
+          Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
+          setupPath:      getValueFromArrayOfObj(result.message, 'setupPath'),
+          timeout:        getValueFromArrayOfObj(result.message, 'timeout'),
+        }
+        return targetDict;
+      }
+    }
+    throw new Error(result.error);
 
   } catch (error) {
     errorLog(error.message);
     dbOpen();
-    return {success: false, message: error.message}
+    return {success: false, error: error.message}
     // throw error;
   }
 };
@@ -1367,10 +1372,10 @@ export const getTargetDict = (containerName) => {
 
 // get saltHash from admin:
 // DB.prepare("SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)").get({"email":"admin","mailbox":"admin","username":"admin"})
-  // {
-  //   salt: 'fdebebcdcec4e534757a49473759355b',
-  //   hash: 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18'
-  // }
+// {
+//   salt: 'fdebebcdcec4e534757a49473759355b',
+//   hash: 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18'
+// }
 
 // DB.prepare('SELECT username, email from logins').all()
 // DB.exec(sql)
@@ -1438,25 +1443,25 @@ export const getTargetDict = (containerName) => {
 
 // warning: REPLACE changes and increments the row id
 // If you want to update an existing row without changing its primary key, you should use an UPDATE statement instead of REPLACE INTO.
-result = DB.prepare("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
-  // { changes: 1, lastInsertRowid: 388 }
-  // { changes: 1, lastInsertRowid: 389 }
-  // { changes: 1, lastInsertRowid: 390 }
-DB.prepare("SELECT * from settings where scope = ?").all(['dmsss'])
-  // [
-  //   ...,
-  //   {
-  //     id: 391,
-  //     name: 'setupPath',
-  //     value: '/usr/local/bin/setup',
-  //     scope: 'dmsss',
-  //     isMutable: 1
-  //   }
-  // ]
-result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
-  // { changes: 1, lastInsertRowid: 0 }   // UPDATE + run will never return lastInsertRowid, but lastInsertRowid will be settothe last actual INSERT == wrong id
-result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope RETURNING id").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+// result = DB.prepare("REPLACE INTO settings (name, value, scope, isMutable) VALUES (@name, @value, @scope, 1)").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+// { changes: 1, lastInsertRowid: 388 }
+// { changes: 1, lastInsertRowid: 389 }
+// { changes: 1, lastInsertRowid: 390 }
+// DB.prepare("SELECT * from settings where scope = ?").all(['dmsss'])
+// [
+//   ...,
+//   {
+//     id: 391,
+//     name: 'setupPath',
+//     value: '/usr/local/bin/setup',
+//     scope: 'dmsss',
+//     isMutable: 1
+//   }
+// ]
+// result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
+// { changes: 1, lastInsertRowid: 0 }   // UPDATE + run will never return lastInsertRowid, but lastInsertRowid will be settothe last actual INSERT == wrong id
+// result = DB.prepare("UPDATE settings set value = @value WHERE 1=1 AND name = @name AND scope = @scope RETURNING id").run({"name":"setupPath","value":"/usr/local/bin/setup","scope":"dmsss"})
   // { id: 393 }  // correct way for UPDATE: add RETURNING whatever and get -> not run
 
-`INSERT OR IGNORE INTO settings (name, value, scope) VALUES ('DKIM_PATH', 'xxx', 'dms') RETURNING id`
+// `INSERT OR IGNORE INTO settings (name, value, scope) VALUES ('DKIM_PATH', 'xxx', 'dms') RETURNING id`
 

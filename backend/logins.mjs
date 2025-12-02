@@ -89,8 +89,9 @@ export const getLogin = async (credential, guess=false) => {
 
 
 // this returns an array of objects, credentials is either mailbox or username, or array of those, or an object like {id:id}|{mailbox:mailbox}|{username:username}, or array of those
-export const getLogins = async credentials => {
-  if (credentials && !Array.isArray(credentials)) return getLogin(credentials);
+export const getLogins = async (credentials, guess=false) => {
+  debugLog(credentials, guess);
+  if (credentials && !Array.isArray(credentials)) return getLogin(credentials, guess);
 
   let result;
   let logins = [];
@@ -102,7 +103,7 @@ export const getLogins = async credentials => {
       // roles come already parsed from getLogin
       logins = await Promise.all(
         credentials.map(async (credential) => {
-          const login = await getLogin(credential);
+          const login = await getLogin(credential, guess);
           if (login.success) return login.message;
         })
       );
@@ -207,8 +208,8 @@ export const loginUser = async (credential, password) => {
       if (login.message.isActive) {
         if (login.message.isAccount) {
           if (login.message.favorite) {
-            const targetDict = getTargetDict(login.message.favorite);
-            targetDict.timeout = 3;
+            const targetDict = getTargetDict('mailserver', 'dms', login.message.favorite);
+            targetDict.timeout = 5;
             let command = `doveadm auth test ${login.message.mailbox} "${password}"`;
             results = await execCommand(command, targetDict);
             if (!results.returncode) {
@@ -270,7 +271,7 @@ export const loginUser = async (credential, password) => {
 
 // this returns an array of objects // cancelled
 export const getRolesFromRoles = async containerName => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   try {
     

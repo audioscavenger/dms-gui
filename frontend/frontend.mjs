@@ -1,4 +1,5 @@
-export const debug = false;
+// export const debug = false;
+export const debug = true;
 
 // import {
 //   regexColors,

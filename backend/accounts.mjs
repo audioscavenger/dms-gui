@@ -55,8 +55,8 @@ import {
 } from './db.mjs';
 
 
-export const getAccounts = async (containerName, refresh, roles=[]) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
   let result;
@@ -65,7 +65,8 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
     
     // refresh
     if (refresh) {
-      result = await pullAccountsFromDMS(containerName);
+      if (schema == 'dms') result = await pullAccountsFromDMS(containerName);
+
       if (result.success) {
         // [{ mailbox: 'a@b.com', storage: {} }, .. ]
         infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
@@ -97,13 +98,13 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
           });
           // now save those linked logins in db
           result = dbRun(sql.logins.insert.fromDMS, logins2create);
-          if (!result.success) errorLog(result.message);
+          if (!result.success) errorLog(result.error);
           
-        } else errorLog(result.message);
+        } else errorLog(result.error);
         
         if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
 
-      } else errorLog(result.message);
+      } else errorLog(result.error);
     }
     
     // now pull accounts from the db as we need to associated logins for the DataTable
@@ -123,7 +124,7 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
       return {success: true, message: accounts};
       // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
 
-    } else errorLog(result.message);
+    } else errorLog(result.error);
     
     return result;
     
@@ -141,12 +142,12 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
 
 // Function to retrieve mailbox accounts from DMS
 export const pullAccountsFromDMS = async containerName => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   const command = 'email list';
   let accounts = [];
   
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', 'dms', containerName);
 
     debugLog(`execSetup(${command})`, targetDict);
     const results = await execSetup(command, targetDict);
@@ -212,7 +213,7 @@ export const pullAccountsFromDMS = async containerName => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, message: ErrorMsg };
+      return { success: false, error: ErrorMsg };
     }
 
     debugLog(`Found ${accounts.length} accounts`, accounts);
@@ -227,15 +228,16 @@ export const pullAccountsFromDMS = async containerName => {
 // Function to add a new mailbox account
 // it create both an account and a login with password in the db, but for isAccout linked users, will never be used
 // TODO: do we want to save passwords also in accounts table? for what purpose?
-export const addAccount = async (containerName, mailbox, password, createLogin=1) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
-  let result;
+export const addAccount = async (schema, containerName, mailbox, password, createLogin=1) => {
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+  let result, results;
 
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
 
     debugLog(`Adding new mailbox account for ${containerName}: ${mailbox}`);
-    const results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
+    if (schema == 'dms') results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
+
     if (!results.returncode) {
       
       const { salt, hash } = await hashPassword(password);
@@ -256,7 +258,7 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
     } else {
       let ErrorMsg = await formatDMSError('addAccount', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, message: ErrorMsg};
+      return { success: false, error: ErrorMsg};
     }
     
   } catch (error) {
@@ -272,17 +274,18 @@ export const addAccount = async (containerName, mailbox, password, createLogin=1
 
 
 // Function to delete an mailbox account
-export const deleteAccount = async (containerName, mailbox) => {
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+export const deleteAccount = async (schema, containerName, mailbox) => {
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let result, results;
   try {
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
 
     // dms setup could take who know how long when mailbox is large
     targetDict.timeout = 60;
-    results = await execSetup(`email del -y ${mailbox}`, targetDict);
+    if (schema == 'dms') results = await execSetup(`email del -y ${mailbox}`, targetDict);
     debugLog('ddebug execSetup',results)
+
     if (!results.returncode) {
       successLog(`Mailbox Account deleted: ${mailbox}`);
       
@@ -312,7 +315,7 @@ export const deleteAccount = async (containerName, mailbox) => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, message: ErrorMsg };
+      return { success: false, error: ErrorMsg };
     }
     
   } catch (error) {
@@ -328,8 +331,8 @@ export const deleteAccount = async (containerName, mailbox) => {
 
 // doveadm function
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
-export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
-  if (!containerName) return {success: false, message: 'containerName has not been defined yet'};
+export const doveadm = async (schema, containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
+  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
   const doveadm = {
@@ -422,7 +425,7 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
 
   try {
     if (!doveadm[command]) throw new Error(`unknown command: ${command}`);
-    const targetDict = getTargetDict(containerName);
+    const targetDict = getTargetDict('mailserver', schema, containerName);
     
     let formattedCommand = doveadm[command].cmd.replace(/{mailbox}/g, mailbox);
     let formattedPass    = doveadm[command].messages.pass.replace(/{mailbox}/g, mailbox);
@@ -443,7 +446,7 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
       
     } else {
       errorLog(results.stderr);
-      return { success: false, message: results.sterr };
+      return { success: false, error: results.sterr };
     }
     
   } catch (error) {

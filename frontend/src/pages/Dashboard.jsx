@@ -7,7 +7,7 @@ import {
 
 import {
   getServerStatus,
-  kill,
+  killContainer,
 } from '../services/api.mjs';
 import {
   AlertMessage,
@@ -25,6 +25,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [containerName] = useLocalStorage("containerName");
+  const [schema] = useLocalStorage("schema");
   
   const [status, setServerStatus] = useState({
     status: {
@@ -64,13 +65,13 @@ const Dashboard = () => {
     try {
       setStatusLoading(true);
 
-      const statusData = await getServerStatus(containerName);
+      const statusData = await getServerStatus('mailserver', schema, containerName);
       if (statusData.success) {
 
         setServerStatus(statusData.message);
         setErrorMessage(null);
         
-      } else setErrorMessage(statusData.message);
+      } else setErrorMessage(statusData?.error);
       
     } catch (error) {
       errorLog(t('api.errors.fetchServerStatus'), error);
@@ -83,7 +84,7 @@ const Dashboard = () => {
 
   const rebootMe = async () => {
     
-    kill();
+    killContainer('dms-gui', 'dms-gui', 'dms-gui');
     logout();
   };
 

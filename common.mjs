@@ -40,21 +40,46 @@ export const regexUsername = /^[^\s]+$/;
 //   moveKeyToLast,
 // } from '../common.mjs'
 
-export const funcName = (parent=4) => {
+
+export const funcName = (parent=4, onlyParent=false) => {
   const error = new Error();
+  let match, funcName;
+
   // The stack trace is formatted differently depending on the Node.js version.
   // We grab the line with the caller's function name.
-  const callerLine = error.stack.split('\n')[parent];
-  
-  // This regular expression works well for many Node.js stack formats.
-  // It looks for "at <functionName>".
-  const match = /at\s+([^ ]+)/.exec(callerLine);
-  
-  if (match && match[1]) {
-    return match[1];
+  const errorLines = error.stack.split('\n');
+  for (let i = parent; i <= errorLines.length; i++) {
+    // This regular expression works well for many Node.js stack formats.
+    // It looks for "at <functionName>".
+    // match = /at\s+([^ ]+)\s+/.exec(errorLines[i]);
+    match = /at\s+(\w+)\s+/.exec(errorLines[i]);
+
+    // append indentation to parent function until we reach 
+    if (match) {
+      funcName = (funcName) ? "  " + funcName : match[1];
+      if (onlyParent) break;
+
+    // either we reached the end or it was anonymous == root from the main script
+    } else {
+      funcName = (funcName) ? funcName : errorLines[i];
+      break;
+    }
+      
   }
-  return 'anonymous';
+  
+  return funcName;
 };
+// error Error
+//     at funcName (file:///app/common.mjs:44:17)
+//     at logger (file:///app/backend/backend.mjs:86:134)
+//     at debugLog (file:///app/backend/backend.mjs:93:70)
+//     at dbGet (file:///app/backend/db.mjs:783:7)
+//     at dbUpgrade (file:///app/backend/db.mjs:877:16)
+//     at dbInit (file:///app/backend/db.mjs:854:5)
+//     at Server.<anonymous> (file:///app/backend/index.js:1809:3)
+//     at Server.f (/app/backend/node_modules/once/once.js:25:25)
+//     at Object.onceWrapper (node:events:622:28)
+//     at Server.emit (node:events:520:35)
 
 
 export const fixStringType = string => {
