@@ -124,6 +124,7 @@ api.interceptors.response.use(
 // Server status API
 export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
+  // debugLog('ddebug settings',settings);
 
   const params = {};
   if (test !== undefined) params.test = test;
@@ -169,7 +170,6 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
   if (name !== undefined) params.name = name;
 
   try {
-    debugLog(api.get(`/settings/${plugin}/${schema}/${scope}/${containerName} + ${params}`));
     const response = await api.get(`/settings/${plugin}/${schema}/${scope}/${containerName}`, {params});
     return response.data;
   } catch (error) {
@@ -184,8 +184,9 @@ export const getConfigs = async (plugin, schema, name) => {
     if (schema) path = `/configs/${plugin}/${schema}`;
     if (name)   path = `/configs/${plugin}/${schema}/${name}`;
 
+    debugLog(`ddebug api ${path}:`, response);
     const response = await api.get(path);
-    debugLog(`getConfigs response:`, response);
+    debugLog(`getConfigs ${path} response:`, response);
     
     return response.data;
   } catch (error) {
@@ -197,7 +198,8 @@ export const getConfigs = async (plugin, schema, name) => {
 export const saveSettings = async (plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted=false) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   const params = {encrypted:encrypted};
-  debugLog('ddebug containerName',containerName);
+  debugLog('ddebug containerName', containerName);
+  debugLog('ddebug jsonArrayOfObjects', jsonArrayOfObjects);
   
   try {
     debugLog(`api.post(/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, {params});
@@ -222,12 +224,12 @@ export const getLogins = async ids => {
   }
 };
 
-export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, favorite, roles=[]) => {
+export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, mailserver, roles=[]) => {
   if (!mailbox) return {success: false, error: 'mailbox is required'};
   if (!username) return {success: false, error: 'username is required'};
   if (!password) return {success: false, error: 'password is required'};
   try {
-    const response = await api.put(`/logins`, { mailbox, username, password, email, isAdmin, isActive, isAccount, favorite, roles });
+    const response = await api.put(`/logins`, { mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -235,11 +237,11 @@ export const addLogin = async (mailbox, username, password, email, isAdmin=0, is
   }
 };
 
-export const updateLogin = async (mailbox, jsonDict) => {
-  if (!mailbox) return {success: false, error: 'mailbox is required'};
+export const updateLogin = async (id, jsonDict) => {
+  if (!id) return {success: false, error: 'id is required'};
   if (!jsonDict) return {success: false, error: 'jsonDict is required'};
   try {
-    const response = await api.patch(`/logins/${mailbox}`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0, mailbox:newEmail} // mailbox must be last
+    const response = await api.patch(`/logins/${id}`, jsonDict); // jsonDict = {username:username, isAdmin:0, isActive:0, mailbox:newEmail} // mailbox had to be last, now ewe rely on id
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -247,10 +249,10 @@ export const updateLogin = async (mailbox, jsonDict) => {
   }
 };
 
-export const deleteLogin = async mailbox => {
-  if (!mailbox) return {success: false, error: 'mailbox is required'};
+export const deleteLogin = async id => {
+  if (!id) return {success: false, error: 'id is required'};
   try {
-    const response = await api.delete(`/logins/${mailbox}`);
+    const response = await api.delete(`/logins/${id}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -280,13 +282,14 @@ export const logoutUser = async () => {
   }
 };
 
-export const getAccounts = async (containerName, refresh) => {
+export const getAccounts = async (schema, containerName, refresh) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/accounts/${containerName}`, {params});
+    const response = await api.get(`/accounts/${schema}/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -294,12 +297,13 @@ export const getAccounts = async (containerName, refresh) => {
   }
 };
 
-export const addAccount = async (containerName, mailbox, password, createLogin) => {
+export const addAccount = async (schema, containerName, mailbox, password, createLogin) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   if (!mailbox) return {success: false, error: 'mailbox is required'};
   if (!password) return {success: false, error: 'password is required'};
   try {
-    const response = await api.post(`/accounts/${containerName}`, { mailbox, password, createLogin });
+    const response = await api.post(`/accounts/${schema}/${containerName}`, { mailbox, password, createLogin });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -307,11 +311,11 @@ export const addAccount = async (containerName, mailbox, password, createLogin) 
   }
 };
 
-// export const deleteAccount = async (mailbox) => {
-export const deleteAccount = async (containerName, mailbox) => {
+export const deleteAccount = async (schema, containerName, mailbox) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   try {
-    const response = await api.delete(`/accounts/${containerName}/${mailbox}`);
+    const response = await api.delete(`/accounts/${schema}/${containerName}/${mailbox}`);
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -319,12 +323,13 @@ export const deleteAccount = async (containerName, mailbox) => {
   }
 };
 
-export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
+export const doveadm = async (schema, containerName, command, mailbox, jsonDict={}) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   if (!command) return {success: false, error: 'command is required'};
   if (!mailbox) return {success: false, error: 'mailbox is required'};
   try {
-    const response = await api.put(`/doveadm/${containerName}/${command}/${mailbox}`, jsonDict); // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
+    const response = await api.put(`/doveadm/${schema}/${containerName}/${command}/${mailbox}`, jsonDict); // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -332,11 +337,12 @@ export const doveadm = async (containerName, command, mailbox, jsonDict={}) => {
   }
 };
 
-export const updateAccount = async (containerName, mailbox, jsonDict) => {
+export const updateAccount = async (schema, containerName, mailbox, jsonDict) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   if (!mailbox) return {success: false, error: 'mailbox is required'};
   try {
-    const response = await api.patch(`/accounts/${containerName}/${mailbox}`, jsonDict); // jsonDict = {password:password}
+    const response = await api.patch(`/accounts/${schema}/${containerName}/${mailbox}`, jsonDict); // jsonDict = {password:password}
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -344,14 +350,14 @@ export const updateAccount = async (containerName, mailbox, jsonDict) => {
   }
 };
 
-// export const getAliases = async (refresh) => {
-export const getAliases = async (containerName, refresh) => {
+export const getAliases = async (schema, containerName, refresh) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/aliases/${containerName}`, {params});
+    const response = await api.get(`/aliases/${schema}/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -359,11 +365,11 @@ export const getAliases = async (containerName, refresh) => {
   }
 };
 
-// export const addAlias = async (source, destination) => {
-export const addAlias = async (containerName, source, destination) => {
+export const addAlias = async (schema, containerName, source, destination) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   try {
-    const response = await api.post(`/aliases/${containerName}`, { source, destination });
+    const response = await api.post(`/aliases/${schema}/${containerName}`, { source, destination });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -371,13 +377,14 @@ export const addAlias = async (containerName, source, destination) => {
   }
 };
 
-// export const deleteAlias = async (source, destination) => {
-export const deleteAlias = async (containerName, source, destination) => {
+export const deleteAlias = async (schema, containerName, source, destination) => {
+  if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
+
   try {
     // Although the HTTP specification for DELETE requests does not explicitly define semantics for a request body, Axios allows you to include one by using the data property within the optional config object.
     // const response = await api.delete(`/aliases/${source}/${destination}`);
-    const response = await api.delete(`/aliases/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
+    const response = await api.delete(`/aliases/${schema}/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
     return response.data;
   } catch (error) {
     errorLog(error.message);

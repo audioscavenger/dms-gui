@@ -40,10 +40,10 @@ const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const { user, login } = useAuth();
-  const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
 
-  const [DMSs, setDMSs] = useState([]);
+  const [containerName] = useLocalStorage("containerName");
+  // const [mailservers, setMailservers] = useState([]);
+  const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ const Profile = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     setLoading(true);
-    fetchMailservers();
+    if (!mailservers || !mailservers.length) fetchMailservers();
     // fetchProfile();  // nah we use localStorage user, even if hacked, the backend takes care of it
     setLoading(false);
   }, []);
@@ -106,7 +106,7 @@ const Profile = () => {
         debugLog('fetchMailservers: mailserversData', mailserversData);   // [ {value:'containerName'}, .. ]
  
         // update selector list
-        setDMSs(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
+        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
       } else setErrorMessage(mailserversData?.error);
 
@@ -119,11 +119,11 @@ const Profile = () => {
 
   const handleLoginInputChange = (e) => {
     debugLog('loginFormData',loginFormData);
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     setloginFormData({
       ...loginFormData,
-      [name]: value
+      [name]: type === 'number' ? Number(value) : value
     });
 
     // Clear the error for this field while typing
@@ -139,8 +139,8 @@ const Profile = () => {
   const validateloginForm = () => {
     const errors = {};
 
-    if (!loginFormData.favorite.trim()) {
-      errors.favorite = 'logins.favoriteRequired';
+    if (!loginFormData.mailserver.trim()) {
+      errors.mailserver = 'logins.mailserverRequired';
     }
 
     // if (!loginFormData.username.trim()) {
@@ -190,8 +190,8 @@ const Profile = () => {
 
       // how about we push only the fields we want? like, the only fields the users can modify? hm??
       const result = await updateLogin(
-        user.mailbox,
-        {username:loginFormData.username, email:loginFormData.email, favorite:loginFormData.favorite},
+        user.id,
+        {username:loginFormData.username, email:loginFormData.email, mailserver:loginFormData.mailserver},
       );
       if (result.success) {
         login(loginFormData); // reset new values for that user in frontend state
@@ -226,11 +226,11 @@ const Profile = () => {
 
   // Handle input changes for password change form
   const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     setPasswordFormData({
       ...passwordFormData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
 
     // Clear the error for this field while typing
@@ -274,6 +274,7 @@ const Profile = () => {
       let result;
       if (selectedLogin.isAccount) {
         result = await updateAccount(
+          getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
           containerName,
           selectedLogin.mailbox,
           { password: passwordFormData.newPassword }
@@ -282,7 +283,7 @@ const Profile = () => {
       // normal dms-gui account
       } else {
         result = await updateLogin(
-          selectedLogin.mailbox,
+          selectedLogin.id,
           { password: passwordFormData.newPassword }
         );
       }
@@ -336,15 +337,15 @@ const Profile = () => {
         />
 
         <SelectField
-          id="favorite"
-          name="favorite"
-          label="logins.favorite"
-          value={loginFormData.favorite}
+          id="mailserver"
+          name="mailserver"
+          label="logins.mailserver"
+          value={loginFormData?.mailserver || mailservers[0]?.containerName || undefined}
           onChange={handleLoginInputChange}
-          options={DMSs}
-          placeholder="logins.favoriteRequired"
-          error={loginFormErrors.favorite}
-          helpText="logins.favoriteRequired"
+          options={mailservers}
+          placeholder="logins.mailserverRequired"
+          error={loginFormErrors.mailserver}
+          helpText="logins.mailserverRequired"
           required
         />
 

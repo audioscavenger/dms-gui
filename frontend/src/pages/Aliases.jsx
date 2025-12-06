@@ -35,9 +35,9 @@ import { useAuth } from '../hooks/useAuth';
 
 const Aliases = () => {
   const { t } = useTranslation();
-  const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
   const { user } = useAuth();
+  const [containerName] = useLocalStorage("containerName");
+  const [mailservers] = useLocalStorage("containerName");
 
   const [isLoading, setLoading] = useState(true);
   
@@ -70,7 +70,7 @@ const Aliases = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAliases(false);
-  }, []);
+  }, [mailservers, containerName]);
 
   const fetchAliases = async (refresh) => {
     refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
@@ -82,8 +82,8 @@ const Aliases = () => {
       setSuccessMessage(null);
       
       const [aliasesData, accountsData] = await Promise.all([
-        getAliases(containerName, refresh),
-        getAccounts(containerName, refresh),
+        getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
       ]);
 
       if (accountsData.success) {
@@ -113,10 +113,10 @@ const Aliases = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
     
     
@@ -183,7 +183,7 @@ const Aliases = () => {
     }
 
     try {
-      const result = await addAlias(containerName, formData.source.trim(), formData.destination.trim());
+      const result = await addAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, formData.source.trim(), formData.destination.trim());
       if (result.success) {
         setFormData({
           source: '',
@@ -206,7 +206,7 @@ const Aliases = () => {
       setSuccessMessage(null);
       
       try {
-        const result = await deleteAlias(containerName, source, destination);
+        const result = await deleteAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, source, destination);
         if (result.success) {
           fetchAliases(true); // Refresh the aliases list
           setSuccessMessage('aliases.aliasDeleted');

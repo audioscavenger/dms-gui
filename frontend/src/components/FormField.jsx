@@ -22,6 +22,7 @@ import {
  * @param {string} [props.helpText] Help text (translation key)
  * @param {boolean} [props.required] Whether the field is required
  * @param {boolean} [props.isChecked] Whether the box isChecked
+ * @param {boolean} [props.defaultChecked] Whether the box defaultChecked
  * @param {boolean} [props.translate] Whether the fields need translation
  * @param {string} [props.groupClass] Whether to replace the default className of the group
  * @param {React.ReactNode} props.children children of Group like extra buttons etc
@@ -41,14 +42,20 @@ const FormField = ({
   groupClass="mb-3",
   required = false,
   isChecked = false,
+  defaultChecked = false,
   translate = true,
   children,
   ...rest // Pass any other props down to Form.Control
 }) => {
   const { t } = useTranslation();
   const require       = required     == true ? true : false;
-  const checked       = isChecked    == true ? true : false;
 
+  // You provided a `checked` prop to a form field without an `onChange` handler. 
+  // This will render a read-only field. If the field should be mutable use `defaultChecked`. 
+  // Otherwise, set either `onChange` or `readOnly`
+  const checked       = isChecked       == true ? true : false;
+  const dChecked      = defaultChecked  == true ? true : false;
+  
   return (
     <Form.Group className={groupClass} controlId={id} as={as}>
       {!['checkbox', 'radio'].includes(type) && label && (
@@ -60,17 +67,29 @@ const FormField = ({
       
       <InputGroup>
         {['checkbox', 'radio'].includes(type) && (
-          <Form.Check
-            type={type}
-            name={name}
-            label={Translate(label, translate)}
-            onChange={onChange}
-            placeholder={(translate) && t(placeholder) || placeholder}
-            isInvalid={!!error} // Set isInvalid based on error presence
-            checked={checked}
-            {...rest} // Spread remaining props
-          />
+          (onChange !== undefined) && (
+            <Form.Check
+              type={type}
+              name={name}
+              label={Translate(label, translate)}
+              onChange={onChange}
+              placeholder={(translate) && t(placeholder) || placeholder}
+              isInvalid={!!error} // Set isInvalid based on error presence
+              checked={checked}
+              {...rest} // Spread remaining props
+            />
           ) || (
+            <Form.Check
+              type={type}
+              name={name}
+              label={Translate(label, translate)}
+              placeholder={(translate) && t(placeholder) || placeholder}
+              isInvalid={!!error} // Set isInvalid based on error presence
+              defaultChecked={dChecked}
+              {...rest} // Spread remaining props
+            />
+          )
+        ) || (
           <Form.Control
             type={type}
             name={name}

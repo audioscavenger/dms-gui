@@ -6,7 +6,30 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailRegex,
   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+  getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
 } from '../../../common.mjs';
 
 import {
@@ -40,7 +63,7 @@ const Accounts = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
+  const [mailservers] = useLocalStorage("mailservers");
 
   const [accounts, setAccounts] = useState([]);
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
@@ -79,7 +102,7 @@ const Accounts = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [mailservers, containerName]);
 
   const fetchAccounts = async (refresh) => {
     refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
@@ -90,8 +113,8 @@ const Accounts = () => {
       setSuccessMessage(null);
       
       const [accountsData, DOVECOT_FTSdata] = await Promise.all([
-        getAccounts(containerName, refresh),
-        getServerEnvs('mailserver', schema, containerName, refresh, 'DOVECOT_FTS'),
+        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh, 'DOVECOT_FTS'),
       ]);
 
       if (accountsData.success) {
@@ -117,10 +140,10 @@ const Accounts = () => {
   };
 
   const handleNewAccountInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setNewAccountFormData({
       ...newAccountformData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
 
     // Clear the error for this field while typing
@@ -165,6 +188,7 @@ const Accounts = () => {
 
     try {
       const result = await addAccount(
+        getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
         containerName,
         newAccountformData.mailbox,
         newAccountformData.password,
@@ -192,7 +216,7 @@ const Accounts = () => {
     setErrorMessage(null);
     if (window.confirm(t('accounts.confirmDelete', { mailbox:mailbox }))) {
       try {
-        const result = await deleteAccount(containerName, mailbox);
+        const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, mailbox);
         if (result.success) {
           fetchAccounts(true); // Refresh the accounts list
           setSuccessMessage('accounts.accountDeleted');
@@ -210,7 +234,7 @@ const Accounts = () => {
     setErrorMessage(null);
     
     try {
-      const result = await doveadm(containerName, command, mailbox);
+      const result = await doveadm(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, command, mailbox);
       debugLog('result',result);
       if (result.success) {
         // setSuccessMessage('accounts.doveadmExecuted');
@@ -246,11 +270,11 @@ const Accounts = () => {
 
   // Handle input changes for password change form
   const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     setPasswordFormData({
       ...passwordFormData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
 
     // Clear the error for this field while typing
@@ -292,6 +316,7 @@ const Accounts = () => {
 
     try {
       const result = await updateAccount(
+        getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
         containerName,
         selectedAccount.mailbox,
         { password: passwordFormData.newPassword }
@@ -329,10 +354,10 @@ const Accounts = () => {
 
   // Handle input changes for password change form
   const handleDNSInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setDNSFormData({
       ...dnsFormData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
 
     // Clear the error for this field while typing

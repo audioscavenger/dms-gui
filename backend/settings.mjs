@@ -8,8 +8,9 @@ import {
   reduxPropertiesOfObj,
 } from '../common.mjs';
 import {
+  command,
   env,
-  userPatchesAPI
+  userPatchesAPI,
 } from './env.mjs';
 
 import {
@@ -39,7 +40,7 @@ import {
 } from './db.mjs';
 
 // const path = require('node:path');
-import exec from 'child_process';
+import * as childProcess from 'child_process';
 import path from 'path';
 
 // returns a string
@@ -100,7 +101,7 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
         warnLog(`db settings seems empty:`, result.message);
       }
       
-    } else errorLog(result.error);
+    } else errorLog(result?.error);
     
     return result;
     // [ { name: 'containerName', value: 'dms' }, .. ]
@@ -160,7 +161,7 @@ export const getConfigs = async (plugin, schema, roles=[], name) => {
         warnLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=`, roles);
       }
       
-    } else errorLog(result.error);
+    } else errorLog(result?.error);
     
     return result;
     // [ { value: 'containerName' }, .. ]
@@ -291,6 +292,7 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
       if (test == 'ping') return {success: true, message: status};
 
       const targetDict = getTargetDict(plugin, schema, containerName, settings);
+      // debugLog('ddebug targetDict', targetDict);
       if (targetDict?.Authorization) {
 
         results = await execSetup('help', targetDict);
@@ -303,6 +305,7 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
             if (results.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
             if (results.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
             status.status.error = results.stderr;
+
           } else {
             status.status.status = 'api_error';
             status.status.error = 'unknown';
@@ -384,8 +387,12 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
           if (result_top.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
         }
 
+      } else if (!targetDict || Object.keys(targetDict).length) {
+        status.status.status = "unknown";   // targetDict likely is missing something
+        status.status.error = 'Missing elements in targetDict';
+
       } else {
-        status.status.status = "api_gen";   // API key has not been generated yet
+        status.status.status = "api_gen";   // just API key has not been generated yet
       }
       
     } else {
@@ -608,6 +615,7 @@ export const readDkimFile = async stdout => {
 
   # global DKIM-selector: this is critical and must match a TXT entry called selector._domainkey in ALL of your domains
   # DKIM Rotation example with minimal downtime (due to restart of dms):
+  # 0. alias dmss='docker exec -it dms setup'
   # 1. generate new keys with new selector: dmss config dkim domain ${domain} selector new_selector keytype ${keytype} keysize ${keysize}
   # 2. create new TXT entries 'new_selector._domainkey' with the content of the generated *-public.dns.txt keys
   # 3. modify the selector name below and restart dms:
@@ -1241,7 +1249,7 @@ export const initAPI = async (plugin, schema, containerName, dms_api_key_param) 
       // result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
       // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 1)`,
       result = dbRun(sql.config.insert.setting, {plugin:plugin, schema:schema, scope:'dms-gui', name:'DMS_API_KEY', value:dms_api_key_new}, containerName);
-      if (!result.success) return {success: true, message: dms_api_key_new, error: result.error}; // this error should only happen when testing new dms before it is saved
+      if (!result.success) return {success: true, message: dms_api_key_new, error: result?.error}; // this error should only happen when testing new dms before it is saved
     }
 
     // regen API files
@@ -1249,7 +1257,7 @@ export const initAPI = async (plugin, schema, containerName, dms_api_key_param) 
     result = await createAPIfiles();
     if (result.success) return {success: true, message: dms_api_key_new};
     
-    return {success: false, error: result.error};
+    return {success: false, error: result?.error};
 
   } catch (error) {
     errorLog(error.message);
@@ -1283,7 +1291,12 @@ export const createAPIfiles = async () => {
 
 export const killContainer = async (plugin='dms-gui', schema='dms-gui', containerName='dms-gui', errorcode=0) => {
   if (env.isDEMO && containerName == 'dms-gui') {
-    exec(`cp ${env.DATABASE_SAMPLE} ${DATABASE_SAMPLE_LIVE}`);
+    childProcess.exec(`cp ${env.DATABASE_SAMPLE} ${DATABASE_SAMPLE_LIVE}`, (error, stdout, stderr) => {
+      if (error) {
+        errorLog(`exec error: ${error}`);
+        return;
+      }
+    });
     successLog(`--------------------------- RESET ${containerName} DATABASE ---------------------------`);
   }
   
@@ -1291,7 +1304,12 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
   warnLog(`--------------------------- REBOOT ${containerName} NOW ---------------------------`);
   if (!env.isDEMO) {
     if (containerName == 'dms-gui') {
-      exec(command[plugin][schema].kill);
+      childProcess.exec(command[plugin][schema].kill, (error, stdout, stderr) => {
+        if (error) {
+          errorLog(`exec error: ${error}`);
+          return;
+        }
+      });
       return {success: true, message: "reboot initiated"};
 
     // reboot another container; first we check if it exists then do it

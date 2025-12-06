@@ -37,6 +37,7 @@ import {
 // } from '../../../common.mjs';
 
 import {
+  getConfigs,
   loginUser,
 } from '../services/api.mjs';
 
@@ -62,9 +63,9 @@ export const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  const { user } = useAuth();
-  const { logout } = useAuth();
-  const { login } = useAuth();
+  const { user, login, logout } = useAuth();
+  
+  const [setMailservers] = useLocalStorage("mailservers");
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -95,6 +96,30 @@ export const Login = () => {
     }
   };
 
+    const fetchMailservers = async () => {
+    
+    try {
+      const [mailserversData] = await Promise.all([
+        getConfigs('mailserver'),
+      ]);
+
+      if (mailserversData.success) {
+        // this will be all containers in db except dms-gui
+        debugLog('Login fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+  
+        // update selector list
+        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
+        
+      // } else setErrorMessage(mailserversData?.error);  // fails silently
+      }
+
+    // fails silently
+    } catch (error) {
+      // errorLog(t('api.errors.fetchConfigs'), error);
+      // setErrorMessage('api.errors.fetchConfigs');
+    }
+  };
+    
   const handleLogin = async (e) => {
     e.preventDefault();
     
@@ -106,8 +131,11 @@ export const Login = () => {
     // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
     
     if (result.success) {
+      // now we can pull and setState for available mailservers; await a little so the Settings page don't pull it twice
+      await fetchMailservers();
+
       (firstRun) ? await login(result.message, "/settings") : await login(result.message);
-      
+
     } else {
       setErrorMessage('logins.denied');
     }

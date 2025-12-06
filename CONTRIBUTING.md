@@ -133,15 +133,21 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
-* [ ] 1.5.13 - frontend: mailservers dropdown in the branding
-* [ ] 1.5.13 - frontend: useAuth also pulls mailServers and sets mailserver=user.containerName
-* [ ] 1.5.13 - frontend/backend: user.favorite becomes mailserver
-* [ ] 1.5.13 - frontend: new state called mailservers = {containerName:schema, ..}
-* [ ] 1.5.13 - frontend: new state called mailserver = {containerName:containerName, schema:schema}
+* [ ] 1.5.14 - frontend: mailservers dropdown in the branding
+* [x] 1.5.13 - backend: updated all accounts and aliases functions everywhere with schema
+* [x] 1.5.13 - fronmtend: bugfixes in Logins
+* [x] 1.5.13 - fronmtend: bugfixes in all updateLogin and deleteLogin now using id
+* [x] 1.5.13 - backend: correctly implement getTargetdict
+* [x] 1.5.13 - backend: correctly implement childProcess.exec()
+* [x] 1.5.13 - backend: dbInit test if table exist instead of blindly recreating it
+* [x] 1.5.13 - frontend: FormContainerAdd also offers to set new mailserver as favorite when user.mailserver is unset
+* [x] 1.5.13 - frontend: Login also fetchMailservers and setMailservers
+* [x] 1.5.13 - frontend: new state called mailservers = [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+* [x] 1.5.13 - backend/db: renamed logins.favorite to mailserver
 * [x] 1.5.12 - frontend: numerous fixes in FormContainerAdd
 * [x] 1.5.12 - backend: getServerStatus and getTargetDict accept [settings] for testing API without existing mailservers in db
 * [x] 1.5.12 - backend: now pushing errors into error instead of message
-* [x] 1.5.12 - frontend: now pulling errors from result.error
+* [x] 1.5.12 - frontend: now pulling errors from result?.error
 * [x] 1.5.12 - logins key is now id
 * [x] 1.5.12 - BREAKING CHANGE: test db table rebuild
 * [x] 1.5.11 - schema='dms' is still had-coded at some places but we are getting there

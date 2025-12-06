@@ -4,11 +4,37 @@ import { useTranslation } from 'react-i18next';
 import {
   errorLog,
 } from '../../frontend.mjs';
-
+import {
+//   regexColors,
+//   regexPrintOnly,
+//   regexFindEmailRegex,
+//   regexFindEmailStrict,
+//   regexFindEmailLax,
+//   regexEmailRegex,
+//   regexEmailStrict,
+//   regexEmailLax,
+//   regexMatchPostfix,
+//   regexUsername,
+//   funcName,
+//   fixStringType,
+//   arrayOfStringToDict,
+//   obj2ArrayOfObj,
+//   reduxArrayOfObjByKey,
+//   reduxArrayOfObjByValue,
+//   reduxPropertiesOfObj,
+//   mergeArrayOfObj,
+  getValueFromArrayOfObj,
+//   getValuesFromArrayOfObj,
+//   pluck,
+//   byteSize2HumanSize,
+//   humanSize2ByteSize,
+//   moveKeyToLast,
+} from '../../../common.mjs';
 import {
   getServerStatus,
   killContainer,
 } from '../services/api.mjs';
+
 import {
   AlertMessage,
   DashboardCard,
@@ -25,7 +51,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
+  const [mailservers] = useLocalStorage("mailservers");
   
   const [status, setServerStatus] = useState({
     status: {
@@ -61,11 +87,13 @@ const Dashboard = () => {
   };
 
   const fetchDashboard = async () => {
-    
+    if (!mailservers || !mailservers.length) return;
+    if (!containerName) return;
+
     try {
       setStatusLoading(true);
 
-      const statusData = await getServerStatus('mailserver', schema, containerName);
+      const statusData = await getServerStatus('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName);
       if (statusData.success) {
 
         setServerStatus(statusData.message);

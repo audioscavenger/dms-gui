@@ -303,7 +303,7 @@ export const plugins =
   //     isAdmin:0,
   //     isAccount:1,
   //     isActive:1,
-  //     favorite:'', 
+  //     mailserver:'', 
   //     roles:[],
   //   },
 

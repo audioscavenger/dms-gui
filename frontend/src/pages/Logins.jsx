@@ -46,9 +46,7 @@ const Logins = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
-
-  const [DMSs, setDMSs] = useState([]);
+  const [mailservers] = useLocalStorage("mailservers");
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
@@ -87,7 +85,7 @@ const Logins = () => {
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
-    favorite: '',
+    mailserver: '',
     roles: [],
   });
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
@@ -106,7 +104,7 @@ const Logins = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [containerName]);
 
   const formatLoginsForTable = async (data) => {
     // add bolder for admins
@@ -138,7 +136,6 @@ const Logins = () => {
       setSuccessMessage(null);
       
       await Promise.all([
-        fetchMailservers(),
         fetchAccounts(),
         fetchLogins(),
       ]);
@@ -153,11 +150,12 @@ const Logins = () => {
   };
 
   const fetchAccounts = async () => {
-    
+    debugLog('ddebug containerName', containerName);
+
     try {
       // debugLog('ddebug containerName',containerName)
       const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
-        getAccounts(containerName),
+        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName),
       ]);
         debugLog('accountsData',accountsData)
 
@@ -207,36 +205,12 @@ const Logins = () => {
   };
 
 
-  const fetchMailservers = async () => {
-    
-    debugLog(`fetchMailservers call getConfigs()`);
-    try {
-      const [mailserversData] = await Promise.all([
-        getConfigs('mailserver'),
-      ]);
-
-      if (mailserversData.success) {
-        // this will be all containers in db except dms-gui
-        console.debug('fetchMailservers: mailserversData', mailserversData);   // [ {value:'containerName'}, .. ]
- 
-        // update selector list
-        setDMSs(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
-
-      } else setErrorMessage(mailserversData.message);
-
-    } catch (error) {
-      errorLog(t('api.errors.fetchSettings'), error);
-      setErrorMessage('api.errors.fetchSettings');
-    }
-  };
-
-
   const handleNewLoginInputChange = (e) => {
     debugLog(newLoginformData);
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     // special cases ------------------------------
-    let jsonDict = {[name]: value};
+    let jsonDict = {[name]: type === 'number' ? Number(value) : value};
     
     if (name == 'email' && newLoginformData.isAccount) {
       // we are attached to a mailbox and user just chose it from the SelectField
@@ -355,7 +329,7 @@ const Logins = () => {
         newLoginformData.isAdmin,
         newLoginformData.isAccount,
         newLoginformData.isActive,
-        newLoginformData.favorite,
+        newLoginformData.mailserver,
         newLoginformData.roles,
         [],
       );
@@ -370,7 +344,7 @@ const Logins = () => {
           isAdmin: 0,
           isAccount: 0,
           isActive: 1,
-          favorite: '',
+          mailserver: '',
           roles: [],
         });
         fetchAll(); // Refresh the logins list
@@ -418,9 +392,9 @@ const Logins = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (window.confirm(t('logins.confirmDelete', { username:login.mailbox }))) {
+    if (window.confirm(t('logins.confirmDelete', { username:login.username }))) {
       try {
-        const result = await deleteLogin(login.mailbox);
+        const result = await deleteLogin(login.id);
         if (result.success) {
           setSuccessMessage('logins.loginDeleted');
           fetchAll(); // Refresh the logins list
@@ -450,7 +424,7 @@ const Logins = () => {
       if (what == 'isAccount' && +!login.isAccount == 1) jsonDict.isAdmin = 0;
       
       const result = await updateLogin(
-        login.mailbox,
+        login.id,
         jsonDict
       );
 
@@ -486,11 +460,12 @@ const Logins = () => {
         // editedData[row.id] ? { ...row, ...editedData[row.id] } : row
       // );
 
-    // send only the editedData from id: {mailbox:newEmail, username:newValue, roles:[whatever]}
-    // ATTENTION the key field=email must come last or else subsequent db updates will fail!
+      // send only the editedData from id: {mailbox:newEmail, username:newValue, roles:[whatever]}
+      // ATTENTION the key field=email must come last or else subsequent db updates will fail!
+      // moveKeyToLast(editedData[login.id], 'mailbox')   // no need anymore we use id instead
       const result = await updateLogin(
-        login.mailbox,
-        moveKeyToLast(editedData[login.id], 'mailbox')
+        login.id,
+        editedData[login.id]
       );
       if (result.success) {
         // TODO: handle individual change failure
@@ -539,11 +514,11 @@ const Logins = () => {
 
   // Handle input changes for password change form
   const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     setPasswordFormData({
       ...passwordFormData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     });
 
     // Clear the error for this field while typing
@@ -585,7 +560,7 @@ const Logins = () => {
 
     try {
       const result = await updateLogin(
-        selectedLogin.mailbox,
+        selectedLogin.id,
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
@@ -624,7 +599,8 @@ const Logins = () => {
       key: 'mailbox',
       label: 'logins.mailbox',
       render: (login) => (
-        <span><span className="d-none">{login.mailbox}</span>
+        <>
+        <span className="d-none">{login.mailbox}</span>
         <FormField
           type="mailbox"
           id="mailbox"
@@ -635,14 +611,15 @@ const Logins = () => {
           className="form-control-sm"
           required
         />
-        </span>
+        </>
       ),
     },
     { 
       key: 'username',
       label: 'logins.username',
       render: (login) => (
-        <span><span className="d-none">{login.username}</span>
+        <>
+        <span className="d-none">{login.username}</span>
         <FormField
           type="username"
           id="username"
@@ -653,7 +630,7 @@ const Logins = () => {
           className="form-control-sm"
           required
         />
-        </span>
+        </>
       ),
     },
     { 
@@ -661,17 +638,17 @@ const Logins = () => {
       label: 'logins.isAdmin',
       noFilter: true,
       render: (login) => (
-          <>
-          <span>{(login.isAdmin) ? t('common.yes') : t('common.no')}</span>
-          <Button
-            variant={(login.isAdmin) ? "info" : "warning"}
-            size="xs"
-            icon={(login.isAdmin) ? "chevron-double-down" : "chevron-double-up"}
-            title={(login.isAdmin) ? t('logins.demote', { username: login.username}) : t('logins.promote', { username: login.username})}
-            onClick={() => handleLoginFlipBit(login, 'isAdmin')}
-            className="me-2 float-end"
-          />
-          </>
+        <>
+        <span>{(login.isAdmin) ? t('common.yes') : t('common.no')}</span>
+        <Button
+          variant={(login.isAdmin) ? "info" : "warning"}
+          size="xs"
+          icon={(login.isAdmin) ? "chevron-double-down" : "chevron-double-up"}
+          title={(login.isAdmin) ? t('logins.demote', { username: login.username}) : t('logins.promote', { username: login.username})}
+          onClick={() => handleLoginFlipBit(login, 'isAdmin')}
+          className="me-2 float-end"
+        />
+        </>
       ),
     },
     { 
@@ -701,34 +678,34 @@ const Logins = () => {
       noSort: true,
       render: (login) => (
         <>
-          <Autocomplete
-            multiple
-            id="roles"
-            size="small"
-            options={rolesAvailable}
-            groupBy={(mailbox) => mailbox.split('@')[1]}    // groupBy with an array of strings: so easy! create the group off the valuesdirectly!
-            filterSelectedOptions
-            disabled={login.isAccount}
-            
-            value={getFieldValue(login.id, 'roles')}
-            onChange={(e, newValue) => handleLoginChange(e, login, "roles", newValue)}
-            renderOption={(props, option) => (
-              <li
-                {...props}
-                className={highlightOptionByDomain(option, login?.mailbox, props.className)}
-                key={option}
-              >
-              {option}
-              </li>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                sx={{ minWidth: 0 }}
-                label={t('logins.roles')}
-              />
-            )}
-          />
+        <Autocomplete
+          multiple
+          id="roles"
+          size="small"
+          options={rolesAvailable}
+          groupBy={(mailbox) => mailbox.split('@')[1]}    // groupBy with an array of strings: so easy! create the group off the valuesdirectly!
+          filterSelectedOptions
+          disabled={login.isAccount}
+          
+          value={getFieldValue(login.id, 'roles')}
+          onChange={(e, newValue) => handleLoginChange(e, login, "roles", newValue)}
+          renderOption={(props, option) => (
+            <li
+              {...props}
+              className={highlightOptionByDomain(option, login?.mailbox, props.className)}
+              key={option}
+            >
+            {option}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              sx={{ minWidth: 0 }}
+              label={t('logins.roles')}
+            />
+          )}
+        />
         </>
       ),
     },
@@ -802,15 +779,15 @@ const Logins = () => {
       />
 
       <SelectField
-        id="favorite"
-        name="favorite"
-        label="logins.favorite"
+        id="mailserver"
+        name="mailserver"
+        label="logins.mailserver"
         value={containerName}
         onChange={handleNewLoginInputChange}
-        options={DMSs}
-        placeholder="logins.favoriteRequired"
-        error={newLoginFormErrors.favorite}
-        helpText="logins.favoriteRequired"
+        options={mailservers}
+        placeholder="logins.mailserverRequired"
+        error={newLoginFormErrors.mailserver}
+        helpText="logins.mailserverRequired"
         required
       />
 

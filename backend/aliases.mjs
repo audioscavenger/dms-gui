@@ -26,7 +26,7 @@ import {
 } from './db.mjs';
 
 
-export const getAliases = async (containerName, refresh, roles=[]) => {
+export const getAliases = async (schema, containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
@@ -37,7 +37,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
   try {
     
     if (!refresh) {
-      result = await dbAll(sql.aliases.select.aliases, {scope:containerName});
+      result = dbAll(sql.aliases.select.aliases, {scope:containerName, schema:schema});
       if (result.success) {
         
         // we could read DB_Logins and it is valid
@@ -78,7 +78,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
       // now save aliases in db ----------------------
       result = dbRun(sql.aliases.insert.alias, aliases);
       if (!result.success) {
-        errorLog(result.error);
+        errorLog(result?.error);
       }
 
       if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
@@ -326,8 +326,9 @@ export const deleteAlias = async (schema, containerName, source, destination) =>
         return { success: false, error: ErrorMsg };
       }
     
-    // this is regex
+    // this is regex, must stringify
     } else {
+      source = JSON.stringify(source);
       debugLog(`Deleting alias regex: ${source}`);
       
       let command = `grep -Fv '${source} ${destination}' ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
@@ -336,7 +337,7 @@ export const deleteAlias = async (schema, containerName, source, destination) =>
       if (!results.returncode) {
         successLog(`Alias regex deleted: ${source}`);
         
-        const result = deleteEntry('aliases', JSON.stringify(source), 'bySource', containerName);
+        const result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
           successLog(`Alias entry deleted: ${source}`);
 

@@ -250,7 +250,7 @@ app.set('query parser', function (str) {
 /**
  * @swagger
  * /api/status/{plugin}/{schema}/{containerName}:
- *   get:
+ *   post:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
  *     parameters:
@@ -288,7 +288,7 @@ app.set('query parser', function (str) {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/status/:plugin/:schema/:containerName', 
+app.post('/api/status/:plugin/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
@@ -404,11 +404,17 @@ async (req, res) => {
 // Endpoint for retrieving mailbox accounts
 /**
  * @swagger
- * /api/accounts/{containerName}:
+ * /api/accounts/{schema}/{containerName}:
  *   get:
  *     summary: Get mailbox accounts
  *     description: Retrieve all mailbox accounts
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -428,23 +434,23 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve accounts
  */
-app.get('/api/accounts/:containerName', 
+app.get('/api/accounts/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
 
     // Users can only pull their own mailboxes or those in their roles (unless admin)
     let accounts;
     if (req.user.isAdmin) {
-      accounts = await getAccounts(containerName, refresh);
+      accounts = await getAccounts(schema, containerName, refresh);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      accounts = await getAccounts(containerName, false, req.user.roles);
+      accounts = await getAccounts(schema, containerName, false, req.user.roles);
     }
     res.json(accounts);
     
@@ -458,11 +464,17 @@ async (req, res) => {
 // Endpoint for adding a new mailbox account
 /**
  * @swagger
- * /api/accounts/{containerName}:
+ * /api/accounts/{schema}/{containerName}:
  *   post:
  *     summary: Add a new mailbox account
  *     description: Add a new mailbox account to the docker-mailserver
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -494,19 +506,19 @@ async (req, res) => {
  *       500:
  *         description: Unable to create account
  */
-app.post('/api/accounts/:containerName', 
+app.post('/api/accounts/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const { mailbox, password, createLogin } = req.body;
     if (!mailbox || !password) {
       return res.status(400).json({ error: 'Mailbox and password are required' });
     }
-    const result = await addAccount(containerName, mailbox, password, createLogin);
+    const result = await addAccount(schema, containerName, mailbox, password, createLogin);
     res.status(201).json(result);
     
   } catch (error) {
@@ -519,11 +531,17 @@ async (req, res) => {
 // Endpoint for doveadm command on mailbox
 /**
  * @swagger
- * /api/doveadm/{containerName}/{command}/{mailbox}:
+ * /api/doveadm/{schema}/{containerName}/{command}/{mailbox}:
  *   put:
  *     summary: Execute doveadm command on mailbox
  *     description: Execute doveadm command on mailbox
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -550,28 +568,28 @@ async (req, res) => {
  *       500:
  *         description: See error message
  */
-app.put('/api/doveadm/:containerName/:command/:mailbox', 
+app.put('/api/doveadm/:schema/:containerName/:command/:mailbox', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName, command, mailbox } = req.params;
+    const { schema, containerName, command, mailbox } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     if (!command || !mailbox) return res.status(400).json({ error: 'Command and Mailbox are required' });
     
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await doveadm(containerName, command, mailbox, req.body);
+      result = await doveadm(schema, containerName, command, mailbox, req.body);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(mailbox)) ? await doveadm(containerName, command, mailbox, req.body) : {success: false, error: 'Permission denied'};
+      result = (req.user.roles.includes(mailbox)) ? await doveadm(schema, containerName, command, mailbox, req.body) : {success: false, error: 'Permission denied'};
     }
     res.json(result);
     
   } catch (error) {
-    errorLog(`PUT /api/doveadm/:containerName/:command/:mailbox: ${error.message}`);
+    errorLog(`PUT /api/doveadm: ${error.message}`);
     // res.status(500).json({ error: 'Unable to execute doveadm' });
     res.status(500).json({ error: error.message });
   }
@@ -580,11 +598,17 @@ async (req, res) => {
 // Endpoint for deleting a mailbox account
 /**
  * @swagger
- * /api/accounts/{containerName}/{mailbox}:
+ * /api/accounts/{schema}/{containerName}/{mailbox}:
  *   delete:
  *     summary: Delete a mailbox account
  *     description: Delete an mailbox account from the docker-mailserver
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -611,14 +635,14 @@ app.delete('/api/accounts/:containerName/:mailbox',
   requireAdmin, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const { mailbox } = req.params;
     if (!mailbox) {
       return res.status(400).json({ error: 'Mailbox is required' });
     }
-    const result = await deleteAccount(containerName, mailbox);
+    const result = await deleteAccount(schema, containerName, mailbox);
     res.json(result);
     
   } catch (error) {
@@ -631,11 +655,17 @@ async (req, res) => {
 // Endpoint for updating a mailbox account; only password is covered atm
 /**
  * @swagger
- * /api/accounts/{containerName}/{mailbox}:
+ * /api/accounts/{schema}/{containerName}/{mailbox}:
  *   patch:
  *     summary: Update an mailbox account
  *     description: Update an existing mailbox account
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -658,6 +688,9 @@ async (req, res) => {
  *               password:
  *                 type: string
  *                 description: New password for the account
+ *               storage:
+ *                 type: object
+ *                 description: Updated storage data
  *     responses:
  *       200:
  *         description: Account updated successfully
@@ -666,23 +699,25 @@ async (req, res) => {
  *       500:
  *         description: Unable to update account
  */
-app.patch('/api/accounts/:containerName/:mailbox', 
+app.patch('/api/accounts/:schema/:containerName/:mailbox', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName, mailbox } = req.params;
+    const { schema, containerName, mailbox } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
-    let result;
+    let result, jsonDict;
+    jsonDict = {...req.body, schema:schema};
+
     if (req.user.isAdmin) {
-      result = await updateDB('accounts', mailbox, req.body, containerName);
+      result = await updateDB('accounts', mailbox,jsonDict, containerName);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(mailbox)) ? await updateDB('accounts', mailbox, req.body, containerName) : {success: false, error: 'Permission denied'};
+      result = (req.user.roles.includes(mailbox)) ? await updateDB('accounts', mailbox, jsonDict, containerName) : {success: false, error: 'Permission denied'};
     }
     res.json(result);
     
@@ -696,11 +731,17 @@ async (req, res) => {
 // Endpoint for retrieving aliases
 /**
  * @swagger
- * /api/aliases/{containerName}:
+ * /api/aliases/{schema}/{containerName}:
  *   get:
  *     summary: Get aliases
  *     description: Retrieve all email aliases
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -720,23 +761,23 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve aliases
  */
-app.get('/api/aliases/:containerName', 
+app.get('/api/aliases/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await getAliases(containerName, refresh);
+      result = await getAliases(schema, containerName, refresh);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = await getAliases(containerName, false, req.user.roles);
+      result = await getAliases(schema, containerName, false, req.user.roles);
     }
     res.json(result);
 
@@ -750,11 +791,17 @@ async (req, res) => {
 // Endpoint for adding an alias
 /**
  * @swagger
- * /api/aliases/{containerName}:
+ * /api/aliases/{schema}/{containerName}:
  *   post:
  *     summary: Add a new alias
  *     description: Add a new email alias to the docker-mailserver
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -785,12 +832,12 @@ async (req, res) => {
  *       500:
  *         description: Unable to create alias
  */
-app.post('/api/aliases/:containerName', 
+app.post('/api/aliases/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const { source, destination } = req.body;
     if (!source || !destination) {
@@ -802,7 +849,7 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await addAlias(containerName, source, destination);
+      result = await addAlias(schema, containerName, source, destination);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
@@ -812,7 +859,7 @@ async (req, res) => {
       let domainSource = source.match(/.*@([\_\-\.\w]+)/);
       let domainDest = destination.match(/.*@([\_\-\.\w]+)/);
       let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1] == domainDest[1]) ? true : false;
-      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(schema, containerName, source, destination) : {success:false, message: 'Permission denied'};
     }
     res.status(201).json(result);
     
@@ -826,11 +873,17 @@ async (req, res) => {
 // Endpoint for deleting an alias
 /**
  * @swagger
- * /api/aliases/{containerName}:
+ * /api/aliases/{schema}/{containerName}:
  *   delete:
  *     summary: Delete an alias
  *     description: Delete an email alias from the docker-mailserver
  *     parameters:
+ *       - in: path
+ *         name: schema
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -858,12 +911,12 @@ async (req, res) => {
  *       500:
  *         description: Unable to delete alias
  */
-app.delete('/api/aliases/:containerName', 
+app.delete('/api/aliases/:schema/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { containerName } = req.params;
+    const { schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const { source, destination } = req.body;
@@ -876,11 +929,11 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await deleteAlias(containerName, source, destination);
+      result = await deleteAlias(schema, containerName, source, destination);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(destination)) ? await deleteAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination)) ? await deleteAlias(schema, containerName, source, destination) : {success:false, message: 'Permission denied'};
     }
     res.json(result);
     
@@ -1073,7 +1126,8 @@ async (req, res) => {
 
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
-    debugLog('ddebug containerName', JSON.stringify(containerName));
+    debugLog('ddebug containerName', containerName);
+    debugLog('ddebug req.body', req.body);
     const result = await saveSettings(plugin, schema, scope, containerName, req.body, encrypted);     // req.body = [{name:name, value:value}, ..]
     res.status(201).json(result);
     
@@ -1234,12 +1288,12 @@ app.put('/api/logins',
   requireAdmin, 
 async (req, res) => {
   try {
-    const { mailbox, username, password, email, isAdmin, isAccount, isActive, favorite, roles } = req.body;
+    const { mailbox, username, password, email, isAdmin, isAccount, isActive, mailserver, roles } = req.body;
     if (!mailbox)     return res.status(400).json({ error: 'mailbox is missing' });
     if (!username)  return res.status(400).json({ error: 'username is missing' });
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
-    const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, favorite, roles);
+    const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, mailserver, roles);
     res.status(201).json(result);
     
   } catch (error) {
@@ -1288,7 +1342,7 @@ async (req, res) => {
  *               isActive:
  *                 type: integer
  *                 description: de/activate login account
- *               favorite:
+ *               mailserver:
  *                 type: string
  *                 description: New mailbox for the login account
  *     responses:
@@ -1360,7 +1414,7 @@ async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'id is required' });
     }
-    const result = await deleteEntry('logins', id, 'mailbox');
+    const result = await deleteEntry('logins', id);
     res.json(result);
     
   } catch (error) {

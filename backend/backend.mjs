@@ -53,7 +53,7 @@ export const color = (env.LOG_COLORS) ? {
 }
 export const ICON = (env.LOG_COLORS) ? {
   success:  '\x1B[92m✔️\x1B[39m ',
-  error:    '\x1B[31m❌\x1B[39m ',
+  error:    '\x1B[31m❌\x1B[39m',
   warn:     '\x1B[33m🔺\x1B[39m',
   info:     '\x1B[36m💬\x1B[39m',
   debug:    '\x1B[35m🔎\x1B[39m',
@@ -274,11 +274,13 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
       const jsonData = Object.assign({}, 
         {
           command: command,
-          timeout: (targetDict?.timeout || env.timeout),
+          timeout: Number(targetDict?.timeout || env.timeout),
         },
         ...rest);
 
       debugLog(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`)
+      // debugLog(`targetDict`, targetDict);
+      // debugLog(`jsonData`, jsonData);
       const response = await postJsonToApi(`${targetDict.protocol}://${targetDict.host}:${targetDict.port}`, jsonData, targetDict.Authorization)
       // debugLog('ddebug response',response)
 

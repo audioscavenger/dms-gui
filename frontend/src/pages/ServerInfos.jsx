@@ -5,7 +5,7 @@ import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
-// import {
+import {
 //   regexColors,
 //   regexPrintOnly,
 //   regexFindEmailRegex,
@@ -24,14 +24,13 @@ import {
 //   reduxArrayOfObjByValue,
 //   reduxPropertiesOfObj,
 //   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
+  getValueFromArrayOfObj,
 //   getValuesFromArrayOfObj,
 //   pluck,
 //   byteSize2HumanSize,
 //   humanSize2ByteSize,
 //   moveKeyToLast,
-// } from '../../../common.mjs';
-
+} from '../../../common.mjs';
 import {
   getNodeInfos,
   getServerEnvs,
@@ -50,7 +49,7 @@ import { useAuth } from '../hooks/useAuth';
 const ServerInfos = () => {
   const { t } = useTranslation();
   const [containerName] = useLocalStorage("containerName");
-  const [schema] = useLocalStorage("schema");
+  const [mailservers] = useLocalStorage("mailservers");
   const { user } = useAuth();
 
   const [isLoading, setLoading] = useState(true);
@@ -64,7 +63,7 @@ const ServerInfos = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll(false);
-  }, []);
+  }, [mailservers]);
 
 
   const fetchAll = async (refresh) => {
@@ -102,12 +101,13 @@ const ServerInfos = () => {
   };
 
   const fetchServerEnvs = async (refresh) => {
+    if (!mailservers || !mailservers.length) return;
     refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
-    debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${schema}, ${containerName}, ${refresh})`);
+    debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema')}, ${containerName}, ${refresh})`);
     
     try {
       const [envsData] = await Promise.all([
-        getServerEnvs('mailserver', schema, containerName, refresh),
+        getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
       ]);
 
       debugLog('envsData', envsData);

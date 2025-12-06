@@ -91,7 +91,7 @@ function FormDomains() {
 
 
   const handleChangeSettings = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     // setSettings({
       // ...settings,
       // [name]: value,
@@ -99,7 +99,7 @@ function FormDomains() {
     // merge array of settings objects by their name
     debugLog(`handleChangeSettings mergeArrayOfObj settings`,settings);
     debugLog(`handleChangeSettings mergeArrayOfObj [{name: name, value:value}]`, [{name: name, value:value}]);
-    setSettings(mergeArrayOfObj(settings, [{name: name, value:value}], 'name'));
+    setSettings(mergeArrayOfObj(settings, [{name: name, value:type === 'number' ? Number(value) : value}], 'name'));
 
     // Clear the error for this field while typing
     if (formErrors[name]) {

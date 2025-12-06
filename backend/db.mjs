@@ -164,7 +164,7 @@ logins: {
     isAdmin:'number', 
     isActive:'number', 
     isAccount:'number', 
-    favorite:'string', 
+    mailserver:'string', 
     refreshToken:'string', 
     roles:'object',
     password:'string',
@@ -172,11 +172,11 @@ logins: {
   scope:  false,
   select: {
     count:    `SELECT COUNT(*) count from logins`,
-    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND id = @id`,
-    loginObj:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
-    loginGuess: `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1`,
-    admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, favorite, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
+    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND id = @id`,
+    loginObj:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
+    loginGuess: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
+    admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
     roles:    `SELECT roles from logins WHERE 1=1 AND id = @id`,
     rolesObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
     salt:     `SELECT salt from logins WHERE id = ?`,
@@ -186,8 +186,8 @@ logins: {
   },
   
   insert: {
-    login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, favorite, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @favorite, @roles)`,
-    fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, favorite, roles) VALUES (@mailbox, @username, @email, @isAccount, @favorite, @roles)`,
+    login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
+    fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
   },
   
   update: {
@@ -274,7 +274,7 @@ logins: {
           isAdmin   BIT DEFAULT 0,
           isActive  BIT DEFAULT 1,
           isAccount BIT DEFAULT 1,
-          favorite  TEXT,
+          mailserver  TEXT,
           refreshToken  TEXT,
           roles     TEXT DEFAULT '[]'
           );
@@ -283,56 +283,18 @@ logins: {
           COMMIT;`,
   
   patch: [
-    // { DB_VERSION: '1.0.14',
-    //   patches: [
-    //     `ALTER TABLE logins DROP COLUMN password;`,
-    //     `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
-    //     `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.0.14', 1, ${env.isImmutable})`,
-    //   ],
-    // },
-    // { DB_VERSION: '1.1.1',
-    //   patches: [
-    //     `ALTER TABLE logins DROP COLUMN password;`,
-    //     `ALTER TABLE logins ADD salt TEXT DEFAULT ''`,
-    //     `ALTER TABLE logins ADD hash TEXT DEFAULT ''`,
-    //     `INSERT OR IGNORE INTO logins (email, username, salt, hash) VALUES ('admin@dms-gui.com', 'admin', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18')`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.1', 1, ${env.isImmutable})`,
-    //   ],
-    // },
-    // { DB_VERSION: '1.1.6',
-    //   patches: [
-    //     `ALTER TABLE logins ADD isAdmin    BIT DEFAULT 0`,
-    //     `ALTER TABLE logins ADD isActive   BIT DEFAULT 1`,
-    //     `UPDATE logins set isAdmin = 1 WHERE username = 'admin'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.6', 1, ${env.isImmutable})`,
-    //   ],
-    // },
-    // { DB_VERSION: '1.1.9',
-    //   patches: [
-    //     `ALTER TABLE logins ADD roles    TEXT DEFAULT '[]'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.1.9', 1, ${env.isImmutable})`,
-    //   ],
-    // },
-    // { DB_VERSION: '1.4.5',
-    //   patches: [
-    //     `ALTER TABLE logins RENAME COLUMN email TO mailbox`,
-    //     `ALTER TABLE logins ADD email    TEXT DEFAULT ''`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.5', 1, ${env.isImmutable})`,
-    //   ],
-    // },
-    // { DB_VERSION: '1.4.6',
-    //   patches: [
-    //     `ALTER TABLE logins ADD favorite    TEXT`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.6', 1, ${env.isImmutable})`,
-    //   ],
-    // },
     // { DB_VERSION: '1.4.7',
     //   patches: [
     //     `ALTER TABLE logins ADD refreshToken    TEXT`,
     //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 1, ${env.isImmutable})`,
     //   ],
     // },
+    { DB_VERSION: '1.5.13',
+      patches: [
+        `ALTER TABLE logins RENAME COLUMN favorite TO mailserver`,
+        `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('logins', '1.5.13', 1, ${env.isImmutable})`,
+      ],
+    },
   ],
 },
 
@@ -831,14 +793,19 @@ export const dbInit = () => {
 
   debugLog(`start`);
   dbOpen();
+  let result;
 
   for (const [table, actions] of Object.entries(sql)) {
     
     // init db table no matter what
     if (actions.init) {
       try {
-        dbRun(actions.init);
-        successLog(`${table}: success`);
+        result = dbGet(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
+        if (!result.success || !result.message) {
+          dbRun(actions.init);
+          successLog(`${table}: success`);
+
+        } else infoLog(`${table}: exist`);
         
       } catch (error) {
         if (!error.message.match(/already exists/i)) {
@@ -879,7 +846,7 @@ export const dbUpgrade = () => {
         db_version = (result.message) ? result.message.value : undefined;
         debugLog(`DB_VERSION ${table}=`, db_version);
         
-      } else throw new Error(result.message);
+      } else throw new Error(result?.error);
       
     } catch (error) {
       match = {
@@ -920,7 +887,8 @@ export const dbUpgrade = () => {
                 if (result.success) {
                   successLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: success`);
                 } else {
-                  throw new Error(result.message);
+                  errorLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: ${result?.error}`);
+                  // throw new Error(result?.error);
                 }
                 
               } catch (error) {
@@ -945,7 +913,7 @@ export const dbUpgrade = () => {
                   
                 } else {
                   errorLog(`${table}: patch ${newVersion} from ${db_version} to ${patch.DB_VERSION}: ${error.code}: ${error.message}`);
-                  throw error;
+                  // throw error;
                 }
               }
             }
@@ -1152,7 +1120,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
                 if (result.success) {
                   messages.push(`Updated ${table} ${id} with ${key}=${value}`);
                   successLog(`Updated ${table} ${id} with ${key}=${value}`);
-                } else messages.push(result.message);
+                } else messages.push(result?.error);
                 
               } else {
                 // we do not pass the test
@@ -1168,7 +1136,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               if (result.success) {
                 messages.push(`Updated ${table} ${id} with ${key}=${value}`);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
-              } else messages.push(result.message);
+              } else messages.push(result?.error);
             }
             
           } else {
@@ -1180,7 +1148,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             if (result.success) {
               messages.push(`Updated ${table} ${id} with ${key}=${value}`);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
-            } else messages.push(result.message);
+            } else messages.push(result?.error);
           }
           
         }
@@ -1205,10 +1173,13 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
 
 
 export const deleteEntry = async (table, id, key, scope) => {
-  debugLog(`${table} id=${id} for scope=${scope} and ${key}`);
+  debugLog(`${table} id=${id} for scope=${scope} and key=${key}`);
 
   let result, testResult;
   try {
+    
+    // use default key if not passed
+    key = (key) ? key : sql[table].key;
     
     // check if the sql is defined for the key to delete
     if (sql[table].delete[key]) {
@@ -1314,10 +1285,27 @@ export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
       // debugLog(`dbAll(${sql.settings.select.settings}, {scope:${containerName}})`);
       // result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
       // `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
-      debugLog(`dbAll(${sql.config.select.settings}, {plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ${containerName})`);
       result = dbAll(sql.config.select.settings, {plugin:'mailserver', schema:'dms', scope:'dms-gui'}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
       
-      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys) ) {
+      // debugLog('ddebug result', result);
+      // {
+      //   success: true,
+      //   message: [
+      //     { name: 'schema', value: 'dms' },
+      //     { name: 'protocol', value: 'http' },
+      //     { name: 'containerName', value: 'dms' },
+      //     { name: 'setupPath', value: '/usr/local/bin/setup' },
+      //     { name: 'DMS_API_PORT', value: '8888' },
+      //     { name: 'timeout', value: '4' },
+      //     {
+      //       name: 'DMS_API_KEY',
+      //       value: 'dms-d6657c97-0000-0000-0000-3e3d43478f41'
+      //     }
+      //   ]
+      // }
+      
+      debugLog(`ddebug result.message.length >= Object.keys(plugins[plugin][schema].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][schema].keys).length}`);
+      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys).length) {
         // limit results to protocol, host, port, and also Authorization
         let targetDict = {
           containerName:  getValueFromArrayOfObj(result.message, 'containerName'),
@@ -1331,7 +1319,7 @@ export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
         return targetDict;
       }
     }
-    throw new Error(result.error);
+    throw new Error(result?.error);
 
   } catch (error) {
     errorLog(error.message);

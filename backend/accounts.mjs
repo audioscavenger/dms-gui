@@ -91,20 +91,20 @@ export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
             username:account.mailbox, 
             email:account.mailbox, 
             isAccount:1, 
-            favorite:containerName, 
+            mailserver:containerName, 
             roles:JSON.stringify([account.mailbox]), 
             scope:containerName
             }; 
           });
           // now save those linked logins in db
           result = dbRun(sql.logins.insert.fromDMS, logins2create);
-          if (!result.success) errorLog(result.error);
+          if (!result.success) errorLog(result?.error);
           
-        } else errorLog(result.error);
+        } else errorLog(result?.error);
         
         if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
 
-      } else errorLog(result.error);
+      } else errorLog(result?.error);
     }
     
     // now pull accounts from the db as we need to associated logins for the DataTable
@@ -124,7 +124,7 @@ export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
       return {success: true, message: accounts};
       // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
 
-    } else errorLog(result.error);
+    } else errorLog(result?.error);
     
     return result;
     
@@ -295,12 +295,12 @@ export const deleteAccount = async (schema, containerName, mailbox) => {
         successLog(`db entry deleted: ${mailbox}`);
 
         // now delete aliases too
-        result = await getAliases(containerName, false, [mailbox]);
+        result = await getAliases(schema, containerName, false, [mailbox]);
         debugLog('ddebug getAliases',result)
         if (result.success && result.message.length) {
 
           for (const alias of result.message) {
-            result = await deleteAlias(containerName, alias.source, alias.destination);
+            result = await deleteAlias(schema, containerName, alias.source, alias.destination);
             debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
             if (result.success) {
               successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
