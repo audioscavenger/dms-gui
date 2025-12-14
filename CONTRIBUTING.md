@@ -133,7 +133,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
 
-* [ ] 1.5.14 - frontend: mailservers dropdown in the branding
+* [ ] 1.5.?? - frontend: mailservers dropdown in the branding
+* [ ] 1.5.?? - backend: how do we handle scope for domains/accounts/aliases? containerName or configID?
+* [x] 1.5.14 - done: getConfigs
+* [x] 1.5.14 - BREAKING CHANGE: must delete db
+* [x] 1.5.14 - frontend: bugfix in Profile: Invalid DOM property `class`. Did you mean `className`?
 * [x] 1.5.13 - backend: updated all accounts and aliases functions everywhere with schema
 * [x] 1.5.13 - fronmtend: bugfixes in Logins
 * [x] 1.5.13 - fronmtend: bugfixes in all updateLogin and deleteLogin now using id

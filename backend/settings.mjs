@@ -52,8 +52,8 @@ export const getSetting = async (plugin, schema, scope, containerName, name, enc
   try {
     
     // const result = dbGet(sql.settings.select.setting, {scope:containerName}, name);
-    // setting:  `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}   AND name = ?`,
-    const result = dbGet(sql.config.select.setting, {plugin:plugin, schema:schema, scope:scope}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
+    // setting:  `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND name = ?`,
+    const result = dbGet(sql.configs.select.setting, {plugin:plugin, schema:schema, scope:scope}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
       return {success: true, message: (encrypted ? decrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
     }
@@ -81,8 +81,8 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
   try {
     
     // result = dbAll(sql.settings.select.settings, {scope:containerName});
-    // settings: `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isMutable}`,
-    result = dbAll(sql.config.select.settings, {plugin:plugin, schema:schema, scope:scope}, containerName); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
+    // settings: `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+    result = dbAll(sql.configs.select.settings, {plugin:plugin, schema:schema, scope:scope}, containerName); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
       
       // we could read DB_Logins and it is valid
@@ -118,35 +118,34 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
 };
 
 
-// this returns all configs, and roles are either mailboxes or scopes==userIDs
-export const getConfigs = async (plugin, schema, roles=[], name) => {
-  debugLog(plugin, schema, roles, name);
+// this returns all configs, and roles are mailboxes or logins id
+export const getConfigs = async (plugin, roles=[], name=undefined) => {
+  debugLog(plugin, roles, name);
 
   let result;
   try {
-    // for admins
-    if (!roles || !roles.length) {
-      if (schema) {
-        result = dbAll(sql.config.select.configs, {plugin:plugin, schema:schema}, "%");
+    if (plugin == 'mailserver') {
+
+      // non admins: roles are mailboxes
+      // configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN config c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
+      if (roles && roles.length) {
+        result = dbAll(sql.accounts.select.configs.replace("?", Array(roles.length).fill("?").join(",")), {plugin:plugin}, roles);
+
+      // admins
       } else {
-        result = dbAll(sql.config.select.configs.replace('AND schema = @schema', ''), {plugin:plugin}, "%");
+        result = dbAll(sql.configs.select.configs, {plugin:plugin}, '%');
       }
 
-    // for non-admins, we only provide scoped values
     } else {
-      if (plugin == 'mailserver') {
-        // if you know of a better way than replacing x number of ?, let me know
-        // `SELECT scope as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts WHERE mailbox IN (?) AND schema = @schema`,
-        result = dbAll(sql.accounts.select.configs.replace("?", Array(roles.length).fill("?").join(",")), roles);
-        debugLog(`Accounts for ${roles}:`, result);
+      // configs:  `SELECT name as value, plugin, schema, scope FROM configs WHERE 1=1 AND plugin = @plugin AND (scope LIKE ?)`,
 
+      // non admins: roles are logins id
+      if (roles && roles.length) {
+        result = dbAll(sql.configs.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin}, roles);
+        
+      // admins
       } else {
-        // `SELECT DISTINCT config as value from config WHERE 1=1 AND plugin = @plugin AND schema = @schema AND (scope LIKE ?)`
-        if (schema) {
-          result = dbAll(sql.config.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin, schema:schema}, roles);
-        } else {
-          result = dbAll(sql.config.select.configs.replace('AND schema = @schema', '').replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin}, roles);
-        }
+        result = dbAll(sql.configs.select.configs, {plugin:plugin}, '%');
       }
     }
 
@@ -190,10 +189,10 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
   let result;
   try {
     
-    result = dbGet(sql.config.select.id, {plugin:plugin, schema:schema, scope:scope}, containerName);
+    result = dbGet(sql.configs.select.id, {plugin:plugin, schema:schema, scope:scope}, containerName);
     if (!result.message?.id) {
-      // config:   `INSERT INTO config (config, plugin, schema, scope) VALUES (?, @plugin, @schema, @scope) RETURNING id`,
-      result = dbGet(sql.config.insert.config, {plugin:plugin, schema:schema, scope:scope}, containerName);
+      // config:   `INSERT INTO configs (config, plugin, schema, scope) VALUES (?, @plugin, @schema, @scope) RETURNING id`,
+      result = dbGet(sql.configs.insert.config, {plugin:plugin, schema:schema, scope:scope}, containerName);
       if (!result.success) return result;
     }
 
@@ -207,8 +206,8 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
       }; 
     });
     
-    // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 1)`,
-    result = dbRun(sql.config.insert.setting, jsonArrayOfObjectsScoped, containerName); // jsonArrayOfObjects = [{name:name, value:value, scope:scope, ..}, ..]
+    // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE config = ? AND plugin = @plugin), 1)`,
+    result = dbRun(sql.configs.insert.setting, jsonArrayOfObjectsScoped, containerName); // jsonArrayOfObjects = [{name:name, value:value, scope:scope, ..}, ..]
     if (result.success) {
       successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
 
@@ -1017,8 +1016,8 @@ export const getServerEnv = async (plugin, schema, scope, containerName, name) =
   try {
 
     // const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
-    // env:      `SELECT       value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable} AND name = ?`,
-    const env = dbGet(sql.config.select.env, {plugin:plugin, schema:schema, scope:scope}, containerName, name);
+    // env:      `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND name = ?`,
+    const env = dbGet(sql.configs.select.env, {plugin:plugin, schema:schema, scope:scope}, containerName, name);
     return {success: true, message: env?.value};
     
   } catch (error) {
@@ -1045,8 +1044,8 @@ export const getServerEnvs = async (plugin, schema, scope, containerName, refres
     try {
       
       // const result = dbAll(sql.settings.select.envs, {scope:containerName});
-      // envs:     `SELECT name, value from settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope) AND isMutable = ${env.isImmutable}`,
-      const result = dbAll(sql.config.select.envs, {plugin:plugin, schema:schema, scope:scope}, containerName);
+      // envs:     `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
+      const result = dbAll(sql.configs.select.envs, {plugin:plugin, schema:schema, scope:scope}, containerName);
       if (result.success) {
         const envs = result.message;
         debugLog(`envs: (${typeof envs})`, envs);
@@ -1101,12 +1100,12 @@ export const saveServerEnvs = async (plugin, schema, scope, containerName, jsonA
     // const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, scope:containerName }; });
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, plugin:plugin, schema:schema, scope:scope }; });
     // result = dbRun(sql.settings.delete.envs, {scope:containerName});
-    // envs:     `DELETE from settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope)`,
+    // envs:     `DELETE FROM settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin)`,
     result = dbRun(sql.config.delete.envs, {plugin:plugin, schema:schema, scope:scope}, containerName);
     if (result.success) {
       // result = dbRun(sql.settings.insert.env, jsonArrayOfObjectsScoped); // jsonArrayOfObjectsScoped = [{name:name, value:value, scope:containerName}, ..]  
-      // env:      `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 0)`,
-      result = dbRun(sql.config.insert.env, jsonArrayOfObjectsScoped, containerName); // jsonArrayOfObjectsScoped = [{name:name, value:value, plugin:'mailserver', schema:'dmsEnv', scope:containerName}, ..]  
+      // env:      `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE config = ? AND plugin = @plugin), 0)`,
+      result = dbRun(sql.configs.insert.env, jsonArrayOfObjectsScoped, containerName); // jsonArrayOfObjectsScoped = [{name:name, value:value, plugin:'mailserver', schema:'dmsEnv', scope:containerName}, ..]  
     }
     return result;
 
@@ -1247,8 +1246,8 @@ export const initAPI = async (plugin, schema, containerName, dms_api_key_param) 
     if (dms_api_key_new != dms_api_key_db) {
       debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
       // result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
-      // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id from config WHERE config = ? AND plugin = @plugin AND schema = @schema AND scope = @scope), 1)`,
-      result = dbRun(sql.config.insert.setting, {plugin:plugin, schema:schema, scope:'dms-gui', name:'DMS_API_KEY', value:dms_api_key_new}, containerName);
+      // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE config = ? AND plugin = @plugin), 1)`,
+      result = dbRun(sql.configs.insert.setting, {plugin:plugin, schema:schema, scope:'dms-gui', name:'DMS_API_KEY', value:dms_api_key_new}, containerName);
       if (!result.success) return {success: true, message: dms_api_key_new, error: result?.error}; // this error should only happen when testing new dms before it is saved
     }
 
@@ -1315,7 +1314,7 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
     // reboot another container; first we check if it exists then do it
     } else {
     
-      result = getConfigs(plugin, schema);
+      result = getConfigs(plugin);
       if (result.success) {
         let containerNames = pluck(result.message, 'value');
         if (containerNames.includes(containerName) && command[plugin][schema]?.kill) {

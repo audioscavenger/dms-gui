@@ -108,7 +108,7 @@ export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
     }
     
     // now pull accounts from the db as we need to associated logins for the DataTable
-    result = dbAll(sql.accounts.select.accounts, {scope:containerName});
+    result = dbAll(sql.accounts.select.accounts, {plugin:'mailserver', schema:schema, scope:'dms-gui', config:containerName});
     if (result.success) {
       
       // we could read DB_Logins and it is valid

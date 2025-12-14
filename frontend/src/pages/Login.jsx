@@ -182,7 +182,7 @@ export const Login = () => {
             
           </form>
 
-          <a href="#" class="float-end">{t("logins.forgotPassword")}</a>
+          <a href="#" className="float-end">{t("logins.forgotPassword")}</a>
 
           <br />
           <AlertMessage type="danger" message={errorMessage} />

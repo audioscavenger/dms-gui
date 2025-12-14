@@ -178,11 +178,10 @@ export const getSettings = async (plugin, schema, scope, containerName, name, en
   }
 };
 
-export const getConfigs = async (plugin, schema, name) => {
+export const getConfigs = async (plugin, name) => {
   try {
     let         path = `/configs/${plugin}`;
-    if (schema) path = `/configs/${plugin}/${schema}`;
-    if (name)   path = `/configs/${plugin}/${schema}/${name}`;
+    if (name)   path = `/configs/${plugin}/${name}`;
 
     debugLog(`ddebug api ${path}:`, response);
     const response = await api.get(path);

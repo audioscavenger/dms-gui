@@ -246,6 +246,32 @@ app.set('query parser', function (str) {
 // Routes ------------------------------------------------------------------------------------------
 // @swagger descriptions based off https://swagger.io/docs/specification/v3_0/describing-parameters/
 
+// post('/api/status/:plugin/:schema/:containerName', 
+// get('/api/infos', 
+// get('/api/envs/:plugin/:schema/:containerName', 
+// get('/api/accounts/:schema/:containerName', 
+// post('/api/accounts/:schema/:containerName', 
+// put('/api/doveadm/:schema/:containerName/:command/:mailbox', 
+// delete('/api/accounts/:containerName/:mailbox', 
+// patch('/api/accounts/:schema/:containerName/:mailbox', 
+// get('/api/aliases/:schema/:containerName', 
+// post('/api/aliases/:schema/:containerName', 
+// delete('/api/aliases/:schema/:containerName', 
+// get('/api/settings/:plugin/:schema/:scope/:containerName', 
+// get('/api/configs/:plugin{/:schema}{/:name}', 
+// post('/api/settings/:plugin/:schema/:scope/:containerName', 
+// get('/api/roles/:credential', 
+// post('/api/getLogins', 
+// put('/api/logins', 
+// patch('/api/logins/:id', 
+// delete('/api/logins/:id', 
+// post('/api/loginUser', async (req, res, next) => {
+// post('/api/refresh', async (req, res) => {
+// post('/api/logout', authenticateToken, async (req, res) => {
+// get('/api/domains/:containerName{/:domain}', 
+// get('/api/getCount/:table{/:containerName}{/:schema}', 
+// post('/api/initAPI/:plugin/:schema/:containerName', 
+// post('/api/killContainer{/:plugin}{/:schema}{/:containerName}', 
 
 /**
  * @swagger
@@ -943,7 +969,7 @@ async (req, res) => {
   }
 });
 
-// Endpoint for retrieving settings
+// Endpoint for retrieving settings - deprecated
 /**
  * @swagger
  * /api/settings/{plugin}/{schema}/{scope}/{containerName}:
@@ -1012,7 +1038,7 @@ async (req, res) => {
 // Endpoint for retrieving config names
 /**
  * @swagger
- * /api/configs/{plugin}/{schema}/{name}:
+ * /api/configs/{plugin}/{name}:
  *   get:
  *     summary: Get config names other then 'dms-gui'
  *     description: Get config names for plugin in parameter
@@ -1023,12 +1049,6 @@ async (req, res) => {
  *         schema:
  *           type: string
  *         description: config plugin name among mailserver, dnscontrol
- *       - in: path
- *         name: schema
- *         required: false
- *         schema:
- *           type: string
- *         description: schema for that plugin
  *       - in: path
  *         name: name
  *         required: false
@@ -1043,15 +1063,15 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve configs
  */
-app.get('/api/configs/:plugin{/:schema}{/:name}', 
+app.get('/api/configs/:plugin{/:name}', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { plugin, schema, name } = req.params;
+    const { plugin, name } = req.params;
     // for non-admins:  for mailserver plugin we send scope=roles, for anything else we send scope=userID
-    debugLog(`getConfigs(${plugin}, ${schema}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
-    const configs = await getConfigs(plugin, schema, (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id], name);
+    debugLog(`getConfigs(${plugin}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
+    const configs = await getConfigs(plugin, (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id], name);
     res.json(configs);
     
   } catch (error) {
@@ -1678,7 +1698,7 @@ async (req, res) => {
 // Endpoint for retrieving count of any table
 /**
  * @swagger
- * /api/getCount/{table}/{containerName}:
+ * /api/getCount/{table}/{containerName}/{schema}:
  *   get:
  *     summary: Get count
  *     description: Get count from a table
@@ -1695,6 +1715,12 @@ async (req, res) => {
  *         schema:
  *           type: string
  *         description: scope as needed
+ *       - in: path
+ *         name: schema
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: schema as needed
  *     responses:
  *       200:
  *         description: Return count from a table
@@ -1703,16 +1729,16 @@ async (req, res) => {
  *       500:
  *         description: Unable to count table
  */
-app.get('/api/getCount/:table{/:containerName}', 
+app.get('/api/getCount/:table{/:containerName}{/:schema}', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { table, containerName } = req.params;
+    const { table, containerName, schema } = req.params;
     if (!table) return res.status(400).json({ error: 'table is required' });
     
-    const count = dbCount(table, containerName);
+    const count = dbCount(table, containerName, schema);
     res.json(count);
     
   } catch (error) {
