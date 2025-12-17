@@ -54,9 +54,10 @@ export const getLogin = async (credential, guess=false) => {
     // or a string: mailbox == what's in the id keay of that table
     if (typeof credential == "string") {
       
-      // guessLogin should only be used for login purposes, and takes a string
+      // loginGuess should only be used for login purposes, and takes a string
       if (guess) {
         login = dbGet(sql.logins.select.loginGuess, {mailbox: credential, username: credential});
+
       } else {
         login = dbGet(sql.logins.select.login, {[sql.logins.id]: credential});
       }
@@ -172,12 +173,15 @@ export const getRoles = async credential => {
 };
 
 
+// mailserver used to be containerName, now we want configID
 export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, mailserver, roles=[]) => {
 
   try {
     debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles);
     
+    // even when password is undefined, we can get a hash value
     const { salt, hash } = await hashPassword(password);
+    // login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
     const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, mailserver:mailserver, roles:JSON.stringify(roles) });
     if (result.success) {
       successLog(`Saved login ${username}:${mailbox}`);
@@ -208,7 +212,7 @@ export const loginUser = async (credential, password) => {
       if (login.message.isActive) {
         if (login.message.isAccount) {
           if (login.message.mailserver) {
-            const targetDict = getTargetDict('mailserver', 'dms', login.message.mailserver);
+            const targetDict = getTargetDict('mailserver', login.message.mailserver);
             targetDict.timeout = 5;
             let command = `doveadm auth test ${login.message.mailbox} "${password}"`;
             results = await execCommand(command, targetDict);
@@ -222,8 +226,8 @@ export const loginUser = async (credential, password) => {
               login.success = false;
             }
 
-          }else {
-            message = `${credential} does not have a favorite mailserver yet`;
+          } else {
+            message = `${credential} mailbox does not have a mailserver assigned yet, where do we log that one?`;
             errorLog(message);
             login.success = false;
             login.message = message;

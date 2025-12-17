@@ -53,9 +53,10 @@ import {
   hashPassword,
   sql
 } from './db.mjs';
+import { getConfigs } from './settings.mjs';
 
 
-export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
+export const getAccounts = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
@@ -65,50 +66,69 @@ export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
     
     // refresh
     if (refresh) {
-      if (schema == 'dms') result = await pullAccountsFromDMS(containerName);
 
+      // get schema
+      result = await getConfigs('mailserver', undefined, containerName);
       if (result.success) {
-        // [{ mailbox: 'a@b.com', storage: {} }, .. ]
-        infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
 
-        // now add the domain item, st
-        accounts = result.message.map(account => { return { ...account, domain: account.mailbox.split('@')[1] }; });
+        if (result.message.schema == 'dms') {
+          result = await pullAccountsFromDMS(containerName);
+        } else {
+          errorLog(`${result.message.schema} unknown`);
+        }
 
-        // create a dupe with stringified storage and scope for saving in db
-        let accounts2save = accounts.map(account => { return {
-          ...account, 
-          storage: JSON.stringify(account?.storage), 
-          scope:containerName 
-          }; 
-        });
-        // now save accounts in db
-        result = dbRun(sql.accounts.insert.fromDMS, accounts2save);
         if (result.success) {
-          
-          // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
-          let logins2create = accounts.map(account => { return {
-            mailbox:account.mailbox, 
-            username:account.mailbox, 
-            email:account.mailbox, 
-            isAccount:1, 
-            mailserver:containerName, 
-            roles:JSON.stringify([account.mailbox]), 
-            scope:containerName
+          // [{ mailbox: 'a@b.com', storage: {} }, .. ]
+          infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
+
+          // create a dupe with stringified storage and scope for saving in db
+          let accounts2save = accounts.map(account => { return {
+            ...account, 
+            domain: account.mailbox.split('@')[1],
+            storage: JSON.stringify(account?.storage), 
             }; 
           });
-          // now save those linked logins in db
-          result = dbRun(sql.logins.insert.fromDMS, logins2create);
-          if (!result.success) errorLog(result?.error);
-          
-        } else errorLog(result?.error);
-        
-        if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
+          // now save accounts in db
+          // fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs where name = ?))`,
+          result = dbRun(sql.accounts.insert.fromDMS, accounts2save, containerName);
+          if (result.success) {
+            
+            // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
+            let logins2create = accounts.map(account => { return {
+              mailbox:account.mailbox, 
+              username:account.mailbox, 
+              email:account.mailbox, 
+              isAccount:1, 
+              mailserver:containerName, 
+              roles:JSON.stringify([account.mailbox]), 
+              }; 
+            });
 
-      } else errorLog(result?.error);
+            // now save those linked logins in db
+            // fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
+            // result = dbRun(sql.logins.insert.fromDMS, logins2create);
+            result = await addLogin(account.mailbox, account.mailbox, undefined, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
+            if (!result.success) errorLog(result?.error);
+            
+          } else errorLog(result?.error);
+          
+          if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
+
+        } else errorLog(result?.error);
+
+      } else errorLog(`${containerName} not found`);
     }
     
-    // now pull accounts from the db as we need to associated logins for the DataTable
-    result = dbAll(sql.accounts.select.accounts, {plugin:'mailserver', schema:schema, scope:'dms-gui', config:containerName});
+    // now pull accounts from the db as we need associated logins for the DataTable
+    // accounts: `SELECT a.mailbox, a.domain, a.storage, l.username 
+    //            FROM accounts a 
+    //            LEFT JOIN config c ON c.id = a.configID 
+    //            LEFT JOIN logins l ON l.mailbox = a.mailbox 
+    //            WHERE 1=1 
+    //            AND c.plugin = 'mailserver' 
+    //            AND c.name = ? 
+    //            ORDER BY a.domain, a.mailbox`,
+    result = dbAll(sql.accounts.select.accounts, {}, containerName);
     if (result.success) {
       
       // we could read DB_Logins and it is valid
@@ -116,7 +136,11 @@ export const getAccounts = async (schema, containerName, refresh, roles=[]) => {
         infoLog(`Found ${result.message.length} entries in accounts`);
         
         // now JSON.parse storage as it's stored stringified in the db
-        accounts = result.message.map(account => { return { ...account, storage: JSON.parse(account?.storage) }; });
+        accounts = result.message.map(account => { return { 
+          ...account, 
+          storage: JSON.parse(account?.storage) 
+          }; 
+        });
         
       } else warnLog(`db accounts seems empty:`, result.message);
 
@@ -147,7 +171,7 @@ export const pullAccountsFromDMS = async containerName => {
   let accounts = [];
   
   try {
-    const targetDict = getTargetDict('mailserver', 'dms', containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     debugLog(`execSetup(${command})`, targetDict);
     const results = await execSetup(command, targetDict);
@@ -233,7 +257,7 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
   let result, results;
 
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     debugLog(`Adding new mailbox account for ${containerName}: ${mailbox}`);
     if (schema == 'dms') results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
@@ -241,11 +265,12 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
     if (!results.returncode) {
       
       const { salt, hash } = await hashPassword(password);
-      result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash, scope:containerName});
+      result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash}, containerName);
       if (result.success) {
         
         if (createLogin) {
-          result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
+          // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
+          result = await addLogin(mailbox, mailbox, password, mailbox, 0, 1, 1, containerName, [mailbox]);
           if (result.success) {
             successLog(`Account created: ${mailbox}`);
           } // login created
@@ -273,18 +298,18 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
 };
 
 
-// Function to delete an mailbox account
+// Function to delete an mailbox account; shema is needed because of the remote command involved
 export const deleteAccount = async (schema, containerName, mailbox) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let result, results;
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     // dms setup could take who know how long when mailbox is large
     targetDict.timeout = 60;
     if (schema == 'dms') results = await execSetup(`email del -y ${mailbox}`, targetDict);
-    debugLog('ddebug execSetup',results)
+    debugLog('ddebug execSetup', results)
 
     if (!results.returncode) {
       successLog(`Mailbox Account deleted: ${mailbox}`);
@@ -295,12 +320,12 @@ export const deleteAccount = async (schema, containerName, mailbox) => {
         successLog(`db entry deleted: ${mailbox}`);
 
         // now delete aliases too
-        result = await getAliases(schema, containerName, false, [mailbox]);
+        result = await getAliases(containerName, false, [mailbox]);
         debugLog('ddebug getAliases',result)
         if (result.success && result.message.length) {
 
           for (const alias of result.message) {
-            result = await deleteAlias(schema, containerName, alias.source, alias.destination);
+            result = await deleteAlias(containerName, alias.source, alias.destination);
             debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
             if (result.success) {
               successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
@@ -425,7 +450,7 @@ export const doveadm = async (schema, containerName, command, mailbox, jsonDict=
 
   try {
     if (!doveadm[command]) throw new Error(`unknown command: ${command}`);
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
     
     let formattedCommand = doveadm[command].cmd.replace(/{mailbox}/g, mailbox);
     let formattedPass    = doveadm[command].messages.pass.replace(/{mailbox}/g, mailbox);

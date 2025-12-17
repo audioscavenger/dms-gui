@@ -430,17 +430,11 @@ async (req, res) => {
 // Endpoint for retrieving mailbox accounts
 /**
  * @swagger
- * /api/accounts/{schema}/{containerName}:
+ * /api/accounts/{containerName}:
  *   get:
  *     summary: Get mailbox accounts
  *     description: Retrieve all mailbox accounts
  *     parameters:
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -460,23 +454,23 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve accounts
  */
-app.get('/api/accounts/:schema/:containerName', 
+app.get('/api/accounts/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { schema, containerName } = req.params;
+    const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
 
     // Users can only pull their own mailboxes or those in their roles (unless admin)
     let accounts;
     if (req.user.isAdmin) {
-      accounts = await getAccounts(schema, containerName, refresh);
+      accounts = await getAccounts(containerName, refresh);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      accounts = await getAccounts(schema, containerName, false, req.user.roles);
+      accounts = await getAccounts(containerName, false, req.user.roles);
     }
     res.json(accounts);
     
@@ -757,17 +751,11 @@ async (req, res) => {
 // Endpoint for retrieving aliases
 /**
  * @swagger
- * /api/aliases/{schema}/{containerName}:
+ * /api/aliases/{containerName}:
  *   get:
  *     summary: Get aliases
  *     description: Retrieve all email aliases
  *     parameters:
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -787,23 +775,23 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve aliases
  */
-app.get('/api/aliases/:schema/:containerName', 
+app.get('/api/aliases/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { schema, containerName } = req.params;
+    const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const refresh = ('refresh' in req.query) ? req.query.refresh : false;
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await getAliases(schema, containerName, refresh);
+      result = await getAliases(containerName, refresh);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = await getAliases(schema, containerName, false, req.user.roles);
+      result = await getAliases(containerName, false, req.user.roles);
     }
     res.json(result);
 
@@ -817,17 +805,11 @@ async (req, res) => {
 // Endpoint for adding an alias
 /**
  * @swagger
- * /api/aliases/{schema}/{containerName}:
+ * /api/aliases/{containerName}:
  *   post:
  *     summary: Add a new alias
  *     description: Add a new email alias to the docker-mailserver
  *     parameters:
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -858,12 +840,12 @@ async (req, res) => {
  *       500:
  *         description: Unable to create alias
  */
-app.post('/api/aliases/:schema/:containerName', 
+app.post('/api/aliases/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { schema, containerName } = req.params;
+    const { containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const { source, destination } = req.body;
     if (!source || !destination) {
@@ -875,7 +857,7 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await addAlias(schema, containerName, source, destination);
+      result = await addAlias(containerName, source, destination);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
@@ -885,7 +867,7 @@ async (req, res) => {
       let domainSource = source.match(/.*@([\_\-\.\w]+)/);
       let domainDest = destination.match(/.*@([\_\-\.\w]+)/);
       let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1] == domainDest[1]) ? true : false;
-      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(schema, containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
     }
     res.status(201).json(result);
     
@@ -1070,8 +1052,8 @@ async (req, res) => {
   try {
     const { plugin, name } = req.params;
     // for non-admins:  for mailserver plugin we send scope=roles, for anything else we send scope=userID
-    debugLog(`getConfigs(${plugin}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
-    const configs = await getConfigs(plugin, (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id], name);
+    debugLog(            `getConfigs(${plugin}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
+    const configs = await getConfigs(plugin,      (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id],    name);
     res.json(configs);
     
   } catch (error) {
@@ -1898,7 +1880,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  dbInit();         // apply patches etc
+  dbInit(true);         // reset db
+  // dbInit();         // apply patches etc
   refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
 });

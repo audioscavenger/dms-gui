@@ -281,14 +281,13 @@ export const logoutUser = async () => {
   }
 };
 
-export const getAccounts = async (schema, containerName, refresh) => {
-  if (!schema) return {success: false, error: 'schema is required'};
+export const getAccounts = async (containerName, refresh) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/accounts/${schema}/${containerName}`, {params});
+    const response = await api.get(`/accounts/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -349,14 +348,13 @@ export const updateAccount = async (schema, containerName, mailbox, jsonDict) =>
   }
 };
 
-export const getAliases = async (schema, containerName, refresh) => {
-  if (!schema) return {success: false, error: 'schema is required'};
+export const getAliases = async (containerName, refresh) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   try {
-    const response = await api.get(`/aliases/${schema}/${containerName}`, {params});
+    const response = await api.get(`/aliases/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -364,11 +362,10 @@ export const getAliases = async (schema, containerName, refresh) => {
   }
 };
 
-export const addAlias = async (schema, containerName, source, destination) => {
-  if (!schema) return {success: false, error: 'schema is required'};
+export const addAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   try {
-    const response = await api.post(`/aliases/${schema}/${containerName}`, { source, destination });
+    const response = await api.post(`/aliases/${containerName}`, { source, destination });
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -376,14 +373,12 @@ export const addAlias = async (schema, containerName, source, destination) => {
   }
 };
 
-export const deleteAlias = async (schema, containerName, source, destination) => {
-  if (!schema) return {success: false, error: 'schema is required'};
+export const deleteAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   try {
     // Although the HTTP specification for DELETE requests does not explicitly define semantics for a request body, Axios allows you to include one by using the data property within the optional config object.
-    // const response = await api.delete(`/aliases/${source}/${destination}`);
-    const response = await api.delete(`/aliases/${schema}/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
+    const response = await api.delete(`/aliases/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params
     return response.data;
   } catch (error) {
     errorLog(error.message);

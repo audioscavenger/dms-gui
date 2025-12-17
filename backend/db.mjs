@@ -1,3 +1,7 @@
+import { exec as execCb } from 'node:child_process';
+import { promisify } from 'node:util';
+const exec = promisify(execCb);
+
 import {
   getValueFromArrayOfObj,
   reduxPropertiesOfObj,
@@ -116,10 +120,10 @@ configs: {
     count:    `SELECT COUNT(*) count FROM configs `,
     id:       `SELECT id FROM configs WHERE 1=1 AND plugin = @plugin AND (name LIKE ?)`,
     configs:  `SELECT name as value, plugin, schema, scope FROM configs WHERE 1=1 AND plugin = @plugin AND (scope LIKE ?)`,
-    settings: `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
-    setting:  `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND name = ?`,
-    envs:     `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
-    env:      `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND name = ?`,
+    settings: `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+    setting:  `SELECT         s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND s.name = ?`,
+    envs:     `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
+    env:      `SELECT         s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
   },
   
   insert: {
@@ -326,25 +330,26 @@ accounts: {
     storage:'object', 
     name:'string', 
   },
-  scope:  'config',
+  scope:  'name',
   select: {
-    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND config = @name)`,
-    accounts: `SELECT a.mailbox, a.domain, a.storage, l.username login 
+    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?)`,
+    accounts: `SELECT a.mailbox, a.domain, a.storage, l.username 
                FROM accounts a 
                LEFT JOIN config c ON c.id = a.configID 
                LEFT JOIN logins l ON l.mailbox = a.mailbox 
                WHERE 1=1 
+               AND c.plugin = 'mailserver' 
                AND c.name = ? 
                ORDER BY a.domain, a.mailbox`,
-    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND config = @name)`,
-    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND config = @name) AND mailbox = ?`,
+    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
+    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name) AND mailbox = ?`,
     saltHash: `SELECT salt, hash FROM accounts WHERE mailbox = @mailbox`,
     configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN config c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
   },
   
   insert: {
-    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs where name = ?))`,
-    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, configID)  VALUES (@mailbox, @domain, @salt, @hash, (SELECT id FROM configs where name = ?))`,
+    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
+    fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, configID)  VALUES (@mailbox, @domain, @salt, @hash, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
   },
   
   update: {
@@ -353,7 +358,7 @@ accounts: {
   },
   
   delete: {
-    mailbox:  `DELETE FROM accounts WHERE 1=1 AND AND mailbox = ?`,
+    mailbox:  `DELETE FROM accounts WHERE 1=1 AND mailbox = ? AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @scope)`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -392,24 +397,27 @@ aliases: {
     destination:'string', 
     regex:'number',
     configID:'number',
-    config:'string',
+    name:'string',
   },
-  scope:  'config',
+  scope:  'name',
   select: {
-    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND config = @config AND schema = @schema and scope = 'dms-gui')`,
-    aliases:  `SELECT source, destination, regex FROM aliases WHERE 1=1 AND scope = @scope`,
-    bySource: `SELECT destination FROM aliases WHERE 1=1 AND scope = @scope AND source = ?`,
-    byDest:   `SELECT source      FROM aliases WHERE 1=1 AND scope = @scope AND destination = ?`,
-    regexes:  `SELECT source, destination FROM aliases WHERE 1=1 AND regex = 1 AND scope = @scope`,
+    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?)`,
+    aliases:  `SELECT a.source, a.destination, a.regex, l.username 
+               FROM aliases a 
+               LEFT JOIN config c ON c.id = a.configID 
+               LEFT JOIN logins l ON l.mailbox = a.destination 
+               WHERE 1=1 
+               AND c.plugin = 'mailserver' 
+               AND c.name = ? 
+               ORDER BY a.source, a.destination`,
   },
   
   insert: {
-    alias:    `REPLACE INTO aliases (source, destination, regex, scope) VALUES (@source, @destination, @regex, @scope)`,
+    alias:    `REPLACE INTO aliases (source, destination, regex, configID) VALUES (@source, @destination, @regex, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
   },
   
   delete: {
-    bySource: `DELETE FROM aliases WHERE 1=1 AND scope = @scope AND source = ?`,
-    byDest:   `DELETE FROM aliases WHERE 1=1 AND scope = @scope AND destination = ?`,
+    bySource: `DELETE FROM aliases WHERE 1=1 AND source = ? AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @scope)`,
   },
   
   init:  `BEGIN TRANSACTION;
@@ -749,9 +757,10 @@ export const dbAll = (sql, params={}, ...anonParams) => {
   }
 };
 
-export const dbInit = () => {
+export const dbInit = async (reset=false) => {
 
   debugLog(`start`);
+  if (reset) await exec(`rm -f ${env.DATABASE}`);
   dbOpen();
   let result;
 
@@ -916,7 +925,7 @@ export const decrypt = encryptedData => {
   return decrypted;
 };
 
-export const hashPassword = async (password, salt) => {
+export const hashPassword = async (password='', salt='') => {
   return new Promise((resolve, reject) => {
     salt = (salt) ? salt: generateIv().toString('hex'); // Generate a random 16-byte salt
     // debugLog(`ddebug env.HASH_LEN=${env.HASH_LEN} (${typeof env.HASH_LEN})`);
@@ -976,7 +985,7 @@ export const changePassword = async (table, id, password, schema, containerName)
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
-      const targetDict = getTargetDict('mailserver', schema, containerName);
+      const targetDict = getTargetDict('mailserver', containerName);
 
       debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
       results = await execSetup(`email update ${id} "${password}"`, targetDict);
@@ -1134,6 +1143,9 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
 
 export const deleteEntry = async (table, id, key, scope) => {
   debugLog(`${table} id=${id} for scope=${scope} and key=${key}`);
+  // example: deleteEntry('accounts', mailbox, 'mailbox', containerName);
+  // example: deleteEntry('aliases', source, 'bySource', containerName);
+  // example: deleteEntry('logins', id);
 
   let result, testResult;
   try {
@@ -1225,7 +1237,7 @@ export const refreshTokens = async (credentials) => {
 };
 
 
-export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
+export const getTargetDict = (plugin, containerName, settings=[]) => {
   
   let result;
   try {
@@ -1242,10 +1254,8 @@ export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
       return targetDict;
 
     } else {
-      // debugLog(`dbAll(${sql.settings.select.settings}, {scope:${containerName}})`);
-      // result = dbAll(sql.settings.select.settings, {scope:containerName});  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
-      // `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
-      result = dbAll(sql.configs.select.settings, {plugin:'mailserver', schema:'dms', scope:'dms-gui'}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
+      // settings: `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+      result = dbAll(sql.configs.select.settings, {plugin:'mailserver'}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
       
       // debugLog('ddebug result', result);
       // {
@@ -1264,8 +1274,8 @@ export const getTargetDict = (plugin, schema, containerName, settings=[]) => {
       //   ]
       // }
       
-      debugLog(`ddebug result.message.length >= Object.keys(plugins[plugin][schema].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][schema].keys).length}`);
-      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys).length) {
+      debugLog(`ddebug result.message.length >= Object.keys(plugins[plugin][schema].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][result.message.schema].keys).length}`);
+      if (result.success && result.message.length >= Object.keys(plugins[plugin][result.message.schema].keys).length) {
         // limit results to protocol, host, port, and also Authorization
         let targetDict = {
           containerName:  getValueFromArrayOfObj(result.message, 'containerName'),

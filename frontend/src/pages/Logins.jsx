@@ -155,7 +155,8 @@ const Logins = () => {
     try {
       // debugLog('ddebug containerName',containerName)
       const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
-        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName),
+        // getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName),
+        getAccounts(containerName),
       ]);
         debugLog('accountsData',accountsData)
 

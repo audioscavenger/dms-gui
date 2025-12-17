@@ -82,8 +82,9 @@ const Aliases = () => {
       setSuccessMessage(null);
       
       const [aliasesData, accountsData] = await Promise.all([
-        getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
-        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        // getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getAliases(containerName, refresh),
+        getAccounts(containerName, refresh),
       ]);
 
       if (accountsData.success) {
@@ -183,7 +184,8 @@ const Aliases = () => {
     }
 
     try {
-      const result = await addAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, formData.source.trim(), formData.destination.trim());
+      // const result = await addAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, formData.source.trim(), formData.destination.trim());
+      const result = await addAlias(containerName, formData.source.trim(), formData.destination.trim());
       if (result.success) {
         setFormData({
           source: '',
@@ -206,7 +208,8 @@ const Aliases = () => {
       setSuccessMessage(null);
       
       try {
-        const result = await deleteAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, source, destination);
+        // const result = await deleteAlias(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, source, destination);
+        const result = await deleteAlias(containerName, source, destination);
         if (result.success) {
           fetchAliases(true); // Refresh the aliases list
           setSuccessMessage('aliases.aliasDeleted');

@@ -1,8 +1,9 @@
 import { exec as execCb } from 'node:child_process';
-import fs from 'node:fs';
-import net from 'node:net';
 import { promisify } from 'node:util';
 const exec = promisify(execCb);
+
+import fs from 'node:fs';
+import net from 'node:net';
 
 // const Docker = require('dockerode');
 // const docker = new Docker({ socketPath: '/var/run/docker.sock' });

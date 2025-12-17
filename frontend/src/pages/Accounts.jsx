@@ -113,7 +113,7 @@ const Accounts = () => {
       setSuccessMessage(null);
       
       const [accountsData, DOVECOT_FTSdata] = await Promise.all([
-        getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getAccounts(containerName, refresh),
         getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh, 'DOVECOT_FTS'),
       ]);
 
@@ -431,7 +431,7 @@ const Accounts = () => {
       label: 'accounts.mailbox',
     },
     { 
-      key: 'login',
+      key: 'username',
       label: 'logins.login',
     },
     {

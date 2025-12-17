@@ -290,7 +290,7 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
       status.status.status = "alive";
       if (test == 'ping') return {success: true, message: status};
 
-      const targetDict = getTargetDict(plugin, schema, containerName, settings);
+      const targetDict = getTargetDict(plugin, containerName, settings);
       // debugLog('ddebug targetDict', targetDict);
       if (targetDict?.Authorization) {
 
@@ -719,7 +719,7 @@ export const pullDoveConf = async (schema, containerName) => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
     const command = `doveconf`;
 
     const results = await execCommand(command, targetDict);
@@ -756,7 +756,7 @@ let ftsMount = '';
 let envs = {};
 
 try {
-  const targetDict = getTargetDict(plugin, schema, containerName);
+  const targetDict = getTargetDict(plugin, containerName);
 
   containerInfo.Mounts.forEach( async (mount) => {
     debugLog(`found mount ${mount.Destination}`);
@@ -795,7 +795,7 @@ export const pullDOVECOT = async (schema, containerName) => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
     const command = `dovecot --version`;
 
     const results = await execCommand(command, targetDict);   // 2.3.19.1 (9b53102964)
@@ -821,7 +821,7 @@ debugLog(`start`);
 let envs = {};
 
 try {
-  const targetDict = getTargetDict(plugin, schema, containerName);
+  const targetDict = getTargetDict(plugin, containerName);
 
   const results = await execCommand(`doveconf mail_plugins`, targetDict);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
   if (!results.returncode) {
@@ -849,7 +849,7 @@ export const pullDkimRspamd = async (schema, containerName) => {
   const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
 
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     results = await execCommand(command, targetDict);
     if (!results.returncode) {
@@ -890,7 +890,7 @@ export const pullServerEnvs = async (plugin, schema, containerName) => {
 
   var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
   try {
-    const targetDict = getTargetDict(plugin, schema, containerName);
+    const targetDict = getTargetDict(plugin, containerName);
     const command = `env`;
 
     // Get container instance
@@ -1319,7 +1319,7 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
         let containerNames = pluck(result.message, 'value');
         if (containerNames.includes(containerName) && command[plugin][schema]?.kill) {
 
-          const targetDict = getTargetDict(plugin, schema, containerName);
+          const targetDict = getTargetDict(plugin, containerName);
           results = await execCommand(command[plugin][schema].kill, targetDict);
           if (results.returncode) return {success: false, error: results.stderr};
 

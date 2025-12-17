@@ -26,7 +26,7 @@ import {
 } from './db.mjs';
 
 
-export const getAliases = async (schema, containerName, refresh, roles=[]) => {
+export const getAliases = async (containerName, refresh, roles=[]) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
@@ -36,54 +36,66 @@ export const getAliases = async (schema, containerName, refresh, roles=[]) => {
   
   try {
     
-    if (!refresh) {
-      result = dbAll(sql.aliases.select.aliases, {scope:containerName, schema:schema});
-      if (result.success) {
-        
-        // we could read DB_Logins and it is valid
-        if (result.message.length) {
-          infoLog(`Found ${result.message.length} entries in aliases`);
-          result.message = result.message.map(alias => { return { ...alias, source: (alias.regex) ? JSON.parse(alias.source) : alias.source}; });
-          
-        } else {
-          warnLog(`db aliases seems empty:`, aliases);
-        }
-      }
-
-      if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'destination', roles);
-      return result;
-    }
-    
     // refresh
-    // virtual aliases: -------------------------------
-    result = await pullAliasesFromDMS(containerName);
-    if (result.success) {
-      infoLog(`got ${result.message.length} aliases from pullAliasesFromDMS(${containerName})`);
+    if (refresh) {
 
-      // now add the alias type and scope
-      aliases = result.message.map(alias => { return { ...alias, regex: 0, scope:containerName }; });
-
-      // regex aliases: -------------------------------
-      result = await pullPostfixRegexFromDMS(containerName);
+      // get schema
+      result = await getConfigs('mailserver', undefined, containerName);
       if (result.success) {
+      
+        // virtual aliases: -------------------------------
+        if (result.message.schema == 'dms') {
+          result = await pullAliasesFromDMS(containerName);
+        } else {
+          errorLog(`${result.message.schema} unknown`);
+        }
         
-        infoLog(`got ${result.message.length} regexes from pullPostfixRegexFromDMS(${containerName})`);
-        // now add the alias type
-        regexes = result.message.map(alias => { return { ...alias, regex: 1, scope:containerName }; });
-      }
-      
-      // now merge aliases and regexes ---------------
-      aliases = [ ...aliases, ...regexes ];
-      
-      // now save aliases in db ----------------------
-      result = dbRun(sql.aliases.insert.alias, aliases);
-      if (!result.success) {
-        errorLog(result?.error);
-      }
+        if (result.success) {
+          infoLog(`got ${result.message.length} aliases from pullAliasesFromDMS(${containerName})`);
 
-      if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
-      return {success: true, message: aliases};
+          // now add the alias type and scope
+          aliases = result.message.map(alias => { return { ...alias, regex: 0, scope:containerName }; });
+
+          // regex aliases: -------------------------------
+          result = await pullPostfixRegexFromDMS(containerName);
+          if (result.success) {
+            
+            infoLog(`got ${result.message.length} regexes from pullPostfixRegexFromDMS(${containerName})`);
+            // now add the alias type
+            regexes = result.message.map(alias => { return { ...alias, regex: 1, scope:containerName }; });
+          }
+          
+          // now merge aliases and regexes ---------------
+          aliases = [ ...aliases, ...regexes ];
+          
+          // now save aliases in db ----------------------
+          result = dbRun(sql.aliases.insert.alias, aliases, containerName);
+          if (!result.success) {
+            errorLog(result?.error);
+          }
+
+          if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
+          return {success: true, message: aliases};
+
+        } else errorLog(result?.error);
+
+      } else errorLog(`${containerName} not found`);
     }
+
+    result = dbAll(sql.aliases.select.aliases, {}, containerName);
+    if (result.success) {
+      
+      // we could read DB_Logins and it is valid
+      if (result.message.length) {
+        infoLog(`Found ${result.message.length} entries in aliases`);
+        result.message = result.message.map(alias => { return { ...alias, source: (alias.regex) ? JSON.parse(alias.source) : alias.source}; });
+        
+      } else {
+        warnLog(`db aliases seems empty:`, aliases);
+      }
+    }
+
+    if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'destination', roles);
     return result;
     
   } catch (error) {
@@ -99,7 +111,7 @@ export const getAliases = async (schema, containerName, refresh, roles=[]) => {
 };
 
 
-// Function to retrieve aliases from DMS
+// Function to retrieve aliases from DMS: returnes [{source, destination}]
 export const pullAliasesFromDMS = async containerName => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
@@ -107,7 +119,7 @@ export const pullAliasesFromDMS = async containerName => {
   const command = 'alias list';
   
   try {
-    const targetDict = getTargetDict('mailserver', 'dms', containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     debugLog(`execSetup(${command})`);
     const results = await execSetup(command, targetDict);
@@ -175,7 +187,7 @@ export const pullPostfixRegexFromDMS = async containerName => {
   const command = `cat ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
   
   try {
-    const targetDict = getTargetDict('mailserver', 'dms', containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     debugLog(`execSetup(${command})`);
     const results = await execCommand(command, targetDict);
@@ -230,12 +242,12 @@ export const parsePostfixRegexFromDMS = async stdout => {
 
 
 // Function to add an alias
-export const addAlias = async (schema, containerName, source, destination) => {
+export const addAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
@@ -243,7 +255,7 @@ export const addAlias = async (schema, containerName, source, destination) => {
       results = await execSetup(`alias add ${source} ${destination}`, targetDict);
       if (!results.returncode) {
         
-        result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0, scope:containerName});
+        result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0}, containerName);
         if (result.success) {
           successLog(`Alias created: ${source} -> ${destination}`);
           return { success: true, message: `Alias created: ${source} -> ${destination}` };
@@ -269,7 +281,7 @@ export const addAlias = async (schema, containerName, source, destination) => {
         results = await execCommand(command, targetDict);
         if (!results.returncode) {
           
-          result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1, scope:containerName});
+          result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1}, containerName);
           if (result.success) {
             successLog(`Alias regex created: ${source} -> ${destination}`);
             return { success: true, message: `Alias regex created: ${source} -> ${destination}` };
@@ -298,12 +310,12 @@ export const addAlias = async (schema, containerName, source, destination) => {
 };
 
 // Function to delete an alias
-export const deleteAlias = async (schema, containerName, source, destination) => {
+export const deleteAlias = async (containerName, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
 
   let results, result;
   try {
-    const targetDict = getTargetDict('mailserver', schema, containerName);
+    const targetDict = getTargetDict('mailserver', containerName);
 
     // this is normal email format
     if (source.match(regexEmailStrict)) {
