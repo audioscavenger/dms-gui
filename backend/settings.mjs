@@ -1012,7 +1012,7 @@ try {
 */
 
 export const getServerEnv = async (plugin, containerName, name) => {
-  debugLog(plugin, containerName, name);
+  debugLog(`plugin=${plugin}, containerName=${containerName}, name=${name}`);
   if (!containerName)             return {success: false, error: 'containerName is required'};
   if (!name)                      return {success: false, error: 'name is required'};
   
@@ -1020,8 +1020,8 @@ export const getServerEnv = async (plugin, containerName, name) => {
 
     // const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
     // env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
-    const env = dbGet(sql.configs.select.env, {plugin:plugin}, containerName, name);
-    return {success: true, message: env?.value};
+    const result = dbGet(sql.configs.select.env, {plugin:plugin}, containerName, name);
+    return {success: true, message: result.message.value};
     
   } catch (error) {
     errorLog(error.message);
@@ -1037,8 +1037,7 @@ export const getServerEnv = async (plugin, containerName, name) => {
 
 // export const getServerEnvs = async (plugin, schema, scope, containerName, refresh, name) => {
 export const getServerEnvs = async (plugin, containerName, refresh, name) => {
-  // debugLog(plugin, schema, scope, containerName, refresh, name);
-  debugLog(plugin, containerName, refresh, name);
+  debugLog(`plugin=${plugin}, containerName=${containerName}, refresh=${refresh}, name=${name}`);
   if (!containerName)             return {success: false, error: 'containerName is required'};
   refresh = (refresh === undefined) ? true : (env.isDEMO ? false : refresh);
   
@@ -1086,7 +1085,7 @@ export const getServerEnvs = async (plugin, containerName, refresh, name) => {
   
   if (pulledEnv && pulledEnv.length) {
     saveServerEnvs(plugin, targetDict.schema, targetDict.scope, containerName, pulledEnv);
-    return (name) ? await getServerEnv(containerName, name) : {success: true, message: pulledEnv};
+    return (name) ? await getServerEnv(plugin, containerName, name) : {success: true, message: pulledEnv};
     
   // unknown error
   } else {

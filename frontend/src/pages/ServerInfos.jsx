@@ -134,7 +134,8 @@ const ServerInfos = () => {
   ];
 
 
-  if (isLoading && !infos && !settings || !user.isAdmin) {
+  // if (isLoading && !infos && !settings || !user.isAdmin) {
+  if (isLoading || !user.isAdmin) {
     return <LoadingSpinner />;
   }
 

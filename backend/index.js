@@ -405,6 +405,8 @@ async (req, res) => {
 
     const refresh = ('refresh' in req.query) ? req.query.refresh   : false;
     const name = ('name' in req.query) ? req.query.name : undefined;
+    debugLog('ddebug req.query:', req.query);
+
     const envs = await getServerEnvs(plugin, containerName, refresh, name);
     res.json(envs);
 
@@ -1856,8 +1858,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  dbInit(true);         // reset db
-  // dbInit();         // apply patches etc
+  // dbInit(true);         // reset db
+  dbInit();         // apply patches etc
   refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
 });

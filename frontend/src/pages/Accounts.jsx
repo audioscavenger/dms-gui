@@ -112,25 +112,24 @@ const Accounts = () => {
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      const [accountsData, DOVECOT_FTSdata] = await Promise.all([
-        getAccounts(containerName, refresh),
-        // getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh, 'DOVECOT_FTS'),
-        getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
-      ]);
-
+      // const [accountsData, DOVECOT_FTSdata] = await Promise.all([
+      //   getAccounts(containerName, refresh),
+      //   getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
+      // ]);
+      const accountsData = await getAccounts(containerName, refresh);
       if (accountsData.success) {
         setAccounts(accountsData.message);
+        debugLog('ddebug accountsData', accountsData);
+
+        const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
+        debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
+        if (DOVECOT_FTSdata.success) {
+          setDOVECOT_FTS(DOVECOT_FTSdata.message);
+          
+        } else setErrorMessage(DOVECOT_FTSdata?.error);
         
       } else setErrorMessage(accountsData?.error);
 
-      if (DOVECOT_FTSdata.success) {
-        setDOVECOT_FTS(DOVECOT_FTSdata.message);
-        
-      } else setErrorMessage(DOVECOT_FTSdata?.error);
-
-      debugLog('accountsData', accountsData);
-      debugLog('DOVECOT_FTS', DOVECOT_FTS);
-      
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage('api.errors.fetchAccounts');
@@ -402,7 +401,7 @@ const Accounts = () => {
   };
 
 
-  if (isLoading && !accounts) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
   
@@ -481,7 +480,7 @@ const Accounts = () => {
               className="me-2"
             />
           }
-          {(DOVECOT_FTS) && (
+          {DOVECOT_FTS && (
           <Button
             variant="warning"
             size="sm"
