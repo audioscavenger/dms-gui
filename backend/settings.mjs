@@ -1205,19 +1205,17 @@ export const getDomains = async (containerName, name) => {
 // 4. if    dms_api_key_param == 'regen', regenerate it and save in db
 // 5. always create script and conf file at the end
 export const initAPI = async (plugin, schema, containerName, dms_api_key_param) => {
-  debugLog(plugin, schema, containerName, dms_api_key_param);
+  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
   if (!containerName)             return {success: false, error: 'containerName is required'};
 
-  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
   
   let result, dms_api_key_db, dms_api_key_new;
   try {
     
-    // get what key is in db
-    // result = await getSetting('dms', containerName, 'DMS_API_KEY');
-    result = await getSetting(plugin, schema, 'dms-gui', containerName);
+    // get what key is in db if any
+    result = await getSetting(plugin, containerName);
     if (result.success) dms_api_key_db = result.message;
-    debugLog(`dms_api_key_db=`, dms_api_key_db);
+    debugLog(`success: ${result.success}, dms_api_key_db:`, dms_api_key_db);
 
     // replace key when key is passed
     if (dms_api_key_param) {
@@ -1249,15 +1247,16 @@ export const initAPI = async (plugin, schema, containerName, dms_api_key_param) 
       }
     }
 
-    // save key in db
-    if (dms_api_key_new != dms_api_key_db) {
+    // save key in db only if there is a config, do not try to save it during testing before a config exists
+    if (result.success && dms_api_key_new != dms_api_key_db) {
       debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
-      // result = dbRun(sql.settings.insert.setting, {name:'DMS_API_KEY', value:dms_api_key_new, scope:containerName});
-      // setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE config = ? AND plugin = @plugin), 1)`,
-      result = dbRun(sql.configs.insert.setting, {plugin:plugin, schema:schema, scope:'dms-gui', name:'DMS_API_KEY', value:dms_api_key_new}, containerName);
-      if (!result.success) return {success: true, message: dms_api_key_new, error: result?.error}; // this error should only happen when testing new dms before it is saved
-    }
+      
+      let jsonArrayOfObjects = [{name:'DMS_API_KEY', value:dms_api_key_new}];
+      result = await saveSettings(plugin, schema, scope, containerName, jsonArrayOfObjects);
+      if (!result.success) return result;
 
+    } else return {success: true, message: dms_api_key_new}; // this is when we test the API only
+        
     // regen API files
     debugLog(`Regenerate API scripts for ${containerName}...`);
     result = await createAPIfiles();

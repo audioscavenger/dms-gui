@@ -135,6 +135,9 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] 1.5.?? - frontend: mailservers dropdown in the branding
 * [ ] 1.5.?? - backend: how do we handle scope for domains/accounts/aliases? containerName or configID?
+* [x] 1.5.17 - everything seems to work again except Accounts shows error "name is required", where does that come from? 
+* [x] 1.5.17 - frontend: FormContainerAdd only enables save button if API test is successful
+* [x] 1.5.17 - done: initAPI
 * [x] 1.5.16 - bug: aliases seem not pulled automatically
 * [x] 1.5.16 - bug: envs seem not auto pulled upon saving dms
 * [x] 1.5.16 - bug: Accounts pulled and creates logins but shows error "name is required", where does that come from?

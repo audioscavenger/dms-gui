@@ -44,6 +44,7 @@ function FormContainerAdd() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
+  const [formValidated, setFormValidated] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [settings, setSettings] = useState([]);
   const makeFavoriteRef = useRef(null);
@@ -195,12 +196,14 @@ function FormContainerAdd() {
     // e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
+    setFormValidated(false);
 
     try {
       
-      if (!validateFormContainerAdd()) {
-        return;
-      }
+      // we should not retest the form here as the button will be disabled until it is valid
+      // if (!validateFormContainerAdd(false)) {
+        // return;
+      // }
 
       // the backend does not have this new dms in db yet, so we must send also the settings to help getTargetDict
       // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
@@ -218,6 +221,8 @@ function FormContainerAdd() {
         if (result.message.status.status === 'api_miss') setErrorMessage(t('dashboard.status.api_miss') +": "+ result.message.status.error);
         if (result.message.status.status === 'api_error') setErrorMessage(t('dashboard.status.api_error') +": "+ result.message.status.error);
         if (result.message.status.status === 'api_unset') setErrorMessage(t('dashboard.status.api_unset') +": "+ result.message.status.error);
+
+        setFormValidated(true);
 
       } else setErrorMessage(result?.error);
       
@@ -307,7 +312,7 @@ function FormContainerAdd() {
   };
 
 
-  const validateFormContainerAdd = () => {
+  const validateFormContainerAdd = (setErrors=false) => {
     const errors = {};
 
     // if (settings.containerName.length == 0) {
@@ -353,7 +358,7 @@ function FormContainerAdd() {
       errors.timeout = 'settings.timeoutRequired';
     }
 
-    setFormErrors(errors);
+    if (setErrors) setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -365,7 +370,7 @@ function FormContainerAdd() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!validateFormContainerAdd()) {
+    if (!validateFormContainerAdd(true)) {
       return;
     }
 
@@ -448,7 +453,14 @@ function FormContainerAdd() {
     return <LoadingSpinner />;
   }
   
-  
+            //   <Button
+            //   variant="info"
+            //   icon="hdd-network"
+            //   title={t('settings.apiTest')}
+            //   onClick={() => handleAPITest()}
+            //   disabled={!getValueFromArrayOfObj(settings, 'setupPath')}
+            // />
+
   return (
     <>
       <AlertMessage type="danger" message={errorMessage} />
@@ -592,21 +604,23 @@ function FormContainerAdd() {
             helpText="settings.setupPathHelp"
             required
           >
-            <Button
-              variant="info"
-              icon="hdd-network"
-              title={t('settings.apiTest')}
-              onClick={() => handleAPITest()}
-              disabled={!getValueFromArrayOfObj(settings, 'setupPath')}
-            />
           </FormField>
         
           <div className="d-flex align-items-center">
+            <Button
+              variant="info"
+              icon="hdd-network"
+              text="settings.apiTest"
+              className="me-2"
+              onClick={() => handleAPITest()}
+              disabled={!validateFormContainerAdd()}
+            />
             <Button
               type="submit"
               variant="primary"
               text="settings.saveButtonSettings"
               className="me-2"
+              disabled={!formValidated}
             />
             <FormField
               type="checkbox"
@@ -614,6 +628,7 @@ function FormContainerAdd() {
               name="makeFavorite"
               label="settings.makeFavorite"
               ref={makeFavoriteRef}
+              disabled={!formValidated}
             />
           </div>
         </form>

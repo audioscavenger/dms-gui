@@ -145,7 +145,7 @@
     "aboutDescription": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutText": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutTitle": "About Docker-Mailserver GUI",
-    "apiTest": "Test API access",
+    "apiTest": "Test API",
     "dnsProvider": "DNS provider API",
     "dnsProviderHelp": "Choose your DNS provider; not seeing yours? Submit a PR!",
     "email": "admin email",
