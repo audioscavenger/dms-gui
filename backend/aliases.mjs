@@ -24,6 +24,7 @@ import {
   getTargetDict,
   sql
 } from './db.mjs';
+import { getConfigs } from './settings.mjs';
 
 
 export const getAliases = async (containerName, refresh, roles=[]) => {
@@ -32,7 +33,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
   
   let aliases = [];
   let regexes = [];
-  let result;
+  let result, config;
   
   try {
     
@@ -42,12 +43,14 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
       // get schema
       result = await getConfigs('mailserver', undefined, containerName);
       if (result.success) {
+        config = result.message[0];
       
         // virtual aliases: -------------------------------
-        if (result.message.schema == 'dms') {
+        if (config?.schema == 'dms') {
           result = await pullAliasesFromDMS(containerName);
         } else {
-          errorLog(`${result.message.schema} unknown`);
+          errorLog(`unknown schema: ${config?.schema}`, result);
+          throw new Error(`unknown schema: ${config?.schema}`);
         }
         
         if (result.success) {
@@ -69,6 +72,7 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
           aliases = [ ...aliases, ...regexes ];
           
           // now save aliases in db ----------------------
+          // alias:    `REPLACE INTO aliases (source, destination, regex, configID) VALUES (@source, @destination, @regex, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
           result = dbRun(sql.aliases.insert.alias, aliases, containerName);
           if (!result.success) {
             errorLog(result?.error);
@@ -77,9 +81,9 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
           if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
           return {success: true, message: aliases};
 
-        } else errorLog(result?.error);
+        } else errorLog('pullPostfixRegexFromDMS:', result?.error);
 
-      } else errorLog(`${containerName} not found`);
+      } else errorLog(`getConfigs: ${containerName} not found`);
     }
 
     result = dbAll(sql.aliases.select.aliases, {}, containerName);

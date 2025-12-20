@@ -261,6 +261,8 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
   if (env.isDEMO) return {returncode:0, stdout:"mock response"};
   let result;
   try {
+    // debugLog('ddebug targetDict', targetDict);
+    // debugLog("ddebug reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization']))", reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization']));
     if (!targetDict || (targetDict && Object.keys(reduxPropertiesOfObj(targetDict, ['protocol', 'host', 'port', 'Authorization'])).length < 4) ) {
       return {
         returncode: 99,

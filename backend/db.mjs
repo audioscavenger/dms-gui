@@ -17,6 +17,9 @@ import {
   env,
   plugins,
 } from './env.mjs';
+import {
+  getSettings,
+} from './settings.mjs';
 
 import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
@@ -120,10 +123,10 @@ configs: {
     count:    `SELECT COUNT(*) count FROM configs `,
     id:       `SELECT id FROM configs WHERE 1=1 AND plugin = @plugin AND (name LIKE ?)`,
     configs:  `SELECT name as value, plugin, schema, scope FROM configs WHERE 1=1 AND plugin = @plugin AND (scope LIKE ?)`,
-    settings: `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
-    setting:  `SELECT         s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND s.name = ?`,
-    envs:     `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
-    env:      `SELECT         s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
+    settings: `SELECT s.name, s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+    setting:  `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND s.name = ?`,
+    envs:     `SELECT s.name, s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
+    env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
   },
   
   insert: {
@@ -152,7 +155,7 @@ configs: {
           UNIQUE    (name, plugin)
           );
           INSERT           INTO configs    (name, plugin, schema, scope)      VALUES ('DB_VERSION', 'dms-gui', 'DB_VERSION', 'dms-gui');
-          INSERT OR IGNORE INTO settings  (name, value, configID, isMutable) VALUES ('config', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          INSERT OR IGNORE INTO settings  (name, value, configID, isMutable) VALUES ('configs', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
 },
@@ -332,10 +335,10 @@ accounts: {
   },
   scope:  'name',
   select: {
-    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?)`,
+    count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
     accounts: `SELECT a.mailbox, a.domain, a.storage, l.username 
                FROM accounts a 
-               LEFT JOIN config c ON c.id = a.configID 
+               LEFT JOIN configs c ON c.id = a.configID 
                LEFT JOIN logins l ON l.mailbox = a.mailbox 
                WHERE 1=1 
                AND c.plugin = 'mailserver' 
@@ -344,11 +347,11 @@ accounts: {
     mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
     mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name) AND mailbox = ?`,
     saltHash: `SELECT salt, hash FROM accounts WHERE mailbox = @mailbox`,
-    configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN config c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
+    configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN configs c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
   },
   
   insert: {
-    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
+    fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage,     (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
     fromGUI:  `REPLACE INTO accounts (mailbox, domain, salt, hash, configID)  VALUES (@mailbox, @domain, @salt, @hash, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
   },
   
@@ -369,7 +372,7 @@ accounts: {
           salt      TEXT,
           hash      TEXT,
           storage   TEXT DEFAULT '{}',
-          configID  INTEGER NOT NULL,
+          configID  INTEGER NOT NULL
           );
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('accounts', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
@@ -401,10 +404,10 @@ aliases: {
   },
   scope:  'name',
   select: {
-    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?)`,
+    count:    `SELECT COUNT(*) count from aliases WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
     aliases:  `SELECT a.source, a.destination, a.regex, l.username 
                FROM aliases a 
-               LEFT JOIN config c ON c.id = a.configID 
+               LEFT JOIN configs c ON c.id = a.configID 
                LEFT JOIN logins l ON l.mailbox = a.destination 
                WHERE 1=1 
                AND c.plugin = 'mailserver' 
@@ -451,13 +454,13 @@ domains: {
     dnsProvider:'string',
     configID:'number',
   },
-  scope:  true,
+  scope:  'name',
   select: {
-    count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND scope = @scope`,
-    domains:  `SELECT * FROM domains WHERE 1=1 AND scope = @scope`,
-    domain:   `SELECT * FROM domains WHERE 1=1 AND scope = @scope AND domain = ?`,
-    dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND scope = @scope`,
-    dkim:     `SELECT dkim FROM domains WHERE 1=1 AND scope = @scope AND domain = ?`,
+    count:    `SELECT COUNT(*) count FROM domains WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
+    domains:  `SELECT * FROM domains WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
+    domain:   `SELECT * FROM domains WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name) AND domain = ?`,
+    dkims:    `SELECT DISTINCT dkim FROM domains WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
+    dkim:     `SELECT dkim FROM domains WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name) AND domain = ?`,
   },
   
   insert: {
@@ -525,7 +528,7 @@ dns: {
     data:'string',
     CF_PROXY_ON:'number',
   },
-  scope:  true,
+  scope:  false,
   select: {
     count:    `SELECT COUNT(*) count FROM dns WHERE 1=1 AND domain = @domain`,
     dns:      `SELECT * FROM dns WHERE 1=1 AND domain = @domain`,
@@ -653,9 +656,9 @@ export const dbRun = (sql, params={}, ...anonParams) => {
     // result = { changes: 0, lastInsertRowid: 0 }
 
   } catch (error) {
-    infoLog(`${error.code}: ${error.message}`);
+    infoLog(`${error?.code}: ${error.message}`);
     dbOpen()
-    return {success: false, error: error.message}
+    return {success: false, error: error.message, code: error?.code};
     // throw error;
   }
 };
@@ -669,6 +672,7 @@ export const dbRun = (sql, params={}, ...anonParams) => {
 // missing table:
 // error.code=SQLITE_ERROR
 // error.message=no such table: master
+// error.message=near ")": syntax error
 // drop column that does not exist:
 // error.code=SQLITE_ERROR
 // error.message=no such column: "password"
@@ -695,7 +699,7 @@ export const dbCount = (table, scope, schema) => {
   } catch (error) {
     errorLog(error.message);
     dbOpen();
-    return {success: false, error: error.message}
+    return {success: false, error: error.message, code: error?.code};
     // throw error;
   }
 };
@@ -709,21 +713,16 @@ export const dbGet = (sql, params={}, ...anonParams) => {
   let result;
   try {
 
-    if (anonParams.length) {
-      debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
-      result = DB.prepare(sql).get(params, anonParams);
+    debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
+    result = DB.prepare(sql).get(params, anonParams);
       
-    } else {
-      debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)})`);
-      result = DB.prepare(sql).get(params);
-    }
     return {success: true, message: result};
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
 
   } catch (error) {
     errorLog(error.message);
     dbOpen();
-    return {success: false, error: error.message}
+    return {success: false, error: error.message, code: error?.code};
     // throw error;
   }
 };
@@ -752,7 +751,7 @@ export const dbAll = (sql, params={}, ...anonParams) => {
     debugLog('ddebug error.message',error.message);
     errorLog(error.message);
     dbOpen();
-    return {success: false, error: error.message}
+    return {success: false, error: error.message, code: error?.code};
     // throw error;
   }
 };
@@ -771,16 +770,24 @@ export const dbInit = async (reset=false) => {
       try {
         result = dbGet(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
         if (!result.success || !result.message) {
-          dbRun(actions.init);
-          successLog(`${table}: success`);
+          result = dbRun(actions.init);
+
+          if (result.success) {
+            infoLog(`${table}: ${result.message}`, result);
+
+          } else if (result.error && result.error.match(/already exists/i)) {
+            infoLog(`${table}: exist`);
+
+          } else {
+            errorLog(`${table}: ${result?.code}: ${result.error}`);
+            throw new Error(`${table}: ${result?.code}: ${result.error}`);
+          }
 
         } else infoLog(`${table}: exist`);
         
       } catch (error) {
-        if (!error.message.match(/already exists/i)) {
-          errorLog(`${table}: ${error.code}: ${error.message}`);
-          throw error;
-        } else infoLog(`${table}: ${error.message}`);
+        errorLog(`${table}: ${error.message}`);
+        throw error;  // we want startup to stop completely
       }
     }
   }
@@ -808,9 +815,8 @@ export const dbUpgrade = () => {
       // INSERT           INTO configs (config, plugin, schema, scope)      VALUES ('DB_VERSION', 'dms-gui', 'DB_VERSION', 'dms-gui');
       // INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('settings', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
       // so we have config = DB_VERSION, plugin = 'dms-gui', schema = 'DB_VERSION', scope = 'dms-gui', and a setting name = 'table' for each table
-      // env:      `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND name = ?`,
-      // result = dbGet(sql.settings.select.env, {scope:'dms-gui'}, `DB_VERSION_${table}`);
-      result = dbGet(sql.configs.select.env, {plugin:'dms-gui', schema:'DB_VERSION', scope:'dms-gui'}, 'DB_VERSION', table);
+      // env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
+      result = dbGet(sql.configs.select.env, {plugin:'dms-gui'}, 'DB_VERSION', table);
       if (result.success) {
         db_version = (result.message) ? result.message.value : undefined;
         debugLog(`DB_VERSION ${table}=`, db_version);
@@ -1237,9 +1243,10 @@ export const refreshTokens = async (credentials) => {
 };
 
 
+// for testing, while settings table is empty, we shall be able to pass on all the settings as well
 export const getTargetDict = (plugin, containerName, settings=[]) => {
   
-  let result;
+  let result, schema;
   try {
     if (settings.length) {
       let targetDict = {
@@ -1250,13 +1257,16 @@ export const getTargetDict = (plugin, containerName, settings=[]) => {
         Authorization:  getValueFromArrayOfObj(settings, 'DMS_API_KEY'),
         setupPath:      getValueFromArrayOfObj(settings, 'setupPath'),
         timeout:        getValueFromArrayOfObj(settings, 'timeout'),
+        scope:          'dms-gui',
       }
       return targetDict;
 
     } else {
-      // settings: `SELECT s.name, s.value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
-      result = dbAll(sql.configs.select.settings, {plugin:'mailserver'}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
-      
+      // settings: `SELECT s.name, s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+      // result = dbAll(sql.configs.select.settings, {plugin:plugin}, containerName);  // [{name:'protocol', value:'http'}, {name:'containerName', value:'dms'}, ..]
+      // why calling dbAll again when getSettings does it?
+      result = getSettings(plugin, containerName);
+
       // debugLog('ddebug result', result);
       // {
       //   success: true,
@@ -1274,9 +1284,33 @@ export const getTargetDict = (plugin, containerName, settings=[]) => {
       //   ]
       // }
       
-      debugLog(`ddebug result.message.length >= Object.keys(plugins[plugin][schema].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][result.message.schema].keys).length}`);
-      if (result.success && result.message.length >= Object.keys(plugins[plugin][result.message.schema].keys).length) {
-        // limit results to protocol, host, port, and also Authorization
+      if (result.success) schema = getValueFromArrayOfObj(result.message, 'schema');
+
+      // debugLog(`plugins[${plugin}][${schema}]`, plugins[plugin][schema]);
+      // {
+      //   keys: {
+      //     containerName: 'containerName',
+      //     protocol: 'protocol',
+      //     host: 'containerName',
+      //     port: 'DMS_API_PORT',
+      //     Authorization: 'DMS_API_KEY',
+      //     setupPath: 'setupPath',
+      //     timeout: 'timeout'
+      //   },
+      //   defaults: {
+      //     containerName: 'dms',
+      //     protocol: 'http',
+      //     DMS_API_PORT: undefined,
+      //     DMS_API_KEY: undefined,
+      //     setupPath: '/usr/local/bin/setup',
+      //     timeout: 4
+      //   }
+      // }
+
+      debugLog(`ddebug result.message.length >= Object.keys(plugins[${plugin}][${schema}].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][schema].keys).length}`);
+      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys).length) {
+        // limit results to protocol, host, port, and also Authorization but we add everything because we end up needing schema sometimes
+        // we could use a for loop over plugins[plugin][schema].keys but then the code becomes hard to debug
         let targetDict = {
           containerName:  getValueFromArrayOfObj(result.message, 'containerName'),
           protocol:       getValueFromArrayOfObj(result.message, 'protocol'),
@@ -1285,6 +1319,8 @@ export const getTargetDict = (plugin, containerName, settings=[]) => {
           Authorization:  getValueFromArrayOfObj(result.message, 'DMS_API_KEY'),
           setupPath:      getValueFromArrayOfObj(result.message, 'setupPath'),
           timeout:        getValueFromArrayOfObj(result.message, 'timeout'),
+          schema:         schema,
+          scope:          'dms-gui',
         }
         return targetDict;
       }

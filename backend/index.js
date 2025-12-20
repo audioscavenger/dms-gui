@@ -275,7 +275,7 @@ app.set('query parser', function (str) {
 
 /**
  * @swagger
- * /api/status/{plugin}/{schema}/{containerName}:
+ * /api/status/{plugin}/{containerName}:
  *   post:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
@@ -286,12 +286,6 @@ app.set('query parser', function (str) {
  *         schema:
  *           type: string
  *         description: plugin like mailserver or mailclient
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: plugin schema like dms or snappymail etc
  *       - in: path
  *         name: containerName
  *         required: true
@@ -314,17 +308,17 @@ app.set('query parser', function (str) {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.post('/api/status/:plugin/:schema/:containerName', 
+app.post('/api/status/:plugin/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { plugin, schema, containerName } = req.params;
+    const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const test = ('test' in req.query) ? req.query.test : undefined;
     const { settings } = req.body;
 
-    const status = await getServerStatus(plugin, schema, containerName, test, settings);
+    const status = await getServerStatus(plugin, containerName, test, settings);
     res.json(status);
 
   } catch (error) {
@@ -362,7 +356,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /api/envs/{plugin}/{schema}/{containerName}:
+ * /api/envs/{plugin}/{containerName}:
  *   get:
  *     summary: Get server envs
  *     description: Retrieve all the DMS envs we parsed or just one
@@ -373,12 +367,6 @@ async (req, res) => {
  *         schema:
  *           type: string
  *         description: plugin is server type among mailserver, mailclient, etc
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: plugin type like dms or poste
  *       - in: path
  *         name: containerName
  *         required: true
@@ -407,17 +395,17 @@ async (req, res) => {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.get('/api/envs/:plugin/:schema/:containerName', 
+app.get('/api/envs/:plugin/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { plugin, schema, containerName } = req.params;
+    const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const refresh = ('refresh' in req.query) ? req.query.refresh   : false;
     const name = ('name' in req.query) ? req.query.name : undefined;
-    const envs = await getServerEnvs(plugin, schema, 'dms-gui', containerName, refresh, name);
+    const envs = await getServerEnvs(plugin, containerName, refresh, name);
     res.json(envs);
 
   } catch (error) {
@@ -881,17 +869,11 @@ async (req, res) => {
 // Endpoint for deleting an alias
 /**
  * @swagger
- * /api/aliases/{schema}/{containerName}:
+ * /api/aliases/{containerName}:
  *   delete:
  *     summary: Delete an alias
  *     description: Delete an email alias from the docker-mailserver
  *     parameters:
- *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: mailserver type
  *       - in: path
  *         name: containerName
  *         required: true
@@ -919,7 +901,7 @@ async (req, res) => {
  *       500:
  *         description: Unable to delete alias
  */
-app.delete('/api/aliases/:schema/:containerName', 
+app.delete('/api/aliases/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
@@ -937,11 +919,11 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await deleteAlias(schema, containerName, source, destination);
+      result = await deleteAlias(containerName, source, destination);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(destination)) ? await deleteAlias(schema, containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination)) ? await deleteAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
     }
     res.json(result);
     
@@ -954,7 +936,7 @@ async (req, res) => {
 // Endpoint for retrieving settings - deprecated
 /**
  * @swagger
- * /api/settings/{plugin}/{schema}/{scope}/{containerName}:
+ * /api/settings/{plugin}/{containerName}/{scope}:
  *   get:
  *     summary: Get settings
  *     description: Retrieve all or 1 settings
@@ -966,23 +948,17 @@ async (req, res) => {
  *           type: string
  *         description: plugin like mailserver or dnscontrol
  *       - in: path
- *         name: schema
- *         required: true
- *         schema:
- *           type: string
- *         description: plugin schema like dms or cloudflare etc
- *       - in: path
- *         name: scope
- *         required: true
- *         schema:
- *           type: string
- *         description: scope aka owner of the settings like dms-gui or user id
- *       - in: path
  *         name: containerName
  *         required: true
  *         schema:
  *           type: string
  *         description: DMS containerName
+ *       - in: path
+ *         name: scope
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: scope aka owner of the settings like dms-gui or user id
  *       - in: query
  *         name: name
  *         required: false
@@ -996,17 +972,17 @@ async (req, res) => {
  *       500:
  *         description: Unable to retrieve settings
  */
-app.get('/api/settings/:plugin/:schema/:scope/:containerName', 
+app.get('/api/settings/:plugin/:containerName{/:scope}', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
   try {
-    const { plugin, schema, scope, containerName } = req.params;
+    const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const name = ('name' in req.query) ? req.query.name : undefined;
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
-    const settings = (req.user.isAdmin || req.user.id == scope) ? await getSettings(plugin, schema, scope, containerName, name, encrypted) : {success:false, message:'Permission denied'};    // fails silently
+    const settings = (req.user.isAdmin || req.user.id == scope) ? getSettings(plugin, containerName, name, encrypted) : {success:false, message:'Permission denied'};    // fails silently
     res.json(settings);
     
   } catch (error) {
@@ -1880,8 +1856,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  dbInit(true);         // reset db
-  // dbInit();         // apply patches etc
+  // dbInit(true);         // reset db
+  dbInit();         // apply patches etc
   refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
 });

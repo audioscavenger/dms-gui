@@ -84,7 +84,7 @@ const Aliases = () => {
       const [aliasesData, accountsData] = await Promise.all([
         // getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
         getAliases(containerName, refresh),
-        getAccounts(containerName, refresh),
+        getAccounts(containerName),           // refresh accounts is done on first load or in Accounts page
       ]);
 
       if (accountsData.success) {

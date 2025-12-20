@@ -44,16 +44,16 @@ import * as childProcess from 'child_process';
 import path from 'path';
 
 // returns a string
-export const getSetting = async (plugin, schema, scope, containerName, name, encrypted=false) => {
-  debugLog(plugin, schema, scope, containerName, name, encrypted);
+export const getSetting = async (plugin, containerName, name, encrypted=false) => {
+  debugLog(plugin, containerName, name, encrypted);
   if (!containerName) return {success: false, error: 'scope=containerName is required'};
   if (!name)          return {success: false, error: 'name is required'};
 
   try {
     
     // const result = dbGet(sql.settings.select.setting, {scope:containerName}, name);
-    // setting:  `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND name = ?`,
-    const result = dbGet(sql.configs.select.setting, {plugin:plugin, schema:schema, scope:scope}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
+    // setting:  `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND s.name = ?`,
+    const result = dbGet(sql.configs.select.setting, {plugin:plugin}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
       return {success: true, message: (encrypted ? decrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
     }
@@ -71,18 +71,18 @@ export const getSetting = async (plugin, schema, scope, containerName, name, enc
 };
 
 
-// this returns an array of objects
-export const getSettings = async (plugin, schema, scope, containerName, name, encrypted=false) => {
-  debugLog(plugin, schema, scope, containerName, name, encrypted);
+// this returns an array of objects; schema and scope are optional; not async anymore since called by getTargetdict
+export const getSettings = (plugin, containerName, name, encrypted=false) => {
+  debugLog(plugin, containerName, name, encrypted);
   if (!containerName)             return {success: false, error: 'scope=containerName is required'};
-  if (name) return getSetting(plugin, schema, scope, containerName, name, encrypted);
+  if (name) return getSetting(plugin, containerName, name, encrypted);
   
   let result, settings;
   try {
     
     // result = dbAll(sql.settings.select.settings, {scope:containerName});
-    // settings: `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
-    result = dbAll(sql.configs.select.settings, {plugin:plugin, schema:schema, scope:scope}, containerName); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
+    // settings: `SELECT s.name, s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}`,
+    result = dbAll(sql.configs.select.settings, {plugin:plugin}, containerName); // plugin:'mailserver', schema:'dms', scope:'dms-gui', containerName:'dms'
     if (result.success) {
       
       // we could read DB_Logins and it is valid
@@ -154,10 +154,10 @@ export const getConfigs = async (plugin, roles=[], name=undefined) => {
       if (name) result.message = reduxArrayOfObjByValue(result.message, 'value', name);
 
       if (result.message.length) {
-        infoLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=`, roles);
+        infoLog(`Found ${result.message.length} configs for ${plugin}/scope=`, roles);
 
       } else {
-        warnLog(`Found ${result.message.length} configs for ${plugin}/${schema} scope=`, roles);
+        warnLog(`Found ${result.message.length} configs for ${plugin}/scope=`, roles);
       }
       
     } else errorLog(result?.error);
@@ -231,11 +231,12 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
 
 
 // Function to get server status from DMS, you can add some extra test like ping or execSetup
-export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
-  debugLog(plugin, schema, containerName, test, settings);
+// export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
+export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
+  debugLog(plugin, containerName, test, settings);
   if (!containerName)             return {success: false, error: 'containerName is required'};
 
-  let result, results;
+  let result, results, schema;
   let status = {
     status: {
       status: 'stopped',
@@ -276,14 +277,6 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
      // 1899 root      20   0   24716  18048   9088 S   0.0   0.4   0:00.52 python3
 
   try {
-    result = dbCount('logins', containerName);
-    if (result.success) status.db.logins = result.message;
-
-    result = dbCount('accounts', containerName, schema);
-    if (result.success) status.db.accounts = result.message;
-
-    result = dbCount('aliases', containerName, schema);
-    if (result.success) status.db.aliases = result.message;
 
     result = await ping(containerName);
     if (result.success) {
@@ -391,7 +384,7 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
         status.status.error = 'Missing elements in targetDict';
 
       } else {
-        status.status.status = "api_gen";   // just API key has not been generated yet
+        status.status.status = "api_gen";   // API key has not been generated yet
       }
       
     } else {
@@ -403,6 +396,20 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
         status.status.status = "stopped";
       }
     }
+
+    // get schema
+    // getSettings(plugin, containerName, name, encrypted)
+    result = getSettings(plugin, containerName);
+    if (result.success) schema = getValueFromArrayOfObj(result.message, 'schema');
+
+    result = dbCount('logins', containerName);
+    if (result.success) status.db.logins = result.message;
+
+    result = dbCount('accounts', containerName, schema);
+    if (result.success) status.db.accounts = result.message;
+
+    result = dbCount('aliases', containerName, schema);
+    if (result.success) status.db.aliases = result.message;
 
     // remote server being down is not a measure of failure
     return {success: true, message: status};
@@ -709,7 +716,7 @@ export const readDkimFile = async stdout => {
 
 
 // pulls entire doveconf and parse what we need
-export const pullDoveConf = async (schema, containerName) => {
+export const pullDoveConf = async (targetDict) => {
 
 // TODO: add quotas
 // "quota_max_mail_size": "314M",
@@ -719,7 +726,6 @@ export const pullDoveConf = async (schema, containerName) => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict('mailserver', containerName);
     const command = `doveconf`;
 
     const results = await execCommand(command, targetDict);
@@ -791,11 +797,10 @@ return envs;
 */
 
 
-export const pullDOVECOT = async (schema, containerName) => {
+export const pullDOVECOT = async (targetDict) => {
   let envs = {};
 
   try {
-    const targetDict = getTargetDict('mailserver', containerName);
     const command = `dovecot --version`;
 
     const results = await execCommand(command, targetDict);   // 2.3.19.1 (9b53102964)
@@ -841,7 +846,7 @@ return envs;
 */
 
 
-export const pullDkimRspamd = async (schema, containerName) => {
+export const pullDkimRspamd = async (targetDict) => {
 
   // we pull only if ENABLE_RSPAMD=1 because we don't know what the openDKIM config looks like
   let envs = {};
@@ -849,7 +854,6 @@ export const pullDkimRspamd = async (schema, containerName) => {
   const command = `cat ${env.DMS_CONFIG_PATH}/rspamd/override.d/dkim_signing.conf`;
 
   try {
-    const targetDict = getTargetDict('mailserver', containerName);
 
     results = await execCommand(command, targetDict);
     if (!results.returncode) {
@@ -886,11 +890,10 @@ export const pullDkimRspamd = async (schema, containerName) => {
 
 
 // Function to pull server environment from API
-export const pullServerEnvs = async (plugin, schema, containerName) => {
+export const pullServerEnvs = async (targetDict) => {
 
   var envs = {DKIM_SELECTOR_DEFAULT: env.DKIM_SELECTOR_DEFAULT };
   try {
-    const targetDict = getTargetDict(plugin, containerName);
     const command = `env`;
 
     // Get container instance
@@ -907,15 +910,15 @@ export const pullServerEnvs = async (plugin, schema, containerName) => {
 
 
       // look for dovecot version -------------------------------------------------- dovecot version
-      const dovecot = await pullDOVECOT(containerName);
+      const dovecot = await pullDOVECOT(targetDict);
 
       // look for doveconf mail_plugins fts etc -------------------------------------------------- doveconf
-      const doveconf = await pullDoveConf(containerName);
+      const doveconf = await pullDoveConf(targetDict);
       
       // TODO: look for quotas -------------------------------------------------- quota
       
       // pull dkim conf ------------------------------------------------------------------ dkim rspamd
-      const dkim = await pullDkimRspamd(containerName);
+      const dkim = await pullDkimRspamd(targetDict);
       
       // merge all ------------------------------------------------------------------ merge
       envs = { ...envs, ...dictEnvDMSredux, ...dovecot, ...doveconf, ...dkim };
@@ -1008,16 +1011,16 @@ try {
 }
 */
 
-export const getServerEnv = async (plugin, schema, scope, containerName, name) => {
-  debugLog(plugin, schema, scope, containerName, name);
+export const getServerEnv = async (plugin, containerName, name) => {
+  debugLog(plugin, containerName, name);
   if (!containerName)             return {success: false, error: 'containerName is required'};
   if (!name)                      return {success: false, error: 'name is required'};
   
   try {
 
     // const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
-    // env:      `SELECT       value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND name = ?`,
-    const env = dbGet(sql.configs.select.env, {plugin:plugin, schema:schema, scope:scope}, containerName, name);
+    // env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
+    const env = dbGet(sql.configs.select.env, {plugin:plugin}, containerName, name);
     return {success: true, message: env?.value};
     
   } catch (error) {
@@ -1032,20 +1035,22 @@ export const getServerEnv = async (plugin, schema, scope, containerName, name) =
 };
 
 
-export const getServerEnvs = async (plugin, schema, scope, containerName, refresh, name) => {
-  debugLog(plugin, schema, scope, containerName, refresh, name);
+// export const getServerEnvs = async (plugin, schema, scope, containerName, refresh, name) => {
+export const getServerEnvs = async (plugin, containerName, refresh, name) => {
+  // debugLog(plugin, schema, scope, containerName, refresh, name);
+  debugLog(plugin, containerName, refresh, name);
   if (!containerName)             return {success: false, error: 'containerName is required'};
   refresh = (refresh === undefined) ? true : (env.isDEMO ? false : refresh);
   
   if (!refresh) {
-    if (name) return getServerEnv(plugin, schema, scope, containerName, name);
+    if (name) return getServerEnv(plugin, containerName, name);
     
     debugLog(`refresh=${refresh} for ${containerName}`);
     try {
       
       // const result = dbAll(sql.settings.select.envs, {scope:containerName});
-      // envs:     `SELECT name, value FROM settings s LEFT JOIN config c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
-      const result = dbAll(sql.configs.select.envs, {plugin:plugin, schema:schema, scope:scope}, containerName);
+      // envs:     `SELECT s.name, s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable}`,
+      const result = dbAll(sql.configs.select.envs, {plugin:plugin}, containerName);
       if (result.success) {
         const envs = result.message;
         debugLog(`envs: (${typeof envs})`, envs);
@@ -1075,11 +1080,12 @@ export const getServerEnvs = async (plugin, schema, scope, containerName, refres
   
   // now refreshing by pulling data from DMS
   debugLog(`will pullServerEnvs for ${containerName}`);
-  const pulledEnv = await pullServerEnvs(plugin, schema, containerName);
+  const targetDict = getTargetDict(plugin, containerName);
+  const pulledEnv = await pullServerEnvs(targetDict);
   infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
-    saveServerEnvs(plugin, schema, scope, containerName, pulledEnv);
+    saveServerEnvs(plugin, targetDict.schema, targetDict.scope, containerName, pulledEnv);
     return (name) ? await getServerEnv(containerName, name) : {success: true, message: pulledEnv};
     
   // unknown error
@@ -1098,10 +1104,11 @@ export const saveServerEnvs = async (plugin, schema, scope, containerName, jsonA
   let result;
   try {
     // const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, scope:containerName }; });
-    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, plugin:plugin, schema:schema, scope:scope }; });
+    // const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, plugin:plugin, schema:schema, scope:scope }; });
+    const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(env => { return { ...env, plugin:plugin }; });
     // result = dbRun(sql.settings.delete.envs, {scope:containerName});
-    // envs:     `DELETE FROM settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id FROM configs WHERE config = ? AND plugin = @plugin)`,
-    result = dbRun(sql.config.delete.envs, {plugin:plugin, schema:schema, scope:scope}, containerName);
+    // envs:     `DELETE FROM settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin)`,
+    result = dbRun(sql.configs.delete.envs, {plugin:plugin}, containerName);
     if (result.success) {
       // result = dbRun(sql.settings.insert.env, jsonArrayOfObjectsScoped); // jsonArrayOfObjectsScoped = [{name:name, value:value, scope:containerName}, ..]  
       // env:      `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE config = ? AND plugin = @plugin), 0)`,

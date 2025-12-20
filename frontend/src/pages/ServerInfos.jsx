@@ -103,11 +103,13 @@ const ServerInfos = () => {
   const fetchServerEnvs = async (refresh) => {
     if (!mailservers || !mailservers.length) return;
     refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
-    debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema')}, ${containerName}, ${refresh})`);
+    // debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema')}, ${containerName}, ${refresh})`);
+    debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${containerName}, ${refresh})`);
     
     try {
       const [envsData] = await Promise.all([
-        getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        // getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getServerEnvs('mailserver', containerName, refresh),
       ]);
 
       debugLog('envsData', envsData);

@@ -104,7 +104,7 @@
     "invalidMailbox": "Invalid mailbox format",
     "manageDNS": "Manage DNS",
     "newAccount": "Add New Account",
-    "noAccounts": "No mailbox found. Add your first account.",
+    "noAccounts": "No mailbox found. Add your first account or force a refresh.",
     "index": "Force reindex",
     "forceResync": "Force re-sync",
     "mailboxStatus": "Get mailbox status",

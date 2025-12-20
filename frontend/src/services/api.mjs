@@ -122,14 +122,15 @@ api.interceptors.response.use(
 );
 
 // Server status API
-export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
+// export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
+export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   // debugLog('ddebug settings',settings);
 
   const params = {};
   if (test !== undefined) params.test = test;
   try {
-    const response = await api.post(`/status/${plugin}/${schema}/${containerName}`, {settings:settings}, {params});
+    const response = await api.post(`/status/${plugin}/${containerName}`, {settings:settings}, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -137,14 +138,15 @@ export const getServerStatus = async (plugin, schema, containerName, test=undefi
   }
 };
 
-export const getServerEnvs = async (plugin, schema, containerName, refresh, name) => {
+// export const getServerEnvs = async (plugin, schema, containerName, refresh, name) => {
+export const getServerEnvs = async (plugin, containerName, refresh, name) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
   if (refresh !== undefined) params.refresh = refresh;
   if (name !== undefined) params.name = name;
   try {
-    const response = await api.get(`/envs/${plugin}/${schema}/${containerName}`, {params});
+    const response = await api.get(`/envs/${plugin}/${containerName}`, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);
@@ -163,14 +165,17 @@ export const getNodeInfos = async () => {
   }
 };
 
-export const getSettings = async (plugin, schema, scope, containerName, name, encrypted=false) => {
+export const getSettings = async (plugin, containerName, name, encrypted=false, scope) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {encrypted:encrypted};
   if (name !== undefined) params.name = name;
 
   try {
-    const response = await api.get(`/settings/${plugin}/${schema}/${scope}/${containerName}`, {params});
+    let         path = `/settings/${plugin}/${containerName}`;
+    if (scope)  path = `/settings/${plugin}/${containerName}/${scope}`;
+
+    const response = await api.get(path, {params});
     return response.data;
   } catch (error) {
     errorLog(error.message);

@@ -93,7 +93,8 @@ const Dashboard = () => {
     try {
       setStatusLoading(true);
 
-      const statusData = await getServerStatus('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName);
+      // const statusData = await getServerStatus('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName);
+      const statusData = await getServerStatus('mailserver', containerName);
       if (statusData.success) {
 
         setServerStatus(statusData.message);

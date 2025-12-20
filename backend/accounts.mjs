@@ -53,14 +53,16 @@ import {
   hashPassword,
   sql
 } from './db.mjs';
+import { addLogin } from './logins.mjs';
 import { getConfigs } from './settings.mjs';
 
 
 export const getAccounts = async (containerName, refresh, roles=[]) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+  debugLog(containerName, refresh, roles);
+  if (!containerName) return {success: false, error: 'containerName is needed'};
   refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
   
-  let result;
+  let result, config;
   let accounts = [];
   try {
     
@@ -68,13 +70,25 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
     if (refresh) {
 
       // get schema
+      // getConfigs(plugin, roles=[], name=undefined)
       result = await getConfigs('mailserver', undefined, containerName);
-      if (result.success) {
+      // message: [
+      //   {
+      //     value: 'dms',
+      //     plugin: 'mailserver',
+      //     schema: 'dms',
+      //     scope: 'dms-gui'
+      //   }
+      // ]
 
-        if (result.message.schema == 'dms') {
+      if (result.success) {
+        config = result.message[0];
+
+        if (config?.schema == 'dms') {
           result = await pullAccountsFromDMS(containerName);
         } else {
-          errorLog(`${result.message.schema} unknown`);
+          errorLog(`unknown schema: ${config?.schema}`, result);
+          throw new Error(`unknown schema: ${config?.schema}`);
         }
 
         if (result.success) {
@@ -82,41 +96,46 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
           infoLog(`got ${result.message.length} accounts from pullAccountsFromDMS(${containerName})`);
 
           // create a dupe with stringified storage and scope for saving in db
-          let accounts2save = accounts.map(account => { return {
+          let accounts2save = result.message.map(account => { return {
             ...account, 
             domain: account.mailbox.split('@')[1],
             storage: JSON.stringify(account?.storage), 
             }; 
           });
+          debugLog('ddebug accounts2save', accounts2save);
+
           // now save accounts in db
-          // fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs where name = ?))`,
+          // fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
           result = dbRun(sql.accounts.insert.fromDMS, accounts2save, containerName);
           if (result.success) {
             
             // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
-            let logins2create = accounts.map(account => { return {
-              mailbox:account.mailbox, 
-              username:account.mailbox, 
-              email:account.mailbox, 
-              isAccount:1, 
-              mailserver:containerName, 
-              roles:JSON.stringify([account.mailbox]), 
-              }; 
-            });
+            // let logins2create = result.message.map(account => { return {
+            //   mailbox:account.mailbox, 
+            //   username:account.mailbox, 
+            //   email:account.mailbox, 
+            //   isAccount:1, 
+            //   mailserver:containerName, 
+            //   roles:JSON.stringify([account.mailbox]), 
+            //   }; 
+            // });
 
-            // now save those linked logins in db
+            // now save those linked logins in db / deprecated: let's use addLogin instead
             // fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
             // result = dbRun(sql.logins.insert.fromDMS, logins2create);
-            result = await addLogin(account.mailbox, account.mailbox, undefined, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
-            if (!result.success) errorLog(result?.error);
+
+            for (const account of accounts2save) {
+              result = await addLogin(account.mailbox, account.mailbox, undefined, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
+              if (!result.success) errorLog('addLogin:', result?.error);
+            }
             
-          } else errorLog(result?.error);
+          } else errorLog('sql.accounts.insert.fromDMS:', result?.error);
           
           if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
 
-        } else errorLog(result?.error);
+        } else errorLog('pullAccountsFromDMS:', result?.error);
 
-      } else errorLog(`${containerName} not found`);
+      } else errorLog(`getConfigs: ${containerName} not found`);
     }
     
     // now pull accounts from the db as we need associated logins for the DataTable

@@ -114,7 +114,8 @@ const Accounts = () => {
       
       const [accountsData, DOVECOT_FTSdata] = await Promise.all([
         getAccounts(containerName, refresh),
-        getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh, 'DOVECOT_FTS'),
+        // getServerEnvs('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh, 'DOVECOT_FTS'),
+        getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
       ]);
 
       if (accountsData.success) {

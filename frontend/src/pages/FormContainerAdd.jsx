@@ -121,14 +121,12 @@ function FormContainerAdd() {
       setLoading(true);
       setErrorMessage(null);
       
-      debugLog(`fetchSettings call getSettings('mailserver', ${getValueFromArrayOfObj(mailservers, container, 'value', 'schema')}, 'dms-gui', ${container})`);
+      debugLog(`fetchSettings call getSettings('mailserver', ${container})`);
       try {
           
           const [settingsData] = await Promise.all([
           getSettings(
             'mailserver',
-            getValueFromArrayOfObj(mailservers, container, 'value', 'schema'),  // mailservers = [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
-            'dms-gui',
             container,
           ),
         ]);
@@ -176,7 +174,8 @@ function FormContainerAdd() {
 
     try {
       
-      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'ping');
+      // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'ping');
+      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'containerName'), 'ping');
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
@@ -204,7 +203,8 @@ function FormContainerAdd() {
       }
 
       // the backend does not have this new dms in db yet, so we must send also the settings to help getTargetDict
-      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
+      // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
+      const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
