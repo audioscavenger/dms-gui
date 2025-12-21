@@ -13,6 +13,9 @@ import {
 } from '../../../common.mjs';
 
 import {
+  getAccounts,
+  getServerEnvs,
+  getAliases,
   getServerStatus,
   getConfigs,
   getSettings,
@@ -208,6 +211,7 @@ function FormContainerAdd() {
       // the backend does not have this new dms in db yet, so we must send also the settings to help getTargetDict
       // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
       const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
+      debugLog('getServerStatus:', result);
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
@@ -356,6 +360,12 @@ function FormContainerAdd() {
         || (Number(settings.find(item => item['name'] == 'timeout').value) > 60)
       ) {
       errors.timeout = 'settings.timeoutRequired';
+    }
+
+    // once the checkbox is rendered...
+    if (makeFavoriteRef.current) {
+      // pre-check the container as favorite when user has none, also pre-check if current container is already the favorite
+      if (!user?.mailserver || user?.mailserver == containerName) makeFavoriteRef.current.checked = true;
     }
 
     if (setErrors) setFormErrors(errors);

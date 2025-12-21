@@ -135,6 +135,13 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] 1.5.?? - frontend: mailservers dropdown in the branding
 * [ ] 1.5.?? - backend: how do we handle scope for domains/accounts/aliases? containerName or configID?
+* [x] 1.5.19 - updated README and other documentation
+* [x] 1.5.19 - rest-api.py DMSGUI_VERSION dynamically set during creation of the file
+* [x] 1.5.19 - rest-api.py now accepts DMS_API_HOST, DMS_API_SIZE and DEBUG from ebvironment
+* [x] 1.5.19 - bugfix in res-api.py leading to HTTP 500
+* [x] 1.5.19 - renamed user-patches-api to rest-api
+* [x] 1.5.19 - bugfix in postJsonToApi that returns nothing when API key is absent in container
+* [x] 1.5.19 - FormContainerAdd preselect favorite when user has no favorite
 * [x] 1.5.18 - bugfix in getServerEnv
 * [x] 1.5.18 - bugfix getServerEnvs calling getServerEnv with wrong arguments
 * [x] 1.5.18 - bugfix LoadingSpinner in Settings and Accounts

@@ -158,7 +158,7 @@
     "DMSHelp": "Select the current mailserver container to handle",
     "DMS_API_KEY": "DMS API KEY",
     "DMS_API_KEYregen": "Generate new DMS_API_KEY",
-    "DMS_API_KEYregened": "DMS_API_KEY: {{DMS_API_KEY}}<br /><br />Now that the API key is created, you need to do 4 things with your DMS compose:<br />1️⃣ Expose the API port<pre>expose: 8888</pre>2️⃣ Add these environment variables <pre>- DMS_API_KEY: {{DMS_API_KEY}}<br />- PYTHONUNBUFFERED: 1 # optional: enable api logging in compose<br />- DMS_API_PORT: {{DMS_API_PORT}}  # optional</pre>3️⃣ Add this volume file:<br /><pre>- ./config/dms-gui/user-patches-api.conf:/etc/supervisor/conf.d/user-patches-api.conf:ro</pre>4️⃣ Finally, <strong>restart</strong> your {{containerName}} container",
+    "DMS_API_KEYregened": "DMS_API_KEY: {{DMS_API_KEY}}<br /><br />Now that the API key is created, you need to do 4 things with your DMS compose:<br />1️⃣ Expose the API port<pre>expose: 8888</pre>2️⃣ Add these environment variables <pre>- DMS_API_KEY: {{DMS_API_KEY}}<br />- PYTHONUNBUFFERED: 1 # optional: enable api logging in compose<br />- DMS_API_PORT: {{DMS_API_PORT}}  # optional</pre>3️⃣ Add this volume file:<br /><pre>- ./config/dms-gui/rest-api.conf:/etc/supervisor/conf.d/rest-api.conf:ro</pre>4️⃣ Finally, <strong>restart</strong> your {{containerName}} container",
     "DMS_API_KEYregenedHelp": "Show the steps to connect with DMS",
     "DMS_API_KEYRequired": "DMS_API_KEY is required and must be set in DMS compose",
     "DMS_API_KEYHelp": "DMS_API_KEY is used to authenticate with DMS container command API",

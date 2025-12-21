@@ -1,9 +1,9 @@
 # Docker Mailserver GUI
 [![Docker Pulls](https://img.shields.io/docker/pulls/audioscavenger/dms-gui)](https://hub.docker.com/r/audioscavenger/dms-gui)
 
-A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)). This portal aims to manage all aspects of DMS including email accounts, aliases, xapian indexes, and DNS entries.
+A graphical user interface for managing DMS ([Docker-Mailserver](https://github.com/docker-mailserver/docker-mailserver)) and other non-gui mailservers like Poste.io. This gui aims to manage all aspects of DMS including: email accounts, aliases, xapian indexes, DNS entries, and other stuff.
 
-It can handle multiple DMS instances, and potentially other mail servers like Poste.io with a little bit of extra work.
+It relies on a generic REST API written in python, that you have to mount in DMS compose.
 
 ## Features
 
@@ -16,7 +16,7 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
   - 📧 Email alias management (includes regex)
 - 🐋 DMS (Docker-Mailserver) connection configuration
   - 🗃️ Multiple-DMS ready!
-  - 🔑 API Key management for direct access
+  - 🔑 REST API Key management for direct access
 - 🛢️ better-sqlite3 database!
   - 🩹 database patch auto-upgrade
 - 🌐 Multilingual support (English, Polish)
@@ -34,15 +34,15 @@ It can handle multiple DMS instances, and potentially other mail servers like Po
 ### FAQ
 
 * [x] How does dms-gui interact with DMS?
-> Simply, by executing `system` and `doveadm` commands inside DMS, through a python API. 
+> Simply, by executing `system` and `doveadm` commands inside DMS, through a python REST API. 
 
 * [x] How does dms-gui execute commands in DMS?
-> Python API script and its loader are generated from dms-gui, and then mounted as a single volume in DMS compose, along with the exposed port. You don't need to alter `user-patches.sh` at all. The API script is conveniently placed in a folder that is mouted in DMS: `./config/dms-gui/`.
+> Python REST API script and its loader are generated from dms-gui, and then mounted as a single volume in DMS compose, along with the exposed port. You don't need to alter `user-patches.sh` at all. The REST API script is conveniently placed in a folder that is mouted in DMS: `./config/dms-gui/`.
 
-* [x] How secure is this API?
-> API Access security is handled with a key generated from dms-gui itself. The key is sent in query header of the http calls. Since the DMS API port is exposed on the docker network only, no one else has access to it.
+* [x] How secure is this REST API?
+> REST API Access security is handled with a key generated from dms-gui itself. The key is sent in query header of the http calls. Since the DMS REST API port is exposed on the docker network only, no one else has access to it.
 
-* [x] I don't trust you, can I see the python code for this API?
+* [x] I don't trust you, can I see the python code for this REST API?
 > Sure, it's in the `/backend/env.js` file.
 
 * [x] How about login security?
@@ -127,7 +127,7 @@ Currently relying on DMS `setup` and a direct read of the `postfix-regexp.cf`fil
 
 ### Settings
 
-Multiple sections to save UI settings, DMS API access, and show some internals + DMS environment values.
+Multiple sections to save UI settings, DMS REST API access, and show some internals + DMS environment values.
 
 ![Settings](/assets/dms-gui-Settings.webp)
 
@@ -173,16 +173,7 @@ Rename `./config/dms-gui/.dms-gui.env.example` as `./config/dms-gui/.dms-gui.env
 ```
 ###############################################################################
 ## dms-gui Configuration: all is handled by React.
-## React is incompatible with environment variables as it relies on a database.
 ## Only the defaults used in dms-gui will be mentionned here.
-## Don't set those variables as they will not be read nor used.
-# DMS_CONTAINER=dms
-# DMS_SETUP_SCRIPT=/usr/local/bin/setup
-# DMS_API_KEY=uuid set in dms-gui
-# DMS_API_PORT=8888
-# PORT_NODEJS=3001
-# API_URL=http://localhost:3001
-# DOVEADM_PORT=8080
 ###############################################################################
 ## JWT_SECRET = secret for salting the cookies, regenerated during container start, before starting node
 ## JWT_SECRET_REFRESH = secret for salting the refresh cookies, regenerated during container start, before starting node
@@ -236,7 +227,7 @@ DMSGUI_CRON="* 1 23 * * *"
 # LOG_COLORS=false
 ```
 
-### Environment Variables
+### Environment Variables for dms-gui in .dms-gui.env
 
 All is optional, as they will be superseeded by the ones defined and saved within dms-gui:
 
@@ -246,19 +237,20 @@ All is optional, as they will be superseeded by the ones defined and saved withi
 - `DMSGUI_CRON`: crontab format for daily restarts ("* 1 23 * * *")
 - `LOG_COLORS`: set false to disable colors in backend logs (*true)
 - `isDEMO`: set false to disable colors in backend logs (*false)
-
 The ones you should never alter unless you want to develop:
 
 - `PORT_NODEJS`: Internal port for the Node.js server (*3001)
 - `API_URL`: defaults to `http://localhost:3001`
 - `NODE_ENV`: Node.js environment: (*production or development)
 
-Listed for history, not used anymore:
+### Environment Variables for dms REST API in compose
 
-- `DMS_CONTAINER`: Name of your docker-mailserver container (required)
-- `DMS_SETUP_SCRIPT`: The internal path to docker-mailserver setup script: normally `/usr/local/bin/setup`
-- `DMS_API_KEY`: format is that of a uuid, must be defined in DMS environment too
-- `DMS_API_PORT`: must be exposed in DMS compose too, defaults to 8888
+- `DMS_API_HOST`: defaults to 0.0.0.0
+- `DMS_API_PORT`: defaults to 8888
+- `DMS_API_KEY`: format is "dms-uuid", must be created in dms-gui first
+- `DMS_API_SIZE`: defaults to 1024
+- `LOG_LEVEL`: defaults to 'info', value is set in your `mailserver.env`
+- `PYTHONUNBUFFERED`: optional: enable api logging = 1 or follow its log at logs/supervisor/rest-api.log
 
 ## Language Support
 
@@ -285,16 +277,18 @@ services:
     <your dms compose here>
     ...
     environment:
+      # DMS_API_HOST:           # defaults to 0.0.0.0
+      DMS_API_PORT: 8888        # defaults to 8888, must match what you se in dms-gui/Settings
       DMS_API_KEY: uuid-random  # key generated by you or dms-gui
-      DMS_API_PORT: 8888        # optional
-      PYTHONUNBUFFERED: 1       # optional: enable API logging in dms compose
+      # DMS_API_SIZE: 1024      # defaults to 1024
+      # PYTHONUNBUFFERED: 1     # optional: enable api logging = 1 or follow its log at logs/supervisor/rest-api.log
     expose:
-      - "8888"                  # local python cgi API
+      - "8888"                  # local python REST API, must match what you se in dms-gui/Settings
     volumes:
       ...
 
       # enable dms-gui API: this file is only generated AFTER you create the API key within dms-gui Settings
-      - ./config/dms-gui/user-patches-api.conf:/etc/supervisor/conf.d/user-patches-api.conf:ro
+      - ./config/dms-gui/rest-api.conf:/etc/supervisor/conf.d/rest-api.conf:ro
       
     networks:
       frontend:                 # same network as dms-gui
@@ -398,6 +392,8 @@ You can and _should_ add a form of authentication at the proxy level, unless you
 
 ### Option 2: Manual using the pre-built image from Docker Hub
 
+Untested, sample below is missing lots of variables, and I don't care since you are supposed to use compose.
+
 ```bash
 docker run -d \
   --name dms-gui \
@@ -425,6 +421,8 @@ For detailed Docker setup instructions, please refer to:
 - [README.dockerhub.md](README.dockerhub.md) - Docker Hub specific information
 
 ## Available endpoints (non exhaustive)
+
+Subject to heavily change over time, please use https://dms.domain.com/docs for current list.
 
 - `GET /api/status` - Server status
 - `GET /api/infos` - Server environment
@@ -491,6 +489,97 @@ Result (outdated):
 
 
 ## Behind the Scenes
+
+### REST API
+
+The REST API injected into DMS is *generic*: all it does is listen for POST requests, verify the KEY passed in the header calls, execute the system command passed in the body, and return the result in json format. You can use it free of charge in any other container having python3.
+
+It's started as a deamon by simply mounting this supervisor service inside DMS, and shall be placed in a subfolder named `dms-gui` under the `config` folder of DMS. dms-gui creates both those files when you generate the API key in Settings, and only the supervisor conf shall be mounted in DMS compose:
+
+`./config/dms-gui/rest-api.conf:/etc/supervisor/conf.d/rest-api.conf:ro`
+
+The supervisor code is pretty generic:
+
+```
+[program:rest-api]
+startsecs=1
+stopwaitsecs=0
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/%(program_name)s.log
+stderr_logfile=/var/log/supervisor/%(program_name)s.log
+command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/rest-api.py
+```
+
+This REST API logs what it does in `logs/supervisor/rest-api.log` like any other supervison service, and I have found that `PYTHONUNBUFFERED=1` will not print the messages in the docker logging when run as a service.
+
+To use it with Node.js, it's pretty basic and simple:
+
+```js
+const DMS_API_KEY = 'dms-uuid';
+const jsonData = {
+  command: command,
+  timeout: 4,
+  };
+const response = await postJsonToApi(`http://dms:8888`, jsonData, DMS_API_KEY);
+
+export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
+  // debugLog('ddebug apiUrl', apiUrl)
+  // debugLog('ddebug DMS_API_KEY', DMS_API_KEY)
+  // debugLog('ddebug jsonData', jsonData)
+  
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Authorization
+      },
+      body: JSON.stringify(jsonData),
+    });
+    if (!response.ok) {
+      <your error handling here>
+    }
+    return await response.json();
+
+  } catch (error) {
+    <your error handling here>
+  }
+}
+```
+
+Sample of a response from the REST API:
+
+```
+Response {
+  status: 200,
+  statusText: 'OK',
+  headers: Headers {
+    server: 'BaseHTTP/0.6 Python/3.11.2',
+    date: 'Sun, 21 Dec 2025 05:35:39 GMT',
+    'content-type': 'application/json'
+  },
+  body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+  bodyUsed: false,
+  ok: true,
+  redirected: false,
+  type: 'basic',
+  url: 'http://dms:8888/'
+}
+```
+
+Format of the json returned from the response by `postJsonToApi`:
+
+```json
+{
+  error: <error>,
+  returncode: 0,
+  stdout: <stdout>,
+  stderr: <stderr>,
+}
+```
+
+Cannot be simpler then that, and super secure since the API also controls the maximum size of the payload you Carry in the POST request.
 
 ### Logging
 

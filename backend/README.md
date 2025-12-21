@@ -33,8 +33,9 @@ Configure the `.dms-gui.env` file with the appropriate environment variables:
 ## Don't set those variables as they will not be read
 ## DMS_CONTAINER=dms
 ## DMS_SETUP_SCRIPT=/usr/local/bin/setup
-## DMS_API_KEY=uuid set in dms-gui
 ## DMS_API_PORT=8888
+## DMS_API_KEY=matches "dms-uuid" set in dms-gui
+## DMS_API_SIZE=1024 / max body size accepted
 
 ## Optional: Dev Environment
 # PORT_NODEJS=3001
@@ -92,6 +93,8 @@ dms-gui/
 ```
 
 ## Available endpoints (non exhaustive)
+
+Subject to heavily change over time, please use https://dms.domain.com/docs for current list.
 
 - `GET /api/status` - Server status
 - `GET /api/infos` - Server environment

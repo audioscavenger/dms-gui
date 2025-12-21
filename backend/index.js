@@ -1858,8 +1858,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  // dbInit(true);         // reset db
-  dbInit();         // apply patches etc
+  dbInit(true);         // reset db
+  // dbInit();         // apply patches etc
   refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
 });

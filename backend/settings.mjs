@@ -231,7 +231,6 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
 
 
 // Function to get server status from DMS, you can add some extra test like ping or execSetup
-// export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
 export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
   debugLog(plugin, containerName, test, settings);
   if (!containerName)             return {success: false, error: 'containerName is required'};
@@ -296,21 +295,22 @@ export const getServerStatus = async (plugin, containerName, test=undefined, set
             if (results.stderr.match(/api_miss/)) status.status.status = "api_miss";   // API key was not sent somehow
             if (results.stderr.match(/api_error/)) status.status.status = "api_error";   // API key is different on either side
             if (results.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
-            status.status.error = results.stderr;
+            
+            status.status.error = results.stderr;   // we should handle HTTP POST error! status: 500
 
           } else {
             status.status.status = 'api_error';
             status.status.error = 'unknown';
           }
-          return {success: false, error: status};
-        }
-
-        if (test == 'execSetup' && !results.returncode) {
-          return {success: true, message: status};
+          return {success: true, message: status};  // api errors are not errors unless we add an error
         }
 
         if (env.isDEMO) {
           return {success: true, message: status};
+        }
+
+        if (test == 'execSetup') {
+          return {success: !results.returncode, message: status};
         }
 
         const [result_top, result_disk] = await Promise.all([
@@ -1021,7 +1021,7 @@ export const getServerEnv = async (plugin, containerName, name) => {
     // const env = dbGet(sql.settings.select.env, {scope:containerName}, name);
     // env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
     const result = dbGet(sql.configs.select.env, {plugin:plugin}, containerName, name);
-    return {success: true, message: result.message.value};
+    return {success: true, message: result.message?.value};
     
   } catch (error) {
     errorLog(error.message);
@@ -1281,7 +1281,7 @@ export const createAPIfiles = async () => {
 
   try {
     for (const file of Object.values(userPatchesAPI)) {
-      writeFile(file.path, file.content);
+      writeFile(file.path, file.content.replace('{DMSGUI_VERSION}', env.DMSGUI_VERSION));
       debugLog('created file.path:',file.path)
     }
     return {success: true, message: 'API files created'};
@@ -1337,17 +1337,3 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
   return {success: true, message: "reboot initiated"};  // fails silently in all other cases
   
 };
-
-
-
-// module.exports = {
-//   getServerStatus,
-//   getNodeInfos,
-//   getServerEnv,
-//   getServerEnvs,
-//   saveServerEnvs,
-//   getSetting,
-//   getSettings,
-//   saveSettings,
-//   initAPI,
-// };

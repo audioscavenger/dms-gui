@@ -121,6 +121,8 @@ const Profile = () => {
     debugLog('loginFormData',loginFormData);
     const { name, value, type } = e.target;
     
+    debugLog('ddebug loginFormData', loginFormData);
+
     setloginFormData({
       ...loginFormData,
       [name]: type === 'number' ? Number(value) : value

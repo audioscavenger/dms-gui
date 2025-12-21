@@ -339,7 +339,41 @@ export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
       body: JSON.stringify(jsonData),
     });
 
-    // debugLog('ddebug response', response)
+    debugLog('ddebug response', response);
+    // valid API key:
+    // Response {
+    //   status: 200,
+    //   statusText: 'OK',
+    //   headers: Headers {
+    //     server: 'BaseHTTP/0.6 Python/3.11.2',
+    //     date: 'Sun, 21 Dec 2025 05:35:39 GMT',
+    //     'content-type': 'application/json'
+    //   },
+    //   body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    //   bodyUsed: false,
+    //   ok: true,
+    //   redirected: false,
+    //   type: 'basic',
+    //   url: 'http://dms:8888/'
+    // }
+
+    // exception:
+    // Response {
+    //   status: 500,
+    //   statusText: 'Internal Server Error',
+    //   headers: Headers {
+    //     server: 'BaseHTTP/0.6 Python/3.11.2',
+    //     date: 'Sun, 21 Dec 2025 05:36:53 GMT',
+    //     'content-type': 'application/json'
+    //   },
+    //   body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    //   bodyUsed: false,
+    //   ok: false,
+    //   redirected: false,
+    //   type: 'basic',
+    //   url: 'http://dms:8888/'
+    // }
+
     if (!response.ok) {
       throw new Error(`HTTP POST error! status: ${response.status}`);
     }
