@@ -45,11 +45,11 @@ It relies on a generic REST API written in python, that you have to mount in DMS
 * [x] I don't trust you, can I see the python code for this REST API?
 > Sure, it's in the `/backend/env.js` file.
 
-* [x] How about login security?
+* [x] How about logon security?
 > Top notch: best practice for React has been followed: CORS same-domain Strict + HTTPonly cookies + backend verification of credentials, zero trust of the frontend.
 
-* [x] Tell me more about security?
-> Two 32 bits secrets are generated when container starts: one for generateToken (valid 1h) and the other for refreshToken (valid 7 days). Refresh tokens are saved in the db for each logins and invalidated when container restarts, since the secrets have changed.
+* [x] Tell me more about logon security?
+> Two 32 bits secrets are generated when container starts: one for generateToken (valid 1h) and the other for refreshToken (valid 7 days). Refresh tokens are saved in the db for each user and invalidated when container restarts, since the secrets have changed.
 
 * [x] Security really bothers me, anything more?
 > Yes, the container relies on node-cron and restarts daily at 11PM to regenerate new secret keys. You can alter the schedule with the environment variable `DMSGUI_CRON`.
@@ -61,7 +61,7 @@ It relies on a generic REST API written in python, that you have to mount in DMS
 > No, their credentials are set in the HTTPonly cookie and the backend only relies on its values to determine what's allowed.
 
 * [x] Can a user do path transversal or sql injections or anything to exploit this portal?
-> No, sql commands are stored in a dictionary and no module executes sql commands directly. All is variabilized and checked for integrity both on the frontend and the backend. Routes are indeed protected following Rect best practices. If you trust React, that's what you get.
+> No, sql commands are stored in a backend dictionary, and no frontend module can send sql commands directly. SQL is variabilized in the backend and cannot be injected. Routes are also protected following React best practices. The separation between frontend and backend is complete and interfaced with an API, just like Electron.js.
 
 * [x] What do users have access to, in this portal?
 
@@ -72,10 +72,13 @@ It relies on a generic REST API written in python, that you have to mount in DMS
 | linked users | DMS      | ✔️ | partial | ❌ | partial | ❌ | ❌ | partial | ❌ |
 
 * [x] Can normal users change their password?
-> Yes, users can change both their dms-gui password and each of the mailboxes they control. Linked users can only change the mailbox password, and are authenticated by dovecot as well.
+> Yes, users can change both their dms-gui password in their profile, and each of the mailboxes they control under Accounts. Logon password in dms-gui is saved in the database. Mailbox-linked users can only change the mailbox password, and their logon is handled by DMS dovecot directly.
 
 * [x] Can users reset their forgotten password?
-> Not yet, it's coming.
+> Not yet, but it's coming.
+
+* [x] Is this project affected by React2Shell Critical Vulnerability (CVE-2025-55182)[https://www.cmu.edu/iso/news/2025/react2shell-critical-vulnerability.html]?
+> No. This project has none of the React or 3rd party affected components like react-server-dom-turbopack, and is not even of the React versions affected. As I understand it, turbopack is another memory unsafe web bundler written in Rust, yet again.
 
 ### Login page
 
@@ -178,6 +181,7 @@ Rename `./config/dms-gui/.dms-gui.env.example` as `./config/dms-gui/.dms-gui.env
 ## JWT_SECRET = secret for salting the cookies, regenerated during container start, before starting node
 ## JWT_SECRET_REFRESH = secret for salting the refresh cookies, regenerated during container start, before starting node
 ## Those keys cannot be defined anywhere else then during container start, and are secret as the name suggests
+## docker/start.sh creates them
 ###############################################################################
 
 ## Optional: Dev Environment
@@ -189,15 +193,18 @@ NODE_ENV=production
 
 ## how long before rotation of the secrets:
 ACCESS_TOKEN_EXPIRY=1h
-REFRESH_TOKEN_EXPIRY=7d
+REFRESH_TOKEN_EXPIRY=1d
 
 ## encryption options:
 ## IV_LEN is the length of the unique Initialization Vector (IV) = random salt used for encryption and hashing
 IV_LEN=16
 ## HASH_LEN is the length of the hashed keys for passwords
 HASH_LEN=64
-## encrypted data secret key, that one is set in the environment as well but shall never change
-AES_SECRET=
+## AES_SECRET = encrypted data secret key, that one is set in the environment as well but must never change or you won;t be able to read your encrypted data anymore
+## generate it once and for all with node or openssl:
+##   openssl rand -hex 32
+##   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+AES_SECRET=replaceme
 ## encrypted data algorithm
 AES_ALGO=aes-256-cbc
 ## AES_HASH is the used to hash the secret key
@@ -233,7 +240,7 @@ All is optional, as they will be superseeded by the ones defined and saved withi
 
 - `DEBUG`: Node.js environment: (*production or development)
 - `ACCESS_TOKEN_EXPIRY`: lifetime of the generated HTTPonly token (1h)
-- `REFRESH_TOKEN_EXPIRY`: lifetime of the generated HTTPonly refresh token (7d)
+- `REFRESH_TOKEN_EXPIRY`: lifetime of the generated HTTPonly refresh token (1d)
 - `DMSGUI_CRON`: crontab format for daily restarts ("* 1 23 * * *")
 - `LOG_COLORS`: set false to disable colors in backend logs (*true)
 - `isDEMO`: set false to disable colors in backend logs (*false)
@@ -247,7 +254,7 @@ The ones you should never alter unless you want to develop:
 
 - `DMS_API_HOST`: defaults to 0.0.0.0
 - `DMS_API_PORT`: defaults to 8888
-- `DMS_API_KEY`: format is "dms-uuid", must be created in dms-gui first
+- `DMS_API_KEY`: format is "dms-uuid" or whatever you like, must be created in dms-gui first
 - `DMS_API_SIZE`: defaults to 1024
 - `LOG_LEVEL`: defaults to 'info', value is set in your `mailserver.env`
 - `PYTHONUNBUFFERED`: optional: enable api logging = 1 or follow its log at logs/supervisor/rest-api.log
@@ -492,7 +499,7 @@ Result (outdated):
 
 ### REST API
 
-The REST API injected into DMS is *generic*: all it does is listen for POST requests, verify the KEY passed in the header calls, execute the system command passed in the body, and return the result in json format. You can use it free of charge in any other container having python3.
+The REST API injected into DMS is *generic*: all it does is listen for POST requests, verify the KEY passed in the Authorization header, execute the system command passed in the body, and return the result in json format. You can use it free of charge in any other container having python3.
 
 It's started as a deamon by simply mounting this supervisor service inside DMS, and shall be placed in a subfolder named `dms-gui` under the `config` folder of DMS. dms-gui creates both those files when you generate the API key in Settings, and only the supervisor conf shall be mounted in DMS compose:
 
@@ -511,23 +518,19 @@ stderr_logfile=/var/log/supervisor/%(program_name)s.log
 command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/rest-api.py
 ```
 
-This REST API logs what it does in `logs/supervisor/rest-api.log` like any other supervison service, and I have found that `PYTHONUNBUFFERED=1` will not print the messages in the docker logging when run as a service.
+This REST API logs what it does in `logs/supervisor/rest-api.log` like any other supervisor service, and I have found that `PYTHONUNBUFFERED=1` will not print the messages in the docker log when run as a daemon.
 
-To use it with Node.js, it's pretty basic and simple:
+To use it with a Node.js client, it's pretty basic and simple:
 
 ```js
 const DMS_API_KEY = 'dms-uuid';
 const jsonData = {
-  command: command,
+  command: 'ls -l /some/folder',
   timeout: 4,
   };
 const response = await postJsonToApi(`http://dms:8888`, jsonData, DMS_API_KEY);
 
 export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
-  // debugLog('ddebug apiUrl', apiUrl)
-  // debugLog('ddebug DMS_API_KEY', DMS_API_KEY)
-  // debugLog('ddebug jsonData', jsonData)
-  
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -540,7 +543,7 @@ export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
     if (!response.ok) {
       <your error handling here>
     }
-    return await response.json();
+    return await response.json(); // Parse the JSON response
 
   } catch (error) {
     <your error handling here>
@@ -575,16 +578,18 @@ Format of the json returned from the response by `postJsonToApi`:
   error: <error>,
   returncode: 0,
   stdout: <stdout>,
-  stderr: <stderr>,
+  stderr: <stderr>
 }
 ```
 
-Cannot be simpler then that, and super secure since the API also controls the maximum size of the payload you Carry in the POST request.
+Cannot be simpler then that, and super secure since the script also controls the maximum size of the payload received in the POST request. The API key is added manually as an environment variable in DMS compose.
 
 ### Logging
 
 Formatted logging with colors, that actually helps!
 ![Logins](/assets/dms-gui-logs.webp)
+
+## Development
 
 ### Automatic Formatting
 
@@ -606,8 +611,6 @@ npm run format
 # Check if all relevant files are formatted correctly
 npm run format:check
 ```
-
-## Development
 
 ### Backend
 

@@ -7,33 +7,38 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 # Primary goals:
 
 1. [x] kick start the project: **done**, thanks to dunajdev and Claude
-2. [x] refactor, fix all the bugs, document and define scope: **done/WIP**
+2. [x] refactor, fix all the bugs, document and define scope: **done**
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
 5. [x] add a login page  **done**
 6. [x] add a Profile page and ability to change mailbox passwords  **done**
 7. [ ] add Domains+DNS+DKIM entries page
-8. [ ] add DNS push entries with custom cloudflare API or octoDNS
-9. [ ] add Backup/Import menu entries
+8. [ ] add DNS push/update entries with (dnscontrol)[https://github.com/StackExchange/dnscontrol]
+9. [ ] add Backup/Import menu entries and code
 
-After (9) my life will be complete and I won't need to work on this anymore ever :D
+# Extra goals:
+
+10. [ ] add fail2ban management
+11. [ ] add Rspamd link
+12. [ ] add hack statistics
+
 
 ## BUGS:
 
 * [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
-* [ ] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data
-* [ ] - frontend/Logins: Invalid DOM property `class`. Did you mean `className`?
+* [x] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
+* [x] - frontend/Logins: Invalid DOM property `class`. Did you mean `className`? - syntax error, fixed
 * [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
-* [ ] - backend/accounts: delete account still fails to delete aliases
+* [ ] - backend/accounts: delete account still fails to delete aliases - pretty sure it's fixed, must retest
 
 ## chores:
 
-* [ ] - unify all frontend errors with {success:false, message, and unified error codes}
-* [ ] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
-* [ ] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
-* [ ] - translation: there seems to be lots of messages unused throughout the project
-* [ ] - chore: there gotta be a way to embedd transforms in fields we push to DB likealways stringify roles etc
+* [ ] - unify all frontend errors with {success:false, message, and unified error codes} **WIP**
+* [x] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
+* [x] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
+* [ ] - translation: there seems to be lots of messages unused throughout the project, clean them up
+* [ ] - chore: there gotta be a way to embedd transforms in fields we push to the DB, such as always stringify roles etc
 
 # TODO:
 
@@ -48,23 +53,25 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### LeftMenu:
 * [ ] - refactor LeftSidebar to be collapsible and extend main container
-* [ ] - add entry to rspamd page when RSPAMD=1
+* [ ] - add entry to rspamd page when RSPAMD=1 just like Mailu
 * [ ] - add entry to snappymail when said variable is detected
 * [ ] - add entry to Backups page
 * [ ] - add entry to Imports page
 
 ### Profile:
-* [ ] - show controlled mailboxes as a disabled select
-* [ ] - add extra/external email to logins for pw recovery, this will solve the cannot change email address canandrum on Profile page
-* [ ] - make sure non-admin users can modify aliases _only_ for the mailboxes they control
+* [x] - show controlled mailboxes as a disabled select
+* [x] - add extra/external email to logins for pw recovery, this will solve the cannot change email address canandrum on Profile page
+* [x] - make sure non-admin users can modify aliases _only_ for the mailboxes they control - roles are controlled by the backend
 
 ### Dashboard:
 * [ ] - add statistics about hacking attempts
+* [ ] - add statistics and actions for fail2ban, it's a bitch to handle with command line
 
 ### Domains:
 * [ ] - start with a DataTable page of domains and see where we go
 * [ ] - add dkim modules and exec calls
 * [ ] - add DNS entries mechanics
+* [ ] - (dnscontrol)[https://github.com/StackExchange/dnscontrol] will do the work, but I need to factor the processes and store the various DNS credentials securely
 
   Domains page be like:
   * domain name
@@ -85,16 +92,16 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### Accounts:
 * [x] - do we keep auto create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
-* [ ] - each account must have either a linked login, or a login with that role must exist
+* [x] - each account must have either a linked login, or a login with that role must exist
 * [ ] - how easy is it to detect if an account without linked login is in a role for another login?
-* [ ] - how about we always create logins for each account, but let admins disable them as they attache roles to some users?
+* [x] - always create logins for each detected account, but let admins disable them as they attache roles to some users?
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
 * [ ] - pull compress/indexing method and maybe statistics on the dashboard?
 * [ ] - switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
-* [ ] - add folders resubscribe option somehow, which is needed after import anyways
+* [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
 
 ### Settings:
-* [ ] - we should definitely offer a first-time global scan after the first DMS entry is added
+* [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
 
 ### Backups:
 * [ ] - start working on this
@@ -130,11 +137,19 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 ## history:
 
-* [ ] 1.4. - frontend/Settings: pulls everything when submitting new DMS, with progress bars
-* [ ] 1.4. - some backend api res still return res.json(result) instead of res.json({success: true, message:result})
+* [ ] - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 
 * [ ] 1.5.?? - frontend: mailservers dropdown in the branding
-* [ ] 1.5.?? - backend: how do we handle scope for domains/accounts/aliases? containerName or configID?
+* [ ] 1.5.20 - update demo database
+* [ ] 1.5.20 - retested: create/delete login
+* [ ] 1.5.20 - retested: create/delete mailbox
+* [ ] 1.5.20 - retested: create/delete alias
+* [x] 1.5.20 - bug: LeftSidebar will not update links after we set containerName, why??
+* [x] 1.5.20 - LeftSidebar will not let user go anywhere until containerName is set
+* [x] 1.5.20 - index now gives AES_SECRET example value when needed
+* [x] 1.5.20 - env does not blow anymore when AES_SECRET is missing
+* [x] 1.5.20 - updated README and other documentation
+* [x] 1.5.20 - upgraded all node_modules
 * [x] 1.5.19 - updated README and other documentation
 * [x] 1.5.19 - rest-api.py DMSGUI_VERSION dynamically set during creation of the file
 * [x] 1.5.19 - rest-api.py now accepts DMS_API_HOST, DMS_API_SIZE and DEBUG from ebvironment

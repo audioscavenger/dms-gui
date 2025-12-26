@@ -58,6 +58,7 @@ import {
 
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import * as crypto from 'crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 // import jwt from 'express-jwt';
@@ -1846,10 +1847,6 @@ app.listen(env.PORT_NODEJS, async () => {
   infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
 
-  if (!env.AES_SECRET) {
-    errorLog(`AES_SECRET has not been set. Example to create it: "openssl rand -hex 32"`);
-  }
-
   // https://github.com/ncb000gt/node-cron    // internal crontan
   debugLog('DMSGUI_CRON',env.DMSGUI_CRON)
   if (env.DMSGUI_CRON) {
@@ -1858,9 +1855,20 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  dbInit(true);         // reset db
-  // dbInit();         // apply patches etc
-  refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
+  await dbInit(true);         // reset db
+  // await dbInit();         // apply patches etc
+  await refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
+
+  if (env.AES_SECRET == 'changeme') {
+    errorLog(`
+    
+    AES_SECRET has not been set. Example to create it: "openssl rand -hex 32"
+    *******************************************************************************
+    * AES_SECRET you could use in .dms-gui.env:                                   *
+    * AES_SECRET=${crypto.randomBytes(32).toString('hex')} *
+    *******************************************************************************
+    `);
+  }
 
 });
 
