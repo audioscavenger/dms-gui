@@ -140,10 +140,20 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 
 * [ ] 1.5.?? - frontend: mailservers dropdown in the branding
-* [ ] 1.5.20 - update demo database
-* [ ] 1.5.20 - retested: create/delete login
-* [ ] 1.5.20 - retested: create/delete mailbox
-* [ ] 1.5.20 - retested: create/delete alias
+* [ ] 1.5.?? - WARNING: saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.5.?? - update demo database
+* [ ] 1.5.?? - retested: create/delete login
+* [ ] 1.5.?? - retested: create/delete mailbox
+* [ ] 1.5.?? - retested: create/delete alias
+* [ ] 1.5.?? - retested: create/delete alias
+* [ ] 1.5.?? - must redirect user to dashboard after new container added successfully 100%
+* [ ] 1.5.?? - must pull all data with a spinner after new container added successfully
+* [x] 1.5.21 - fixed many error messages and retested pulling accounts and aliases and all seems to work again
+* [x] 1.5.21 - containerName being used as a default value for some select, should not be defaulted to null
+* [x] 1.5.21 - massing revamp of all functions with default values and more testing
+* [x] 1.5.21 - undefined not being a valid JSON value, replaced by null everywhere
+* [x] 1.5.21 - SSR Awareness + Cross-Tab Syncing: complete rewrite of useLocalStorage with useSyncExternalStore to replace useState and useEffect in pages
+* [x] 1.5.21 - bug: LeftSidebar will not update links after we set containerName, despite all my efforts: solution is rewrite useLocalStorage
 * [x] 1.5.20 - bug: LeftSidebar will not update links after we set containerName, why??
 * [x] 1.5.20 - LeftSidebar will not let user go anywhere until containerName is set
 * [x] 1.5.20 - index now gives AES_SECRET example value when needed

@@ -4,6 +4,7 @@ import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
+  debug,
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
@@ -38,13 +39,16 @@ import { useAuth } from '../hooks/useAuth';
 function FormContainerAdd() {
   const { t } = useTranslation();
   const { user, login } = useAuth();
-  const [containerName, setContainerName] = useLocalStorage("containerName", undefined);
+  const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
+  // const [containerName, setContainerName] = useState(useLocalStorage("containerName", ''););   // best of both worlds, deprecated
+  // const [mailservers, setMailservers] = useState(useLocalStorage("mailservers", []));                // best of both worlds, deprecated
 
   const [isLoading, setLoading] = useState(true);
-  const [submissionSettings, setSubmissionSettings] = useState(null); // 'idle', 'submitting', 'success', 'error'
+  const [settingsSubmitted, setSettingsSubmitted] = useState(false); // 'idle', 'submitting', 'success', 'error'
 
   const [successMessage, setSuccessMessage] = useState(null);
+  const [warningMessage, setWarningMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   
   const [formValidated, setFormValidated] = useState(false);
@@ -77,16 +81,20 @@ function FormContainerAdd() {
   }, [containerName]);
 
   useEffect(() => {
-    handleMailservers();
-  }, [mailservers]);
+    if (settingsSubmitted || mailservers.length) {
+      handleMailservers();
+      handleContainername()
+    }
+  }, [mailservers, settingsSubmitted]);
 
 
   const fetchAll = async () => {
     setLoading(true);
     setErrorMessage(null);
+    setWarningMessage(null);
     setSuccessMessage(null);
 
-    debugLog('ddebug 1 fetchAll');
+    debugLog('FormContainerAdd 1 fetchAll');
 
     if (!mailservers || !mailservers.length) await fetchMailservers();
 
@@ -96,19 +104,35 @@ function FormContainerAdd() {
 
   const fetchMailservers = async () => {
     
-    debugLog('ddebug 2 fetchMailservers');
+    debugLog('FormContainerAdd 2 fetchMailservers mailservers:', mailservers);
     try {
       const [mailserversData] = await Promise.all([
         getConfigs('mailserver'),
       ]);
 
       if (mailserversData.success) {
-        // this will be all containers in db except dms-gui
-        debugLog('fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
- 
-        // update selector list
-        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
-        
+        debugLog('FormContainerAdd mailserversData:', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+
+        if (mailserversData.message.length) {
+          // update selector list
+          debugLog(`FormContainerAdd setMailservers:`, mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));
+          setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
+
+        // nothing yet in database, preset form defaults:
+        } else {
+          // if no container exist yet, we also preset the schema and protocol values, as the values would never be set until the user change them
+          // numbers are stored as text because they would transform into floats otherwise
+          setSettings([
+              {name: 'schema', value: schemas[0].value},
+              {name: 'containerName', value: containerName},
+              {name: 'protocol', value: protocols[0].value},
+              {name: 'DMS_API_PORT', value: '8888'},
+              {name: 'DMS_API_KEY', value: ''},
+              {name: 'timeout', value: '4'},
+              {name: 'setupPath', value: '/usr/local/bin/setup'},
+            ]);
+        }
+
       } else setErrorMessage(mailserversData?.error);
 
     } catch (error) {
@@ -123,9 +147,9 @@ function FormContainerAdd() {
   const fetchSettings = async (container) => {
     if (container && mailservers.length) {
       setLoading(true);
+      // setWarningMessage(null);   // if API KEY is not ready yet on DMS side, we want to keep the warning
       setErrorMessage(null);
       
-      debugLog(`fetchSettings call getSettings('mailserver', ${container})`);
       try {
           
           const [settingsData] = await Promise.all([
@@ -134,11 +158,11 @@ function FormContainerAdd() {
             container,
           ),
         ]);
-        // debugLog(`fetchAll mergeArrayOfObj settingsData`,settingsData);
+        // debugLog(`FormContainerAdd mergeArrayOfObj settingsData`,settingsData);
 
         if (settingsData.success) {
           // this will be settings for that container only
-          console.debug(`fetchAll: got ${settingsData.message.length} settingsData for ${container}:`, settingsData.message);
+          debugLog(`FormContainerAdd: got ${settingsData.message.length} settingsData for ${container}:`, settingsData.message);
   
           setSettings(mergeArrayOfObj(settings, settingsData.message, 'name'));
 
@@ -152,27 +176,38 @@ function FormContainerAdd() {
     }
   };
 
+  const handleContainername = async () => {
+    if (makeFavoriteRef.current?.checked) {
+      debugLog('FormContainerAdd mailservers:', mailservers); // mailservers should be set at this point
+
+      handleLoginSave(getValueFromArrayOfObj(settings, 'containerName'));
+      setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+    }
+  }
 
   const handleMailservers = async () => {
     if (mailservers.length) {
       if (!containerName) {
+        debugLog(`FormContainerAdd setContainerName(getValueFromArrayOfObj(${JSON.stringify(mailservers)}, 'value')`, getValueFromArrayOfObj(mailservers, 'value'));
+
         // user does not have a favorite, pick the first in the list
-        debugLog(`ddebug setContainerName(getValueFromArrayOfObj(${mailservers}, 'value')`, getValueFromArrayOfObj(mailservers, 'value'));
         setContainerName(getValueFromArrayOfObj(mailservers, 'value'));
 
+      // preload this container's data
       } else {
         fetchSettings(containerName);
       }
 
-    } else {
+    // } else {
       // if no container exist yet, we also preset the schema and protocol values, as the values would never be set until the user change them
-      setSettings([{name: 'schema', value:schemas[0].value}, {name: 'protocol', value:protocols[0].value}]);
+      // setSettings([{name: 'schema', value:schemas[0].value}, {name: 'protocol', value:protocols[0].value}]);
     }
   }
 
 
   const handlePingTest = async (e) => {
     // e.preventDefault();
+    setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -183,7 +218,7 @@ function FormContainerAdd() {
 
       if (result.success) {
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
-        if (result.message.status.status === 'stopped') setErrorMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
+        if (result.message.status.status === 'stopped') setWarningMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
         if (result.message.status.status === 'alive') setSuccessMessage(t('dashboard.status.alive'));
 
       } else setErrorMessage(result?.error);
@@ -197,6 +232,7 @@ function FormContainerAdd() {
 
   const handleAPITest = async (e) => {
     // e.preventDefault();
+    setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
     setFormValidated(false);
@@ -211,9 +247,10 @@ function FormContainerAdd() {
       // the backend does not have this new dms in db yet, so we must send also the settings to help getTargetDict
       // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
       const result = await getServerStatus('mailserver', getValueFromArrayOfObj(settings, 'containerName'), 'execSetup', settings);
-      debugLog('getServerStatus:', result);
+      debugLog('FormContainerAdd getServerStatus:', result);
 
       if (result.success) {
+        if (result.message.status.status === 'unknown') setErrorMessage(t('dashboard.status.unknown') +": "+ result.message.status.error);
         if (result.message.status.status === 'missing') setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
         if (result.message.status.status === 'stopped') setErrorMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
         if (result.message.status.status === 'alive') setSuccessMessage(t('dashboard.status.alive') +": however, API test was not performed");
@@ -224,7 +261,10 @@ function FormContainerAdd() {
         if (result.message.status.status === 'api_gen') setErrorMessage(t('dashboard.status.api_gen') +": "+ result.message.status.error);
         if (result.message.status.status === 'api_miss') setErrorMessage(t('dashboard.status.api_miss') +": "+ result.message.status.error);
         if (result.message.status.status === 'api_error') setErrorMessage(t('dashboard.status.api_error') +": "+ result.message.status.error);
-        if (result.message.status.status === 'api_unset') setErrorMessage(t('dashboard.status.api_unset') +": "+ result.message.status.error);
+
+        // not actual errors: more setup needed to finish the linking
+        if (result.message.status.status === 'api_match') setWarningMessage(t('dashboard.status.api_match'));
+        if (result.message.status.status === 'api_unset') setWarningMessage(t('dashboard.status.api_unset'));
 
         setFormValidated(true);
 
@@ -239,20 +279,21 @@ function FormContainerAdd() {
 
   const handleDMS_API_KEYregen = async (e) => {
     // e.preventDefault();
+    setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
       
-      debugLog('regen API key for containerName=', getValueFromArrayOfObj(settings, 'containerName'))
+      debugLog('FormContainerAdd regen API key for containerName=', getValueFromArrayOfObj(settings, 'containerName'))
       const result = await initAPI('mailserver', getValueFromArrayOfObj(settings, 'schema'), getValueFromArrayOfObj(settings, 'containerName'), 'regen');
 
       if (result.success) {
         const DMS_API_KEY = result.message;
         
-        // debugLog('settings',settings)
-        // debugLog('initAPI', result)
-        // debugLog('DMS_API_KEY', DMS_API_KEY)
+        // debugLog('FormContainerAdd settings',settings)
+        // debugLog('FormContainerAdd initAPI', result)
+        // debugLog('FormContainerAdd DMS_API_KEY', DMS_API_KEY)
 
         // the 2 below should only be set on save
         // if (!containerName) setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
@@ -272,6 +313,7 @@ function FormContainerAdd() {
 
   const handleChangeSettings = (e) => {
     const { name, value, type } = e.target;
+    setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -281,7 +323,7 @@ function FormContainerAdd() {
     // HOWEVER, we won't do that because settings values are stored as TEXT in the db
     setSettings(mergeArrayOfObj(settings, [{name: name, value:value}], 'name'));
 
-    debugLog(`handleChangeSettings settings:`, mergeArrayOfObj(settings, [{name: name, value:value}], 'name'));
+    debugLog(`FormContainerAdd handleChangeSettings settings:`, mergeArrayOfObj(settings, [{name: name, value:value}], 'name'));
 
     // Clear the error for this field while typing
     if (formErrors[name]) {
@@ -296,7 +338,7 @@ function FormContainerAdd() {
   const handleLoginSave = async (containerName) => {
 
     try {
-      
+      debugLog(`FormContainerAdd handleLoginSave mailservers:`, mailservers); // mailservers should be set at this point
       const result = await updateLogin(
         user.id,
         {mailserver:containerName},
@@ -305,7 +347,8 @@ function FormContainerAdd() {
         login({
           ...user,
           mailserver:containerName
-        }); // reset new values for that user in frontend state
+        },
+        mailservers); // reset new values for that user in frontend state
         
       } // fails silently
       
@@ -374,9 +417,8 @@ function FormContainerAdd() {
 
   const handleSubmitSettings = async (e) => {
     e.preventDefault();
-    debugLog('Form settings Submitted:', settings);
+    debugLog('FormContainerAdd settings Submitted:', settings);
     
-    setSubmissionSettings('submitting');
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -386,7 +428,7 @@ function FormContainerAdd() {
 
     try {
 
-      debugLog(`saveSettings( mailserver, ${getValueFromArrayOfObj(settings, 'schema')}, dms-gui, ${getValueFromArrayOfObj(settings, 'containerName')})`, settings);
+      debugLog(`FormContainerAdd saveSettings( mailserver, ${getValueFromArrayOfObj(settings, 'schema')}, dms-gui, ${getValueFromArrayOfObj(settings, 'containerName')})`, settings);
       const result = await saveSettings(
         'mailserver',
         getValueFromArrayOfObj(settings, 'schema'),
@@ -395,15 +437,17 @@ function FormContainerAdd() {
         settings,
       );
       if (result.success) {
-        setSubmissionSettings('success');
+        setSettingsSubmitted(true);
 
         // pull mailservers again to refresh the select field list and branding selector
         await fetchMailservers();
 
-        if (makeFavoriteRef.current.checked) {
-          await handleLoginSave(getValueFromArrayOfObj(settings, 'containerName'));
-          await setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
-        }
+        // if (makeFavoriteRef.current.checked) {
+        //   debugLog('FormContainerAdd mailservers:', mailservers); // mailservers should be set at this point
+
+        //   await handleLoginSave(getValueFromArrayOfObj(settings, 'containerName'));
+        //   await setContainerName(getValueFromArrayOfObj(settings, 'containerName'));
+        // }
 
         // switch to this new container to trigger fetchSettings and confirm all was saved properly
         // UNLESS containerName is already set, indeed
@@ -426,7 +470,7 @@ function FormContainerAdd() {
       } else setErrorMessage(result?.error);
       
     } catch (error) {
-      setSubmissionSettings('error');
+      setSettingsSubmitted(false);
       errorLog(t('api.errors.saveSettings'), error);
       setErrorMessage('api.errors.saveSettings');
     }
@@ -436,7 +480,10 @@ function FormContainerAdd() {
   const handleChangeDMS = async (e) => {
     // e.preventDefault();
     const { name, value, type } = e.target;
-    debugLog(`Switching to ${name}=${value}`);
+    setWarningMessage(null);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    debugLog(`FormContainerAdd Switching to ${name}=${value}`);
     
     try {
       
@@ -474,6 +521,7 @@ function FormContainerAdd() {
   return (
     <>
       <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="warning" message={warningMessage} />
       <AlertMessage type="success" message={successMessage} />
       
       <Row className="align-items-center justify-content-center">

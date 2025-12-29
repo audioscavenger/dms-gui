@@ -316,7 +316,7 @@ async (req, res) => {
   try {
     const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-    const test = ('test' in req.query) ? req.query.test : undefined;
+    const test = ('test' in req.query) ? req.query.test : null;
     const { settings } = req.body;
 
     const status = await getServerStatus(plugin, containerName, test, settings);
@@ -405,7 +405,7 @@ async (req, res) => {
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const refresh = ('refresh' in req.query) ? req.query.refresh   : false;
-    const name = ('name' in req.query) ? req.query.name : undefined;
+    const name = ('name' in req.query) ? req.query.name : null;
     debugLog('ddebug req.query:', req.query);
 
     const envs = await getServerEnvs(plugin, containerName, refresh, name);
@@ -982,7 +982,7 @@ async (req, res) => {
   try {
     const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-    const name = ('name' in req.query) ? req.query.name : undefined;
+    const name = ('name' in req.query) ? req.query.name : null;
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
     const settings = (req.user.isAdmin || req.user.id == scope) ? getSettings(plugin, containerName, name, encrypted) : {success:false, message:'Permission denied'};    // fails silently
@@ -1526,7 +1526,7 @@ app.post('/api/refresh', async (req, res) => {
 
     // Check if refresh token exists in database
     const result = dbGet(sql.logins.select.refreshToken, decoded.id, {refreshToken:refreshToken});
-    const user = (result.success) ? result.message : undefined;
+    const user = (result.success) ? result.message : null;
 
     if (!user) {
       return res.status(403).json({ 
@@ -1861,7 +1861,7 @@ app.listen(env.PORT_NODEJS, async () => {
 
   if (env.AES_SECRET == 'changeme') {
     errorLog(`
-    
+
     AES_SECRET has not been set. Example to create it: "openssl rand -hex 32"
     *******************************************************************************
     * AES_SECRET you could use in .dms-gui.env:                                   *

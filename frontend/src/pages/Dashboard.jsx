@@ -50,13 +50,13 @@ import Col from 'react-bootstrap/Col'; // Import Col
 const Dashboard = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
-  const [containerName] = useLocalStorage("containerName");
-  const [mailservers] = useLocalStorage("mailservers");
+  const [containerName] = useLocalStorage("containerName", '');
+  const [mailservers] = useLocalStorage("mailservers", []);
   
   const [status, setServerStatus] = useState({
     status: {
       status: 'loading',
-      error: undefined,
+      error: null,
     },
     resources: {
       cpuUsage: 0,
@@ -97,8 +97,9 @@ const Dashboard = () => {
       const statusData = await getServerStatus('mailserver', containerName);
       if (statusData.success) {
 
-        setServerStatus(statusData.message);
         setErrorMessage(null);
+        setServerStatus(statusData.message);
+        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'unknown'].includes(statusData.message.status.status)) setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
         
       } else setErrorMessage(statusData?.error);
       
@@ -123,8 +124,9 @@ const Dashboard = () => {
     if (status.status.status === 'missing') return 'danger';
     if (status.status.status === 'api_gen') return 'warning';
     if (status.status.status === 'api_miss') return 'warning';
-    if (status.status.status === 'api_error') return 'warning';
+    if (status.status.status === 'api_match') return 'warning';
     if (status.status.status === 'api_unset') return 'warning';
+    if (status.status.status === 'api_error') return 'danger';
     if (status.status.status === 'running') return 'success';
     if (status.status.status === 'stopped') return 'danger';
     if (status.status.status === 'unknown') return 'danger';

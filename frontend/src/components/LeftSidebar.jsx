@@ -9,6 +9,7 @@ import {
   Button,
   Translate,
 } from './index.jsx';
+import { debugLog } from '../../frontend.mjs';
 
 // https://getbootstrap.com/docs/5.0/examples/sidebars/
 // https://stackoverflow.com/questions/60482018/make-a-sidebar-from-react-bootstrap
@@ -17,10 +18,17 @@ import {
 const LeftSidebar = () => {
   // const { t } = useTranslation();
   const { user } = useAuth();
-  const [containerName] = useLocalStorage("containerName", undefined);
+  const [containerName] = useLocalStorage("containerName", '');
   
+  const [showMailMenus, setShowMailMenus] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   // const [isDropdownActive, setDropdownActive] = useState("false");  // we don't use it yet
+  
+    useEffect(() => {
+      debugLog('LeftSidebar user:', user);
+      debugLog('LeftSidebar containerName:', containerName);
+      if (containerName) setShowMailMenus(true);
+    }, [containerName]);
   
   
   // Style function to apply styles directly based on isActive, a reserved word for bootstrap active links
@@ -43,46 +51,38 @@ const LeftSidebar = () => {
   return (
     <>
     <Nav id="leftsidebar" className={isSidebarCollapsed ? "flex-column leftsidebar collapsed" : "flex-column leftsidebar"}>
-      {user && (
-      <>
-        {(containerName) && (
-          <>
-            <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
-              <i className="bi bi-speedometer2 me-2"></i>
-              <span> {Translate('dashboard.sidebar')}</span>
-            </Nav.Link>
+      {user && (<>
+        {(showMailMenus) && (<>
+          <Nav.Link as={NavLink} to="/dashboard" style={getNavLinkStyle}>
+            <i className="bi bi-speedometer2 me-2"></i>
+            <span> {Translate('dashboard.sidebar')}</span>
+          </Nav.Link>
 
-            {(user.isAccount == 0) && (
-              <>
-              <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
-                <i className="bi bi-inboxes-fill me-2"></i>
-                <span> {Translate('accounts.sidebar')}</span>
-              </Nav.Link>
-              </>
-            )}
-        
-            <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
-              <i className="bi bi-arrow-left-right me-2"></i>
-              <span> {Translate('aliases.sidebar')}</span>
+          {(user.isAccount == 0) && (<>
+            <Nav.Link as={NavLink} to="/accounts" style={getNavLinkStyle}>
+              <i className="bi bi-inboxes-fill me-2"></i>
+              <span> {Translate('accounts.sidebar')}</span>
             </Nav.Link>
+          </>)}
       
-            {(user.isAdmin == 1) && (
-              <>
-                <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
-                  <i className="bi bi-person-lock me-2"></i>
-                  <span> {Translate('logins.sidebar')}</span>
-                </Nav.Link>
+          <Nav.Link as={NavLink} to="/aliases" style={getNavLinkStyle}>
+            <i className="bi bi-arrow-left-right me-2"></i>
+            <span> {Translate('aliases.sidebar')}</span>
+          </Nav.Link>
+        </>)}
 
-                <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
-                  <i className="bi bi-gear-fill me-2"></i>
-                  <span> {Translate('settings.sidebar')}</span>
-                </Nav.Link>
-              </>
-            )}
-          </>
-        )}
-      </>
-      )}
+        {(user.isAdmin == 1) && (<>
+          <Nav.Link as={NavLink} to="/logins" style={getNavLinkStyle}>
+            <i className="bi bi-person-lock me-2"></i>
+            <span> {Translate('logins.sidebar')}</span>
+          </Nav.Link>
+
+          <Nav.Link as={NavLink} to="/settings" style={getNavLinkStyle}>
+            <i className="bi bi-gear-fill me-2"></i>
+            <span> {Translate('settings.sidebar')}</span>
+          </Nav.Link>
+        </>)}
+      </>)}
     </Nav>
 
     <div className="leftsidebar-collapse-footer">

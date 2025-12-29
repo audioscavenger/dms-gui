@@ -57,10 +57,10 @@ import { addLogin } from './logins.mjs';
 import { getConfigs } from './settings.mjs';
 
 
-export const getAccounts = async (containerName, refresh, roles=[]) => {
+export const getAccounts = async (containerName=null, refresh=false, roles=[]) => {
   debugLog(containerName, refresh, roles);
   if (!containerName) return {success: false, error: 'containerName is needed'};
-  refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
+  refresh = env.isDEMO ? false : refresh;
   
   let result, config;
   let accounts = [];
@@ -125,7 +125,7 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
             // result = dbRun(sql.logins.insert.fromDMS, logins2create);
 
             for (const account of accounts2save) {
-              result = await addLogin(account.mailbox, account.mailbox, undefined, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
+              result = await addLogin(account.mailbox, account.mailbox, '', account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
               if (!result.success) errorLog('addLogin:', result?.error);
             }
             
@@ -184,8 +184,8 @@ export const getAccounts = async (containerName, refresh, roles=[]) => {
 
 
 // Function to retrieve mailbox accounts from DMS
-export const pullAccountsFromDMS = async containerName => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const pullAccountsFromDMS = async (containerName=null) => {
+  if (!containerName) return {success: false, error: 'containerName is null'};
   const command = 'email list';
   let accounts = [];
   
@@ -271,8 +271,10 @@ export const pullAccountsFromDMS = async containerName => {
 // Function to add a new mailbox account
 // it create both an account and a login with password in the db, but for isAccout linked users, will never be used
 // TODO: do we want to save passwords also in accounts table? for what purpose?
-export const addAccount = async (schema, containerName, mailbox, password, createLogin=1) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const addAccount = async (schema='dms', containerName=null, mailbox=null, password=null, createLogin=1) => {
+  if (!password) return {success: false, error: 'password is null'};
+  if (!mailbox) return {success: false, error: 'mailbox is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
   let result, results;
 
   try {
@@ -283,13 +285,13 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
 
     if (!results.returncode) {
       
-      const { salt, hash } = await hashPassword(password);
+      const { salt, hash } = await hashPassword(password ?? '');
       result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash}, containerName);
       if (result.success) {
         
         if (createLogin) {
           // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
-          result = await addLogin(mailbox, mailbox, password, mailbox, 0, 1, 1, containerName, [mailbox]);
+          result = await addLogin(mailbox, mailbox, password ?? '', mailbox, 0, 1, 1, containerName, [mailbox]);
           if (result.success) {
             successLog(`Account created: ${mailbox}`);
           } // login created
@@ -318,8 +320,9 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
 
 
 // Function to delete an mailbox account; shema is needed because of the remote command involved
-export const deleteAccount = async (schema, containerName, mailbox) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const deleteAccount = async (schema='dms', containerName=null, mailbox=null) => {
+  if (!mailbox) return {success: false, error: 'containerName is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   let result, results;
   try {
@@ -373,10 +376,12 @@ export const deleteAccount = async (schema, containerName, mailbox) => {
   }
 };
 
-// doveadm function
+// doveadm function for mailboxes
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
-export const doveadm = async (schema, containerName, command, mailbox, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const doveadm = async (schema='dms', containerName=null, command=null, mailbox=null, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}
+  if (!mailbox) return {success: false, error: 'mailbox is null'};
+  if (!command) return {success: false, error: 'command is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
   debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
 
   const doveadm = {
@@ -505,8 +510,9 @@ export const doveadm = async (schema, containerName, command, mailbox, jsonDict=
 };
 
 
-// unused
-export const doveadmAPIforTesting = async (containerName, command, mailbox, jsonDict={}) => {
+// was used for testing, we will likely never implement doveadm API
+/*
+export const doveadmAPIforTesting = async (containerName=null, command=null, mailbox=null, jsonDict={}) => {
 
 // https://doc.dovecot.org/main/core/admin/doveadm.html
 // https://doc.dovecot.org/2.3/admin_manual/doveadm_http_api/
@@ -595,7 +601,7 @@ export const doveadmAPIforTesting = async (containerName, command, mailbox, json
   // 500	Internal server error (see Dovecot logs for more information).
 
 };
-
+*/
 
 
 // module.exports = {

@@ -818,7 +818,7 @@ export const dbUpgrade = () => {
       // env:      `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isImmutable} AND s.name = ?`,
       result = dbGet(sql.configs.select.env, {plugin:'dms-gui'}, 'DB_VERSION', table);
       if (result.success) {
-        db_version = (result.message) ? result.message.value : undefined;
+        db_version = (result.message) ? result.message.value : null;
         debugLog(`DB_VERSION ${table}=`, db_version);
         
       } else throw new Error(result?.error);
@@ -944,10 +944,10 @@ export const hashPassword = async (password='', salt='') => {
 
 
 // verifyPassword works the same wherever a table has a salted hash
-export const verifyPassword = async (credential, password, table='logins') => {
+export const verifyPassword = async (credential=null, password='', table='logins') => {
+  debugLog(`for ${credential}`);
   
   try {
-    debugLog(`for ${credential}`);
     // const login = dbGet(sql[table].select.saltHash, credential, credential);  // this worked perfectly until we switched to ES6
     const login = dbGet(sql[table].select.saltHash, {mailbox:credential, username:credential });
     const saltHash = (login.success) ? login.message : false;
@@ -966,7 +966,7 @@ export const verifyPassword = async (credential, password, table='logins') => {
     if (saltHash && Object.keys(saltHash).length) {
       // debugLog('Object.keys(saltHash).length=', Object.keys(saltHash).length);
       if (saltHash.salt && saltHash.hash) {
-        const { salt, hash } = await hashPassword(password, saltHash.salt);
+        const { salt, hash } = await hashPassword(password ?? '', saltHash.salt);
         // debugLog(`ddebug saltHash.salt = ${saltHash.salt} == ${salt} salt?`);
         // debugLog(`ddebug password ${password} hash=${hash} == ${saltHash.hash} saltHash.hash?`);
         return saltHash.hash === hash;
@@ -987,7 +987,7 @@ export const changePassword = async (table, id, password, schema, containerName)
   let result, results;
 
   try {
-    const { salt, hash } = await hashPassword(password);
+    const { salt, hash } = await hashPassword(password ?? '');
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
@@ -1077,10 +1077,10 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
           if (sql[table].update[key]) {
               
             // is there a test for THAT value or ANY values?
-            if (sql[table].update[key][value] || sql[table].update[key][undefined]) {
+            if (sql[table].update[key][value] || sql[table].update[key][null]) {
               
               // fix the value2test and scope as we may have tests for any values
-              value2test = (sql[table].update[key][value]) ? value : undefined;
+              value2test = (sql[table].update[key][value]) ? value : null;
               
               // there is a test for THAT value and now we check with id in mind
               testResult = dbGet(sql[table].update[key][value2test].test, scopedValues, id);
@@ -1167,10 +1167,10 @@ export const deleteEntry = async (table, id, key, scope) => {
       let scopedValues = {scope:scope};    // always add scope, why care? it's failproof
       
       // check if delete should be tested
-      if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
+      if (sql[table].delete[key][id] || sql[table].delete[key][null]) {
         
         // fix the value2test as we may have tests for any values
-        let value2test = (sql[table].delete[key][id]) ? value : undefined;
+        let value2test = (sql[table].delete[key][id]) ? value : null;
         
         // there is a test for THAT value and now we check with id in mind
         testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
@@ -1244,7 +1244,7 @@ export const refreshTokens = async (credentials) => {
 
 
 // for testing, while settings table is empty, we shall be able to pass on all the settings as well
-export const getTargetDict = (plugin, containerName, settings=[]) => {
+export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
   
   let result, schema;
   try {
@@ -1300,8 +1300,8 @@ export const getTargetDict = (plugin, containerName, settings=[]) => {
       //   defaults: {
       //     containerName: 'dms',
       //     protocol: 'http',
-      //     DMS_API_PORT: undefined,
-      //     DMS_API_KEY: undefined,
+      //     DMS_API_PORT: null,
+      //     DMS_API_KEY: null,
       //     setupPath: '/usr/local/bin/setup',
       //     timeout: 4
       //   }

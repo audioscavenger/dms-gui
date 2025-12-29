@@ -27,9 +27,9 @@ import {
 import { getConfigs } from './settings.mjs';
 
 
-export const getAliases = async (containerName, refresh, roles=[]) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
-  refresh = (refresh === undefined) ? false : (env.isDEMO ? false : refresh);
+export const getAliases = async (containerName=null, refresh=false, roles=[]) => {
+  if (!containerName) return {success: false, error: 'containerName is null'};
+  refresh = env.isDEMO ? false : refresh;
   
   let aliases = [];
   let regexes = [];
@@ -116,8 +116,8 @@ export const getAliases = async (containerName, refresh, roles=[]) => {
 
 
 // Function to retrieve aliases from DMS: returnes [{source, destination}]
-export const pullAliasesFromDMS = async containerName => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const pullAliasesFromDMS = async (containerName=null) => {
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   let aliases = [];
   const command = 'alias list';
@@ -148,7 +148,7 @@ export const pullAliasesFromDMS = async containerName => {
 };
 
 
-export const parseAliasesFromDMS = async stdout => {
+export const parseAliasesFromDMS = async (stdout='') => {
   var aliases = [];
   
   // Parse each line in the format "* source destination"
@@ -184,8 +184,8 @@ export const parseAliasesFromDMS = async stdout => {
 };
 
 
-export const pullPostfixRegexFromDMS = async containerName => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const pullPostfixRegexFromDMS = async (containerName=null) => {
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   let regexes = [];
   const command = `cat ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
@@ -214,7 +214,7 @@ export const pullPostfixRegexFromDMS = async containerName => {
 };
 
 
-export const parsePostfixRegexFromDMS = async stdout => {
+export const parsePostfixRegexFromDMS = async (stdout='') => {
   var regexes = [];
   
   // Parse each line in the format "* source destination"
@@ -246,8 +246,10 @@ export const parsePostfixRegexFromDMS = async stdout => {
 
 
 // Function to add an alias
-export const addAlias = async (containerName, source, destination) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const addAlias = async (containerName=null, source=null, destination=null) => {
+  if (!destination) return {success: false, error: 'destination is null'};
+  if (!source) return {success: false, error: 'source is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   let results, result;
   try {
@@ -314,8 +316,10 @@ export const addAlias = async (containerName, source, destination) => {
 };
 
 // Function to delete an alias
-export const deleteAlias = async (containerName, source, destination) => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const deleteAlias = async (containerName=null, source=null, destination=null) => {
+  if (!destination) return {success: false, error: 'destination is null'};
+  if (!source) return {success: false, error: 'source is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   let results, result;
   try {

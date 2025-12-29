@@ -23,14 +23,23 @@
     "status": {
       "api_gen": "API key not generated",
       "api_miss": "API key not sent",
-      "api_error": "API keys mismatch: update DMS compose with the new key and restart it!",
-      "api_unset": "DMS needs its API key: you are almost there!",
+      "api_match": "API key mismatch",
+      "api_unset": "API key unset",
+      "api_error": "Unknown API error",
       "loading": "Loading...",
       "alive": "Server is alive",
-      "missing": "Wrong name or DNS error",
+      "missing": "Name or DNS error",
       "running": "Running",
       "stopped": "Stopped",
       "unknown": "Unknown error"
+    },
+    "errors": {
+      "api_gen": "API key not generated: yyou should not even have access to this page. How did you pull that one off?",
+      "api_miss": "API key not sent: dms-gui did not sent the API KEY to the Mailserver API, how did you pull that one off?",
+      "api_match": "API key mismatch: you must update your Mailserver compose with the API KEY you can see in Settings and restart it.",
+      "api_unset": "API key unset: you must add the API KEY you can see in Settings in your Mailserver compose and restart it.",
+      "api_error": "Unknown API error: something badwrong happened with the python API we injected in your Mailserver.",
+      "unknown": "Unknown error: cannot tell what the proble is, open the browser debugger and look for clues."
     },
     "error": "Unable to load dashboard data. Please check server connection."
   },
@@ -158,7 +167,7 @@
     "DMSHelp": "Select the current mailserver container to handle",
     "DMS_API_KEY": "DMS API KEY",
     "DMS_API_KEYregen": "Generate new DMS_API_KEY",
-    "DMS_API_KEYregened": "DMS_API_KEY: {{DMS_API_KEY}}<br /><br />Now that the API key is created, you need to do 4 things with your DMS compose:<br />1️⃣ Expose the API port<pre>expose: 8888</pre>2️⃣ Add these environment variables <pre>- DMS_API_KEY: {{DMS_API_KEY}}<br />- PYTHONUNBUFFERED: 1 # optional: enable api logging in compose<br />- DMS_API_PORT: {{DMS_API_PORT}}  # optional</pre>3️⃣ Add this volume file:<br /><pre>- ./config/dms-gui/rest-api.conf:/etc/supervisor/conf.d/rest-api.conf:ro</pre>4️⃣ Finally, <strong>restart</strong> your {{containerName}} container",
+    "DMS_API_KEYregened": "DMS_API_KEY: {{DMS_API_KEY}}<br /><br />Now that the API key is created, you need to do 4 things with your DMS compose:<br />1️⃣ Expose the API port: <pre>expose: 8888</pre>2️⃣ Add these environment variables: <pre>- DMS_API_KEY: {{DMS_API_KEY}}<br />- DMS_API_PORT: {{DMS_API_PORT}}</pre>3️⃣ Add this volume file:<br /><pre>- ./config/dms-gui/rest-api.conf:/etc/supervisor/conf.d/rest-api.conf:ro</pre>4️⃣ Finally, <strong>restart</strong> your {{containerName}} container",
     "DMS_API_KEYregenedHelp": "Show the steps to connect with DMS",
     "DMS_API_KEYRequired": "DMS_API_KEY is required and must be set in DMS compose",
     "DMS_API_KEYHelp": "DMS_API_KEY is used to authenticate with DMS container command API",

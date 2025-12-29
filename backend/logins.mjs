@@ -90,7 +90,7 @@ export const getLogin = async (credential, guess=false) => {
 
 
 // this returns an array of objects, credentials is either mailbox or username, or array of those, or an object like {id:id}|{mailbox:mailbox}|{username:username}, or array of those
-export const getLogins = async (credentials, guess=false) => {
+export const getLogins = async (credentials=null, guess=false) => {
   debugLog(credentials, guess);
   if (credentials && !Array.isArray(credentials)) return getLogin(credentials, guess);
 
@@ -105,14 +105,14 @@ export const getLogins = async (credentials, guess=false) => {
       logins = await Promise.all(
         credentials.map(async (credential) => {
           const login = await getLogin(credential, guess);
-          if (login.success) return login.message;
+          if (login.success) return login?.message || null;
         })
       );
       infoLog(`Found ${logins.length} entries in logins for`, credentials);
 
       if (logins.length) {
         // now remove all undefined entries
-        logins = logins.filter(element => element !== undefined);
+        logins = logins.filter(element => element !== null);
       }
       
     } else {
@@ -143,7 +143,7 @@ export const getLogins = async (credentials, guess=false) => {
 
 
 // this returns an array
-export const getRoles = async credential => {
+export const getRoles = async (credential=null) => {
 
   let roles = {success:false};
   try {
@@ -174,13 +174,12 @@ export const getRoles = async credential => {
 
 
 // mailserver used to be containerName, now we want configID
-export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, mailserver, roles=[]) => {
+export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
+  debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles);
 
   try {
-    debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles);
-    
     // even when password is undefined, we can get a hash value
-    const { salt, hash } = await hashPassword(password);
+    const { salt, hash } = await hashPassword(password ?? '');
     // login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
     const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, mailserver:mailserver, roles:JSON.stringify(roles) });
     if (result.success) {
@@ -202,7 +201,7 @@ export const addLogin = async (mailbox, username, password, email, isAdmin=0, is
 
 
 // loginUser will not throw an error an attacker can exploit
-export const loginUser = async (credential, password) => {
+export const loginUser = async (credential=null, password='') => {
   
   let login, isValid, results, message;
   try {
@@ -274,8 +273,8 @@ export const loginUser = async (credential, password) => {
 
 
 // this returns an array of objects // cancelled
-export const getRolesFromRoles = async containerName => {
-  if (!containerName) return {success: false, error: 'containerName has not been defined yet'};
+export const getRolesFromRoles = async (containerName=null) => {
+  if (!containerName) return {success: false, error: 'containerName is null'};
 
   try {
     

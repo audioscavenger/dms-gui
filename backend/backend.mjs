@@ -99,7 +99,7 @@ export const debugLog = async (message, ...data) => { if (env.debug) logger('deb
  * @param {string} setupCommand Command to pass to setup.sh
  * @return {Promise<string>} stdout from the command
  */
-export const execSetup = async (setupCommand, targetDict, ...rest) => {
+export const execSetup = async (setupCommand=null, targetDict={}, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   // const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
@@ -109,7 +109,7 @@ export const execSetup = async (setupCommand, targetDict, ...rest) => {
 };
 
 
-export const execCommand = async (command, targetDict, ...rest) => {
+export const execCommand = async (command=null, targetDict={}, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
   debugLog(`Executing system command: ${command}`);
@@ -189,7 +189,7 @@ async function execInContainer(command, containerName) {
  * @param {object} targetDict with protocol, host, port, Authorization
  * @return {Promise<object>} with returncode, stdout and stderr
  */
-export const checkPort = async (targetDict) => {
+export const checkPort = async (targetDict={}) => {
   return new Promise((resolve) => {
 
     if (env.isDEMO) return {success: true, message: 'running'};
@@ -229,7 +229,7 @@ export const checkPort = async (targetDict) => {
  * @param {string} host
  * @return {Promise<object>} with returncode, stdout and stderr
  */
-export const ping = async (host) => {
+export const ping = async (host=null) => {
 
   if (env.isDEMO) return {success: true, message: "mock response"};
   try {
@@ -256,7 +256,7 @@ export const ping = async (host) => {
  * @param {object} targetDict with protocol, host, port, Authorization and maybe timeout
  * @return {Promise<object>} with returncode, stdout and stderr
  */
-export const execInContainerAPI = async (command, targetDict, ...rest) => {
+export const execInContainerAPI = async (command=null, targetDict={}, ...rest) => {
   
   if (env.isDEMO) return {returncode:0, stdout:"mock response"};
   let result;
@@ -324,7 +324,7 @@ export const execInContainerAPI = async (command, targetDict, ...rest) => {
  * @param {string} apiUrl API url like http://whatever:8888
  * @return {Promise<string>} stdout from the fetch
  */
-export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
+export const postJsonToApi = async (apiUrl=null, jsonData={}, Authorization=null) => {
   // debugLog('ddebug apiUrl', apiUrl)
   // debugLog('ddebug DMS_API_KEY', DMS_API_KEY)
   // debugLog('ddebug jsonData', jsonData)
@@ -394,7 +394,7 @@ export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
  * @param {string} apiUrl API url like http://whatever:8888
  * @return {Promise<string>} stdout from the fetch
  */
-export const getJsonFromApi = async (apiUrl, Authorization) => {
+export const getJsonFromApi = async (apiUrl=null, Authorization=null) => {
 
   try {
     const response = await fetch(apiUrl, {
@@ -512,7 +512,7 @@ try {
 */
 
 
-export const readJson = async jsonFile => {
+export const readJson = async (jsonFile=null) => {
   var json = {};
 
   debugLog(`start to read ${jsonFile}`);
@@ -540,7 +540,7 @@ export const readJson = async jsonFile => {
 
 
 
-export const writeJson = async (jsonFile, DBdict) => {
+export const writeJson = async (jsonFile=null, DBdict={}) => {
   
   if (DBdict.constructor == Object) {
     try {
@@ -560,7 +560,7 @@ export const writeJson = async (jsonFile, DBdict) => {
 };
 
 
-export const writeFile = async (file, content) => {
+export const writeFile = async (file=null, content='') => {
   
   try {
 
@@ -576,7 +576,7 @@ export const writeFile = async (file, content) => {
 };
 
 
-export const formatDMSError = async (errorMsg, error) => {
+export const formatDMSError = async (errorMsg=null, error=null) => {
   // Unfortunately, we cannot list all the error types from dms just here
   // var patterns = [
     // /'?\S+'? is already an alias for recipient: '?\S+'?/i,

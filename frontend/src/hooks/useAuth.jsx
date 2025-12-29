@@ -8,40 +8,38 @@ const AuthContext = createContext();
 import {
   logoutUser,
 } from '../services/api.mjs';
+import { debugLog } from '../../frontend.mjs';
 
 export const AuthProvider = ({ children }) => {
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
-  const [containerName, setContainerName] = useLocalStorage("containerName", undefined);
+  const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
   const [user, setUser] = useLocalStorage("user", null);
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
   // const login = async (username, to="/") => {
-  const login = async (user, to="/") => {
+  const login = async (passedUser, to="/") => {
     
-    // console.debug('ddebug setUser(user)', user);
-    setUser(user);
-    console.debug('ddebug useAuth user', user);
+    debugLog('useAuth passedUser', passedUser);
+    setUser(passedUser);
 
     // set current mailserver container
-    if (user?.mailserver) {
-      console.debug('ddebug useAuth user?.mailserver', user?.mailserver);
-      setContainerName(user.mailserver);
+    if (passedUser?.mailserver) {
+      setContainerName(passedUser.mailserver);
 
     // no user favorite? pick the first one in the list if any
-    } else {
-      if (mailservers.length && !containerName) setContainerName(getValueFromArrayOfObj(mailservers, 'value'));
-    }
-    setIsDEMO(user?.isDEMO);
+    } else if (mailservers.length && !passedUser?.mailserver) setContainerName(getValueFromArrayOfObj(mailservers, 'value'));
+
+    setIsDEMO(passedUser?.isDEMO);
     
-    // console.debug('ddebug navigate /');
+    debugLog(`useAuth navigate to ${to}`);
     navigate(to);
   };
 
   // call this function to sign out logged in user
   const logout = async (to="/login") => {
-    // console.debug('ddebug /logout');
+    // debugLog('useAuth /logout');
     // setUser(null);
     logoutUser();
     window.localStorage.clear();
@@ -54,13 +52,16 @@ export const AuthProvider = ({ children }) => {
       user,
       login,
       logout,
+      containerName,
+      mailservers,
+      isDEMO,
     }),
-    [user]
+    [user, containerName, mailservers]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  // console.debug('ddebug useAuth AuthContext');
+  // debugLog('useAuth AuthContext');
   return useContext(AuthContext);
 };

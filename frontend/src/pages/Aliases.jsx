@@ -36,8 +36,8 @@ import { useAuth } from '../hooks/useAuth';
 const Aliases = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [containerName] = useLocalStorage("containerName");
-  const [mailservers] = useLocalStorage("containerName");
+  const [containerName] = useLocalStorage("containerName", '');
+  const [mailservers] = useLocalStorage("mailservers", []);
 
   const [isLoading, setLoading] = useState(true);
   
@@ -72,8 +72,8 @@ const Aliases = () => {
     fetchAliases(false);
   }, [mailservers, containerName]);
 
-  const fetchAliases = async (refresh) => {
-    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
+  const fetchAliases = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
     debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
     
     try {

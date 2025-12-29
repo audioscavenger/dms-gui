@@ -24,7 +24,7 @@ const Navbar = ({
   // const { t } = useTranslation();
   const { logout } = useAuth();
   const { user } = useAuth();
-  const [isDEMO] = useLocalStorage("isDEMO");
+  const [isDEMO] = useLocalStorage("isDEMO", false);
   
   const navigate = useNavigate();
   

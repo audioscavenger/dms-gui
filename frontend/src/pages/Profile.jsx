@@ -41,8 +41,7 @@ const Profile = () => {
   const { t } = useTranslation();
   const { user, login } = useAuth();
 
-  const [containerName] = useLocalStorage("containerName");
-  // const [mailservers, setMailservers] = useState([]);
+  const [containerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
 
   // Common states -------------------------------------------------

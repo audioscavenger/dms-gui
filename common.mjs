@@ -235,9 +235,9 @@ export const mergeArrayOfObj = (a=[], b=[], prop='name') => {
 // this will return the FIRST value found in a list of props, from an array of objects like:
 // array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => "value1"
 export const getValueFromArrayOfObj = (array, propValues, keyName='name', keyValue='value') => {
-  if (!Array.isArray(array)) return undefined;
+  if (!Array.isArray(array)) return null;
   if (!Array.isArray(propValues)) propValues = [propValues];
-  return (array.find(item => propValues.includes(item[keyName]) )) ? array.find(item => propValues.includes(item[keyName]))[keyValue] : undefined;
+  return (array.find(item => propValues.includes(item[keyName]) )) ? array.find(item => propValues.includes(item[keyName]))[keyValue] : null;
 };
 
 
@@ -256,7 +256,7 @@ export const getValuesFromArrayOfObj = (array, propValues, keyName='name', keyVa
 
 // this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
 export const pluck = (array, keyValue='value', uniq=true, sorted=true) => {
-  if (!Array.isArray(array)) return undefined;
+  if (!Array.isArray(array)) return null;
   let values = array.map(item => item[keyValue]);
   let uniqValues = (uniq) ? [... new Set(values)] : values;
   return (sorted) ? uniqValues.sort() : uniqValues;

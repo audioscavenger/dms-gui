@@ -125,7 +125,7 @@ nohup /usr/bin/python3 $(dirname $0)/rest-api.py &
 */
 
 
-export const userPatchesAPI = {
+export const userRESTAPI = {
   py: {
     desc: 'python API server - mount this to /tmp/docker-mailserver/dms-gui/rest-api.py',
     path: env.DMSGUI_CONFIG_PATH + '/rest-api.py',
@@ -218,7 +218,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
       else:
         if DMS_API_KEY != 'missing':
           if api_key != 'missing':
-            response_message = {"status": "error", "error": f"Invalid api_key: api_error: {str(api_key)}"}
+            response_message = {"status": "error", "error": f"Invalid api_key: api_match: {str(api_key)}"}
           else:
             response_message = {"status": "error", "error": f"Missing api_key: api_miss"}
         else: 

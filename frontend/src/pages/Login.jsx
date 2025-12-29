@@ -57,15 +57,17 @@ export const Login = () => {
 
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
-  const [firstRun, setFirstRun] = useState(false);
-  const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO");
+  // const [firstRun, setFirstRun] = useState(false);
+  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this could be used elsewhere as well
+  const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
   
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   const { user, login, logout } = useAuth();
   
-  const [setMailservers] = useLocalStorage("mailservers");
+  const [containerName, setContainerName] = useLocalStorage("containerName", '');
+  const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
@@ -96,7 +98,7 @@ export const Login = () => {
     }
   };
 
-    const fetchMailservers = async () => {
+  const fetchMailservers = async () => {
     
     try {
       const [mailserversData] = await Promise.all([
@@ -109,6 +111,14 @@ export const Login = () => {
   
         // update selector list
         setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
+        
+        // debugLog('Login user?.mailserver', user?.mailserver);
+        // debugLog('Login mailserversData.message[0]', mailserversData.message[0]);
+        // if (user?.mailserver) {
+        //   setContainerName(user.mailserver);              // sets user favorite
+        // } else if (mailserversData.message.length) {
+        //   setContainerName(mailserversData.message[0]);   // set first one in list
+        // }
         
       // } else setErrorMessage(mailserversData?.error);  // fails silently
       }
@@ -123,20 +133,27 @@ export const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    // Here you would usually send a request to your backend to authenticate the user
-    // For the sake of this example, we're using a mock authentication
-    const result = await loginUser(credential, password)
-    // console.debug('ddebug loginUser result=', result.message);
-    // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
-    // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
-    
-    if (result.success) {
-      // now we can pull and setState for available mailservers; await a little so the Settings page don't pull it twice
-      await fetchMailservers();
+    try {
+      // Here you would usually send a request to your backend to authenticate the user
+      // For the sake of this example, we're using a mock authentication
+      const result = await loginUser(credential, password);
+      console.debug('ddebug loginUser result=', result.message);
+      // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
+      // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
+      
+      if (result.success) {
+        // now we can pull and setState for available mailservers; await a little so the Settings page don't pull it twice
+        await fetchMailservers();
 
-      (firstRun) ? await login(result.message, "/settings") : await login(result.message);
+        (firstRun) ? await login(result.message, "/settings") : await login(result.message);
 
-    } else {
+      // this will never happen with a 401 login denied unless the backend returns 200, which it won't. HTTP error codes exist for a reason and we will use them.
+      } else {
+        setErrorMessage('logins.denied');
+      }
+
+    // react refuses to handle 401 login denied and will actually fall here
+    } catch (error) {
       setErrorMessage('logins.denied');
     }
   };

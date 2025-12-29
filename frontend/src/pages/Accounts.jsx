@@ -62,8 +62,8 @@ const Accounts = () => {
   const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [containerName] = useLocalStorage("containerName");
-  const [mailservers] = useLocalStorage("mailservers");
+  const [containerName] = useLocalStorage("containerName", '');
+  const [mailservers] = useLocalStorage("mailservers", []);
 
   const [accounts, setAccounts] = useState([]);
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
@@ -104,8 +104,8 @@ const Accounts = () => {
     fetchAccounts();
   }, [mailservers, containerName]);
 
-  const fetchAccounts = async (refresh) => {
-    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
+  const fetchAccounts = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
     
     try {
       setLoading(true);
@@ -132,7 +132,7 @@ const Accounts = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
-      setErrorMessage('api.errors.fetchAccounts');
+      setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
       
     } finally {
       setLoading(false);

@@ -45,8 +45,8 @@ const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [containerName] = useLocalStorage("containerName");
-  const [mailservers] = useLocalStorage("mailservers");
+  const [containerName] = useLocalStorage("containerName", '');
+  const [mailservers] = useLocalStorage("mailservers", []);
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);

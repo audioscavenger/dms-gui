@@ -125,7 +125,7 @@ api.interceptors.response.use(
 // export const getServerStatus = async (plugin, schema, containerName, test=undefined, settings=[]) => {
 export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
-  // debugLog('ddebug settings',settings);
+  debugLog('api getServerStatus settings:', settings);
 
   const params = {};
   if (test !== undefined) params.test = test;
@@ -139,7 +139,7 @@ export const getServerStatus = async (plugin, containerName, test=undefined, set
 };
 
 // export const getServerEnvs = async (plugin, schema, containerName, refresh, name) => {
-export const getServerEnvs = async (plugin, containerName, refresh, name) => {
+export const getServerEnvs = async (plugin, containerName, refresh=false, name) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
@@ -188,9 +188,9 @@ export const getConfigs = async (plugin, name) => {
     let         path = `/configs/${plugin}`;
     if (name)   path = `/configs/${plugin}/${name}`;
 
-    debugLog(`ddebug api ${path}:`, response);
+    debugLog(`api getConfigs plugin=${plugin} path=${path}:`, response);
     const response = await api.get(path);
-    debugLog(`getConfigs ${path} response:`, response);
+    debugLog(`api getConfigs plugin=${plugin} path=${path} response:`, response);
     
     return response.data;
   } catch (error) {
@@ -202,8 +202,7 @@ export const getConfigs = async (plugin, name) => {
 export const saveSettings = async (plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted=false) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   const params = {encrypted:encrypted};
-  debugLog('ddebug containerName', containerName);
-  debugLog('ddebug jsonArrayOfObjects', jsonArrayOfObjects);
+  debugLog(`api saveSettings containerName=${containerName} jsonArrayOfObjects:`, jsonArrayOfObjects);
   
   try {
     debugLog(`api.post(/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, {params});
@@ -216,10 +215,10 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
 };
 
 export const getLogins = async ids => {
-  debugLog(`getLogins ids`, ids);
+  debugLog(`api getLogins ids`, ids);
   const body = {ids: ids};
   try {
-    debugLog(`getLogins api.post(/getLogins`, body);
+    debugLog(`api getLogins api.post(/getLogins`, body);
     const response = await api.post(`/getLogins`, body);
     return response.data;
   } catch (error) {
@@ -286,7 +285,7 @@ export const logoutUser = async () => {
   }
 };
 
-export const getAccounts = async (containerName, refresh) => {
+export const getAccounts = async (containerName=null, refresh=false) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
@@ -353,7 +352,7 @@ export const updateAccount = async (schema, containerName, mailbox, jsonDict) =>
   }
 };
 
-export const getAliases = async (containerName, refresh) => {
+export const getAliases = async (containerName=null, refresh=false) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   const params = {};
@@ -367,7 +366,7 @@ export const getAliases = async (containerName, refresh) => {
   }
 };
 
-export const addAlias = async (containerName, source, destination) => {
+export const addAlias = async (containerName=null, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   try {
     const response = await api.post(`/aliases/${containerName}`, { source, destination });
@@ -378,7 +377,7 @@ export const addAlias = async (containerName, source, destination) => {
   }
 };
 
-export const deleteAlias = async (containerName, source, destination) => {
+export const deleteAlias = async (containerName=null, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   try {
@@ -391,7 +390,7 @@ export const deleteAlias = async (containerName, source, destination) => {
   }
 };
 
-export const getDomains = async (containerName, name) => {
+export const getDomains = async (containerName=null, name) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
 
   try {

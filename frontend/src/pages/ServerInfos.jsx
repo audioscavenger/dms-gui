@@ -48,8 +48,8 @@ import { useAuth } from '../hooks/useAuth';
 
 const ServerInfos = () => {
   const { t } = useTranslation();
-  const [containerName] = useLocalStorage("containerName");
-  const [mailservers] = useLocalStorage("mailservers");
+  const [containerName] = useLocalStorage("containerName", '');
+  const [mailservers] = useLocalStorage("mailservers", []);
   const { user } = useAuth();
 
   const [isLoading, setLoading] = useState(true);
@@ -66,8 +66,8 @@ const ServerInfos = () => {
   }, [mailservers]);
 
 
-  const fetchAll = async (refresh) => {
-    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
+  const fetchAll = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
     debugLog(`fetchAll refresh=(${refresh})`);
     setLoading(true);
 
@@ -100,9 +100,9 @@ const ServerInfos = () => {
     }
   };
 
-  const fetchServerEnvs = async (refresh) => {
+  const fetchServerEnvs = async (refresh=false) => {
     if (!mailservers || !mailservers.length) return;
-    refresh = (refresh === undefined || !user.isAdmin) ? false : refresh;
+    refresh = !user.isAdmin ? false : refresh;
     // debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema')}, ${containerName}, ${refresh})`);
     debugLog(`fetchServerEnvs call getServerEnvs('mailserver', ${containerName}, ${refresh})`);
     

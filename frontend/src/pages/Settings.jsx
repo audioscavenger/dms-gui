@@ -44,7 +44,7 @@ import ServerInfos from './ServerInfos';
 const Settings = () => {
   // const passwordFormRef = useRef(null);
   const { t } = useTranslation();
-  const [containerName] = useLocalStorage("containerName");
+  const [containerName] = useLocalStorage("containerName", '');
 
   // this is how to handle data coming from a child form
   /*
