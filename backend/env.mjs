@@ -125,12 +125,13 @@ nohup /usr/bin/python3 $(dirname $0)/rest-api.py &
 */
 
 
-export const userRESTAPI = {
-  py: {
-    desc: 'python API server - mount this to /tmp/docker-mailserver/dms-gui/rest-api.py',
-    path: env.DMSGUI_CONFIG_PATH + '/rest-api.py',
-    content:
-`#!/usr/bin/python3
+export const mailserverRESTAPI = {
+  dms: {
+    api: {
+      desc: 'python API server - should be created at /tmp/docker-mailserver/dms-gui/rest-api.py',
+      path: env.DMSGUI_CONFIG_PATH + '/rest-api.py',
+      content: `
+#!/usr/bin/python3
 # version={DMSGUI_VERSION}
 
 import http.server
@@ -147,12 +148,12 @@ DMS_API_SIZE = int(os.environ.get('DMS_API_SIZE', 1024))          # max bytes pe
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'info')                   # relies on dms LOG_LEVEL value set in your 'mailserver.env'
 timeout_default = 1                                               # can be superseeded by passed timeout in data
 
-def debugg(message):
-  if LOG_LEVEL == 'debug' logger(message)
-
 def logger(message):
   # 2025-11-05T15:05:49.710284+00:00 mx dms-gui-api:
   print(f'{datetime.datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S.%f%z")} {os.uname().nodename.split(".")[0]} dms-gui-api: {message}')
+
+def debugg(message):
+  if LOG_LEVEL == 'debug': logger(message)
 
 class APIHandler(http.server.BaseHTTPRequestHandler):
 
@@ -194,11 +195,11 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
             
             logger(f"Executing command: {command}")
             result = subprocess.run(command, 
-                                     shell=True, 
-                                     capture_output=True, # Capture stdout and stderr
-                                     text=True,           # Decode stdout and stderr as text
-                                     check=False,         # Do not raise an exception for non-zero exit codes
-                                     timeout=timeout,     # timeout in seconds
+                                    shell=True, 
+                                    capture_output=True, # Capture stdout and stderr
+                                    text=True,           # Decode stdout and stderr as text
+                                    check=False,         # Do not raise an exception for non-zero exit codes
+                                    timeout=timeout,     # timeout in seconds
                                     )
             debugg("result: {result}")  #  CompletedProcess(args='/usr/local/bin/setup alias list', returncode=0, stdout='...
             
@@ -255,12 +256,11 @@ with socketserver.TCPServer((DMS_API_HOST, DMS_API_PORT), APIHandler) as httpd:
   logger(f"Serving at port {DMS_API_HOST}:{DMS_API_PORT}")
   httpd.serve_forever()
 `,
-  },
-  cron: {
-    desc: 'https://github.com/orgs/docker-mailserver/discussions/2908 - mount this to /etc/supervisor/conf.d/rest-api.conf',
-    path: env.DMSGUI_CONFIG_PATH + '/rest-api.conf',
-    content:
-`
+    },
+    cron: {
+      desc: 'https://github.com/orgs/docker-mailserver/discussions/2908 - mount this to /etc/supervisor/conf.d/rest-api.conf',
+      path: env.DMSGUI_CONFIG_PATH + '/rest-api.conf',
+      content:`
 [program:rest-api]
 startsecs=1
 stopwaitsecs=0
@@ -270,6 +270,7 @@ stdout_logfile=/var/log/supervisor/%(program_name)s.log
 stderr_logfile=/var/log/supervisor/%(program_name)s.log
 command=/usr/bin/python3 /tmp/docker-mailserver/dms-gui/rest-api.py
 `,
+    },
   },
 }
 

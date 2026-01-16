@@ -936,7 +936,7 @@ async (req, res) => {
   }
 });
 
-// Endpoint for retrieving settings - deprecated
+// Endpoint for retrieving settings
 /**
  * @swagger
  * /api/settings/{plugin}/{containerName}/{scope}:

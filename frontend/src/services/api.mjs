@@ -205,8 +205,9 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
   debugLog(`api saveSettings containerName=${containerName} jsonArrayOfObjects:`, jsonArrayOfObjects);
   
   try {
-    debugLog(`api.post(/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, {params});
+    debugLog(`api.post(/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, 'params:', {params});
     const response = await api.post(`/settings/${plugin}/${schema}/${scope}/${containerName}`, jsonArrayOfObjects, {params});   // jsonArrayOfObjects = [{name:name, value:value}, ..]
+    debugLog(`api.post(/settings/${plugin}/${schema}/${scope}/${containerName} response.data:`, response.data);
     return response.data;
   } catch (error) {
     errorLog(error.message);

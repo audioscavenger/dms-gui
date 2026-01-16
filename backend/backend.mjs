@@ -84,7 +84,7 @@ export const LEVEL = {
 // });
 export const logger = async (level, message='', ...data) => {
   // console[level](`[\x1B[90m${(new Date).toLocaleTimeString()}\x1B[39m]`, ICON[level], color.k+color.HIG+LEVEL[level]+color.end, color.LOW+funcName(4)+color.end, message, data);
-  console.log(`[${color.kLOW}${(new Date).toLocaleTimeString()}${color.end}`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, ...data, color.end);
+  console.log(`[${color.kLOW}${(new Date).toLocaleTimeString()}]${color.end}`, ICON[level], color.k+color.HIG+LEVEL[level], color.LOW+funcName(4)+(level == 'debug' ? '' : color.end), message, ...data, color.end);
 };
 
 export const successLog = async (message, ...data) => { logger('success', message, ...data) };
@@ -192,7 +192,7 @@ async function execInContainer(command, containerName) {
 export const checkPort = async (targetDict={}) => {
   return new Promise((resolve) => {
 
-    if (env.isDEMO) return {success: true, message: 'running'};
+    if (env.isDEMO) return {success: true, message: 'port_open'};
     try {
       const socket = new net.Socket();
       socket.setTimeout((targetDict?.timeout || 0.3) * 1000);   // we don't accept less then 300ms reply time
@@ -200,25 +200,30 @@ export const checkPort = async (targetDict={}) => {
       // Attempt to connect to the specified host and port
       socket.connect(targetDict.port, targetDict.host, () => {
         socket.end(); // Close the connection immediately after success
-        resolve({success: true, message: 'running'});
+        resolve({success: true, message: 'port_open'});
       });
 
-      socket.on('error', () => {
+      socket.on('error', (error) => {
+        // console.error(`Error message: ${error.message}`);   // connect ECONNREFUSED 172.19.0.3:8888
+        // console.error(`Error code: ${error.code}`);         // 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'
+        // console.error(`System call: ${error.syscall}`);     // 'connect'
+        // console.error(`Address: ${error.address}`);         // 172.19.0.3
+        // console.error(`Port: ${error.port}`);               // 8888
         socket.destroy();
-        resolve({success: false, error: 'error'});
+        resolve({success: false, message: 'port_closed: ' + error.code});
       });
 
       // Handle 'timeout' events
       socket.on('timeout', () => {
         socket.destroy();
-        resolve({success: false, error: 'timeout'});
+        resolve({success: false, message: 'port_timeout'});
       });
 
-      return {success: true, message: 'running'};
+      return {success: false, message: 'port_unknown'};       // should never happen
 
     } catch (error) {
       errorLog('error:', error.message);
-      return {success: false, error: error.message};
+      return {success: false, message: error.message};
     }
   });
 }
@@ -291,7 +296,7 @@ export const execInContainerAPI = async (command=null, targetDict={}, ...rest) =
         errorLog('response:', response);
         return {
           returncode: 99,
-          stderr: response.error.toString('utf8'),
+          stderr: response.error.toString('utf8'),    // example: Invalid api_key: api_error: xxx-491c1cfd-86ec-49ba-b962-ce0bce5ff189
         };
         
       } else {
@@ -303,9 +308,10 @@ export const execInContainerAPI = async (command=null, targetDict={}, ...rest) =
         };
       }
     } else {
+      debugLog('error:', result);
       return {
         returncode: 99,
-        stderr: checkPort.message,
+        stderr: result.message,
       };
     }
 
@@ -567,11 +573,13 @@ export const writeFile = async (file=null, content='') => {
     // fs.writeFileSync(file, content, 'utf8');
     await fs.promises.writeFile(file, content, 'utf8');
     successLog(`${file}`);
+    return {success: true, message: file};
 
     
   } catch (error) {
     errorLog(error.message);
-    throw new Error(error.message);
+    return {success: false, error: error.message};
+    // throw new Error(error.message);
   }
 };
 

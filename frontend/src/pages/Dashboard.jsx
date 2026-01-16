@@ -99,7 +99,7 @@ const Dashboard = () => {
 
         setErrorMessage(null);
         setServerStatus(statusData.message);
-        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'unknown'].includes(statusData.message.status.status)) setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown'].includes(statusData.message.status.status)) setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
         
       } else setErrorMessage(statusData?.error);
       
@@ -127,6 +127,9 @@ const Dashboard = () => {
     if (status.status.status === 'api_match') return 'warning';
     if (status.status.status === 'api_unset') return 'warning';
     if (status.status.status === 'api_error') return 'danger';
+    if (status.status.status === 'port_closed') return 'danger';
+    if (status.status.status === 'port_timeout') return 'warning';
+    if (status.status.status === 'port_unknown') return 'danger';
     if (status.status.status === 'running') return 'success';
     if (status.status.status === 'stopped') return 'danger';
     if (status.status.status === 'unknown') return 'danger';

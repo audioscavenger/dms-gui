@@ -33,8 +33,10 @@ export const AuthProvider = ({ children }) => {
 
     setIsDEMO(passedUser?.isDEMO);
     
-    debugLog(`useAuth navigate to ${to}`);
-    navigate(to);
+    if (to !== null) {
+      debugLog(`useAuth navigate to ${to}`);
+      navigate(to);
+    }
   };
 
   // call this function to sign out logged in user

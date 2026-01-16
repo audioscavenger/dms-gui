@@ -50,6 +50,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### NavBar:
 * [ ] - save user's lang in logins table?
+* [ ] - have container selector in lieu of the branding
 
 ### LeftMenu:
 * [ ] - refactor LeftSidebar to be collapsible and extend main container
@@ -139,15 +140,24 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 
-* [ ] 1.5.?? - frontend: mailservers dropdown in the branding
-* [ ] 1.5.?? - WARNING: saveServerEnvs and changePassword do not use scope and schema anymore, why?
-* [ ] 1.5.?? - update demo database
-* [ ] 1.5.?? - retested: create/delete login
-* [ ] 1.5.?? - retested: create/delete mailbox
-* [ ] 1.5.?? - retested: create/delete alias
-* [ ] 1.5.?? - retested: create/delete alias
-* [ ] 1.5.?? - must redirect user to dashboard after new container added successfully 100%
-* [ ] 1.5.?? - must pull all data with a spinner after new container added successfully
+* [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
+* [ ] 1.5.99 - frontend: mailservers dropdown in the branding
+* [ ] 1.5.99 - WARNING: saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.5.99 - update demo database
+* [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - retested: create/delete mailbox
+* [ ] 1.5.99 - retested: create/delete alias
+* [ ] 1.5.99 - retested: create/delete alias
+* [ ] 1.5.99 - must redirect user to dashboard after new container added successfully 100%
+* [ ] 1.5.99 - must pull all data with a progress bar after new container added successfully
+* [ ] 1.5.99 - frontend: bugfix: ServerInfos table does not show boolean values
+* [x] 1.5.22 - evreything seems to work again
+* [x] 1.5.22 - frontend: FormContainerAdd injects the API at the right time and not a dozen times
+* [x] 1.5.22 - backend: saveSettings should not do anything else like injecting the API. One function, one job
+* [x] 1.5.22 - frontend: bugfix: FormContainerAdd page refresh does not ping and therefore test API button is locked
+* [x] 1.5.22 - frontend: FormContainerAdd correctly works again and redirects to dashboard if API is running
+* [x] 1.5.22 - backend: correctly handle API port errors
+* [x] 1.5.22 - must autoping and show as red or green to unlock the test API button; decision is made to not let user save a container that doesn't exist
 * [x] 1.5.21 - fixed many error messages and retested pulling accounts and aliases and all seems to work again
 * [x] 1.5.21 - containerName being used as a default value for some select, should not be defaulted to null
 * [x] 1.5.21 - massing revamp of all functions with default values and more testing

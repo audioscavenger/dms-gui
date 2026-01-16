@@ -10,7 +10,7 @@ import {
 import {
   command,
   env,
-  userRESTAPI,
+  mailserverRESTAPI,
 } from './env.mjs';
 
 import {
@@ -46,9 +46,9 @@ import path from 'path';
 // returns a string
 export const getSetting = async (plugin='mailserver', containerName=null, name=null, encrypted=false) => {
   debugLog(plugin, containerName, name, encrypted);
-  if (!name)          return {success: false, error: 'name is required'};
-  if (!containerName) return {success: false, error: 'scope=containerName is required'};
-  if (!plugin) return {success: false, error: 'plugin is required'};
+  if (!name)          return {success: false, error: 'getSetting: name is required'};
+  if (!containerName) return {success: false, error: 'getSetting: scope=containerName is required'};
+  if (!plugin) return {success: false, error: 'getSetting: plugin is required'};
 
   try {
     
@@ -75,8 +75,8 @@ export const getSetting = async (plugin='mailserver', containerName=null, name=n
 // this returns an array of objects; schema and scope are optional; not async anymore since called by getTargetdict
 export const getSettings = (plugin='mailserver', containerName=null, name=null, encrypted=false) => {
   debugLog(plugin, containerName, name, encrypted);
-  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
-  if (!plugin)             return {success: false, error: 'plugin is required'};
+  if (!containerName)             return {success: false, error: 'getSettings: scope=containerName is required'};
+  if (!plugin)             return {success: false, error: 'getSettings: plugin is required'};
   if (name) return getSetting(plugin, containerName, name, encrypted);
   
   let result, settings;
@@ -186,11 +186,11 @@ export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
 // ... the value for DMS_API_PORT  will always be dependent on containerName from the frontend
 export const saveSettings = async (plugin='mailserver', schema=null, scope=null, containerName=null, jsonArrayOfObjects=[], encrypted=false) => {
   debugLog(plugin, schema, scope, containerName, jsonArrayOfObjects, encrypted);
-  if (!jsonArrayOfObjects.length) return {success: false, error: 'values=jsonArrayOfObjects is required'};
-  if (!containerName) return {success: false, error: 'containerName is required'};
-  if (!scope) return {success: false, error: 'scope is required'};
-  if (!schema) return {success: false, error: 'schema is required'};
-  if (!plugin) return {success: false, error: 'plugin is required'};
+  if (!jsonArrayOfObjects.length) return {success: false, error: 'saveSettings: values=jsonArrayOfObjects is required'};
+  if (!containerName) return {success: false, error: 'saveSettings: containerName is required'};
+  if (!scope) return {success: false, error: 'saveSettings: scope is required'};
+  if (!schema) return {success: false, error: 'saveSettings: schema is required'};
+  if (!plugin) return {success: false, error: 'saveSettings: plugin is required'};
 
   let result;
   try {
@@ -218,8 +218,9 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
       successLog(`Saved ${jsonArrayOfObjectsScoped.length} settings for containerName=${containerName}`);
 
       // now (re) generate API scripts if we are saving a new DMS_API_KEY
-      const DMS_API_KEY = getValueFromArrayOfObj(jsonArrayOfObjectsScoped, 'DMS_API_KEY');
-      if (DMS_API_KEY) result = await initAPI(plugin, schema, containerName, DMS_API_KEY);
+      // NOOOOOOOOOO one function does one job not two
+      // const DMS_API_KEY = getValueFromArrayOfObj(jsonArrayOfObjectsScoped, 'DMS_API_KEY');
+      // if (DMS_API_KEY) result = await initAPI(plugin, schema, containerName, DMS_API_KEY);
       
     }
     return result;
@@ -239,8 +240,8 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
 // Function to get server status from DMS, you can add some extra test like ping or execSetup
 export const getServerStatus = async (plugin='mailserver', containerName=null, test=undefined, settings=[]) => {
   debugLog(plugin, containerName, test, settings);
-  if (!containerName)             return {success: false, error: 'containerName is required'};
-  if (!plugin)             return {success: false, error: 'plugin is required'};
+  if (!containerName)             return {success: false, error: 'getServerStatus: containerName is required'};
+  if (!plugin)             return {success: false, error: 'getServerStatus: plugin is required'};
 
   let result, results, schema;
   let status = {
@@ -298,15 +299,20 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
           status.status.status = "running";
 
         } else {
+          debugLog('error:', results);
           if (results.stderr) {
             if (results.stderr.match(/api_miss/))  status.status.status = "api_miss";   // API key was not sent by dms-gui somehow
             if (results.stderr.match(/api_unset/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
             if (results.stderr.match(/api_match/)) status.status.status = "api_match";   // API key is different on either side
+            if (results.stderr.match(/port_closed|ECONNREFUSED/)) status.status.status = "port_closed";   // API port is closed or filtered
+            if (results.stderr.match(/port_timeout|ETIMEDOUT/)) status.status.status = "port_timeout";   // API port timeout
+            if (results.stderr.match(/port_unknown/)) status.status.status = "port_unknown";   // API port unknown error, should never happen
+            if (results.stderr.match(/missing|ENOTFOUND/)) status.status.status = "missing";   // name or IP not found, should not happen here as ping takes care of that
             
             status.status.error = results.stderr;   // we should handle HTTP POST error! status: 500
 
           } else {
-            status.status.status = 'api_error';     // unknown error
+            status.status.status = 'api_error';     // unknown API error
             status.status.error = 'unknown';
           }
           return {success: true, message: status};  // api errors are not errors unless we add an error
@@ -1046,14 +1052,13 @@ export const getServerEnv = async (plugin='mailserver', containerName=null, name
 // export const getServerEnvs = async (plugin, schema, scope, containerName, refresh, name) => {
 export const getServerEnvs = async (plugin='mailserver', containerName=null, refresh=false, name=null) => {
   debugLog(`plugin=${plugin}, containerName=${containerName}, refresh=${refresh}, name=${name}`);
-  if (!containerName)             return {success: false, error: 'containerName is required'};
-  if (!plugin)             return {success: false, error: 'plugin is required'};
+  if (!containerName)             return {success: false, error: 'getServerEnvs: containerName is required'};
+  if (!plugin)             return {success: false, error: 'getServerEnvs: plugin is required'};
   refresh = env.isDEMO ? false : refresh;
   
   if (!refresh) {
     if (name) return getServerEnv(plugin, containerName, name);
     
-    debugLog(`refresh=${refresh} for ${containerName}`);
     try {
       
       // const result = dbAll(sql.settings.select.envs, {scope:containerName});
@@ -1061,7 +1066,7 @@ export const getServerEnvs = async (plugin='mailserver', containerName=null, ref
       const result = dbAll(sql.configs.select.envs, {plugin:plugin}, containerName);
       if (result.success) {
         const envs = result.message;
-        debugLog(`envs: (${typeof envs})`, envs);
+        debugLog(`envs: (${typeof envs}) of length ${envs?.length}:`, envs);
         
         // we could read DB_Logins and it is valid
         if (envs.length) {
@@ -1106,8 +1111,8 @@ export const getServerEnvs = async (plugin='mailserver', containerName=null, ref
 
 export const saveServerEnvs = async (plugin='mailserver', schema=null, scope=null, containerName=null, jsonArrayOfObjects=[]) => {  // jsonArrayOfObjects = [{name:name, value:value}, ..]
   debugLog(plugin, schema, scope, containerName, jsonArrayOfObjects);
-  if (!jsonArrayOfObjects.length) return {success: false, error: 'values=jsonArrayOfObjects is required'};
-  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
+  if (!jsonArrayOfObjects.length) return {success: false, error: 'saveServerEnvs: values=jsonArrayOfObjects is required'};
+  if (!containerName)             return {success: false, error: 'saveServerEnvs: scope=containerName is required'};
 
   let result;
   try {
@@ -1141,6 +1146,7 @@ export const getNodeInfos = async () => {
   return {success: true, message: [
     { name: 'debug', value: env.debug },
     { name: 'DMSGUI_VERSION', value: env.DMSGUI_VERSION },
+    { name: 'DMSGUI_CONFIG_PATH', value: env.DMSGUI_CONFIG_PATH },
     { name: 'HOSTNAME', value: env.HOSTNAME },
     { name: 'TZ', value: env.TZ },
     { name: 'NODE_VERSION', value: process.version },
@@ -1152,8 +1158,8 @@ export const getNodeInfos = async () => {
 
 export const getDomain = async (containerName=null, name=null) => {
   debugLog(containerName, name);
-  if (!name)                      return {success: false, error: 'name is required'};
-  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
+  if (!name)                      return {success: false, error: 'getDomain: name is required'};
+  if (!containerName)             return {success: false, error: 'getDomain: scope=containerName is required'};
 
   try {
     
@@ -1175,7 +1181,7 @@ export const getDomain = async (containerName=null, name=null) => {
 export const getDomains = async (containerName=null, name=null) => {
   debugLog(containerName, name);
   if (name) return getDomain(containerName, name);
-  if (!containerName)             return {success: false, error: 'scope=containerName is required'};
+  if (!containerName)             return {success: false, error: 'getDomains: scope=containerName is required'};
   
   try {
     
@@ -1206,26 +1212,47 @@ export const getDomains = async (containerName=null, name=null) => {
 };
 
 
+
+
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]     dbRun DB.transaction success
+// dms-gui  | [3:36:59 AM ✔️  [SUCCESS] saveSettings Saved 7 settings for containerName=dms
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]     initAPI (plugin:mailserver, schema:dms, containerName:dms, dms_api_key_param:d6657c97-2f43-40c6-8104-3e3d43478f41)
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]     initAPI Injecting API scripts to dms...
+// dms-gui  | [3:36:59 AM ✔️  [SUCCESS]         writeFile /app/config/rest-api.py
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]         createAPIfiles created file.path: /app/config/rest-api.py
+// dms-gui  | [3:36:59 AM ✔️  [SUCCESS]         writeFile /app/config/rest-api.conf
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]         createAPIfiles created file.path: /app/config/rest-api.conf
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]         getSetting mailserver dms null false
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]       initAPI success: false, dms_api_key_db: undefined
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]       initAPI dms_api_key_new=param d6657c97-2f43-40c6-8104-3e3d43478f41
+
+
 // Creates API script and conf file for DMS
 // 1. if    dms_api_key_param, use it and replace value in db 
 // 2. if no dms_api_key_param, use what's in db
 // 3. if no dms_api_key_param and nothing in db, generate it
-// 4. if    dms_api_key_param == 'regen', regenerate it and save in db
+// 4. if    dms_api_key_param == 'regen',  regenerate it and save in db
+// 4. if    dms_api_key_param == 'inject', only inject API files to DMS config folder
 // 5. always create script and conf file at the end
-export const initAPI = async (plugin='mailserver', schema=null, containerName=null, dms_api_key_param=null) => {
+export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, dms_api_key_param=null) => {
   debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
-  if (!containerName)             return {success: false, error: 'containerName is required'};
-  if (!schema)             return {success: false, error: 'schema is required'};
-  if (!plugin)             return {success: false, error: 'plugin is required'};
+  if (!containerName)             return {success: false, error: 'initAPI: containerName is required'};
+  if (!schema)             return {success: false, error: 'initAPI: schema is required'};
+  if (!plugin)             return {success: false, error: 'initAPI: plugin is required'};
 
   
   let result, dms_api_key_db, dms_api_key_new;
   try {
     
+    // inject API files and exit if inject is passed
+    debugLog(`Injecting API scripts to ${containerName}...`);
+    result = await createAPIfiles(schema);
+    if (dms_api_key_param == 'inject') return result;
+    
     // get what key is in db if any
-    result = await getSetting(plugin, containerName);
+    result = await getSetting(plugin, containerName, "DMS_API_KEY");
     if (result.success) dms_api_key_db = result.message;
-    debugLog(`success: ${result.success}, dms_api_key_db:`, dms_api_key_db);
+    debugLog(`success: ${result.success}, dms_api_key_db: ${dms_api_key_db}, error:`, result?.error);
 
     // replace key when key is passed
     if (dms_api_key_param) {
@@ -1234,6 +1261,11 @@ export const initAPI = async (plugin='mailserver', schema=null, containerName=nu
       if (dms_api_key_param == 'regen') {
         dms_api_key_new = containerName + "-" + crypto.randomUUID();
         debugLog(`dms_api_key_new=regen`, dms_api_key_new);
+
+      // inject API was passed
+      } else if (dms_api_key_param == 'inject') {
+        dms_api_key_new = dms_api_key_param;
+        debugLog(`dms_api_key_new=inject`);
 
       // use key vparam passed
       } else {
@@ -1258,20 +1290,16 @@ export const initAPI = async (plugin='mailserver', schema=null, containerName=nu
     }
 
     // save key in db only if there is a config, do not try to save it during testing before a config exists
-    if (result.success && dms_api_key_new != dms_api_key_db) {
+    if (result.success && dms_api_key_new != dms_api_key_db && dms_api_key_param != 'inject') {
       debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
       
       let jsonArrayOfObjects = [{name:'DMS_API_KEY', value:dms_api_key_new}];
       result = await saveSettings(plugin, schema, scope, containerName, jsonArrayOfObjects);
       if (!result.success) return result;
 
-    } else return {success: true, message: dms_api_key_new}; // this is when we test the API only
+    // } else return {success: true, message: dms_api_key_new}; // this is when we test the API only // stupid: how can we test the API without the injection?
+    }
         
-    // regen API files
-    debugLog(`Regenerate API scripts for ${containerName}...`);
-    result = await createAPIfiles();
-    if (result.success) return {success: true, message: dms_api_key_new};
-    
     return {success: false, error: result?.error};
 
   } catch (error) {
@@ -1286,14 +1314,20 @@ export const initAPI = async (plugin='mailserver', schema=null, containerName=nu
 };
 
 
-// TODO: add containerName somewhere in path or file name
-export const createAPIfiles = async () => {
+// API files and path are defined in env.mjs and depend on the container type == schema
+export const createAPIfiles = async (schema='dms') => {
   if (env.isDEMO) return {success: true, message: 'API files created'};
 
+  let result;
   try {
-    for (const file of Object.values(userRESTAPI)) {
-      writeFile(file.path, file.content.replace('{DMSGUI_VERSION}', env.DMSGUI_VERSION));
-      debugLog('created file.path:',file.path)
+    for (const file of Object.values(mailserverRESTAPI[schema])) {
+      result = await writeFile(file.path, file.content.replace('{DMSGUI_VERSION}', env.DMSGUI_VERSION));
+      if (result.success) {
+        debugLog('created file.path:', file.path);
+      } else {
+        errorLog(`FAILED to created ${file.path}:`, result?.error);
+        return {success: false, error: result?.error};
+      }
     }
     return {success: true, message: 'API files created'};
     
