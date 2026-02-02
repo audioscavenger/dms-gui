@@ -300,7 +300,9 @@ const Logins = () => {
 
     if (!newLoginformData.password) {
       errors.password = 'password.passwordRequired';
-    } else if (newLoginformData.password.length < 8) {
+
+    // admins can do anything including disregard password length
+    } else if (newLoginformData.password.length < 8 && !user.isAdmin) {
       errors.password = 'password.passwordLength';
     }
 

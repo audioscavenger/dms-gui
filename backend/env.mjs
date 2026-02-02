@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 export const env = {
-  debug: (process.env.DEBUG === 'true') ? true : false,
+  debug: ((process.env?.DEBUG || '') == 'true') ? true : false,
 
   // const { name, version, description }: require('./package.json');
   DMSGUI_VERSION: (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION,
@@ -92,7 +92,7 @@ export const env = {
   LOG_COLORS: (process.env.LOG_COLORS === 'false') ? false : true,
 
   // DEMO will activate a mock database and disable all refresh options
-  isDEMO : (process.env.isDEMO === 'true') ? true : false,
+  isDEMO : ((process.env?.isDEMO || '').toLowerCase() == 'true') ? true : false,
   github : 'https://github.com/audioscavenger/dms-gui',
   wiki : 'https://github.com/audioscavenger/dms-gui',
   dockerhub : 'https://hub.docker.com/repositories/audioscavenger',

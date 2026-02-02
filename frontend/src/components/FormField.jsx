@@ -48,20 +48,23 @@ const FormField = ({
   ...rest // Pass any other props down to Form.Control
 }) => {
   const { t } = useTranslation();
-  const require       = required     == true ? true : false;
 
   // You provided a `checked` prop to a form field without an `onChange` handler. 
   // This will render a read-only field. If the field should be mutable use `defaultChecked`. 
   // Otherwise, set either `onChange` or `readOnly`
-  const checked       = isChecked       == true ? true : false;
-  const dChecked      = defaultChecked  == true ? true : false;
+  // ALSO, safely convert booleans to true booleans
+  required        = !!required;
+  isChecked       = !!isChecked;
+  defaultChecked  = !!defaultChecked;
+  translate       = !!translate;
   
+
   return (
     <Form.Group className={groupClass} controlId={id} as={as}>
       {!['checkbox', 'radio'].includes(type) && label && (
       <Form.Label className={labelColor}>
         {Translate(label, translate)}
-        {require && <span className="text-danger ms-1">*</span>}
+        {required && <span className="text-danger ms-1">*</span>}
       </Form.Label>
       )}
       
@@ -75,7 +78,7 @@ const FormField = ({
               onChange={onChange}
               placeholder={(translate) && t(placeholder) || placeholder}
               isInvalid={!!error} // Set isInvalid based on error presence
-              checked={checked}
+              checked={isChecked}
               {...rest} // Spread remaining props
             />
           ) || (
@@ -85,7 +88,7 @@ const FormField = ({
               label={Translate(label, translate)}
               placeholder={(translate) && t(placeholder) || placeholder}
               isInvalid={!!error} // Set isInvalid based on error presence
-              defaultChecked={dChecked}
+              defaultChecked={defaultChecked}
               {...rest} // Spread remaining props
             />
           )
@@ -97,7 +100,7 @@ const FormField = ({
             onChange={onChange}
             placeholder={(translate) && t(placeholder) || placeholder}
             isInvalid={!!error} // Set isInvalid based on error presence
-            required={require} // Pass required prop
+            required={required} // Pass required prop
             {...rest} // Spread remaining props
           />
         )}

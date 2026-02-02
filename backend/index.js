@@ -857,7 +857,7 @@ async (req, res) => {
       // check source for obvious hack attempt. extract domains and see that they match. Only admins can create aliases for different domain then destination
       let domainSource = source.match(/.*@([\_\-\.\w]+)/);
       let domainDest = destination.match(/.*@([\_\-\.\w]+)/);
-      let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1] == domainDest[1]) ? true : false;
+      let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1].toLowerCase() == domainDest[1].toLowerCase()) ? true : false;
       result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
     }
     res.status(201).json(result);
@@ -1031,8 +1031,8 @@ async (req, res) => {
   try {
     const { plugin, name } = req.params;
     // for non-admins:  for mailserver plugin we send scope=roles, for anything else we send scope=userID
-    debugLog(            `getConfigs(${plugin}, ${(req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
-    const configs = await getConfigs(plugin,      (req.user.isAdmin) ? undefined : (plugin == 'mailserver') ? req.user.roles : [req.user.id],    name);
+    debugLog(            `getConfigs(${plugin}, ${(req.user.isAdmin) ? [] : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
+    const configs = await getConfigs(plugin,      (req.user.isAdmin) ? [] : (plugin == 'mailserver') ? req.user.roles : [req.user.id],    name);
     res.json(configs);
     
   } catch (error) {
@@ -1855,8 +1855,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  await dbInit(true);         // reset db
-  // await dbInit();         // apply patches etc
+  // await dbInit(true);         // reset db
+  await dbInit();         // apply patches etc
   await refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
   if (env.AES_SECRET == 'changeme') {

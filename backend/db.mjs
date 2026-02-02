@@ -727,6 +727,7 @@ export const dbGet = (sql, params={}, ...anonParams) => {
   }
 };
 
+// WARNING: use the spread syntax when passing an array in anonParams!
 export const dbAll = (sql, params={}, ...anonParams) => {
   
   if (typeof sql != "string") {

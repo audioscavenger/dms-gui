@@ -67,11 +67,13 @@ const Profile = () => {
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
+    debugLog('user',user);
     setLoading(true);
     if (!mailservers || !mailservers.length) fetchMailservers();
-    // fetchProfile();  // nah we use localStorage user, even if hacked, the backend takes care of it
+    setloginFormData(user);
     setLoading(false);
-  }, []);
+    debugLog('loginFormData',loginFormData);
+  }, [user]);
 
   // const fetchProfile = async () => {
     
@@ -249,7 +251,9 @@ const Profile = () => {
 
     if (!passwordFormData.newPassword) {
       errors.newPassword = 'password.passwordRequired';
-    } else if (passwordFormData.newPassword.length < 8) {
+
+    // admins can do anything including disregard password length
+    } else if (passwordFormData.newPassword.length < 8 && !user.isAdmin) {
       errors.newPassword = 'password.passwordLength';
     }
 
@@ -301,7 +305,7 @@ const Profile = () => {
   };
 
 
-  if (isLoading && !selectedLogin) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -323,7 +327,7 @@ const Profile = () => {
           name="isAdmin"
           label="logins.isAdmin"
           error={loginFormErrors.isAdmin}
-          isChecked={loginFormData.isAdmin}
+          defaultChecked={loginFormData.isAdmin}
           disabled
         />
 
@@ -333,7 +337,7 @@ const Profile = () => {
           name="isAccount"
           label="logins.isAccountChoice"
           error={loginFormErrors.isAccount}
-          isChecked={loginFormData.isAccount && !loginFormData.isAdmin}
+          defaultChecked={loginFormData.isAccount && !loginFormData.isAdmin}
           disabled
         />
 
@@ -341,7 +345,7 @@ const Profile = () => {
           id="mailserver"
           name="mailserver"
           label="logins.mailserver"
-          value={loginFormData?.mailserver || mailservers[0]?.containerName || undefined}
+          value={loginFormData?.mailserver || mailservers[0]?.containerName || null}
           onChange={handleLoginInputChange}
           options={mailservers}
           placeholder="logins.mailserverRequired"
@@ -397,7 +401,7 @@ const Profile = () => {
           name="isActive"
           label="logins.isActive"
           error={loginFormErrors.isActive}
-          isChecked={loginFormData.isActive}
+          defaultChecked={loginFormData.isActive}
           disabled
         />
 

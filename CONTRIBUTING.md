@@ -135,23 +135,32 @@ docker container prune -f && docker image prune -f
 docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
 
+2026-01-17T00:49:44.766885+0000 mx dms-gui-api: response_message: {'status': 'success', 'returncode': 0, 'stdout': "\x1b[0;35mSETUP\x1b[0;31m(\x1b[0;33m1\x1b[0;31m)\n\n\x1b[38;5;214mNAME\x1b[0m\n    setup - 'docker-mailserver' Administration & Configuration CLI\n\n\x1b[38;5;214mSYNOPSIS\x1b[0m\n    setup [ OPTIONS\x1b[0;31m...\x1b[0m ] COMMAND [ help \x1b[0;31m|\x1b[0m ARGUMENTS\x1b[0;31m...\x1b[0m ]\n\n    COMMAND \x1b[0;31m:=\x1b[0m { email \x1b[0;31m|\x1b[0m alias \x1b[0;31m|\x1b[0m quota \x1b[0;31m|\x1b[0m dovecot-master \x1b[0;31m|\x1b[0m config \x1b[0;31m|\x1b[0m relay \x1b[0;31m|\x1b[0m debug } SUBCOMMAND\n\n\x1b[38;5;214mDESCRIPTION\x1b[0m\n    This is the main administration command that you use for all your interactions with\n    'docker-mailserver'. Initial setup, configuration, and much more is done with this CLI tool.\n\n    Most subcommands can provide additional information and examples by appending 'help'.\n    For example: 'setup email add help'\n\n\x1b[0;31m[\x1b[38;5;214mSUB\x1b[0;31m]\x1b[38;5;214mCOMMANDS\x1b[0m\n    \x1b[1;34mCOMMAND\x1b[0m email \x1b[0;31m:=\x1b[0m\n        setup email \x1b[0;36madd\x1b[0m <EMAIL ADDRESS> [<PASSWORD>]\n        setup email \x1b[0;36mupdate\x1b[0m <EMAIL ADDRESS> [<PASSWORD>]\n        setup email \x1b[0;36mdel\x1b[0m [ OPTIONS\x1b[0;31m...\x1b[0m ] <EMAIL ADDRESS> [ <EMAIL ADDRESS>\x1b[0;31m...\x1b[0m ]\n        setup email \x1b[0;36mrestrict\x1b[0m <add\x1b[0;31m|\x1b[0mdel\x1b[0;31m|\x1b[0mlist> <send\x1b[0;31m|\x1b[0mreceive> [<EMAIL ADDRESS>]\n        setup email \x1b[0;36mlist\x1b[0m\n\n    \x1b[1;34mCOMMAND\x1b[0m alias \x1b[0;31m:=\x1b[0m\n        setup alias \x1b[0;36madd\x1b[0m <EMAIL ADDRESS> <RECIPIENT>\n        setup alias \x1b[0;36mdel\x1b[0m <EMAIL ADDRESS> <RECIPIENT>\n        setup alias \x1b[0;36mlist\x1b[0m\n\n    \x1b[1;34mCOMMAND\x1b[0m quota \x1b[0;31m:=\x1b[0m\n        setup quota \x1b[0;36mset\x1b[0m <EMAIL ADDRESS> [<QUOTA>]\n        setup quota \x1b[0;36mdel\x1b[0m <EMAIL ADDRESS>\n\n    \x1b[1;34mCOMMAND\x1b[0m dovecot-master \x1b[0;31m:=\x1b[0m\n        setup dovecot-master \x1b[0;36madd\x1b[0m <USERNAME> [<PASSWORD>]\n        setup dovecot-master \x1b[0;36mupdate\x1b[0m <USERNAME> [<PASSWORD>]\n        setup dovecot-master \x1b[0;36mdel\x1b[0m [ OPTIONS\x1b[0;31m...\x1b[0m ] <USERNAME> [ <USERNAME>\x1b[0;31m...\x1b[0m ]\n        setup dovecot-master \x1b[0;36mlist\x1b[0m\n\n    \x1b[1;34mCOMMAND\x1b[0m config \x1b[0;31m:=\x1b[0m\n        setup config \x1b[0;36mdkim\x1b[0m [ ARGUMENTS\x1b[0;31m...\x1b[0m ]\n\n    \x1b[1;34mCOMMAND\x1b[0m relay \x1b[0;31m:=\x1b[0m\n        setup relay \x1b[0;36madd-auth\x1b[0m <DOMAIN> <USERNAME> [<PASSWORD>]\n        setup relay \x1b[0;36madd-domain\x1b[0m <DOMAIN> <HOST> [<PORT>]\n        setup relay \x1b[0;36mexclude-domain\x1b[0m <DOMAIN>\n\n    \x1b[1;34mCOMMAND\x1b[0m fail2ban \x1b[0;31m:=\x1b[0m\n        setup fail2ban \x1b[0m\n        setup fail2ban \x1b[0;36mban\x1b[0m <IP>\n        setup fail2ban \x1b[0;36munban\x1b[0m <IP>\n        setup fail2ban \x1b[0;36mlog\x1b[0m\n        setup fail2ban \x1b[0;36mstatus\x1b[0m\n\n    \x1b[1;34mCOMMAND\x1b[0m debug \x1b[0;31m:=\x1b[0m\n        setup debug \x1b[0;36mfetchmail\x1b[0m\n        setup debug \x1b[0;36mgetmail\x1b[0m\n        setup debug \x1b[0;36mlogin\x1b[0m <COMMANDS>\n        setup debug \x1b[0;36mshow-mail-logs\x1b[0m\n\n\x1b[38;5;214mEXAMPLES\x1b[0m\n    \x1b[1;37msetup email add test@example.com\x1b[0m\n        Add the email account \x1b[1;37mtest@example.com\x1b[0m. You will be prompted\n        to input a password afterwards since no password was supplied.\n\n    \x1b[1;37msetup config dkim keysize 2048 domain 'example.com,not-example.com'\x1b[0m\n        Creates keys of length 2048 for the domains in comma-seperated list.\n        This is necessary when using LDAP as the required domains cannot be inferred.\n\n    \x1b[1;37msetup config dkim help\x1b[0m\n        This will provide you with a detailed explanation on how to use the \x1b[1;37m\n        config dkim\x1b[0m command, showing what arguments can be passed and what they do.\n\n", 'stderr': ''}
+2026-01-17T00:50:00.924051+0000 mx dms-gui-api: Received JSON data: {'command': 'env', 'timeout': 4}
+
 
 ## history:
 
 * [ ] - frontend/Settings: pulls everything when submitting new DMS, with progress bars
 
+* [ ] 1.5.99 - backend: pull aliases can only be done by an admin currently, that's by design.
+* [ ] 1.5.99 - backend: execInContainerAPI logs cleartext passwords when loggin in users, can we send encrypted data instead?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - WARNING: saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.5.99 - backend: must find a way to delete the database depending on certain versions
 * [ ] 1.5.99 - update demo database
-* [ ] 1.5.99 - retested: create/delete login
-* [ ] 1.5.99 - retested: create/delete mailbox
-* [ ] 1.5.99 - retested: create/delete alias
-* [ ] 1.5.99 - retested: create/delete alias
 * [ ] 1.5.99 - must redirect user to dashboard after new container added successfully 100%
 * [ ] 1.5.99 - must pull all data with a progress bar after new container added successfully
 * [ ] 1.5.99 - frontend: bugfix: ServerInfos table does not show boolean values
-* [x] 1.5.22 - evreything seems to work again
+* [x] 1.5.99 - Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
+* [ ] 1.5.24 - retested: create/delete login
+* [ ] 1.5.24 - retested: create/delete mailbox
+* [ ] 1.5.24 - retested: create/delete alias
+* [x] 1.5.23 - frontend: Profile correctly use defaultChecked instead of isChecked for unmonitored checkboxes
+* [x] 1.5.23 - safely convert booleans to true booleans almost everywhere with bool = !!passedVariable
+* [x] 1.5.23 - let admin use unsecure passwords, that's their problem
+* [x] 1.5.22 - everything seems to work again
 * [x] 1.5.22 - frontend: FormContainerAdd injects the API at the right time and not a dozen times
 * [x] 1.5.22 - backend: saveSettings should not do anything else like injecting the API. One function, one job
 * [x] 1.5.22 - frontend: bugfix: FormContainerAdd page refresh does not ping and therefore test API button is locked

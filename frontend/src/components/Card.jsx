@@ -42,7 +42,7 @@ const Card = ({
 }) => {
   const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
-  const collapser       = collapsible    == true ? true : false;
+  const collapser       = !!collapsible;
   const refresher       = (typeof onClickRefresh  == "function") ? true : false;
   
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap

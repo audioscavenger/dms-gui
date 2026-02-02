@@ -144,7 +144,7 @@
     "existingAliases": "Existing Aliases",
     "invalidDestination": "Invalid email format",
     "invalidSource": "Invalid email format",
-    "invalidSourceDomain": "Domain is not covered by any accounts",
+    "invalidSourceDomain": "Cannot create this alias: domain is not in your managed domains (or you are not admin)",
     "newAlias": "Add New Alias",
     "noAliases": "No aliases. Add your first alias.",
     "selectDestination": "Select destination account",

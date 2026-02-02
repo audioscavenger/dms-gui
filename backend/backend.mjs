@@ -300,7 +300,7 @@ export const execInContainerAPI = async (command=null, targetDict={}, ...rest) =
         };
         
       } else {
-        successLog('command:', command);
+        successLog('command:', command);              // WARNING this will show cleartext passwords when loggin in users
         return {
           returncode: response.returncode,
           stdout: response.stdout.toString('utf8'),

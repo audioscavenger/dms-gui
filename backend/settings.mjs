@@ -131,7 +131,7 @@ export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
       // non admins: roles are mailboxes
       // configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN config c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
       if (roles && roles.length) {
-        result = dbAll(sql.accounts.select.configs.replace("?", Array(roles.length).fill("?").join(",")), {plugin:plugin}, roles);
+        result = dbAll(sql.accounts.select.configs.replace("?", Array(roles.length).fill("?").join(",")), {plugin:plugin}, ...roles);
 
       // admins
       } else {
@@ -143,7 +143,7 @@ export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
 
       // non admins: roles are logins id
       if (roles && roles.length) {
-        result = dbAll(sql.configs.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin}, roles);
+        result = dbAll(sql.configs.select.configs.replace("scope LIKE ?", Array(roles.length).fill("scope LIKE ?").join(" OR ")), {plugin:plugin}, ...roles);
         
       // admins
       } else {
@@ -156,10 +156,10 @@ export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
       if (name) result.message = reduxArrayOfObjByValue(result.message, 'value', name);
 
       if (result.message.length) {
-        infoLog(`Found ${result.message.length} configs for ${plugin}/scope=`, roles);
+        infoLog(`Found ${result.message.length} configs for ${plugin}/scope=`, ...roles);
 
       } else {
-        warnLog(`Found ${result.message.length} configs for ${plugin}/scope=`, roles);
+        warnLog(`Found ${result.message.length} configs for ${plugin}/scope=`, ...roles);
       }
       
     } else errorLog(result?.error);

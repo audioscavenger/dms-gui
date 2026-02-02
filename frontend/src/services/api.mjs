@@ -188,7 +188,7 @@ export const getConfigs = async (plugin, name) => {
     let         path = `/configs/${plugin}`;
     if (name)   path = `/configs/${plugin}/${name}`;
 
-    debugLog(`api getConfigs plugin=${plugin} path=${path}:`, response);
+    debugLog(`api getConfigs plugin=${plugin} path=${path} name=${name}`);
     const response = await api.get(path);
     debugLog(`api getConfigs plugin=${plugin} path=${path} response:`, response);
     
