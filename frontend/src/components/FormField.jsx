@@ -52,12 +52,6 @@ const FormField = ({
   // You provided a `checked` prop to a form field without an `onChange` handler. 
   // This will render a read-only field. If the field should be mutable use `defaultChecked`. 
   // Otherwise, set either `onChange` or `readOnly`
-  // ALSO, safely convert booleans to true booleans
-  required        = !!required;
-  isChecked       = !!isChecked;
-  defaultChecked  = !!defaultChecked;
-  translate       = !!translate;
-  
 
   return (
     <Form.Group className={groupClass} controlId={id} as={as}>
@@ -78,7 +72,7 @@ const FormField = ({
               onChange={onChange}
               placeholder={(translate) && t(placeholder) || placeholder}
               isInvalid={!!error} // Set isInvalid based on error presence
-              checked={isChecked}
+              checked={!!isChecked}
               {...rest} // Spread remaining props
             />
           ) || (
@@ -88,7 +82,7 @@ const FormField = ({
               label={Translate(label, translate)}
               placeholder={(translate) && t(placeholder) || placeholder}
               isInvalid={!!error} // Set isInvalid based on error presence
-              defaultChecked={defaultChecked}
+              defaultChecked={!!defaultChecked}
               {...rest} // Spread remaining props
             />
           )
@@ -100,7 +94,7 @@ const FormField = ({
             onChange={onChange}
             placeholder={(translate) && t(placeholder) || placeholder}
             isInvalid={!!error} // Set isInvalid based on error presence
-            required={required} // Pass required prop
+            required={!!required} // Pass required prop
             {...rest} // Spread remaining props
           />
         )}

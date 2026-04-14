@@ -1227,7 +1227,7 @@ export const refreshTokens = async (credentials) => {
     
     let result = dbRun(sql.logins.update.refreshTokens, credentials);
     if (result.success) {
-      successLog(`tokens refreshed:`, credentials || '*');
+      successLog(`tokens refreshed:`, credentials ?? '*');
       return {success: true, message: `tokens refreshed:`};
       
     } else return result;

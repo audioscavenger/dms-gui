@@ -198,10 +198,10 @@ const DataTable = ({
   return (
     <>
     <Table
-      striped={striped}
-      bordered={bordered}
-      hover={hover}
-      responsive={responsive}
+      striped={!!striped}
+      bordered={!!bordered}
+      hover={!!hover}
+      responsive={!!responsive}
       {...rest}
     >
       <thead>

@@ -43,11 +43,11 @@ const SelectField = ({
         value={value}
         onChange={onChange}
         isInvalid={!!error}
-        required={required}
+        required={!!required}
         {...rest}
       >
         {placeholder && (
-          <option value="" disabled={required}>
+          <option value="" disabled={!!required}>
             {' '}
             {/* Disable placeholder if required */}
             {t(placeholder)}

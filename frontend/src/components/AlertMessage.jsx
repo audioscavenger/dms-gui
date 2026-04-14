@@ -17,7 +17,7 @@ import {
 const AlertMessage = ({
   type = 'info',
   message,
-  onClose,
+  onClose = true,
   translate = true,
   ...rest
 }) => {
@@ -27,7 +27,7 @@ const AlertMessage = ({
   return (
     <RBAlert
       variant={type}
-      onClose={onClose}
+      onClose={!!onClose}
       dismissible={!!onClose} // Make dismissible if onClose is provided
       {...rest}
     >

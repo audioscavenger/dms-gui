@@ -3,21 +3,21 @@ import crypto from 'node:crypto';
 
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 export const env = {
-  debug: ((process.env?.DEBUG || '') == 'true') ? true : false,
+  debug: ((process.env.DEBUG || '').toLowerCase() == 'true') ? true : false,
 
   // const { name, version, description }: require('./package.json');
   DMSGUI_VERSION: (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION,
   DMSGUI_DESCRIPTION: process.env.DMSGUI_DESCRIPTION,
   HOSTNAME: process.env.HOSTNAME,
   NODE_ENV: process.env.NODE_ENV || 'production',
-  PORT_NODEJS: process.env.PORT_NODEJS || 3001,
+  PORT_NODEJS: Number(process.env.PORT_NODEJS) || 3001,
   TZ: process.env.TZ || 'UTC',
 
   // internals of dms-gui
   FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // for cors if you really are crazy with this sort of security
   API_URL  : process.env.API_URL || '/api',               // for cors too
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
-  DATABASE: (process.env.isDEMO === 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
+  DATABASE: ((process.env.isDEMO || '').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
   DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
   DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo.sqlite3',
 
@@ -92,7 +92,7 @@ export const env = {
   LOG_COLORS: (process.env.LOG_COLORS === 'false') ? false : true,
 
   // DEMO will activate a mock database and disable all refresh options
-  isDEMO : ((process.env?.isDEMO || '').toLowerCase() == 'true') ? true : false,
+  isDEMO : ((process.env.isDEMO || '').toLowerCase() == 'true') ? true : false,
   github : 'https://github.com/audioscavenger/dms-gui',
   wiki : 'https://github.com/audioscavenger/dms-gui',
   dockerhub : 'https://hub.docker.com/repositories/audioscavenger',

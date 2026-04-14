@@ -31,8 +31,6 @@ const ButtonDropdown = ({
 }) => {
   const { t } = useTranslation();
 
-  // console.debug('ddebug items', items);
-
   return (
     <Dropdown>
       <Dropdown.Toggle
@@ -42,7 +40,7 @@ const ButtonDropdown = ({
         rel={rel}
         size={size}
         className={className}
-        disabled={disabled}
+        disabled={!!disabled}
         {...rest} // Spread remaining props
       >
         {icon && (

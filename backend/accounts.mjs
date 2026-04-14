@@ -288,12 +288,13 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
       const { salt, hash } = await hashPassword(password ?? '');
       result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash}, containerName);
       if (result.success) {
+        successLog(`Account created: ${mailbox}`);
         
         if (createLogin) {
           // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
           result = await addLogin(mailbox, mailbox, password ?? '', mailbox, 0, 1, 1, containerName, [mailbox]);
           if (result.success) {
-            successLog(`Account created: ${mailbox}`);
+            successLog(`Login created: ${mailbox}`);
           } // login created
         
         } // also create login

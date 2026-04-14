@@ -30,7 +30,7 @@ const Card = ({
   headerContent,
   titleExtra,
   icon,
-  isLoading= false,
+  isLoading = false,
   children,
   onClickRefresh,
   collapsible = true,
@@ -42,12 +42,11 @@ const Card = ({
 }) => {
   const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
-  const collapser       = !!collapsible;
-  const refresher       = (typeof onClickRefresh  == "function") ? true : false;
+  const showRefresher   = (typeof onClickRefresh  == "function") ? true : false;
   
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap
   // "d-flex justify-content-between" works only for exactly 2 div as children, not span
-  const titleClassName  = (refresher || collapser) ? "mb-0 d-flex justify-content-between" : "mb-0";
+  const titleClassName  = (showRefresher || collapsible) ? "mb-0 d-flex justify-content-between" : "mb-0";
 
   const [open, setOpen] = useState(startOpen);
 
@@ -59,9 +58,9 @@ const Card = ({
           {title && (
             <RBCard.Title as="h5" className={titleClassName}>
             <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {Translate(title, translate)} {isLoading ? <span><LoadingSpinner isInline="true" size="sm"/></span> : titleExtra} </div>
-            {(refresher || collapser) && (
-              <div>
-              {refresher && (
+            {(showRefresher || collapsible) && (
+              <>
+              {showRefresher && (
                 <Button
                   variant="warning"
                   size="sm"
@@ -71,7 +70,7 @@ const Card = ({
                   onClick={onClickRefresh}
                 />
               )}
-              {collapser && (
+              {collapsible && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -82,7 +81,7 @@ const Card = ({
                   aria-expanded={open}
                 />
               )}
-              </div>
+              </>
             )}
             </RBCard.Title>
           )}

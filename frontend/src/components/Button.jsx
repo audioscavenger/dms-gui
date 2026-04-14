@@ -42,7 +42,7 @@ const Button = ({
       target={target}
       rel={rel}
       size={size}
-      disabled={disabled}
+      disabled={!!disabled}
       className={className}
       {...rest} // Spread remaining props
     >
