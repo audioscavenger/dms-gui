@@ -1236,9 +1236,9 @@ export const getDomains = async (containerName=null, name=null) => {
 // 5. always create script and conf file at the end
 export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, dms_api_key_param=null) => {
   debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
-  if (!containerName)             return {success: false, error: 'initAPI: containerName is required'};
-  if (!schema)             return {success: false, error: 'initAPI: schema is required'};
-  if (!plugin)             return {success: false, error: 'initAPI: plugin is required'};
+  if (!containerName)       return {success: false, error: 'initAPI: containerName is required'};
+  if (!schema)              return {success: false, error: 'initAPI: schema is required'};
+  if (!plugin)              return {success: false, error: 'initAPI: plugin is required'};
 
   
   let result, dms_api_key_db, dms_api_key_new;

@@ -101,6 +101,12 @@ settings: {
           COMMIT;`,
   
   patch: [
+    { DB_VERSION: '1.5.10',
+      patches: [
+        `ALTER TABLE settings ADD COLUMN configID INTEGER NOT NULL`,
+        `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('logins', '1.5.10', 1, ${env.isImmutable})`,
+    ],
+    },
   ],
 },
 
@@ -757,10 +763,11 @@ export const dbAll = (sql, params={}, ...anonParams) => {
   }
 };
 
-export const dbInit = async (reset=false) => {
+// dbInit is not async, hell no
+export const dbInit = (reset=false) => {
 
   debugLog(`start`);
-  if (reset) await exec(`rm -f ${env.DATABASE}`);
+  if (reset) exec(`rm -f ${env.DATABASE}`);
   dbOpen();
   let result;
 
@@ -768,16 +775,30 @@ export const dbInit = async (reset=false) => {
     
     // init db table no matter what
     if (actions.init) {
+
       try {
         result = dbGet(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
         if (!result.success || !result.message) {
           result = dbRun(actions.init);
+          // result example:
+          // {
+          //   success: true,
+          //   message: Database {
+          //     name: '/app/config/dms-gui.sqlite3',
+          //     open: true,
+          //     inTransaction: false,
+          //     readonly: false,
+          //     memory: false
+          // }
 
           if (result.success) {
-            infoLog(`${table}: ${result.message}`, result);
+            // infoLog(`${table}: ${result.message}`, result);
+            successLog(`table ${table} created`);
+            debugLog(`table ${table} result.message:`, result.message);
 
-          } else if (result.error && result.error.match(/already exists/i)) {
-            infoLog(`${table}: exist`);
+          // the below can never happen
+          // } else if (result.error && result.error.match(/already exists/i)) {
+          //   infoLog(`${table}: exist`);
 
           } else {
             errorLog(`${table}: ${result?.code}: ${result.error}`);
@@ -785,15 +806,17 @@ export const dbInit = async (reset=false) => {
           }
 
         } else infoLog(`${table}: exist`);
+        // dbUpgrade(table);
         
       } catch (error) {
         errorLog(`${table}: ${error.message}`);
-        throw error;  // we want startup to stop completely
+        throw error;  // we want startup to stop completely if init or upgrade fails miserably and leave the user stranded
       }
     }
   }
   DB.close()
 
+  
   try {
     dbUpgrade();
     
@@ -805,11 +828,13 @@ export const dbInit = async (reset=false) => {
 };
 
 
+// dbUpgrade is not async, hell no
 export const dbUpgrade = () => {
   debugLog(`start`);
 
   dbOpen();
   let result, db_version, match;
+  // let actions = sql[table];
   
   for (const [table, actions] of Object.entries(sql)) {
     try {

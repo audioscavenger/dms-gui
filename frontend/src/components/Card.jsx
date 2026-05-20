@@ -59,7 +59,7 @@ const Card = ({
             <RBCard.Title as="h5" className={titleClassName}>
             <div>{(icon) && <i className={`me-2 bi bi-${icon}`}></i>} {Translate(title, translate)} {isLoading ? <span><LoadingSpinner isInline="true" size="sm"/></span> : titleExtra} </div>
             {(showRefresher || collapsible) && (
-              <>
+              <div>
               {showRefresher && (
                 <Button
                   variant="warning"
@@ -81,7 +81,7 @@ const Card = ({
                   aria-expanded={open}
                 />
               )}
-              </>
+              </div>
             )}
             </RBCard.Title>
           )}

@@ -67,7 +67,7 @@ export const ICON = (env.LOG_COLORS) ? {
 }
 
 export const LEVEL = {
-  success:  color.g+color.LOW+'[SUCCESS]'+color.end,
+  success:  color.g+color.LOW+'[SUCCESS] '+color.end,
   error:    color.r+color.LOW+'[ERROR]  '+color.end,
   warn:     color.y+color.LOW+'[WARN]   '+color.end,
   info:     color.k+color.HIG+'[INFO]   '+color.end,

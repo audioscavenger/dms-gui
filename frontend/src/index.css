@@ -153,3 +153,10 @@ tr .MuiChip-root  {
   min-width: 1px !important;
 }
 /* -------------------- Autocomplete -------------------- */
+
+/* -------------------- misc -------------------- */
+/* alerts take the whole width and go over float buttons placed on the right side */
+.alert-dismissible {
+  margin-right: 50px;
+}
+/* -------------------- misc -------------------- */

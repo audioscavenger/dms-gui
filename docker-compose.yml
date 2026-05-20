@@ -12,6 +12,7 @@ services:
       # options:
         # tag: dms
 
+    build: .                                    # uncomment me to build locally
     image: audioscavenger/dms-gui:latest
     container_name: dms-gui
     hostname: dms-gui
@@ -26,7 +27,7 @@ services:
       - TZ=${TZ:-UTC}
 
       # Set to true to enable debug logs for Docker commands
-      # - DEBUG=true
+      - DEBUG=true
 
     volumes:
       - /etc/timezone:/etc/timezone:ro

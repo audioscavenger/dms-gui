@@ -115,7 +115,20 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 - [wiki](https://github.com/audioscavenger/dms-gui)
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
-alias buildup='docker-compose up --build --force-recreate'
+alias buildup='docker-compose down --volumes; docker-compose up --build --force-recreate'
+alias buildup='docker-compose down --volumes; docker-compose build --no-cache; docker-compose up --force-recreate'   # if you need to redetect all files for some reason
+run --rm --entrypoint ls audioscavenger/dms-gui:latest -la /app
+<!--
+drwxr-xr-x    1 root     root          4096 Apr 19 17:01 .
+drwxr-xr-x    1 root     root          4096 Apr 19 17:01 ..
+drwxr-xr-x    1 root     root          4096 Apr 19 16:31 backend
+-rw-rw-r--    1 root     root         10262 Apr 14 18:36 common.mjs
+drwxr-xr-x    1 root     root          4096 Apr 19 16:35 frontend
+-rw-rw-r--    1 root     root            62 Apr 14 18:36 nodemon.json
+-rwxrwxr-x    1 root     root           939 Apr 14 18:36 start.sh
+-rw-r--r--    1 root     root             0 Apr 19 17:01 version.1.5.25
+-->
+
 docker login -u audioscavenger
 <!-- we don't need to delete local releases anymore are they can only be pushed directly without cache, in multiarch -->
 <!-- docker container prune -f && docker image prune -f && docker image rm audioscavenger/dms-gui:v1.5.4 -->
@@ -150,10 +163,19 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - must pull all data with a progress bar after new container added successfully
 * [ ] 1.5.99 - frontend: bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
-* [ ] 1.5.24 - what happens when you delete a linked Account? Shouldn't the login be deleted too?
-* [ ] 1.5.24 - why is create login checkbox forced when creating an Account?
-* [ ] 1.5.24 - delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
-* [ ] 1.5.24 - retested: create/delete login
+* [ ] 1.5.99 - frontend: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `i18nisdynamiclist` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+* [ ] 1.5.99 - what happens when you delete a linked Account? Shouldn't the login be deleted too?
+* [ ] 1.5.99 - why is create login checkbox forced when creating an Account?
+* [ ] 1.5.99 - delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
+* [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - retested: create/delete login
+* [x] 1.5.26 - bugfix: FormContainerAdd containerName change does not reset the invalid status once a it's valid; added setPingResult(false) in handlePingTest
+* [x] 1.5.26 - bugfix: Aliases refresh button is not on the far left: Card titles not have a dive for all right-side buttons
+* [x] 1.5.26 - bugfix: Accounts refresh button is behind the .alert-dismissible: added margin-right +50px
+* [x] 1.5.25 - <!> left frontend.mjs and package.json in development mode
+* [x] 1.5.25 - dbInit and dbUpgrade are not async anymore
+* [x] 1.5.25 - re-added nodemon
+* [x] 1.5.25 - upgraded all modules
 * [x] 1.5.24 - retested: create/delete mailbox
 * [x] 1.5.24 - retested: create/delete alias
 * [x] 1.5.24 - proper use of Nullish Coalescing instead of logical OR || where it matters
@@ -210,8 +232,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.14 - BREAKING CHANGE: must delete db
 * [x] 1.5.14 - frontend: bugfix in Profile: Invalid DOM property `class`. Did you mean `className`?
 * [x] 1.5.13 - backend: updated all accounts and aliases functions everywhere with schema
-* [x] 1.5.13 - fronmtend: bugfixes in Logins
-* [x] 1.5.13 - fronmtend: bugfixes in all updateLogin and deleteLogin now using id
+* [x] 1.5.13 - frontend: bugfixes in Logins
+* [x] 1.5.13 - frontend: bugfixes in all updateLogin and deleteLogin now using id
 * [x] 1.5.13 - backend: correctly implement getTargetdict
 * [x] 1.5.13 - backend: correctly implement childProcess.exec()
 * [x] 1.5.13 - backend: dbInit test if table exist instead of blindly recreating it
@@ -711,83 +733,129 @@ octodns-sync --version
 -->
 
 <!--
-## upgrade commands:
-# docker exec -it dms-gui sh
-# cd /app/backend
-# /app/backend # npm version
-    # {
-      # 'dms-gui-backend': '1.0.4',
-      # npm: '11.6.0',
-      # node: '24.9.0',
-      # acorn: '8.15.0',
-      # ada: '3.2.7',
-      # amaro: '1.1.2',
-      # ares: '1.34.5',
-      # brotli: '1.1.0',
-      # cjs_module_lexer: '2.1.0',
-      # cldr: '47.0',
-      # icu: '77.1',
-      # llhttp: '9.3.0',
-      # modules: '137',
-      # napi: '10',
-      # nbytes: '0.1.1',
-      # ncrypto: '0.0.1',
-      # nghttp2: '1.66.0',
-      # openssl: '3.5.3',
-      # simdjson: '3.13.0',
-      # simdutf: '6.4.0',
-      # sqlite: '3.50.4',
-      # tz: '2025b',
-      # undici: '7.16.0',
-      # unicode: '16.0',
-      # uv: '1.51.0',
-      # uvwasi: '0.0.23',
-      # v8: '13.6.233.10-node.27',
-      # zlib: '1.3.1-470d3a2',
-      # zstd: '1.5.7'
-    # }
+## backend upgrade commands:
+docker exec -it dms-gui sh
 
-# docker exec -it dms-gui sh
-# npm install -g npm-check-updates
-# npm install -g npm
+npm install -g npm-check-updates
+npm install -g npm
 
-# cd /app/backend
-# npx npm-check-updates -u
-# npm install
-# npm audit fix
-    # Upgrading /app/backend/package.json
-    # [====================] 10/10 100%
+cd /app/backend
+npm version
+{
+  'dms-gui-backend': '1.0.0',
+  npm: '11.6.0',
+  node: '24.9.0',
+  acorn: '8.15.0',
+  ada: '3.2.7',
+  amaro: '1.1.2',
+  ares: '1.34.5',
+  brotli: '1.1.0',
+  cjs_module_lexer: '2.1.0',
+  cldr: '47.0',
+  icu: '77.1',
+  llhttp: '9.3.0',
+  modules: '137',
+  napi: '10',
+  nbytes: '0.1.1',
+  ncrypto: '0.0.1',
+  nghttp2: '1.66.0',
+  openssl: '3.5.3',
+  simdjson: '3.13.0',
+  simdutf: '6.4.0',
+  sqlite: '3.50.4',
+  tz: '2025b',
+  undici: '7.16.0',
+  unicode: '16.0',
+  uv: '1.51.0',
+  uvwasi: '0.0.23',
+  v8: '13.6.233.10-node.27',
+  zlib: '1.3.1-470d3a2',
+  zstd: '1.5.7'
+}
 
-     # axios       ^1.8.4  →  ^1.12.2
-     # dockerode   ^4.0.2  →   ^4.0.8
-     # dotenv     ^16.4.7  →  ^17.2.2
-     # express    ^4.21.2  →   ^5.1.0
-     # nodemon     ^3.1.9  →  ^3.1.10
-     # prettier     3.5.3  →    3.6.2
+npx npm-check-updates -u
+ better-sqlite3        ^12.4.1  →         ^12.9.0
+ cors                   ^2.8.5  →          ^2.8.6
+ dockerode              ^4.0.9  →         ^4.0.10
+ dotenv                ^17.2.3  →         ^17.4.2
+ express                ^5.1.0  →          ^5.2.1
+ json-server     ^1.0.0-beta.3  →  ^1.0.0-beta.15
+ jsonwebtoken           ^9.0.2  →          ^9.0.3
+ prettier                3.6.2  →           3.8.2
 
-# cd /app/frontend
-# npx npm-check-updates -u
-# npm install
-# npm audit fix
-    # [====================] 21/21 100%
+npm install
+npm audit fix
+  found 0 vulnerabilities
 
-     # @babel/core                       ^7.26.10  →   ^7.28.4
-     # @babel/preset-env                  ^7.26.9  →   ^7.28.3
-     # @babel/preset-react                ^7.26.3  →   ^7.27.1
-     # axios                               ^1.8.4  →   ^1.12.2
-     # bootstrap                           ^5.3.3  →    ^5.3.8
-     # bootstrap-icons                    ^1.11.3  →   ^1.13.1
-     # html-webpack-plugin                 ^5.6.3  →    ^5.6.4
-     # i18next                            ^24.2.3  →   ^25.5.2
-     # i18next-browser-languagedetector    ^8.0.4  →    ^8.2.0
-     # prettier                             3.5.3  →     3.6.2
-     # react                              ^19.1.0  →   ^19.1.1
-     # react-bootstrap                    ^2.10.9  →  ^2.10.10
-     # react-dom                          ^19.1.0  →   ^19.1.1
-     # react-i18next                      ^15.4.1  →   ^16.0.0
-     # react-router-dom                    ^7.4.1  →    ^7.9.3
-     # webpack                            ^5.98.0  →  ^5.101.3
-     # webpack-dev-server                  ^5.2.1  →    ^5.2.2
+
+## frontend upgrade commands: from the OS
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+source ~/.bashrc
+
+## make sure your local node is the same as the VM:
+nvm install 24.9.0
+nvm use 24.9.0
+node -v
+
+npm install -g npm-check-updates
+npm install -g npm
+
+cd /docker/dms/dms-gui/frontend
+npm version
+{
+  'dms-gui-frontend': '1.0.0',
+  npm: '11.12.1',
+  node: '24.9.0',
+  acorn: '8.15.0',
+  ada: '3.2.7',
+  amaro: '1.1.2',
+  ares: '1.34.5',
+  brotli: '1.1.0',
+  cjs_module_lexer: '2.1.0',
+  cldr: '47.0',
+  icu: '77.1',
+  llhttp: '9.3.0',
+  modules: '137',
+  napi: '10',
+  nbytes: '0.1.1',
+  ncrypto: '0.0.1',
+  nghttp2: '1.66.0',
+  openssl: '3.5.3',
+  simdjson: '3.13.0',
+  simdutf: '6.4.0',
+  sqlite: '3.50.4',
+  tz: '2025b',
+  undici: '7.16.0',
+  unicode: '16.0',
+  uv: '1.51.0',
+  uvwasi: '0.0.23',
+  v8: '13.6.233.10-node.27',
+  zlib: '1.3.1-470d3a2',
+  zstd: '1.5.7'
+}
+
+npx npm-check-updates -u
+ @babel/core                        ^7.28.5  →   ^7.29.0
+ @babel/preset-env                  ^7.28.5  →   ^7.29.2
+ @mui/material                       ^7.3.6  →    ^9.0.0
+ axios                              ^1.13.2  →   ^1.15.0
+ babel-loader                       ^10.0.0  →   ^10.1.1
+ css-loader                          ^7.1.2  →    ^7.1.4
+ html-webpack-plugin                 ^5.6.5  →    ^5.6.6
+ i18next                            ^25.7.3  →   ^26.0.4
+ i18next-browser-languagedetector    ^8.2.0  →    ^8.2.1
+ prettier                             3.7.4  →     3.8.2
+ react                              ^19.2.3  →   ^19.2.5
+ react-dom                          ^19.2.3  →   ^19.2.5
+ react-i18next                      ^16.5.0  →   ^17.0.3
+ react-router-dom                   ^7.11.0  →   ^7.14.1
+ webpack                           ^5.104.1  →  ^5.106.1
+ webpack-cli                         ^6.0.1  →    ^7.0.2
+ webpack-dev-server                  ^5.2.2  →    ^5.2.3
+
+npm install
+npm audit fix
+  found 0 vulnerabilities
 
 -->
 

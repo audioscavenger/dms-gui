@@ -263,6 +263,7 @@ function FormContainerAdd() {
     setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setPingResult(false);
 
     if (!container) container = getValueFromArrayOfObj(formValues, 'containerName');
     if (container.length) {

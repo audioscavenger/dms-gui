@@ -2,6 +2,7 @@ import {
   debugLog,
   errorLog,
   infoLog,
+  successLog,
 } from './backend.mjs';
 import {
   env
@@ -11,6 +12,7 @@ import {
   dbCount,
   dbGet,
   dbInit,
+  dbUpgrade,
   deleteEntry,
   refreshTokens,
   updateDB,
@@ -1844,7 +1846,7 @@ app.use((err, req, res, next) => {
 
 
 app.listen(env.PORT_NODEJS, async () => {
-  infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} Server ${process.version} running on port ${env.PORT_NODEJS}`);
+  infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} NodeJS ${process.version} running on port ${env.PORT_NODEJS}`);
   debugLog('🐞 debug mode is ENABLED');
 
   // https://github.com/ncb000gt/node-cron    // internal crontan
@@ -1855,20 +1857,25 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  // await dbInit(true);         // reset db
-  await dbInit();         // apply patches etc
+  dbInit(true);         // reset db: 1.5.10 to 1.5.25
+  // dbInit();         // apply patches etc
+  dbUpgrade();
   await refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 
   if (env.AES_SECRET == 'changeme') {
     errorLog(`
 
-    AES_SECRET has not been set. Example to create it: "openssl rand -hex 32"
+    AES_SECRET has not been set in your environment: should reside in .dms-gui.env
+    AES_SECRET must exist and never change, it's used to encrypt personal user data
+    such as Azure or Cloudflare tokens.
+      Example to create it: ``openssl rand -hex 32``
     *******************************************************************************
-    * AES_SECRET you could use in .dms-gui.env:                                   *
+    * Random AES_SECRET you can use right away :                                  *
     * AES_SECRET=${crypto.randomBytes(32).toString('hex')} *
     *******************************************************************************
+
     `);
-  }
+  } else successLog(`AES_SECRET found`);
 
 });
 

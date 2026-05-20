@@ -1,7 +1,7 @@
 # Multi-stage build for Docker Mailserver GUI
 #   docker rm dms-gui dms-gui-dms-gui; docker image prune -f
 #   alias buildup='docker-compose up --build --force-recreate'
-#   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.0.6 .
+#   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.5.25 .
 #   docker push audioscavenger/dms-gui --all-tags
 
 # -----------------------------------------------------
@@ -52,7 +52,7 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.5.24
+ARG DMSGUI_VERSION=1.5.26
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
@@ -73,10 +73,10 @@ COPY --from=backend-builder /app/backend /app/backend
 # Copy frontend build from frontend-builder
 COPY --from=frontend-builder /app/frontend/dist /app/frontend
 
-# this only detects changes in /backend and does not recompile the frontend. useless
+# this only detects changes in /backend and does not recompile the frontend. half useful
 # https://www.metered.ca/blog/how-to-restart-your-node-js-apps-automatically-with-nodemon/
-# COPY nodemon.json ./
-# RUN npm install -g nodemon
+COPY nodemon.json ./
+RUN npm install -g nodemon
 
 # Copy Nginx configuration - nope, what for? use a reverse proxy!
 RUN mkdir -p /run/nginx
@@ -87,14 +87,16 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 # Copy startup script
 COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+RUN touch /app/version.${DMSGUI_VERSION}
+RUN busybox dos2unix /app/*.sh
 
 # Expose port for the application
 # EXPOSE 3001
 
-# Start Nginx and Node.js OR just node itself when slim is used for main stage
+# Start just node itself when slim is used for main stage: however JWT_SECRET regen will be missing
 # CMD ["node", "/app/backend/index.js"]
+# Start Nginx and Node.js with all the security mechanics around JWT_SECRET
 CMD ["/app/start.sh"]
-
 
 # Add metadata to image:
 LABEL org.opencontainers.image.title="dms-gui"
