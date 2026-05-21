@@ -169,6 +169,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
+* [x] 1.5.27 - bugfix: updateDB "Error: sql argument must be a string: sql=" when reactivating a user; deactivate worked. Reason: any key check is 'undefined' but updateDB was looking for 'null'
 * [x] 1.5.26 - bugfix: FormContainerAdd containerName change does not reset the invalid status once a it's valid; added setPingResult(false) in handlePingTest
 * [x] 1.5.26 - bugfix: Aliases refresh button is not on the far left: Card titles not have a dive for all right-side buttons
 * [x] 1.5.26 - bugfix: Accounts refresh button is behind the .alert-dismissible: added margin-right +50px

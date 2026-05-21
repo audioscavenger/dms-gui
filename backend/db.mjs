@@ -248,10 +248,10 @@ logins: {
         pass:   `UPDATE logins set isActive = @isActive WHERE id = ?`,
         fail:   "Cannot deactivate the last admin, how will you administer dms-gui?",
       },
-      undefined: {
-        desc:   "no test",
+      1: {
+        desc:   "not really a test",
         test:   `SELECT COUNT(isActive) count from logins WHERE 1=1 AND id = ?`,
-        check:  function() { return true; },
+        check:  function(result) { return result.count == 1; },
         pass:   `UPDATE logins set isActive = @isActive WHERE id = ?`,
       },
     },
@@ -1058,7 +1058,7 @@ export const changePassword = async (table, id, password, schema, containerName)
 
 // Function to update a table in the db; id can very well be an array as well
 export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  // jsonDict = { column:value, .. }
-  debugLog(`${table} id=${id} for scope=${scope}`);   // don't show jsonDict as it may contain a password
+  debugLog(`${table} id=${id} for scope=${scope}; encrypt=${encrypt}`, jsonDict);   // don't show jsonDict as it may contain a password
 
   let result, scopedValues, value2test, testResult;
   let messages = [];
@@ -1071,18 +1071,32 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
       throw new Error('nothing to modify was passed');
     }
     
-    // keep only keys defined as updatable
+    // security: keep only keys defined in table.update[] == any column update is controled
     let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
     if (!validDict || Object.keys(validDict).length == 0) {
-      errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)} not in`,sql[table].keys); // only dump stuff in container log
+      errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)} not in`, sql[table].keys); // only dump stuff in container log
       throw new Error(`jsonDict is invalid`);
     }
     
-    // for each new value to update...
+    // for each new value to update... example: logins { isActive: 0 }
     for (const [key, value] of Object.entries(validDict)) {
       
-      // is the value the right type...
-      if (typeof value == sql[table].keys[key]) {
+      // is the value the right type... as defined in the 'keys' section:
+        // keys:   {
+        //   mailbox:'string', 
+        //   username:'string', 
+        //   email:'string', 
+        //   salt:'string', 
+        //   hash:'string', 
+        //   isAdmin:'number', 
+        //   isActive:'number', 
+        //   isAccount:'number', 
+        //   mailserver:'string', 
+        //   refreshToken:'string', 
+        //   roles:'object',
+        //   password:'string',
+        // },
+      if (typeof value == sql[table].keys[key]) {   // example: 0 or 1 are numbers so that's okay
         
         // password has its own function
         if (key == 'password') {
@@ -1096,17 +1110,18 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
           if (typeof value == 'object') {
             scopedValues = {[key]:JSON.stringify(value), scope:scope};
           } else {
+            // updateDB logins id=10 for scope=undefined; encrypt=false { isActive: 0 } ==> that gives us scopedValues = {[isActive]:0, scope:undefined};
             scopedValues = {[key]:value, scope:scope};
           }
             
           // check if we have specifics before updating this key
-          if (sql[table].update[key]) {
+          if (sql[table].update[key]) {   // sql.logins.update.isActive has {0, undefined}
               
             // is there a test for THAT value or ANY values?
-            if (sql[table].update[key][value] || sql[table].update[key][null]) {
+            if (sql[table].update[key][value] || sql[table].update[key][undefined]) {  // sql.logins.update.isActive has {0 and 1}
               
-              // fix the value2test and scope as we may have tests for any values
-              value2test = (sql[table].update[key][value]) ? value : null;
+              // swap the value2test for 'undefined' for values that have no test defined
+              value2test = (sql[table].update[key][value]) ? value : undefined;
               
               // there is a test for THAT value and now we check with id in mind
               testResult = dbGet(sql[table].update[key][value2test].test, scopedValues, id);
@@ -1193,10 +1208,10 @@ export const deleteEntry = async (table, id, key, scope) => {
       let scopedValues = {scope:scope};    // always add scope, why care? it's failproof
       
       // check if delete should be tested
-      if (sql[table].delete[key][id] || sql[table].delete[key][null]) {
+      if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
         
         // fix the value2test as we may have tests for any values
-        let value2test = (sql[table].delete[key][id]) ? value : null;
+        let value2test = (sql[table].delete[key][id]) ? value : undefined;
         
         // there is a test for THAT value and now we check with id in mind
         testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);

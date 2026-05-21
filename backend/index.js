@@ -1349,7 +1349,7 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
-      result = await updateDB('logins', id, req.body);
+      result = await updateDB('logins', id, req.body);    // example: { isActive: 0 }
 
     } else {
       result = (id == req.user.id) ? await updateDB('logins', id, req.body) : {success:false, message: 'Permission denied'};
