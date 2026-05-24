@@ -1857,8 +1857,8 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  dbInit(true);         // reset db: 1.5.10 to 1.5.25
   // dbInit();         // apply patches etc
+  dbInit(true);     // reset db: 1.5.10 to 1.5.25; also debug mode since 1.5.28
   dbUpgrade();
   await refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
 

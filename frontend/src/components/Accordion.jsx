@@ -35,11 +35,13 @@ const Accordion = ({
   className = '',
   noPadding = false,
   children,
+  titleRefresh,
   translate = true,
   ...rest
 }) => {
   const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
+  const overrideTitleRefresh   = (typeof titleRefresh  == "string") ? true : false;
 
   // not very clear what they want:
   // -key +eventKey: it works but we have an error
@@ -63,7 +65,7 @@ const Accordion = ({
                   variant="warning"
                   size="sm"
                   icon="arrow-repeat"
-                  title={t('common.refresh')}
+                  title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
                   className="me-2"
                   onClick={tab.onClickRefresh}
                 />

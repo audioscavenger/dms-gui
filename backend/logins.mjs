@@ -65,7 +65,7 @@ export const getLogin = async (credential, guess=false) => {
     } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
       login = dbGet(sql.logins.select.loginObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
-    if (login.success) {
+    if (login?.success) {
       
       if (login.message && Object.keys(login.message).length) {
         infoLog(`Found login ${credential}:`, {isAdmin:login.message.isAdmin, isActive:login.message.isActive, isAccount:login.message.isAccount, roles:login.message.roles});
@@ -155,7 +155,7 @@ export const getRoles = async (credential=null) => {
     } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
       roles = dbGet(sql.logins.select.rolesObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
-    if (roles.success) {
+    if (roles?.success) {
       return {success: true, message: JSON.parse(roles.message)};
       
     }
@@ -207,7 +207,7 @@ export const loginUser = async (credential=null, password='') => {
   try {
     login = await getLogin(credential, true);
 
-    if (login.success) {
+    if (login?.success) {
       if (login.message.isActive) {
         if (login.message.isAccount) {
           if (login.message.mailserver) {
@@ -279,7 +279,7 @@ export const getRolesFromRoles = async (containerName=null) => {
   try {
     
     let roles = dbAll(sql.roles.select.roles, {scope:containerName});
-    if (roles.success) {
+    if (roles?.success) {
       debugLog(`pulled ${roles.message.length} roles`);
       
       // we could read DB_Logins and it is valid

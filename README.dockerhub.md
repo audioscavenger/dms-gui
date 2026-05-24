@@ -553,7 +553,7 @@ export const postJsonToApi = async (apiUrl, jsonData, Authorization) => {
 }
 ```
 
-Sample of a response from the REST API:
+Sample of a response from the REST API: http:200 accepted
 
 ```
 Response {
@@ -562,6 +562,26 @@ Response {
   headers: Headers {
     server: 'BaseHTTP/0.6 Python/3.11.2',
     date: 'Sun, 21 Dec 2025 05:35:39 GMT',
+    'content-type': 'application/json'
+  },
+  body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+  bodyUsed: false,
+  ok: true,
+  redirected: false,
+  type: 'basic',
+  url: 'http://dms:8888/'
+}
+```
+
+Sample of a response from the REST API: http:200 rejected
+
+```
+Response {
+  status: 200,
+  statusText: 'OK',
+  headers: Headers {
+    server: 'BaseHTTP/0.6 Python/3.11.2',
+    date: 'Sun, 24 May 2026 01:02:58 GMT',
     'content-type': 'application/json'
   },
   body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },

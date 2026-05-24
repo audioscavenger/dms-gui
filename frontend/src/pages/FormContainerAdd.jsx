@@ -174,12 +174,13 @@ function FormContainerAdd() {
     
     debugLog('FormContainerAdd 2 fetchMailservers mailservers:', mailservers);
     try {
+      // Show the discovered mailservers in the dropdown
       const [mailserversData] = await Promise.all([
         getConfigs('mailserver'),
       ]);
 
       debugLog('FormContainerAdd 3 mailserversData:', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
-      if (mailserversData.success) {
+      if (mailserversData?.success) {
 
         if (mailserversData.message.length) {
           // update selector list
@@ -239,7 +240,7 @@ function FormContainerAdd() {
         ]);
         // debugLog(`FormContainerAdd mergeArrayOfObj settingsData`,settingsData);
 
-        if (settingsData.success) {
+        if (settingsData?.success) {
           // this will be formValues for that container only
           debugLog(`FormContainerAdd: got ${settingsData.message.length} settingsData for ${container}:`, settingsData.message);
   
@@ -441,6 +442,7 @@ function FormContainerAdd() {
     setWarningMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setAPIValidated(false);
 
     // merge array of formValues objects by their name
     // WARNING: When handling input fields of type="number" in React-Bootstrap forms, the onChange event event.target.value will always provide a string, even if the user enters a number.
@@ -778,9 +780,10 @@ function FormContainerAdd() {
               disabled={!pingResult}
             />
             <Button
-              variant="info"
+              variant={APIValidated && "success" || "info"}
               icon="hdd-network"
               text="settings.apiTest"
+              title={APIValidated && t('settings.DMS_API_ValidatedSuccess') || t('settings.DMS_API_ValidatedFailed')}
               className="me-2"
               onClick={() => handleAPITest()}
               disabled={!pingResult || !APIInjected || !formValidated}

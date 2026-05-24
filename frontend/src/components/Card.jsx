@@ -27,8 +27,9 @@ import {
  */
 const Card = ({
   title,
-  headerContent,
   titleExtra,
+  titleRefresh,
+  headerContent,
   icon,
   isLoading = false,
   children,
@@ -43,6 +44,7 @@ const Card = ({
   const { t } = useTranslation();
   const bodyClassName   = noPadding      == true ? 'p-0' : '';
   const showRefresher   = (typeof onClickRefresh  == "function") ? true : false;
+  const overrideTitleRefresh   = (typeof titleRefresh  == "string") ? true : false;
   
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap
   // "d-flex justify-content-between" works only for exactly 2 div as children, not span
@@ -65,7 +67,7 @@ const Card = ({
                   variant="warning"
                   size="sm"
                   icon="arrow-repeat"
-                  title={t('common.refresh')}
+                  title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
                   className="me-2"
                   onClick={onClickRefresh}
                 />

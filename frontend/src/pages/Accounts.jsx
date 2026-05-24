@@ -65,7 +65,7 @@ const Accounts = () => {
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
 
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useLocalStorage("accounts", []);
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   // Common states -------------------------------------------------
@@ -117,17 +117,17 @@ const Accounts = () => {
       //   getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
       // ]);
       const accountsData = await getAccounts(containerName, refresh);
-      if (accountsData.success) {
+      if (accountsData?.success) {
         setAccounts(accountsData.message);
         debugLog('ddebug accountsData', accountsData);
 
         const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
         debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
-        if (DOVECOT_FTSdata.success) {
+        if (DOVECOT_FTSdata?.success) {
           setDOVECOT_FTS(DOVECOT_FTSdata.message);
           
         } else setErrorMessage(DOVECOT_FTSdata?.error);
-        
+
       } else setErrorMessage(accountsData?.error);
 
     } catch (error) {
@@ -494,7 +494,7 @@ const Accounts = () => {
             variant="warning"
             size="sm"
             icon="arrow-repeat"
-            title={t('accounts.forceResync')}
+            title={t('common.forceResync')}
             onClick={() => handleDoveadm('forceResync', account.mailbox)}
             className="me-2"
           />
@@ -579,7 +579,13 @@ const Accounts = () => {
   );
   
   const accountTabs = [
-    { id: 1, title: "accounts.existingAccounts",  titleExtra: `(${accounts.length})`, icon: "inboxes-fill", onClickRefresh: () => fetchAccounts(true), content: DataTableAccounts },
+    { id: 1, 
+      title: "accounts.existingAccounts",  
+      titleExtra: `(${accounts.length})`, 
+      icon: "inboxes-fill", 
+      onClickRefresh: () => fetchAccounts(true), 
+      titleRefresh: t('common.forceResync'), 
+      content: DataTableAccounts },
   ];
   if (user.isAdmin) accountTabs.push({ id: 2, title: "accounts.newAccount",        icon: "inbox", content: FormNewAccount });
 

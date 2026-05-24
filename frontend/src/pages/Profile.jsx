@@ -102,7 +102,7 @@ const Profile = () => {
         getConfigs('mailserver'),
       ]);
 
-      if (mailserversData.success) {
+      if (mailserversData?.success) {
         // this will be all containers in db except dms-gui
         debugLog('fetchMailservers: mailserversData', mailserversData);   // [ {value:'containerName'}, .. ]
  

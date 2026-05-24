@@ -150,26 +150,42 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 ## history:
 
-* [ ] - frontend/Settings: pulls everything when submitting new DMS, with progress bars
+* [ ] 1.5.99 - update demo database
+* [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - retested: create/delete mailbox
+* [ ] 1.5.99 - retested: create/delete alias
 
+* [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.5.99 - Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.5.99 - backend: pull aliases can only be done by an admin currently, that's by design.
 * [ ] 1.5.99 - backend: execInContainerAPI logs cleartext passwords when loggin in / create new accounts, can we send encrypted data instead or at least show asterisks?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
-* [ ] 1.5.99 - WARNING: saveServerEnvs and changePassword do not use scope and schema anymore, why?
-* [ ] 1.5.99 - backend: must find a way to delete the database depending on certain versions
-* [ ] 1.5.99 - update demo database
-* [ ] 1.5.99 - must redirect user to dashboard after new container added successfully 100%
-* [ ] 1.5.99 - must pull all data with a progress bar after new container added successfully
-* [ ] 1.5.99 - frontend: bugfix: ServerInfos table does not show boolean values
-* [ ] 1.5.99 - Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
-* [ ] 1.5.99 - frontend: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `i18nisdynamiclist` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
-* [ ] 1.5.99 - what happens when you delete a linked Account? Shouldn't the login be deleted too?
-* [ ] 1.5.99 - why is create login checkbox forced when creating an Account?
-* [ ] 1.5.99 - delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
-* [ ] 1.5.99 - retested: create/delete login
-* [ ] 1.5.99 - retested: create/delete login
+* [ ] 1.5.99 - Logins: trying to demote the last admin should show an alert error with the correct message
+* [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
+* [ ] 1.5.99 - Settings: we should redirect user to dashboard after new container added successfully 100% as dashboard will load everything
+
+* [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
+* [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
+* [ ] 1.5.99 - bugfix: backend: must find a way to delete the database depending on certain versions
+* [ ] 1.5.99 - bugfix: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom 
+* [ ] 1.5.99 - bugfix: delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
+* [ ] 1.5.99 - bugfix: My Profile should also show a disabled field with username
+* [ ] 1.5.99 - bugfix: dismissible alerts are not dismissed when click on the cross
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
+* [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
+* [ ] 1.5.99 - bugfix: new admin login with existing mailbox email actually replaces existing admin's username
+* [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
+* [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
+
+* [x] 1.5.28 - Dashboard: useEffect force refresh of accounts and aliases when all counts are 0
+* [x] 1.5.28 - Dashboard: added force refresh of accounts and aliases 
+* [x] 1.5.28 - Dashboard/Aliases/Accounts: useLocalStorage for aliases and accounts
+* [x] 1.5.28 - DashboardCard: added refresh and refreshTitle
+* [x] 1.5.28 - Logins: turning to an admin should change the title of the change password modal; added translations
+* [x] 1.5.28 - FormContainerAdd: Test API should turn green upon success or info upon any field change; added titles+translations
+* [x] 1.5.28 - DEBUG: reset db and debug enabled
 * [x] 1.5.27 - bugfix: updateDB "Error: sql argument must be a string: sql=" when reactivating a user; deactivate worked. Reason: any key check is 'undefined' but updateDB was looking for 'null'
 * [x] 1.5.26 - bugfix: FormContainerAdd containerName change does not reset the invalid status once a it's valid; added setPingResult(false) in handlePingTest
 * [x] 1.5.26 - bugfix: Aliases refresh button is not on the far left: Card titles not have a dive for all right-side buttons
@@ -633,6 +649,9 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 ## DECISIONS
 
+* [x] - what happens when you delete a linked Account? Shouldn't the login be deleted too? YES
+* [ ] - bugfix: why is create login checkbox forced when creating an Account?
+* [-] - must pull all data with a progress bar after new container added successfully
 * [ ] - backend: do we really want scoped queries per container? multiple DMS, really? if so, logins too should be scoped
 * [ ] - Dashboard: there is no such thing as disk usage with docker. remove? yes. replace by what?
 * [ ] - docker.sock seems frowned upon, why is it? Response from @polarathene:

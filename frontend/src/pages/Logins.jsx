@@ -16,6 +16,8 @@ import {
 import {
   moveKeyToLast,
   pluck,
+  regexUsername,
+  regexEmailStrict,
 } from '../../../common.mjs';
 
 import {
@@ -160,7 +162,7 @@ const Logins = () => {
       ]);
         debugLog('accountsData',accountsData)
 
-      if (accountsData.success) {
+      if (accountsData?.success) {
         // Prepare account options for the select field
         setAccountOptions(accountsData.message.map((account) => ({
           value: account.mailbox,
@@ -177,8 +179,6 @@ const Logins = () => {
       errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage('api.errors.fetchAccounts');
       
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -189,7 +189,7 @@ const Logins = () => {
         getLogins(),
       ]);
 
-      if (loginsData.success) {
+      if (loginsData?.success) {
         let loginsDataAltered = await formatLoginsForTable(loginsData.message);
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);
@@ -200,8 +200,6 @@ const Logins = () => {
       errorLog(t('api.errors.fetchLogins'), error);
       setErrorMessage('api.errors.fetchLogins');
       
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -284,14 +282,14 @@ const Logins = () => {
       errors.username = 'logins.usernameInvalid';
     }
 
-    // this is done by react
+    // this is done by react somehow
     // if (!newLoginformData.mailbox.trim()) {
       // errors.mailbox = 'logins.emailRequired';
     // } else if (!regexEmailStrict.test(newLoginformData.mailbox)) {
       // errors.mailbox = 'logins.invalidEmail';
     // }
 
-    // this is done by react
+    // this is done by react somehow
     // if (!newLoginformData.email.trim()) {
       // errors.email = 'logins.emailRequired';
     // } else if (!regexEmailStrict.test(newLoginformData.email)) {
@@ -723,7 +721,7 @@ const Logins = () => {
             variant="primary"
             size="sm"
             icon="key"
-            title={t('password.changePassword')}
+            title={(login.isAdmin) ? t('password.changeLocalPassword') : t('password.changeMailboxPassword') }
             onClick={() => handleChangePassword(login)}
             className="me-2"
           />
@@ -931,8 +929,18 @@ const Logins = () => {
   
   // https://icons.getbootstrap.com/
   const loginTabs = [
-  { id: 1, title: "logins.existingLogins",  titleExtra: `(${logins.length})`, icon: "person-lines-fill", onClickRefresh: () => fetchAll(), content: DataTableLogins },
-  { id: 2, title: "logins.newLogin",        icon: "person-fill-add", content: FormNewLogin },
+    { id: 1, 
+      title: "logins.existingLogins",
+      titleExtra: `(${logins.length})`, 
+      icon: "person-lines-fill", 
+      onClickRefresh: () => fetchAll(), 
+      content: DataTableLogins 
+    },
+    { id: 2, 
+      title: "logins.newLogin",
+      icon: "person-fill-add",
+      content: FormNewLogin
+    },
   ];
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not
@@ -951,7 +959,7 @@ const Logins = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
+            {(selectedLogin && selectedLogin.admin) ? Translate('password.changePassword') : Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

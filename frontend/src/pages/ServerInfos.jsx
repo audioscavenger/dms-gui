@@ -86,7 +86,7 @@ const ServerInfos = () => {
         getNodeInfos(),
       ]);
 
-      if (infosData.success) {
+      if (infosData?.success) {
         setInfos(infosData.message);
         debugLog('infosData', infosData.message);
         
@@ -113,7 +113,7 @@ const ServerInfos = () => {
       ]);
 
       debugLog('envsData', envsData);
-      if (envsData.success) {
+      if (envsData?.success) {
         setServerEnvs(envsData.message);
         
         setErrorMessage(null);

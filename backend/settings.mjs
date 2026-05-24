@@ -1186,7 +1186,7 @@ export const getDomains = async (containerName=null, name=null) => {
   try {
     
     const domains = dbAll(sql.domains.select.domains, {scope:containerName});
-    if (domains.success) {
+    if (domain?.success) {
       debugLog(`domains: domains (${typeof domains.message})`);
       
       // we could read DB_Logins and it is valid

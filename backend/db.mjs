@@ -1019,14 +1019,14 @@ export const changePassword = async (table, id, password, schema, containerName)
     if (table == 'accounts') {
       const targetDict = getTargetDict('mailserver', containerName);
 
-      debugLog(`Updating password for ${id} in ${table} for ${containerName}...`);
+      debugLog(`Updating account password for id ${id} in ${containerName}...`);
       results = await execSetup(`email update ${id} "${password}"`, targetDict);
       if (!results.returncode) {
         
-        debugLog(`Updating password for ${id} in ${table} with scope=${containerName}...`);
+        debugLog(`Updating password for id ${id} in ${table} (${containerName})...`);
         result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
-        successLog(`Password updated for ${table}: ${id}`);
-        return { success: true, message: `Password updated for ${id} in ${table}`};
+        successLog(`Password updated for id ${id} in ${table} (${containerName})`);
+        return { success: true, message: `Password updated for id ${id} in ${table} (${containerName})`};
         
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
@@ -1035,11 +1035,11 @@ export const changePassword = async (table, id, password, schema, containerName)
       }
       
     } else {
-      debugLog(`Updating password for ${id} in ${table}...`);
+      debugLog(`Updating password for id ${id} in ${table}...`);
       result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);  // doesn't hurt to add scope even when unused
       if (result.success) {
-        successLog(`Password updated for ${id} in ${table}`);
-        return { success: true, message: `Password updated for ${id} in ${table}` };
+        successLog(`Password updated for id ${id} in ${table}`);
+        return { success: true, message: `Password updated for id ${id} in ${table}` };
         
       } else return result;
     }

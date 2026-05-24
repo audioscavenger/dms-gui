@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  debugLog,
   errorLog,
 } from '../../frontend.mjs';
 import {
@@ -31,6 +32,9 @@ import {
 //   moveKeyToLast,
 } from '../../../common.mjs';
 import {
+  getAccounts,
+  getAliases,
+  getServerEnvs,
   getServerStatus,
   killContainer,
 } from '../services/api.mjs';
@@ -53,7 +57,13 @@ const Dashboard = () => {
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
   
-  const [status, setServerStatus] = useState({
+  const [isLoading, setLoading] = useState(true);
+  
+  const [aliases, setAliases] = useLocalStorage("aliases", []);
+  const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
+  
+  const [status, setServerStatus] = useLocalStorage("status", {
     status: {
       status: 'loading',
       error: null,
@@ -70,11 +80,18 @@ const Dashboard = () => {
     },
   });
   
-  const [isStatusLoading, setStatusLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
-    fetchAll();
+    if (!mailservers || !mailservers.length) return;
+    if (!containerName) return;
+
+    fetchDashboard();
+
+    if (!status.db.accounts?.length && !status.db.aliases?.length) {
+      fetchAll();
+    }
 
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboard, 30000);
@@ -82,20 +99,24 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+
   const fetchAll = async () => {
-    fetchDashboard();
-  };
-
-  const fetchDashboard = async () => {
-    if (!mailservers || !mailservers.length) return;
-    if (!containerName) return;
-
     try {
-      setStatusLoading(true);
+      fetchAccounts(true);
+      fetchAliases(true);
+      fetchDashboard();
+
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
 
       // const statusData = await getServerStatus('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName);
       const statusData = await getServerStatus('mailserver', containerName);
-      if (statusData.success) {
+      if (statusData?.success) {
 
         setErrorMessage(null);
         setServerStatus(statusData.message);
@@ -105,17 +126,19 @@ const Dashboard = () => {
       
     } catch (error) {
       errorLog(t('api.errors.fetchServerStatus'), error);
-      setErrorMessage('api.errors.fetchServerStatus');
+      // setErrorMessage('api.errors.fetchServerStatus');
+      setErrorMessage(statusData.message);
       
     } finally {
-      setStatusLoading(false);
+      setLoading(false);
     }
   };
 
   const rebootMe = async () => {
-    
-    killContainer('dms-gui', 'dms-gui', 'dms-gui');
-    logout();
+    if (user.isAdmin) {
+      killContainer('dms-gui', 'dms-gui', 'dms-gui');
+      logout();
+    }
   };
 
   const getStatusColor = () => {
@@ -140,6 +163,85 @@ const Dashboard = () => {
     return `dashboard.status.${status.status.status}`;
   };
 
+  const fetchAliases = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
+    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
+    
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      
+      const [aliasesData, accountsData] = await Promise.all([
+        // getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
+        getAliases(containerName, refresh),
+        getAccounts(containerName),           // refresh accounts is done on first load or in Accounts page
+      ]);
+
+      if (accountsData?.success) {
+        setAccounts(accountsData.message);
+        debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+      } else setErrorMessage(accountsData?.error);
+      
+      if (aliasesData?.success) {
+        // add color column for regex aliases
+        let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
+          ...alias, 
+          color:  (alias.regex) ? "text-info" : "",
+          }; });
+        setAliases(aliasesDataFormatted);
+        debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
+        
+      } else setErrorMessage(aliasesData?.error);
+      
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchAliases'), error);
+      setErrorMessage('api.errors.fetchAliases');
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAccounts = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
+    
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      
+      // const [accountsData, DOVECOT_FTSdata] = await Promise.all([
+      //   getAccounts(containerName, refresh),
+      //   getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
+      // ]);
+      const accountsData = await getAccounts(containerName, refresh);
+      if (accountsData?.success) {
+        setAccounts(accountsData.message);
+        debugLog('ddebug accountsData', accountsData);
+
+        const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
+        debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
+        if (DOVECOT_FTSdata?.success) {
+          setDOVECOT_FTS(DOVECOT_FTSdata.message);
+          
+        } else setErrorMessage(DOVECOT_FTSdata?.error);
+        
+      } else setErrorMessage(accountsData?.error);
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchAccounts'), error);
+      setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
   if (!user) {
     return <LoadingSpinner />;
   }
@@ -153,7 +255,7 @@ const Dashboard = () => {
           icon="arrow-repeat"
           title={t('common.refresh')}
           className="me-2"
-          onClick={() => fetchAll(true)}
+          onClick={() => fetchDashboard(true)}
         />
       </div>
 
@@ -172,7 +274,7 @@ const Dashboard = () => {
             iconColor={getStatusColor()}
             badgeColor={getStatusColor()}
             badgeText={getStatusText()}
-            isLoading={isStatusLoading}
+            isLoading={isLoading}
           >
           {user?.isAdmin == 1 &&
             <Button
@@ -191,8 +293,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.cpuUsage"
             icon="cpu"
-            iconColor={isStatusLoading ? "secondary" : "primary"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "primary"}
+            isLoading={isLoading}
             value={Number(status.resources.cpuUsage).toFixed(2)+'%'}
           />
         </Col>
@@ -200,8 +302,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.memoryUsage"
             icon="memory"
-            iconColor={isStatusLoading ? "secondary" : "info"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "info"}
+            isLoading={isLoading}
             value={Number(status.resources.memoryUsage).toFixed(2)+'%'}
           />
         </Col>
@@ -209,8 +311,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.diskUsage"
             icon="hdd"
-            iconColor={isStatusLoading ? "secondary" : "warning"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "warning"}
+            isLoading={isLoading}
             value={status.resources.diskUsage+'MB'}
           />
         </Col>
@@ -224,8 +326,8 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.logins"
             icon="person-lock"
-            iconColor={isStatusLoading ? "secondary" : "success"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "success"}
+            isLoading={isLoading}
             value={status.db.logins}
             href="/logins"
           />
@@ -234,9 +336,10 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.mailboxAccounts"
             icon="inboxes-fill"
-            iconColor={isStatusLoading ? "secondary" : "success"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "success"}
+            isLoading={isLoading}
             value={status.db.accounts}
+            onClickRefresh={() => fetchAccounts(true)}
             href="/accounts"
           />
         </Col>
@@ -244,9 +347,10 @@ const Dashboard = () => {
           <DashboardCard
             title="dashboard.aliases"
             icon="arrow-left-right"
-            iconColor={isStatusLoading ? "secondary" : "success"}
-            isLoading={isStatusLoading}
+            iconColor={isLoading ? "secondary" : "success"}
+            isLoading={isLoading}
             value={status.db.aliases}
+            onClickRefresh={() => fetchAliases(true)}
             href="/aliases"
           />
         </Col>

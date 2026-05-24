@@ -38,13 +38,12 @@ const Aliases = () => {
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
+  const [aliases, setAliases] = useLocalStorage("aliases", []);
+  const [accounts, setAccounts] = useLocalStorage("accounts", []);
 
   const [isLoading, setLoading] = useState(true);
-  
-  const [aliases, setAliases] = useState([]);
   const [isSource, setIsSource] = useState({valid:true, alias:true});
-  const [accounts, setAccounts] = useState([]);
-  
+
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [formData, setFormData] = useState({
@@ -87,12 +86,12 @@ const Aliases = () => {
         getAccounts(containerName),           // refresh accounts is done on first load or in Accounts page
       ]);
 
-      if (accountsData.success) {
+      if (accountsData?.success) {
         setAccounts(accountsData.message);
         debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
       } else setErrorMessage(accountsData?.error);
       
-      if (aliasesData.success) {
+      if (aliasesData?.success) {
         // add color column for regex aliases
         let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
           ...alias, 
@@ -313,6 +312,8 @@ const Aliases = () => {
             icon="person-lines-fill" 
             isLoading={isLoading}
             onClickRefresh={() => fetchAliases(true)}
+            titleRefresh={t('common.forceResync')}
+
           >
             <DataTable
               columns={columns}

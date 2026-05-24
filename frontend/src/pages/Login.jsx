@@ -80,6 +80,7 @@ export const Login = () => {
     // since we are redirected here from the api when dms-gui has restarted with fresh secret keys, we need to logout first
     if (user) logout();
 
+    setFirstRun(false);
     const result = await loginUser('admin', 'changeme', true);
     // debugLog('ddebug isFirstRun result', result);
     
@@ -105,7 +106,7 @@ export const Login = () => {
         getConfigs('mailserver'),
       ]);
 
-      if (mailserversData.success) {
+      if (mailserversData?.success) {
         // this will be all containers in db except dms-gui
         debugLog('Login fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
   

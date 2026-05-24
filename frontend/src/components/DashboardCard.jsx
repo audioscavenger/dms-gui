@@ -1,11 +1,12 @@
 import React from 'react';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
 import RBBadge from 'react-bootstrap/Badge'; // Import react-bootstrap Badge
 import { useNavigate } from 'react-router-dom';
 import {
   LoadingSpinner,
   Translate,
+  Button,
 } from './index.jsx';
 
 /**
@@ -35,9 +36,12 @@ const DashboardCard = ({
   href = null,
   translate = true,
   children,
+  onClickRefresh,
   ...rest
 }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
+  const showRefresher   = (typeof onClickRefresh  == "function") ? true : false;
+  const overrideTitleRefresh   = (typeof titleRefresh  == "string") ? true : false;
   const navigate = useNavigate();
 
   function handleNavigate(to) {
@@ -52,11 +56,27 @@ const DashboardCard = ({
       {...rest}
     >
       <RBCard.Body>
-        <div className={`dashboard-icon text-${iconColor}`}>
-          <i className={`bi bi-${icon}`}></i>
+        <div>
+          <div className={`dashboard-icon text-${iconColor}`}>
+            <i className={`bi bi-${icon}`}></i>
+          </div>
+          {(showRefresher) && (
+            <div className="float-end position-sticky z-1">
+            {showRefresher && (
+              <Button
+                variant="warning"
+                size="sm"
+                icon="arrow-repeat"
+                title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
+                className="me-2"
+                onClick={onClickRefresh}
+              />
+            )}
+            </div>
+          )}
         </div>
         <RBCard.Title as="h5">
-        {Translate(title, translate)}
+          {Translate(title, translate)}
         </RBCard.Title>
         {badgeColor
           ? <RBBadge bg={badgeColor}>{badgeText ? Translate(badgeText, translate) : value}</RBBadge>
