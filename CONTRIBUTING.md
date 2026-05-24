@@ -164,7 +164,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - Logins: trying to demote the last admin should show an alert error with the correct message
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
-* [ ] 1.5.99 - Settings: we should redirect user to dashboard after new container added successfully 100% as dashboard will load everything
+* [ ] 1.5.99 - Accounts: delete a linked account shoudl also delete the login
 
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
@@ -179,6 +179,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
 
+* [ ] 1.5.29 - Settings: we should redirect user to dashboard after new container added successfully 100% as dashboard will load everything
 * [x] 1.5.28 - Dashboard: useEffect force refresh of accounts and aliases when all counts are 0
 * [x] 1.5.28 - Dashboard: added force refresh of accounts and aliases 
 * [x] 1.5.28 - Dashboard/Aliases/Accounts: useLocalStorage for aliases and accounts

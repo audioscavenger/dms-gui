@@ -56,25 +56,23 @@ const DashboardCard = ({
       {...rest}
     >
       <RBCard.Body>
-        <div>
-          <div className={`dashboard-icon text-${iconColor}`}>
-            <i className={`bi bi-${icon}`}></i>
-          </div>
-          {(showRefresher) && (
-            <div className="float-end position-sticky z-1">
-            {showRefresher && (
-              <Button
-                variant="warning"
-                size="sm"
-                icon="arrow-repeat"
-                title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
-                className="me-2"
-                onClick={onClickRefresh}
-              />
-            )}
-            </div>
-          )}
+        <div className={`dashboard-icon text-${iconColor}`}>
+          <i className={`bi bi-${icon}`}></i>
         </div>
+        {(showRefresher) && (
+          <div className="float-end position-sticky z-1">
+          {showRefresher && (
+            <Button
+              variant="warning"
+              size="sm"
+              icon="arrow-repeat"
+              title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
+              className="me-2"
+              onClick={onClickRefresh}
+            />
+          )}
+          </div>
+        )}
         <RBCard.Title as="h5">
           {Translate(title, translate)}
         </RBCard.Title>
