@@ -179,8 +179,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
 
-* [ ] 1.5.31 - bugfix: Cannot deactivate the last admin, how will you administer dms-gui? message is not shown in the gui
-* [ ] 1.5.31 - bugfix: upon changing logged in user's userName or mailbox, log it out immediately upon success as the TLS token is now tempered
+* [ ] 1.5.32 - bugfix: Cannot deactivate the last admin, how will you administer dms-gui? message is not shown in the gui
+* [x] 1.5.31 - bugfix: upon changing logged in user's userName or mailbox, log it out immediately upon success as the TLS token is now tempered
 * [x] 1.5.30 - DataTable shows row in red text upon any modification
 * [x] 1.5.29 - bug: DashboardCard values for accounts etc don't refresh when I call fetchAccounts etc; useLocalStorage has been upgraded but no luck
 * [x] 1.5.29 - bugfix: useLocalStorage: updated setState to handle formatting differences and fixed state merging

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
@@ -47,6 +48,7 @@ const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
   const { user } = useAuth();   // {"id":1,"username":"adminn","email":"admin@dms-gui.com","isAdmin":1,"isActive":1,"isAccount":0,"mailserver":"dms","roles":[],"mailbox":"admin@dms-gui.com"}
+  const navigate = useNavigate();
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
 
@@ -486,7 +488,7 @@ const Logins = () => {
         // if you modified yourself, logout immediately since we cannot reflect the changes in the token nor the profile dynamically
         if (login.id == user.id) {
           setTimeout(() => {
-            navigate("/logout");
+            navigate("/login");
           }, 2000);
         }
         
