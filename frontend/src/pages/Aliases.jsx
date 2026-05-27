@@ -87,11 +87,12 @@ const Aliases = () => {
       ]);
 
       if (accountsData?.success) {
-        setAccounts(accountsData.message);
         debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+        setAccounts(accountsData.message);
       } else setErrorMessage(accountsData?.error);
       
       if (aliasesData?.success) {
+        debugLog('aliasesData', aliasesData);
         // add color column for regex aliases
         let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
           ...alias, 

@@ -34,7 +34,7 @@ import {
 import {
   getAccounts,
   getAliases,
-  getServerEnvs,
+  getLogins,
   getServerStatus,
   killContainer,
 } from '../services/api.mjs';
@@ -58,9 +58,11 @@ const Dashboard = () => {
   const [mailservers] = useLocalStorage("mailservers", []);
   
   const [isLoading, setLoading] = useState(true);
-  
+  const [cardLoading, setCardLoading] = useState({});
+
   const [aliases, setAliases] = useLocalStorage("aliases", []);
   const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  const [logins, setLogins] = useLocalStorage("logins", []);
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
   
   const [status, setServerStatus] = useLocalStorage("status", {
@@ -89,27 +91,39 @@ const Dashboard = () => {
 
     fetchDashboard();
 
-    if (!status.db.accounts?.length && !status.db.aliases?.length) {
-      fetchAll();
-    }
-
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboard, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [containerName]);
+
+  useEffect(() => {
+    if (isLoading) {
+      handleRefreshCard("logins");
+      handleRefreshCard("accounts");
+      handleRefreshCard("aliases");
+    } else {
+      handleRefreshCard("logins", false);
+      handleRefreshCard("accounts", false);
+      handleRefreshCard("aliases", false);
+    }
+  }, [isLoading]);
 
 
-  const fetchAll = async () => {
+  const refreshAll = async () => {
     try {
-      fetchAccounts(true);
-      fetchAliases(true);
-      fetchDashboard();
+      await fetchAccounts(true);
+      await fetchLogins();
+      await fetchAliases(true);
 
     } finally {
-      setLoading(false);
+      setSuccessMessage(t('dashboard.isFirstRun', {
+        containerName:containerName,
+      }));
     }
   };
+
+
   const fetchDashboard = async () => {
     try {
       setLoading(true);
@@ -120,7 +134,19 @@ const Dashboard = () => {
 
         setErrorMessage(null);
         setServerStatus(statusData.message);
-        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown'].includes(statusData.message.status.status)) setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+        
+        // handle API errors
+        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown'].includes(statusData.message.status.status)) {
+          setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+        } else {
+
+          // force a global refresh if everything is empty; RISK: can a user start from a DMS server with zero accounts? that would execute every time
+          if (statusData.message.db.aliases == 0 && statusData.message.db.accounts == 0 && statusData.message.db.logins <= 1) {
+            refreshAll();
+          }
+
+          return statusData.message;
+        }
         
       } else setErrorMessage(statusData?.error);
       
@@ -168,29 +194,39 @@ const Dashboard = () => {
     debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
     
     try {
-      setLoading(true);
+      handleRefreshCard("aliases");
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      const [aliasesData, accountsData] = await Promise.all([
+      // const [aliasesData, accountsData] = await Promise.all([
+      const [aliasesData] = await Promise.all([
         // getAliases(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, refresh),
         getAliases(containerName, refresh),
-        getAccounts(containerName),           // refresh accounts is done on first load or in Accounts page
+        // getAccounts(containerName),           // refresh accounts is done on first load or in Accounts page
       ]);
 
-      if (accountsData?.success) {
-        setAccounts(accountsData.message);
-        debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
-      } else setErrorMessage(accountsData?.error);
+      // if (accountsData?.success) {
+      //   debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
+        // setAccounts(accountsData.message);
+      // } else setErrorMessage(accountsData?.error);
       
       if (aliasesData?.success) {
+        debugLog('aliasesData', aliasesData);
         // add color column for regex aliases
-        let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
-          ...alias, 
-          color:  (alias.regex) ? "text-info" : "",
-          }; });
-        setAliases(aliasesDataFormatted);
-        debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
+        // let aliasesDataFormatted = aliasesData.message.map(alias => { return { 
+        //   ...alias, 
+        //   color:  (alias.regex) ? "text-info" : "",
+        //   }; });
+        // setAliases(aliasesDataFormatted);
+        // debugLog('aliasesDataFormatted', aliasesDataFormatted); // [ { source: 'a@b.com', destination:'b@b.com', regex: 0, color: '' }, .. ]
+        // bug: this never works for some reason
+        setServerStatus(prev => ({
+          ...prev,                                  // 1. Copy top level using your state variable
+          db: {
+            ...prev.db,                             // 2. Copy the db level (keeps aliases intact)
+            logins: aliasesData.message.length,     // 3. Update count
+          }
+        }));
         
       } else setErrorMessage(aliasesData?.error);
       
@@ -200,7 +236,7 @@ const Dashboard = () => {
       setErrorMessage('api.errors.fetchAliases');
       
     } finally {
-      setLoading(false);
+      handleRefreshCard("aliases", false);
     }
   };
 
@@ -208,7 +244,7 @@ const Dashboard = () => {
     refresh = !user.isAdmin ? false : refresh;
     
     try {
-      setLoading(true);
+      handleRefreshCard("accounts");
       setErrorMessage(null);
       setSuccessMessage(null);
       
@@ -218,15 +254,23 @@ const Dashboard = () => {
       // ]);
       const accountsData = await getAccounts(containerName, refresh);
       if (accountsData?.success) {
-        setAccounts(accountsData.message);
         debugLog('ddebug accountsData', accountsData);
+        // setAccounts(accountsData.message);
+        // bug: this never works for some reason
+        setServerStatus(prev => ({
+          ...prev,                                  // 1. Copy top level using your state variable
+          db: {
+            ...prev.db,                             // 2. Copy the db level (keeps aliases intact)
+            logins: accountsData.message.length,    // 3. Update count
+          }
+        }));
 
-        const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
-        debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
-        if (DOVECOT_FTSdata?.success) {
-          setDOVECOT_FTS(DOVECOT_FTSdata.message);
+        // const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
+        // debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
+        // if (DOVECOT_FTSdata?.success) {
+        //   setDOVECOT_FTS(DOVECOT_FTSdata.message);
           
-        } else setErrorMessage(DOVECOT_FTSdata?.error);
+        // } else setErrorMessage(DOVECOT_FTSdata?.error);
         
       } else setErrorMessage(accountsData?.error);
 
@@ -235,12 +279,52 @@ const Dashboard = () => {
       setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
       
     } finally {
-      setLoading(false);
+      handleRefreshCard("accounts", false);
     }
   };
 
 
+  const fetchLogins = async () => {
+    
+    try {
+      handleRefreshCard("logins");
+      const [loginsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
+        getLogins(),
+      ]);
 
+      if (loginsData?.success) {
+        debugLog('loginsData', loginsData);
+        // let loginsDataAltered = await formatLoginsForTable(loginsData.message);
+        // debugLog('loginsDataAltered', loginsDataAltered);
+        // setLogins(loginsDataAltered);
+        // bug: this never works for some reason
+        setServerStatus(prev => ({
+          ...prev,                                  // 1. Copy top level using your state variable
+          db: {
+            ...prev.db,                             // 2. Copy the db level (keeps aliases intact)
+            logins: loginsData.message.length,      // 3. Update count
+          }
+        }));
+
+      } else setErrorMessage(loginsData?.error);
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchLogins'), error);
+      setErrorMessage('api.errors.fetchLogins');
+      
+    } finally {
+      handleRefreshCard("logins", false);
+    }
+  };
+
+
+  const handleRefreshCard = (cardId, status=true) => {
+    // Turn loading on for this specific card
+    setCardLoading(prev => ({ 
+      ...prev, 
+      [cardId]: status 
+    }));
+  };
 
   if (!user) {
     return <LoadingSpinner />;
@@ -261,6 +345,7 @@ const Dashboard = () => {
 
       <h2 className="mb-4">{Translate('dashboard.title')} {t('common.for', {what:containerName})}</h2>
       <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="success" message={successMessage} />
 
       <Row>
         {' '}
@@ -269,6 +354,7 @@ const Dashboard = () => {
           {' '}
           {/* Use Col component and add bottom margin */}
           <DashboardCard
+            key="serverStatus"
             title="dashboard.serverStatus"
             icon="hdd-rack-fill"
             iconColor={getStatusColor()}
@@ -291,6 +377,7 @@ const Dashboard = () => {
         </Col>
         <Col md={3} className="mb-3">
           <DashboardCard
+            key="cpuUsage"
             title="dashboard.cpuUsage"
             icon="cpu"
             iconColor={isLoading ? "secondary" : "primary"}
@@ -300,6 +387,7 @@ const Dashboard = () => {
         </Col>
         <Col md={3} className="mb-3">
           <DashboardCard
+            key="memoryUsage"
             title="dashboard.memoryUsage"
             icon="memory"
             iconColor={isLoading ? "secondary" : "info"}
@@ -309,6 +397,7 @@ const Dashboard = () => {
         </Col>
         <Col md={3} className="mb-3">
           <DashboardCard
+            key="diskUsage"
             title="dashboard.diskUsage"
             icon="hdd"
             iconColor={isLoading ? "secondary" : "warning"}
@@ -324,20 +413,23 @@ const Dashboard = () => {
         {/* Use Row component */}
         <Col md={4} className="mb-3">
           <DashboardCard
+            key="logins"
             title="dashboard.logins"
             icon="person-lock"
-            iconColor={isLoading ? "secondary" : "success"}
-            isLoading={isLoading}
+            iconColor={cardLoading["logins"] ? "secondary" : "success"}
+            isLoading={cardLoading["logins"]}
             value={status.db.logins}
+            onClickRefresh={() => fetchLogins(true)}
             href="/logins"
           />
         </Col>
         <Col md={4} className="mb-3">
           <DashboardCard
-            title="dashboard.mailboxAccounts"
+            key="accounts"
+            title="dashboard.accounts"
             icon="inboxes-fill"
-            iconColor={isLoading ? "secondary" : "success"}
-            isLoading={isLoading}
+            iconColor={cardLoading["accounts"] ? "secondary" : "success"}
+            isLoading={cardLoading["accounts"]}
             value={status.db.accounts}
             onClickRefresh={() => fetchAccounts(true)}
             href="/accounts"
@@ -345,10 +437,11 @@ const Dashboard = () => {
         </Col>
         <Col md={4} className="mb-3">
           <DashboardCard
+            key="aliases"
             title="dashboard.aliases"
             icon="arrow-left-right"
-            iconColor={isLoading ? "secondary" : "success"}
-            isLoading={isLoading}
+            iconColor={cardLoading["aliases"] ? "secondary" : "success"}
+            isLoading={cardLoading["aliases"]}
             value={status.db.aliases}
             onClickRefresh={() => fetchAliases(true)}
             href="/aliases"

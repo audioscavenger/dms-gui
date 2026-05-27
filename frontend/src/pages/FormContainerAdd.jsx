@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
@@ -39,10 +40,17 @@ import { useAuth } from '../hooks/useAuth';
 function FormContainerAdd() {
   const { t } = useTranslation();
   const { user, login } = useAuth();
+  const navigate = useNavigate();
   const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
   // const [containerName, setContainerName] = useState(useLocalStorage("containerName", ''););   // best of both worlds, deprecated
   // const [mailservers, setMailservers] = useState(useLocalStorage("mailservers", []));                // best of both worlds, deprecated
+  
+  // moved to dashboard
+  // const [envs, setServerEnvs] = useState([]);
+  // const [aliases, setAliases] = useLocalStorage("aliases", []);
+  // const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  // const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   const [isLoading, setLoading] = useState(true);
   const [formValuesSubmitted, setFormValuesSubmitted] = useState(false); // 'idle', 'submitting', 'success', 'error'
@@ -59,16 +67,19 @@ function FormContainerAdd() {
   const makeFavoriteRef = useRef(null);
 
   // selector fields
+  // TODO: no actual data or names should ever be there, those should be in emv..mjs and pulled by an API call
   const [protocols, setProtocols] = useState([
     {value: 'http', label: 'http'},
     {value: 'https', label: 'https'},
   ]);
 
+  // TODO: no actual data or names should ever be there, those should be in emv..mjs and pulled by an API call
   const [schemas, setSchemas] = useState([
     {value: 'dms', label: 'DMS'},
     {value: 'poste', label: 'Poste.io'},
   ]);
 
+  // TODO: no actual data or names should ever be there, those should be in emv..mjs and pulled by an API call
   const [formValues, setFormValues] = useState([
         {name: 'schema', value: schemas[0].value},
         {name: 'containerName', value: containerName},
@@ -117,11 +128,36 @@ function FormContainerAdd() {
         handleLoginSave(getValueFromArrayOfObj(formValues, 'containerName'));
       }
 
-      // pull all data if API is working
       debugLog('FormContainerAdd APIInjected:', APIInjected);
       if (APIInjected) {
+
         debugLog('FormContainerAdd APIValidated:', APIValidated);
-        if (!APIValidated) {
+        // API installed and valid, success!
+        if (APIValidated) {
+
+          setSuccessMessage(t('settings.DMS_API_KEYSaved', {
+            DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
+          }));
+
+          // pull all data since API is working
+          // this causes a problem the first time as the containerName is still unset or in queue. Also those fetches shall be done in sequence not in parallel
+          // try {
+          //   setLoading(true);
+          //   fetchServerEnvs(true);
+          //   fetchAccounts(true);
+          //   fetchAliases(true);
+
+          // } finally {
+          //   setLoading(false);
+          // }
+          debugLog(`Success! navigate to /dashboard`);
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 2000);
+
+        } else {
+          // reminder to setup DMS compose after a submit
+          debugLog(`FormContainerAdd 5 fetchMailservers failed: show setup reminder`);
           setSuccessMessage(t('settings.DMS_API_KEYinit', {
             containerName:getValueFromArrayOfObj(formValues, 'containerName'),
             DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
@@ -129,6 +165,7 @@ function FormContainerAdd() {
           }));
         }
       }
+
     }
   }, [formValuesSubmitted]);
 
@@ -187,22 +224,6 @@ function FormContainerAdd() {
           debugLog(`FormContainerAdd 4 setMailservers:`, mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));
           setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
-          // reminder to setup DMS compose after a submit
-          if (formValuesSubmitted) {
-            if (APIValidated) {
-              setSuccessMessage(t('settings.DMS_API_KEYSaved', {
-                DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
-              }));
-              
-            } else {
-              debugLog(`FormContainerAdd 5 fetchMailservers failed: show setup reminder`);
-              setSuccessMessage(t('settings.DMS_API_KEYinit', {
-                containerName:getValueFromArrayOfObj(formValues, 'containerName'),
-                DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
-                DMS_API_PORT:getValueFromArrayOfObj(formValues, 'DMS_API_PORT'),
-              }));
-            }
-          }
 
         // nothing yet in database, preset form defaults: done by useState()
         // } else {

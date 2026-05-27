@@ -15,11 +15,12 @@
     "cpuUsage": "CPU Usage",
     "memoryUsage": "Memory Usage",
     "diskUsage": "Disk Usage",
-    "mailboxAccounts": "Mailbox Accounts",
+    "accounts": "Mailbox Accounts",
     "aliases": "Aliases",
     "logins": "Login accounts",
     "loading": "Loading...",
     "rebootMe": "Reboot",
+    "isFirstRun": "First time pull of container <i>{{containerName}}</i>: success!",
     "status": {
       "api_gen": "API key not generated",
       "api_miss": "API key not sent",

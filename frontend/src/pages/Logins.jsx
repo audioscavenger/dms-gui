@@ -190,6 +190,7 @@ const Logins = () => {
       ]);
 
       if (loginsData?.success) {
+        debugLog('loginsData', loginsData);
         let loginsDataAltered = await formatLoginsForTable(loginsData.message);
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);

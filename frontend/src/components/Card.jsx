@@ -69,7 +69,11 @@ const Card = ({
                   icon="arrow-repeat"
                   title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
                   className="me-2"
-                  onClick={onClickRefresh}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 👈 Stops the click from bubbling up to the card
+                    e.preventDefault();  // 👈 Prevents the card link from opening
+                    onClickRefresh(e);   // 👈 Calls your actual refresh function
+                  }}
                 />
               )}
               {collapsible && (

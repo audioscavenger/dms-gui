@@ -28,7 +28,7 @@ export const useLocalStorage = (key, initialValue) => {
     const raw = localStorage.getItem(key) || initialValue;   // returns null when not exist so let's use initialValue instead
     
     // Check if the raw string changed before parsing
-    if (key == 'containerName') console.debug(`${key}.raw: ${JSON.stringify(cache.current.raw)} == ${JSON.stringify(raw)}`);
+    // if (key == 'containerName') console.debug(`${key}.raw: ${JSON.stringify(cache.current.raw)} == ${JSON.stringify(raw)}`);
     if (cache.current.raw !== raw) {
       cache.current.raw = raw;
       try {
@@ -58,6 +58,44 @@ export const useLocalStorage = (key, initialValue) => {
 
   const setState = (newValue) => {
     if (typeof window !== 'undefined') {
+      // 1. Correctly evaluate functions using the freshest value from the cache ref
+      const valueToStore = typeof newValue === 'function' 
+        ? newValue(cache.current.parsed) 
+        : newValue;
+        
+      const serializedValue = JSON.stringify(valueToStore);
+      localStorage.setItem(key, serializedValue);
+
+      // 2. CRITICAL FIX: Update the cache ref immediately on the writing tab
+      // This forces getSnapshot to realize the data is fresh and bypass the raw !== raw trap
+      cache.current.raw = serializedValue;
+      cache.current.parsed = valueToStore;
+
+      // 3. Manually notify this tab and other tabs
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
+  return [state, setState];
+}
+
+/*
+bugfix: updating values handled by useLocalStorage does not update them on the UI like useState
+Here is what Gemini told me:
+
+Look at this line inside your setState function:
+  window.dispatchEvent(new Event('storage'));
+When you dispatch this manual storage event, your subscribe listener fires, which immediately forces React to call getSnapshot(). 
+Inside getSnapshot, you have this validation check:
+  if (cache.current.raw !== raw) { ... }
+When you update an object using Direct State Reference (setServerStatus({ ...status, db: { ... } })), you are creating a brand new object. 
+But look at what you pass to localStorage.setItem: you stringify it.
+If the internal values (like strings, numbers, booleans) inside your stringified JSON look identical or have formatting nuances, or if localStorage.getItem(key) doesn't perfectly mismatch your cached raw string yet, cache.current.raw !== raw can evaluate to false. 
+If it evaluates to false, your hook returns the old cached cache.current.parsed reference, completely ignoring your new state object!
+Furthermore, your functional state helper newValue instanceof Function ? newValue(state) : newValue is technically supported by your code, but state inside setState is a stale closure from the last render, which breaks state merging.
+
+  const setState = (newValue) => {
+    if (typeof window !== 'undefined') {
       // "Boolean-Safe" Hook for storing false values
       // localStorage.setItem(key, JSON.stringify(newValue));
       const valueToStore = newValue instanceof Function ? newValue(state) : newValue;
@@ -68,8 +106,8 @@ export const useLocalStorage = (key, initialValue) => {
     }
   };
 
-  return [state, setState];
-}
+
+*/
 
 /*
 // https://blog.logrocket.com/authentication-react-router-v6/

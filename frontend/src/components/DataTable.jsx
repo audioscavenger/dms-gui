@@ -38,7 +38,7 @@ const DataTable = ({
   keyExtractor,
   renderRow,
   sortKeysInObject = [],  // we will sort objects from data only by those keys
-  isLoading= false,
+  isLoading= true,
   emptyMessage = 'common.noData',
   striped = true,         // Default to striped
   bordered = false,

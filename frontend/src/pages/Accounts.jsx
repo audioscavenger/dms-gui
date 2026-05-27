@@ -118,8 +118,8 @@ const Accounts = () => {
       // ]);
       const accountsData = await getAccounts(containerName, refresh);
       if (accountsData?.success) {
-        setAccounts(accountsData.message);
         debugLog('ddebug accountsData', accountsData);
+        setAccounts(accountsData.message);
 
         const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
         debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);

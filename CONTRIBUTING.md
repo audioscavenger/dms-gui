@@ -166,20 +166,25 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: delete a linked account shoudl also delete the login
 
+* [ ] 1.5.99 - bugfix: Dashboard: rebootMe simply logs you out
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - bugfix: backend: must find a way to delete the database depending on certain versions
-* [ ] 1.5.99 - bugfix: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom 
+* [ ] 1.5.99 - bugfix: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
 * [ ] 1.5.99 - bugfix: delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
 * [ ] 1.5.99 - bugfix: My Profile should also show a disabled field with username
-* [ ] 1.5.99 - bugfix: dismissible alerts are not dismissed when click on the cross
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
 * [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
 * [ ] 1.5.99 - bugfix: new admin login with existing mailbox email actually replaces existing admin's username
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
 
-* [ ] 1.5.29 - Settings: we should redirect user to dashboard after new container added successfully 100% as dashboard will load everything
+* [x] 1.5.29 - bug: DashboardCard values for accounts etc don't refresh when I call fetchAccounts etc; useLocalStorage has been upgraded but no luck
+* [x] 1.5.29 - bugfix: useLocalStorage: updated setState to handle formatting differences and fixed state merging
+* [x] 1.5.29 - bugfix: dismissible alerts are not dismissed when click on the cross
+* [x] 1.5.29 - DashboardCard and DataTable: isLoading=true is the default
+* [x] 1.5.29 - Dashboard: we should update each card on loading not the whole page: created a useState array for special cards
+* [x] 1.5.29 - Settings: we should redirect user to dashboard after new container added successfully 100% as dashboard will load everything
 * [x] 1.5.28 - Dashboard: useEffect force refresh of accounts and aliases when all counts are 0
 * [x] 1.5.28 - Dashboard: added force refresh of accounts and aliases 
 * [x] 1.5.28 - Dashboard/Aliases/Accounts: useLocalStorage for aliases and accounts

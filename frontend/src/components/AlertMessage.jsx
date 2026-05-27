@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 // import { useTranslation } from 'react-i18next';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
 
@@ -23,12 +23,15 @@ const AlertMessage = ({
 }) => {
   // const { t } = useTranslation();
   if (!message) return null;
+  // 1. Create a state variable to control the visibility
+  const [showAlert, setShowAlert] = useState(true);
 
   return (
     <RBAlert
       variant={type}
-      onClose={!!onClose}
-      dismissible={!!onClose} // Make dismissible if onClose is provided
+      dismissible={!!onClose}               // Make dismissible if onClose is provided
+      show={showAlert}                      // 👈 Tells the alert when to render
+      onClose={() => setShowAlert(false)}   // 👈 Changes state to false on 'X'
       {...rest}
     >
       {Translate(message, translate)}
