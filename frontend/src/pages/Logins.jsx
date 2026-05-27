@@ -46,7 +46,7 @@ import { useAuth } from '../hooks/useAuth';
 const Logins = () => {
   // const sortKeysInObject = ['email', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user } = useAuth();   // {"id":1,"username":"adminn","email":"admin@dms-gui.com","isAdmin":1,"isActive":1,"isAccount":0,"mailserver":"dms","roles":[],"mailbox":"admin@dms-gui.com"}
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
 
@@ -125,12 +125,6 @@ const Logins = () => {
     data = data.map(login => { return { 
     ...login, 
     color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
-    }; });
-
-    // add text-danger color for modified rows
-    data = data.map(login => { return { 
-    ...login, 
-    color:  (!isRowChanged(login.id)) ? login?.color : login?.color+" text-red",
     }; });
 
     return data;
@@ -392,7 +386,16 @@ const Logins = () => {
         [key]: newValue,
       },
     }));
-    
+
+    // reflect changes in the table row
+    setLogins(prevLogins =>
+      prevLogins.map(item =>
+        item.id === login.id                                      // for that login...
+          ? { ...item, color: `${item.color || ''} text-danger` } // add color class
+          : item                                                  // and keep other items as they are
+      )
+    );
+
   };
 
 
@@ -478,6 +481,15 @@ const Logins = () => {
       if (result.success) {
         // TODO: handle individual change failure
         
+        setSuccessMessage(t('logins.saved', {username:login.mailbox}));
+
+        // if you modified yourself, logout immediately since we cannot reflect the changes in the token nor the profile dynamically
+        if (login.id == user.id) {
+          setTimeout(() => {
+            navigate("/logout");
+          }, 2000);
+        }
+        
         // apply actual logins data with the changes
         // reflect changes in the table instead of fetching all again
         setLogins(prevLogins =>
@@ -488,12 +500,10 @@ const Logins = () => {
           )
         );
         
-        // reset editedData without that id
+        // remove that id from editedData object
         const { [login.id]:{}, ...editedDataReset } = editedData;
         setEditedData(editedDataReset);
 
-        setSuccessMessage(t('logins.saved', {username:login.mailbox}));
-        
       } else setErrorMessage(result?.error);
       
     } catch (error) {
