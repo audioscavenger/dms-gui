@@ -127,6 +127,12 @@ const Logins = () => {
     color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
     }; });
 
+    // add text-danger color for modified rows
+    data = data.map(login => { return { 
+    ...login, 
+    color:  (!isRowChanged(login.id)) ? login?.color : login?.color+" text-red",
+    }; });
+
     return data;
   }
 
@@ -363,11 +369,11 @@ const Logins = () => {
 
   const handleLoginChange = (e, login, key, newValue) => {  // newValue is an arrey with all the options selected
     
-    debugLog('login', login);               // { id: 1, mailbox: "admin@domain.com", username: "admin", isAdmin: 1, isActive: 1, color: "" }
-    debugLog('key', key);                   // roles, emails, username...
-    debugLog('newValue', newValue);         // role: _[ "box1@domain.com", .. ]_ or mailbox: _new.mailbox@gmail.com_ or username: _admin2_
-    debugLog('editedData', editedData);     // { 1:{mailbox:newValue, username:newValue}, .. }
-    debugLog(`isRowChanged(${login.id})`, isRowChanged(login.id));     // 
+    debugLog('login', login);                                       // { id: 1, mailbox: "admin@domain.com", username: "admin", isAdmin: 1, isActive: 1, color: "" }
+    debugLog('key', key);                                           // roles, emails, username...
+    debugLog('editedData (prev)    ', editedData);                  // { 1:{username: "admin"}, .. }
+    debugLog('editedData (newValue)', newValue);                    // "adminn"
+    debugLog(`isRowChanged(${login.id}):`, isRowChanged(login.id)); // isRowChanged(1) true
     
     // set state, with changes
     // setLogins(prevLogins =>
