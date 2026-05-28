@@ -1397,7 +1397,7 @@ async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'id is required' });
     }
-    const result = await deleteEntry('logins', id);
+    const result = await deleteEntry('logins', id, 'id');
     res.json(result);
     
   } catch (error) {

@@ -62,7 +62,7 @@ export const sql = {
 settings: {
 
   scope:  true,
-  id:  'name',
+  key:  'name',
   keys:   {
     name:'string', 
     value:'string', 
@@ -118,7 +118,7 @@ settings: {
 configs: {
 
   scope:  false,
-  id:  'name',
+  key:  'name',
   keys:   {
     name:'string', 
     plugin:'string', 
@@ -175,7 +175,7 @@ configs: {
 logins: {
 
   desc:   "password in the the list of keys even tho it's not a column",
-  id:     'id',
+  key:     'id',
   keys:   {
     mailbox:'string', 
     username:'string', 
@@ -328,7 +328,7 @@ logins: {
 accounts: {
       
   desc:   "password is in the the list of keys even tho it's not a column; scope = containerName; schema = type of container: dms, poste, etc",
-  id:     'mailbox',
+  key:     'mailbox',
   keys:   {
     mailbox:'string', 
     domain:'string',
@@ -400,7 +400,7 @@ accounts: {
 // ██   ██ ███████ ██ ██   ██ ███████ ███████ ███████ 
 aliases: {
       
-  id:     'source',
+  key:     'source',
   keys:   {
     source:'string', 
     destination:'string', 
@@ -450,7 +450,7 @@ aliases: {
 // ██████   ██████  ██      ██ ██   ██ ██ ██   ████ ███████ 
 domains: {
       
-  id:     'domain',
+  key:     'domain',
   keys:   {
     domain:'string', 
     dkim:'string', 
@@ -522,7 +522,7 @@ domains: {
 dns: {
       
   desc:   'dns entries, with SRV priority/weight/port being use also for TLSA usage/selector/type, MX, CERT type/tag/algo, and DNSKEY flag/protocol/algo',
-  id:     'domain',
+  key:     'domain',
   keys:   {
     domain:'string', 
     name:'string', 
@@ -1160,7 +1160,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             // return { success: false, error: `sql[${table}].update is missing [${key}]`};
 
             if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
-            result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].id} = ?`, scopedValues, id);
+            result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].key} = ?`, scopedValues, id);
             if (result.success) {
               messages.push(`Updated ${table} ${id} with ${key}=${value}`);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
@@ -1189,7 +1189,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
 
 
 export const deleteEntry = async (table, id, key, scope) => {
-  debugLog(`${table} id=${id} for scope=${scope} and key=${key}`);
+  debugLog(`${table} ${key}=${id} for scope=${scope} and key=${key}`);
   // example: deleteEntry('accounts', mailbox, 'mailbox', containerName);
   // example: deleteEntry('aliases', source, 'bySource', containerName);
   // example: deleteEntry('logins', id);
