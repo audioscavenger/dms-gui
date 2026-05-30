@@ -691,6 +691,7 @@ function FormContainerAdd() {
               variant={pingResult && "success" || "danger"}
               icon={pingResult && "check" || "x"}
               title={pingResult && t('common.pingUp') || t('common.pingDown')}
+              className='btn-feedback'
               disabled
             />
             <Button

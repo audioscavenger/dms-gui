@@ -174,6 +174,7 @@ export const getRoles = async (credential=null) => {
 
 
 // mailserver used to be containerName, now we want configID
+// addLogin will not create a mailbox by itself, while addAccount will create a login for it
 export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
   debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles);
 

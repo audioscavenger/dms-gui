@@ -75,10 +75,28 @@ const Logins = () => {
   };
   
   // change detector to enable save button
-  const isRowChanged = (id) => {
-    return editedData[id] !== undefined;
+  const isRowChanged = (id, currentEditedData = editedData) => {
+    // debugLog('isRowChanged currentEditedData:', currentEditedData)
+    return currentEditedData[id] !== undefined;
   };
   
+  const removeIdFromEditedData = (idToRemove) => {
+    // Compute the clean remaining data object upfront synchronously
+    const nextEditedData = { ...editedData };
+    delete nextEditedData[idToRemove]; // Safely drop the item from our local copy
+
+    // debugLog('removeIdFromEditedData editedData:', editedData)
+    setEditedData((prevData) => {
+      // Destructure to separate the unwanted ID from the rest of the object
+      const { [idToRemove]: _, ...remainingData } = prevData;
+      
+      // Return the new object to update the state and trigger a re-render
+      return remainingData;
+    });
+    // debugLog('removeIdFromEditedData nextEditedData:', nextEditedData)
+    return nextEditedData;
+  };
+
   // State for new login inputs ----------------------------------
   const [newLoginformData, setNewLoginFormData] = useState({
     mailbox: '',
@@ -110,7 +128,8 @@ const Logins = () => {
     fetchAll();
   }, [containerName]);
 
-  const formatLoginsForTable = async (data) => {
+  const formatLoginsForTable = async (data, currentEditedData) => {
+    debugLog('formatLoginsForTable currentEditedData:', currentEditedData)
     // add bolder for admins
     data = data.map(login => { return { 
     ...login, 
@@ -127,6 +146,12 @@ const Logins = () => {
     data = data.map(login => { return { 
     ...login, 
     color:  (login.isActive) ? login?.color : login?.color+" td-opacity-25",
+    }; });
+
+    // add red color for edited
+    data = data.map(login => { return { 
+    ...login, 
+    color:  (isRowChanged(login.id, currentEditedData)) ? login?.color+" text-danger" : login?.color,
     }; });
 
     return data;
@@ -184,7 +209,8 @@ const Logins = () => {
     }
   };
 
-  const fetchLogins = async () => {
+  const fetchLogins = async (currentEditedData = editedData) => {
+    debugLog('fetchLogins currentEditedData:', currentEditedData)
     
     try {
       const [loginsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
@@ -193,7 +219,7 @@ const Logins = () => {
 
       if (loginsData?.success) {
         debugLog('loginsData', loginsData);
-        let loginsDataAltered = await formatLoginsForTable(loginsData.message);
+        let loginsDataAltered = await formatLoginsForTable(loginsData.message, currentEditedData);
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);
 
@@ -232,6 +258,8 @@ const Logins = () => {
         [name]: null,
       });
     }
+
+    
   };
 
   const handleNewLoginCheckboxChange = (e) => {
@@ -277,7 +305,7 @@ const Logins = () => {
   };
 
   const validateNewLoginForm = () => {
-    const errors = {};
+    let errors = {};
 
     if (!newLoginformData.username.trim()) {
       errors.username = 'logins.usernameRequired';
@@ -461,6 +489,7 @@ const Logins = () => {
     }
   };
 
+
   // the save operation is done per id
   const handleLoginSave = async (login) => {
     setErrorMessage(null);
@@ -494,19 +523,11 @@ const Logins = () => {
           }, 2000);
         }
         
-        // apply actual logins data with the changes
-        // reflect changes in the table instead of fetching all again
-        setLogins(prevLogins =>
-          prevLogins.map(item =>
-            item.id === login.id                          // for that login...
-              ? { ...item, ...editedData[login.id] }      // merge current state with editedData
-              : item                                      // and keep other items as they are
-          )
-        );
-        
         // remove that id from editedData object
-        const { [login.id]:{}, ...editedDataReset } = editedData;
-        setEditedData(editedDataReset);
+        let nextEditedData = removeIdFromEditedData(login.id);
+
+        // reload table with remaining editedData if any
+        await fetchLogins(nextEditedData);
 
       } else setErrorMessage(result?.error);
       

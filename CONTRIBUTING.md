@@ -177,8 +177,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
-* [ ] 1.5.34 - bugfix: new admin login with existing mailbox email actually replaces existing admin's username
 
+* [x] 1.5.34 - frontend: css sould add opacity:0.25 for all disabled buttons
+* [x] 1.5.34 - bugfix: Logins: editedData was lost after saving one row, added synchronous editedData state passed through various functions
+* [x] 1.5.34 - bugfix: Logins: table does not refresh after successful login update like change username or mailbox
+* [x] 1.5.34 - bugfix: backend.sql: new admin login with existing mailbox email actually replaces existing admin's username: use INSERT instead of REPLACE
 * [x] 1.5.33 - bugfix: Dashboard: on firstTime pull of container, logins and accounts cards show number of aliases
 * [x] 1.5.33 - bugfix: backend did not always return error string upon failures, while UI only looks for error instead of message
 * [x] 1.5.33 - bugfix: Logins doesn't show error messages

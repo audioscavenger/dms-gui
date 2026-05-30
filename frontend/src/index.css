@@ -159,4 +159,11 @@ tr .MuiChip-root  {
 .alert-dismissible {
   margin-right: 50px;
 }
+
+/* Target disabled buttons, but EXCLUDE anything with .btn-feedback */
+button:disabled:not(.btn-feedback),
+.btn:disabled:not(.btn-feedback),
+.btn.disabled:not(.btn-feedback) {
+  opacity: 0.25 !important;
+}
 /* -------------------- misc -------------------- */

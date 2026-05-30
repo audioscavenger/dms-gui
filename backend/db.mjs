@@ -207,8 +207,8 @@ logins: {
   },
   
   insert: {
-    login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
-    fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
+    login:    `INSERT INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
+    fromDMS:  `--deprecated REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
   },
   
   update: {
@@ -713,9 +713,9 @@ export const dbRun = (sql, params={}, ...anonParams) => {
     // result = { changes: 0, lastInsertRowid: 0 }
 
   } catch (error) {
-    infoLog(`${error?.code}: ${error.message}`);
+    errorLog(`${error?.code}: ${error.message}`);
     dbOpen();
-    return {success: false, message: error.message, error: error, code: error?.code};
+    return {success: false, error: error.message, code: error?.code};
     // throw error;
   }
 };
@@ -754,7 +754,7 @@ export const dbCount = (table, scope, schema) => {
     return {success: true, message: result.count};
 
   } catch (error) {
-    errorLog(error.message);
+    errorLog(`${error?.code}: ${error.message}`);
     dbOpen();
     return {success: false, error: error.message, code: error?.code};
     // throw error;
@@ -777,7 +777,7 @@ export const dbGet = (sql, params={}, ...anonParams) => {
     // result = { name: 'node', value: 'v24' } or { value: 'v24' } or undefined
 
   } catch (error) {
-    errorLog(error.message);
+    errorLog(`${error?.code}: ${error.message}`);
     dbOpen();
     return {success: false, error: error.message, code: error?.code};
     // throw error;
@@ -806,7 +806,7 @@ export const dbAll = (sql, params={}, ...anonParams) => {
     // result = [ { name: 'node', value: 'v24' }, { name: 'node2', value: 'v27' } ] or []
 
   } catch (error) {
-    debugLog('ddebug error.message',error.message);
+    errorLog(`${error?.code}: ${error.message}`);
     errorLog(error.message);
     dbOpen();
     return {success: false, error: error.message, code: error?.code};
@@ -872,8 +872,10 @@ export const dbInit = (reset=false) => {
     dbUpgrade();
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
   }
   debugLog(`end`);
 };
@@ -1052,8 +1054,10 @@ export const verifyPassword = async (credential=null, password='', table='logins
     return false;
 
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
   }
 
 };
@@ -1096,8 +1100,10 @@ export const changePassword = async (table, id, password, schema, containerName)
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1236,8 +1242,10 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
     return success ? { success: true, message: messages.join ("; ") } : { success: false, error: messages.join ("; ") };
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1309,8 +1317,10 @@ export const deleteEntry = async (table, id, key, scope) => {
     }
 
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1332,8 +1342,10 @@ export const refreshTokens = async (credentials) => {
     } else return result;
 
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    // errorLog(error.message);
+    // throw new Error(error.message);
+    errorLog(error);
+    throw new Error(error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1428,7 +1440,8 @@ export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
     throw new Error(result?.error);
 
   } catch (error) {
-    errorLog(error.message);
+    // errorLog(error.message);
+    errorLog(error);
     dbOpen();
     return {success: false, error: error.message}
     // throw error;
