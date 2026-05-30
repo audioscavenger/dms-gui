@@ -860,7 +860,7 @@ async (req, res) => {
       let domainSource = source.match(/.*@([\_\-\.\w]+)/);
       let domainDest = destination.match(/.*@([\_\-\.\w]+)/);
       let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1].toLowerCase() == domainDest[1].toLowerCase()) ? true : false;
-      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
     }
     res.status(201).json(result);
     
@@ -928,7 +928,7 @@ async (req, res) => {
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(destination)) ? await deleteAlias(containerName, source, destination) : {success:false, message: 'Permission denied'};
+      result = (req.user.roles.includes(destination)) ? await deleteAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
     }
     res.json(result);
     
@@ -987,7 +987,7 @@ async (req, res) => {
     const name = ('name' in req.query) ? req.query.name : null;
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
-    const settings = (req.user.isAdmin || req.user.id == scope) ? getSettings(plugin, containerName, name, encrypted) : {success:false, message:'Permission denied'};    // fails silently
+    const settings = (req.user.isAdmin || req.user.id == scope) ? getSettings(plugin, containerName, name, encrypted) : {success:false, error:'Permission denied'};    // fails silently
     res.json(settings);
     
   } catch (error) {
@@ -1157,7 +1157,7 @@ async (req, res) => {
 
     } else {
       // const roles = await getRoles(req.user.mailbox);
-      result = (credential == req.user.mailbox) ? await getRoles(credential) : {success:false, message: 'Permission denied'};
+      result = (credential == req.user.mailbox) ? await getRoles(credential) : {success:false, error: 'Permission denied'};
     }
     res.json(roles);
     
@@ -1352,7 +1352,7 @@ async (req, res) => {
       result = await updateDB('logins', id, req.body);    // example: { isActive: 0 }
 
     } else {
-      result = (id == req.user.id) ? await updateDB('logins', id, req.body) : {success:false, message: 'Permission denied'};
+      result = (id == req.user.id) ? await updateDB('logins', id, req.body) : {success:false, error: 'Permission denied'};
     }
     debugLog(`index PATCH /api/logins/${id}`, result)
     res.json(result);

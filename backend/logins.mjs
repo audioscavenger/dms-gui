@@ -47,7 +47,7 @@ import {
 // this returns an objects
 export const getLogin = async (credential, guess=false) => {
   
-  let login = {success:false, message: 'invalid credential: neither string nor object'};
+  let login = {success:false, error: 'invalid credential: neither string nor object'};
   try {
     
     // we expect either an object like {id:id}|{mailbox:mailbox}|{username:username}

@@ -175,10 +175,14 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: My Profile should also show a disabled field with username
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
 * [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
-* [ ] 1.5.99 - bugfix: new admin login with existing mailbox email actually replaces existing admin's username
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
+* [ ] 1.5.34 - bugfix: new admin login with existing mailbox email actually replaces existing admin's username
 
+* [x] 1.5.33 - bugfix: Dashboard: on firstTime pull of container, logins and accounts cards show number of aliases
+* [x] 1.5.33 - bugfix: backend did not always return error string upon failures, while UI only looks for error instead of message
+* [x] 1.5.33 - bugfix: Logins doesn't show error messages
+* [x] 1.5.33 - bugfix: updateDB always returned success
 * [x] 1.5.32 - bugfix: delete the only one admin login shows "sql[logins].delete is missing [undefined]"
 * [x] 1.5.32 - bugfix: Cannot deactivate the last admin, how will you administer dms-gui? message is not shown in the gui
 * [x] 1.5.31 - bugfix: upon changing logged in user's userName or mailbox, log it out immediately upon success as the TLS token is now tempered

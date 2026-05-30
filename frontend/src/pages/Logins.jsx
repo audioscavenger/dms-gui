@@ -154,7 +154,7 @@ const Logins = () => {
   };
 
   const fetchAccounts = async () => {
-    debugLog('ddebug containerName', containerName);
+    // debugLog('ddebug containerName', containerName);
 
     try {
       // debugLog('ddebug containerName',containerName)
@@ -480,6 +480,8 @@ const Logins = () => {
         login.id,
         editedData[login.id]
       );
+      debugLog('result:', result);
+
       if (result.success) {
         // TODO: handle individual change failure
         

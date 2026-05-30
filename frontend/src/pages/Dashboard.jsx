@@ -224,7 +224,7 @@ const Dashboard = () => {
           ...prev,                                  // 1. Copy top level using your state variable
           db: {
             ...prev.db,                             // 2. Copy the db level (keeps aliases intact)
-            logins: aliasesData.message.length,     // 3. Update count
+            aliases: aliasesData.message.length,     // 3. Update count
           }
         }));
         
@@ -261,7 +261,7 @@ const Dashboard = () => {
           ...prev,                                  // 1. Copy top level using your state variable
           db: {
             ...prev.db,                             // 2. Copy the db level (keeps aliases intact)
-            logins: accountsData.message.length,    // 3. Update count
+            accounts: accountsData.message.length,    // 3. Update count
           }
         }));
 

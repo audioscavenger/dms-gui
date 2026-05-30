@@ -24,7 +24,7 @@ import {
 import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
 
-var DB;
+var DB = null;
 
 // rsa-2048-dkim-$domain.private.txt
 // keytypes = ['rsa','ed25519']
@@ -49,7 +49,7 @@ export const sqlMatch = {
 
 // in-memory database: https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#serializeoptions---buffer
 // const buffer = DB.serialize();
-// DB.close();
+// dbClose();
 // DB = new Database(buffer);
 
 export const sql = {
@@ -580,30 +580,81 @@ dns: {
 // TypeError: SQLite3 can only bind numbers, strings, bigints, buffers, and null
 
 
+const dbClose = () => {
+  try {
+    // Only attempt cleanup if DB is genuinely instantiated and open
+    if (DB && typeof DB.pragma === 'function' && DB.open) {
+      DB.pragma('wal_checkpoint(TRUNCATE)'); 
+      DB.close();
+    }
+  } catch (e) {
+    // Suppress or log errors if the DB was already closed elsewhere
+    errorLog(`Exit checkpoint failed: ${e.message}`);
+  }
+};
+
+
+// Register process listeners EXACTLY ONCE at module root
+process.on('exit', dbClose);
+process.on('SIGHUP', () => { dbClose(); process.exit(129); });
+process.on('SIGINT', () => { dbClose(); process.exit(130); });
+process.on('SIGTERM', () => { dbClose(); process.exit(143); });
+
 
 export const dbOpen = () => {
   try {
-    if (DB && DB.inTransaction) DB.close();
-    
-    if (!DB || !DB.open) {
-      // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
-      // DB = new Database(env.DATABASE, { verbose: console.debug });
-      DB = new Database(env.DATABASE);
-      DB.pragma('journal_mode = WAL');
-
-      // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
-      process.on('exit', () => DB.close());
-      process.on('SIGHUP', () => process.exit(128 + 1));
-      process.on('SIGINT', () => process.exit(128 + 2));
-      process.on('SIGTERM', () => process.exit(128 + 15));
-      
-      return DB;
+    // If already open, return the cached connection
+    if (DB && typeof DB.pragma === 'function' && DB.open) {
+      return DB; 
     }
+
+    // Initialize the database connection
+    DB = new Database(env.DATABASE);
+    
+    // Enable Write-Ahead Log mode
+    DB.pragma('journal_mode = WAL');
+
+    // FORCE automatic background checkpoints much faster.
+    // Triggers a checkpoint every page (~4KB) instead of 1000 pages (~4MB)
+    DB.pragma('wal_autocheckpoint = 1');
+
+    // Set a hard limit on the WAL file size (measured in bytes).
+    // When a checkpoint finishes, if the WAL is bigger than 1MB, it truncates it back to 0.
+    DB.pragma('journal_size_limit = 16384'); 
+    
+    return DB;
   } catch (error) {
     errorLog(`dbOpen error: ${error.code}: ${error.message}`);
     throw error;
   }
 };
+
+
+// this is complete garbage apparently:
+// export const dbOpen = () => {
+//   try {
+//     // if (DB && DB.inTransaction) DB.close();
+//     if (DB) DB.close();
+    
+//     if (!DB || !DB.open) {
+//       // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
+//       // DB = new Database(env.DATABASE, { verbose: console.debug });
+//       DB = new Database(env.DATABASE);
+//       DB.pragma('journal_mode = WAL');
+
+//       // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#close---this
+//       process.on('exit', () => DB.close());
+//       process.on('SIGHUP', () => process.exit(128 + 1));
+//       process.on('SIGINT', () => process.exit(128 + 2));
+//       process.on('SIGTERM', () => process.exit(128 + 15));
+      
+//       return DB;
+//     }
+//   } catch (error) {
+//     errorLog(`dbOpen error: ${error.code}: ${error.message}`);
+//     throw error;
+//   }
+// };
 
 // password: `REPLACE INTO accounts (mailbox, salt, hash, scope) VALUES (@mailbox, @salt, @hash, ?)`,
 
@@ -663,8 +714,8 @@ export const dbRun = (sql, params={}, ...anonParams) => {
 
   } catch (error) {
     infoLog(`${error?.code}: ${error.message}`);
-    dbOpen()
-    return {success: false, error: error.message, code: error?.code};
+    dbOpen();
+    return {success: false, message: error.message, error: error, code: error?.code};
     // throw error;
   }
 };
@@ -809,12 +860,12 @@ export const dbInit = (reset=false) => {
         // dbUpgrade(table);
         
       } catch (error) {
-        errorLog(`${table}: ${error.message}`);
+        errorLog(`${table}: ${error.message}`, error);
         throw error;  // we want startup to stop completely if init or upgrade fails miserably and leave the user stranded
       }
     }
   }
-  DB.close()
+  dbClose();
 
   
   try {
@@ -925,7 +976,7 @@ export const dbUpgrade = () => {
     }
 
   }
-  DB.close()
+  dbClose();
   dbOpen();
   debugLog(`end`);
 };
@@ -1062,6 +1113,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
 
   let result, scopedValues, value2test, testResult;
   let messages = [];
+  let success = false;
   try {
     if (!sql[table]) {
       throw new Error(`unknown table ${table}`);
@@ -1136,6 +1188,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
                 if (result.success) {
                   messages.push(`Updated ${table} ${id} with ${key}=${value}`);
                   successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                  success = true;
+
                 } else messages.push(result?.error);
                 
               } else {
@@ -1152,6 +1206,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               if (result.success) {
                 messages.push(`Updated ${table} ${id} with ${key}=${value}`);
                 successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                success = true;
+
               } else messages.push(result?.error);
             }
             
@@ -1164,6 +1220,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             if (result.success) {
               messages.push(`Updated ${table} ${id} with ${key}=${value}`);
               successLog(`Updated ${table} ${id} with ${key}=${value}`);
+              success = true;
+
             } else messages.push(result?.error);
           }
           
@@ -1174,7 +1232,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
         messages.push(`typeof ${value} for ${key} is not ${sql[table].keys[key]}`);
       }
     }
-    return { success: true, message: messages.join ("; ") };
+    // we can't just always return true and we should pass on the failure messages from the sql tests if any
+    return success ? { success: true, message: messages.join ("; ") } : { success: false, error: messages.join ("; ") };
     
   } catch (error) {
     errorLog(error.message);
