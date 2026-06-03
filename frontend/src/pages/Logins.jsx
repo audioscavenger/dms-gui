@@ -107,10 +107,25 @@ const Logins = () => {
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
-    mailserver: '',
+    mailserver: user?.mailserver,
     roles: [],
   });
-  const [newLoginFormErrors, setNewLoginFormErrors] = useState({});
+
+  // errors must be initialized unfortunately, otherwise the save login button is never disabled
+  const [newLoginFormErrors, setNewLoginFormErrors] = useState({
+    mailserver: 'logins.mailserverRequired',
+    username: 'logins.usernameRequired',
+    mailbox: 'logins.emailRequired',
+    email: 'logins.emailRequired',
+    password: 'password.passwordRequired',
+  });
+
+  // State for save login button ----------------------------------
+  // useEffect(() => {  // too laggy
+  //   Object.keys(newLoginFormErrors).length === 0 ? setAddLoginDisabled(false) : setAddLoginDisabled(true);
+  //   debugLog('Object.keys(newLoginFormErrors).length:', Object.keys(newLoginFormErrors).length)
+  // }, [newLoginFormErrors]);
+  const [addLoginDisabled, setAddLoginDisabled] = useState(true);
 
   // State for password change modal -------------------------------
   const passwordFormRef = useRef(null);
@@ -121,8 +136,7 @@ const Logins = () => {
   });
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
-  
-  
+
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
@@ -234,31 +248,83 @@ const Logins = () => {
 
 
   const handleNewLoginInputChange = (e) => {
-    debugLog(newLoginformData);
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;    // { name: "isAccount", value: "on", type: "checkbox", checked: true }
+    debugLog('{ name, value, type, checked }',{ name, value, type, checked });
     
     // special cases ------------------------------
-    let jsonDict = {[name]: type === 'number' ? Number(value) : value};
-    
-    if (name == 'email' && newLoginformData.isAccount) {
-      // we are attached to a mailbox and user just chose it from the SelectField
-      debugLog(`roles ==> [${value}]`);
-      jsonDict.roles = [value];
+    let jsonDict, inputValue;
+    // Determine the actual value based on the element type
+    // BUG FOUND:
+    // type === 'checkbox' ? ((checked === true) ? 1 : 0) : value   ===> evaluates to "on"
+    // This should evaluate to 1 when type is 'checkbox' and checked is true. 
+    // The string "on" should be entirely bypassed.
+    // If this function is still spitting out "on", it means the event triggering the function isn't what I think it is.
+    // If the checkbox looks like <Checkbox /> or <Form.Check /> (which it is) instead of a raw HTML <input type="checkbox" />, 
+    // these libraries don't pass a real HTML event to onChange.
+    // Instead, they pass a custom synthetic event where:
+      // e.target.type is often undefined or 'text' rather than 'checkbox'
+      // e.target.value is overridden to pass the value string directly.
+
+    if (type === 'checkbox') {
+      inputValue = checked ? 1 : 0; // Directly assigns 1 or 0
+    } else {
+      inputValue = type === 'number' ? Number(value) : value; // Assigns the typed text string or resolve as a number
     }
-    
-    setNewLoginFormData({
+
+    // selecting various checkboxes will alter other options and we also need to construct the roles array, so we will use a temporary dict
+    jsonDict = {[name]: inputValue};
+
+    // checkboxes will resolve to 0 or 1 and 1 is == true
+    if (name == 'isAdmin' && checked) {
+      debugLog('isAdmin ==> 1: disabling isAccount');
+      // disable isAccount checkbox and SelectField
+      jsonDict.isAccount = 0;
+    }
+
+    if (name == 'isAccount' && checked) {
+      // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
+      if (pluck(accountOptions, 'value').includes(newLoginformData.mailbox)) {
+        debugLog(`isAccount ==> 1: adding ${newLoginformData.mailbox} to the roles`);
+        jsonDict.roles = [newLoginformData.mailbox]
+
+      } else {
+        debugLog(`isAccount ==> 1: removing ${newLoginformData.mailbox} as it is NOT defined in available mailboxes`);
+        // we MUST reset mailbox since it is not in the official list
+        jsonDict.mailbox = '';
+        jsonDict.roles = [];
+      }
+    }
+
+    if (name == 'mailbox') {
+      if (newLoginformData.isAccount) {
+        // we are attached to a mailbox and user just chose it from the SelectField
+        debugLog(`roles ==> [${inputValue}]`);
+        jsonDict.roles = [inputValue];
+      }
+    }
+
+    // Calculate the exact next state
+    const updatedFormData = {
       ...newLoginformData,
       ...jsonDict
-    });
+    };
+    setNewLoginFormData(updatedFormData);
+    debugLog('newLoginformData:', updatedFormData);
 
-    // Clear the error for this field while typing
-    if (newLoginFormErrors[name]) {
-      setNewLoginFormErrors({
-        ...newLoginFormErrors,
-        [name]: null,
-      });
-    }
+    // Clear the error for this field while typing // now done by validateNewLoginForm
+    // if (newLoginFormErrors[name]) {
+    //   setNewLoginFormErrors({
+    //     ...newLoginFormErrors,
+    //     [name]: null,
+    //   });
+    // }
+    // validateNewLoginForm();  // this is delayed
+    // Validate using the fresh data directly:
 
+    // Update the button instantly using the fresh error object
+    const freshErrors = validateNewLoginForm(updatedFormData);
+    const hasErrors = Object.keys(freshErrors).length > 0;
+    setAddLoginDisabled(hasErrors);
     
   };
 
@@ -272,23 +338,40 @@ const Logins = () => {
     if (name == 'isAdmin' && checked) {
       debugLog('isAccount ==> 0');
       // disable isAccount checkbox and SelectField
-      // but we keep the mailbox that was selected
-      // setNewLoginFormData({
-        // ...newLoginformData,
-        // isAccount: 0
-      // });
       jsonDict.isAccount = 0;
     }
 
-    if (name == 'isAccount' && checked) {
-      debugLog('isAccount ==> 1');
-      jsonDict.roles = pluck(accountOptions, 'value').includes(newLoginformData.mailbox) ? [newLoginformData.mailbox] : [];
+    if (name == 'isAccount') {
+      if (checked) {
+        debugLog('isAccount ==> 1');
+        // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
+        if (pluck(accountOptions, 'value').includes(newLoginformData.mailbox)) {
+          jsonDict.roles = [newLoginformData.mailbox]
+
+        } else {
+          // we MUST reset mailbox since it is not in the official list
+          jsonDict.mailbox = '';
+          jsonDict.roles = [];
+        }
+    
+      // isAccount is unchecked, we should reset the roles
+      } else {
+        jsonDict.roles = [];
+      }
     }
 
-    setNewLoginFormData({
+    // Calculate the exact next state
+    const updatedFormData = {
       ...newLoginformData,
       ...jsonDict
-    });
+    };
+    setNewLoginFormData(updatedFormData);
+    debugLog('newLoginformData:', updatedFormData);
+
+    // Update the button instantly using the fresh error object
+    const freshErrors = validateNewLoginForm(updatedFormData);
+    const hasErrors = Object.keys(freshErrors).length > 0;
+    setAddLoginDisabled(hasErrors);
 
   };
 
@@ -304,43 +387,49 @@ const Logins = () => {
     
   };
 
-  const validateNewLoginForm = () => {
+  const validateNewLoginForm = (currentFormData) => {
     let errors = {};
 
-    if (!newLoginformData.username.trim()) {
+    if (!currentFormData.mailserver) {
+      errors.mailserver = 'logins.mailserverRequired';
+    }
+    
+    if (!currentFormData.username.trim()) {
       errors.username = 'logins.usernameRequired';
-    } else if (!regexUsername.test(newLoginformData.username)) {
+
+    } else if (!regexUsername.test(currentFormData.username.trim())) {
       errors.username = 'logins.usernameInvalid';
     }
 
-    // this is done by react somehow
-    // if (!newLoginformData.mailbox.trim()) {
-      // errors.mailbox = 'logins.emailRequired';
-    // } else if (!regexEmailStrict.test(newLoginformData.mailbox)) {
-      // errors.mailbox = 'logins.invalidEmail';
-    // }
+    // this is done by react somehow but we need to also do it to release the save login button
+    if (!currentFormData.mailbox.trim()) {
+      errors.mailbox = 'logins.mailboxRequired';
 
-    // this is done by react somehow
-    // if (!newLoginformData.email.trim()) {
-      // errors.email = 'logins.emailRequired';
-    // } else if (!regexEmailStrict.test(newLoginformData.email)) {
-      // errors.email = 'logins.invalidEmail';
-    // }
-
-    if (!newLoginformData.password) {
-      errors.password = 'password.passwordRequired';
-
-    // admins can do anything including disregard password length
-    } else if (newLoginformData.password.length < 8 && !user.isAdmin) {
-      errors.password = 'password.passwordLength';
+    } else if (!regexEmailStrict.test(currentFormData.mailbox.trim())) {
+      errors.mailbox = 'logins.mailboxInvalid';
     }
 
-    if (newLoginformData.password !== newLoginformData.confirmPassword) {
+    // this is done by react somehow but we need to also do it to release the save login button
+    if (!currentFormData.email.trim()) {
+      errors.email = 'logins.emailRequired';
+
+    } else if (!regexEmailStrict.test(currentFormData.email.trim())) {
+      errors.email = 'logins.emailInvalid';
+    }
+
+    if (!currentFormData.password) {
+      errors.password = 'password.passwordRequired';
+
+    } else if (currentFormData.password.length < 8) {
+      errors.password = 'password.passwordLength';
+
+    } else if (currentFormData.password !== currentFormData.confirmPassword) {
       errors.confirmPassword = 'logins.passwordsNotMatch';
     }
 
     setNewLoginFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    debugLog('ddebug setNewLoginFormErrors errors:', errors)
+    return errors;
   };
 
 
@@ -348,9 +437,10 @@ const Logins = () => {
     e.preventDefault();
     setSuccessMessage(null);
 
-    if (!validateNewLoginForm()) {
-      return;
-    }
+    // no need anymore since validateNewLoginForm is done after each change
+    // if (!validateNewLoginForm()) {
+    //   return;
+    // }
 
     try {
       const result = await addLogin(
@@ -635,6 +725,14 @@ const Logins = () => {
             // getOptionLabel={rolesAvailable}    // requires a dict
                 // placeholder={t('logins.roles2pick')}
 
+//   ░██████             ░██                                                  
+//  ░██   ░██            ░██                                                  
+// ░██         ░███████  ░██ ░██    ░██ ░█████████████  ░████████   ░███████  
+// ░██        ░██    ░██ ░██ ░██    ░██ ░██   ░██   ░██ ░██    ░██ ░██        
+// ░██        ░██    ░██ ░██ ░██    ░██ ░██   ░██   ░██ ░██    ░██  ░███████  
+//  ░██   ░██ ░██    ░██ ░██ ░██   ░███ ░██   ░██   ░██ ░██    ░██        ░██ 
+//   ░██████   ░███████  ░██  ░█████░██ ░██   ░██   ░██ ░██    ░██  ░███████  
+
   // Column definitions for existing logins table
   // adding hidden data in the span before the FormField let us sort also this column
   const columns = [
@@ -798,6 +896,16 @@ const Logins = () => {
   ];
 
 
+// ░██████████                                    ░███    ░██                              ░██                               ░██           
+// ░██                                            ░████   ░██                              ░██                                             
+// ░██         ░███████  ░██░████ ░█████████████  ░██░██  ░██  ░███████  ░██    ░██    ░██ ░██          ░███████   ░████████ ░██░████████  
+// ░█████████ ░██    ░██ ░███     ░██   ░██   ░██ ░██ ░██ ░██ ░██    ░██ ░██    ░██    ░██ ░██         ░██    ░██ ░██    ░██ ░██░██    ░██ 
+// ░██        ░██    ░██ ░██      ░██   ░██   ░██ ░██  ░██░██ ░█████████  ░██  ░████  ░██  ░██         ░██    ░██ ░██    ░██ ░██░██    ░██ 
+// ░██        ░██    ░██ ░██      ░██   ░██   ░██ ░██   ░████ ░██          ░██░██ ░██░██   ░██         ░██    ░██ ░██   ░███ ░██░██    ░██ 
+// ░██         ░███████  ░██      ░██   ░██   ░██ ░██    ░███  ░███████     ░███   ░███    ░██████████  ░███████   ░█████░██ ░██░██    ░██ 
+//                                                                                                                       ░██               
+//                                                                                                                 ░███████                
+
   const FormNewLogin = (
     <Form onSubmit={handleSubmitNewLogin} className="form-wrapper">
       <FormField
@@ -805,7 +913,7 @@ const Logins = () => {
         id="isAdmin"
         name="isAdmin"
         label="logins.isAdmin"
-        onChange={handleNewLoginCheckboxChange}
+        onChange={handleNewLoginInputChange}
         error={newLoginFormErrors.isAdmin}
         isChecked={newLoginformData.isAdmin}
       />
@@ -815,7 +923,7 @@ const Logins = () => {
         id="isAccount"
         name="isAccount"
         label="logins.isAccountChoice"
-        onChange={handleNewLoginCheckboxChange}
+        onChange={handleNewLoginInputChange}
         error={newLoginFormErrors.isAccount}
         isChecked={newLoginformData.isAccount && !newLoginformData.isAdmin}
         disabled={newLoginformData.isAdmin}
@@ -831,6 +939,19 @@ const Logins = () => {
         placeholder="logins.mailserverRequired"
         error={newLoginFormErrors.mailserver}
         helpText="logins.mailserverRequired"
+        required
+      />
+
+      <FormField
+        type="text"
+        id="username"
+        name="username"
+        label="logins.username"
+        value={newLoginformData.username}
+        onChange={handleNewLoginInputChange}
+        placeholder="admin"
+        error={newLoginFormErrors.username}
+        helpText="logins.usernameHelp"
         required
       />
 
@@ -891,19 +1012,6 @@ const Logins = () => {
       />
 
       <FormField
-        type="text"
-        id="username"
-        name="username"
-        label="logins.username"
-        value={newLoginformData.username}
-        onChange={handleNewLoginInputChange}
-        placeholder="admin"
-        error={newLoginFormErrors.username}
-        helpText="logins.usernameHelp"
-        required
-      />
-
-      <FormField
         type="email"
         id="email"
         name="email"
@@ -946,7 +1054,7 @@ const Logins = () => {
         id="isActive"
         name="isActive"
         label="logins.isActive"
-        onChange={handleNewLoginCheckboxChange}
+        onChange={handleNewLoginInputChange}
         error={newLoginFormErrors.isActive}
         isChecked={newLoginformData.isActive}
       />
@@ -955,6 +1063,7 @@ const Logins = () => {
         type="submit"
         variant="primary"
         text="logins.addLogin"
+        disabled={addLoginDisabled}
       />
     </Form>
   );
@@ -969,6 +1078,16 @@ const Logins = () => {
           />
   );
   
+
+  // ░██████████           ░██                   
+  //   ░██               ░██                   
+  //   ░██     ░██████   ░████████   ░███████  
+  //   ░██          ░██  ░██    ░██ ░██        
+  //   ░██     ░███████  ░██    ░██  ░███████  
+  //   ░██    ░██   ░██  ░███   ░██        ░██ 
+  //   ░██     ░█████░██ ░██░█████   ░███████  
+                                            
+
   // https://icons.getbootstrap.com/
   const loginTabs = [
     { id: 1, 

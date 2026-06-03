@@ -10,6 +10,7 @@ import {
 import {
   regexEmailRegex,
   regexEmailStrict,
+  regexFindEmailStrict,
   pluck,
 } from '../../../common.mjs';
 
@@ -120,7 +121,7 @@ const Aliases = () => {
       [name]: type === 'number' ? Number(value) : value,
     });
     
-    
+    // source can be an email or a regex
     if (name == 'source') {
       console.debug('value.match(regexEmailStrict)',value.match(regexEmailStrict));
       console.debug('value.match(regexEmailRegex)',value.match(regexEmailRegex));
@@ -145,7 +146,7 @@ const Aliases = () => {
     
     // with FormField type="text" we don't need any of that, but since we deal with regex...
     
-    let matchEmailStrict = formData.source.trim().match(regexEmailStrict);
+    let matchEmailStrict = formData.source.trim().match(regexFindEmailStrict);
     let matchEmailRegex = formData.source.trim().match(regexEmailRegex);
     console.debug('matchEmailStrict',matchEmailStrict)
     console.debug('matchEmailRegex',matchEmailRegex)
@@ -153,6 +154,8 @@ const Aliases = () => {
     if (!formData.source.trim()) {
       errors.source = 'aliases.sourceRequired';
       setErrorMessage(errors.source);
+
+    // source can be an email or a regex
     } else if (!matchEmailStrict && !matchEmailRegex) {
       errors.source = 'aliases.invalidSource';
       setErrorMessage(errors.source);

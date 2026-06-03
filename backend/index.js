@@ -1,8 +1,11 @@
 import {
+  regexFindEmailStrict
+} from '../common.mjs';
+import {
   debugLog,
   errorLog,
   infoLog,
-  successLog,
+  successLog
 } from './backend.mjs';
 import {
   env
@@ -850,6 +853,7 @@ async (req, res) => {
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result;
     if (req.user.isAdmin) {
+      // TODO: maybe add some checks even tho it's an admin?
       result = await addAlias(containerName, source, destination);
 
     } else {
@@ -857,9 +861,10 @@ async (req, res) => {
       // TODO: find a way to analyze regex so users do not hijack others
       
       // check source for obvious hack attempt. extract domains and see that they match. Only admins can create aliases for different domain then destination
-      let domainSource = source.match(/.*@([\_\-\.\w]+)/);
-      let domainDest = destination.match(/.*@([\_\-\.\w]+)/);
-      let domainsMatch = (domainSource.length == 2 && domainDest.length == 2 && domainSource[1].toLowerCase() == domainDest[1].toLowerCase()) ? true : false;
+      // TODO: we match full domains sub.domain.com, but maybe we should only match the main domain.com?
+      let domainSource = source.match(regexFindEmailStrict);
+      let domainDest = destination.match(regexFindEmailStrict);
+      let domainsMatch = (domainSource.length == 3 && domainDest.length == 3 && domainSource[2].toLowerCase() == domainDest[2].toLowerCase()) ? true : false;
       result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
     }
     res.status(201).json(result);

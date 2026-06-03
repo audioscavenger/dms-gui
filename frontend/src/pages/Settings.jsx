@@ -4,12 +4,8 @@ import { useTranslation } from 'react-i18next';
 // import {
 //   regexColors,
 //   regexPrintOnly,
-//   regexFindEmailRegex,
 //   regexFindEmailStrict,
-//   regexFindEmailLax,
-//   regexEmailRegex,
 //   regexEmailStrict,
-//   regexEmailLax,
 //   regexMatchPostfix,
 //   regexUsername,
 //   funcName,

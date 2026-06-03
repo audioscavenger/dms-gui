@@ -1,12 +1,8 @@
 // import {
 //   regexColors,
 //   regexPrintOnly,
-//   regexFindEmailRegex,
 //   regexFindEmailStrict,
-//   regexFindEmailLax,
-//   regexEmailRegex,
 //   regexEmailStrict,
-//   regexEmailLax,
 //   regexMatchPostfix,
 //   regexUsername,
 //   funcName,

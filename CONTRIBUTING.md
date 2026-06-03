@@ -178,6 +178,15 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
 * [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
 
+* [x] 1.5.35 - Logins: FINALLY, cannot overwrite existing users anymore when creating new logins and everything seems to work just fine
+* [x] 1.5.35 - bugfix: Logins: favorite mailserver should be preselected under add login
+* [x] 1.5.35 - bugfix: Logins: checkbox onChange was not detected as checkbox because we use Form.Check
+* [x] 1.5.35 - bugfix: Logins: merged field and checkbox tests into handleNewLoginInputChange
+* [x] 1.5.35 - bugfix: Logins: added missing mailserver in the list of loginFormErrors
+* [x] 1.5.35 - bugfix: Logins: release of save login button is delayed yet again, must pass updatedFormData to validateNewLoginForm; this is annoying
+* [x] 1.5.35 - bugfix: Logins: when isAccount, roles were pulling email value instead of mailbox
+* [x] 1.5.35 - Logins: save login button should be disabled until form is valid
+* [x] 1.5.35 - frontend: removed all of this strict/lax email nonsense
 * [x] 1.5.34 - frontend: css sould add opacity:0.25 for all disabled buttons
 * [x] 1.5.34 - bugfix: Logins: editedData was lost after saving one row, added synchronous editedData state passed through various functions
 * [x] 1.5.34 - bugfix: Logins: table does not refresh after successful login update like change username or mailbox

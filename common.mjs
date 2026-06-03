@@ -3,25 +3,19 @@ export const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
 export const regexPrintOnly = /[^\S]/;
 
-export const regexFindEmailRegex = /\/[\S]+@[\S]+\//;
-export const regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+)/;
-export const regexFindEmailLax = /([\S]+)@([\S]+)/;
-export const regexEmailRegex = /^\/[\S]+@[\S]+\/$/;
-export const regexEmailStrict = /^([\w\.\-_]+)@([\w\.\-_]+)$/;
-export const regexEmailLax = /^([\S]+)@([\S]+)$/;
+export const regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)/;                     // example: x@y.z
+export const regexFindEmailRegex = /\/([\S]+@[\S]+)\//;                                     // example: /abuse@*/
+export const regexEmailStrict = /^[\w\.\-_]+@[\w\.\-_]+\.[\w]+$/;                           // example: x@y.z
+export const regexEmailRegex = /^\/[\S]+@[\S]+\/$/;                                         // example: /abuse@*/
 
-export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+)/;
+export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+\.[\w]+)/;    // example: /^postmaster.*@.*.*/ admin@example.com
 export const regexUsername = /^[^\s]+$/;
 
 // import {
 //   regexColors,
 //   regexPrintOnly,
-//   regexFindEmailRegex,
 //   regexFindEmailStrict,
-//   regexFindEmailLax,
-//   regexEmailRegex,
 //   regexEmailStrict,
-//   regexEmailLax,
 //   regexMatchPostfix,
 //   regexUsername,
 //   funcName,

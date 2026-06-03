@@ -43,7 +43,7 @@
     "updatePassword": "Aktualizuj Hasło",
     "noAccounts": "Brak kont email. Dodaj pierwsze konto.",
     "emailRequired": "Email jest wymagany",
-    "invalidEmail": "Nieprawidłowy format email",
+    "emailInvalid": "Nieprawidłowy format email",
     "passwordRequired": "Hasło jest wymagane",
     "passwordLength": "Hasło musi mieć co najmniej 8 znaków",
     "passwordsNotMatch": "Hasła nie są takie same",
