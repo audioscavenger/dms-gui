@@ -10,6 +10,7 @@ import RBButton from 'react-bootstrap/Button';
  * @param {string} props.variant Button variant: 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'link', 'outline-primary', etc.
  * @param {function} props.onClick Click handler
  * @param {string} props.text Button text (translation key)
+ * @param {string} props.title Button title (translation key)
  * @param {string} props.icon Bootstrap icon class name (without 'bi-' prefix)
  * @param {string} props.size Button size: 'sm', 'lg'
  * @param {boolean} props.disabled Whether the button is disabled
@@ -21,6 +22,7 @@ const Button = ({
   variant = 'primary',
   onClick,
   text,
+  title,
   href,
   target,
   rel,
@@ -36,6 +38,7 @@ const Button = ({
   return (
     <RBButton
       type={type}
+      title={t(title)}
       variant={variant}
       onClick={onClick}
       href={href}

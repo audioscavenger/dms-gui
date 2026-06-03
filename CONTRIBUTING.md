@@ -175,9 +175,10 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: My Profile should also show a disabled field with username
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
 * [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
-* [ ] 1.5.99 - bugfix: new admin login should not require a mailbox at all or at least translation should indicate it's used for login purposes
-* [ ] 1.5.99 - bugfix: upon changing existing admin's username and password through the new admin login creation bug, a new login entry is created without admin grants
 
+* [x] 1.5.36 - Login: common.collapse translation was missing
+* [x] 1.5.36 - Login: should now show the collapse button: collapsible={false} is the correct syntax
+* [x] 1.5.35 - bugfix: new login mailbox field should indicate it can be used for login purposes but we should still require it
 * [x] 1.5.35 - Logins: FINALLY, cannot overwrite existing users anymore when creating new logins and everything seems to work just fine
 * [x] 1.5.35 - bugfix: Logins: favorite mailserver should be preselected under add login
 * [x] 1.5.35 - bugfix: Logins: checkbox onChange was not detected as checkbox because we use Form.Check
