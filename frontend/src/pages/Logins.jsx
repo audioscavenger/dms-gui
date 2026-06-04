@@ -122,10 +122,10 @@ const Logins = () => {
 
   // State for save login button ----------------------------------
   // useEffect(() => {  // too laggy
-  //   Object.keys(newLoginFormErrors).length === 0 ? setAddLoginDisabled(false) : setAddLoginDisabled(true);
+  //   Object.keys(newLoginFormErrors).length === 0 ? setSubmitDisabled(false) : setSubmitDisabled(true);
   //   debugLog('Object.keys(newLoginFormErrors).length:', Object.keys(newLoginFormErrors).length)
   // }, [newLoginFormErrors]);
-  const [addLoginDisabled, setAddLoginDisabled] = useState(true);
+  const [submitDisabled, setSubmitDisabled] = useState(true);
 
   // State for password change modal -------------------------------
   const passwordFormRef = useRef(null);
@@ -324,7 +324,7 @@ const Logins = () => {
     // Update the button instantly using the fresh error object
     const freshErrors = validateNewLoginForm(updatedFormData);
     const hasErrors = Object.keys(freshErrors).length > 0;
-    setAddLoginDisabled(hasErrors);
+    setSubmitDisabled(hasErrors);
     
   };
 
@@ -371,7 +371,7 @@ const Logins = () => {
     // Update the button instantly using the fresh error object
     const freshErrors = validateNewLoginForm(updatedFormData);
     const hasErrors = Object.keys(freshErrors).length > 0;
-    setAddLoginDisabled(hasErrors);
+    setSubmitDisabled(hasErrors);
 
   };
 
@@ -1063,7 +1063,7 @@ const Logins = () => {
         type="submit"
         variant="primary"
         text="logins.addLogin"
-        disabled={addLoginDisabled}
+        disabled={submitDisabled}
       />
     </Form>
   );

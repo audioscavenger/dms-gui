@@ -172,10 +172,14 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: backend: must find a way to delete the database depending on certain versions
 * [ ] 1.5.99 - bugfix: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
 * [ ] 1.5.99 - bugfix: delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
-* [ ] 1.5.99 - bugfix: My Profile should also show a disabled field with username
-* [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox
-* [ ] 1.5.99 - bugfix: logout produces Request failed with status code 401 <empty string>
+* [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
+* [ ] 1.5.99 - bugfix: logout produces axios API request aborted error with status code 401 <empty string>
 
+* [ ] 1.5.38 - bugfix: My Profile page refresh does not log user out after server restart
+* [x] 1.5.37 - bugfix: My Profile page shows a 0 when the loginFormData.isAccount is false == always use double negation to make sure it's a boolean!
+* [x] 1.5.37 - bugfix: My Profile should disable submit button until form is valid
+* [x] 1.5.37 - bugfix: My Profile should show roles
+* [x] 1.5.37 - bugfix: My Profile for non admin users should show username field disabled
 * [x] 1.5.36 - Login: common.collapse translation was missing
 * [x] 1.5.36 - Login: should now show the collapse button: collapsible={false} is the correct syntax
 * [x] 1.5.35 - bugfix: new login mailbox field should indicate it can be used for login purposes but we should still require it

@@ -11,14 +11,18 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 // import TextField from '@mui/material/TextField';
 // import Stack from '@mui/material/Stack';
 
+// https://mui.com/material-ui/react-autocomplete/#multiple-values
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
+
 import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
-// import {
-//   regexUsername,
-//   moveKeyToLast,
-// } from '../../../common.mjs';
+import {
+  regexUsername,
+  regexEmailStrict,
+} from '../../../common.mjs';
 
 import {
   updateAccount,
@@ -51,7 +55,9 @@ const Profile = () => {
   
   // State for new login inputs ----------------------------------
   const [loginFormData, setloginFormData] = useState(user);
+  // errors must not be initialized as there are no errors for a valid user Profile
   const [loginFormErrors, setloginFormErrors] = useState({});
+  const [submitDisabled, setSubmitDisabled] = useState(true);
 
   // State for password change modal -------------------------------
   const [selectedLogin, setSelectedLogin] = useState(null);
@@ -119,55 +125,70 @@ const Profile = () => {
 
 
   const handleLoginInputChange = (e) => {
-    debugLog('loginFormData',loginFormData);
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
     
-    debugLog('ddebug loginFormData', loginFormData);
+    let jsonDict, inputValue;
+    if (type === 'checkbox') {
+      inputValue = checked ? 1 : 0; // Directly assigns 1 or 0
+    } else {
+      inputValue = type === 'number' ? Number(value) : value; // Assigns the typed text string or resolve as a number
+    }
+    jsonDict = {[name]: inputValue};
+
+    // Calculate the exact next state
+    const updatedFormData = {
+      ...loginFormData,
+      ...jsonDict
+    };
+    setloginFormData(updatedFormData);
+    debugLog('loginFormData:', updatedFormData);
 
     setloginFormData({
       ...loginFormData,
       [name]: type === 'number' ? Number(value) : value
     });
 
-    // Clear the error for this field while typing
-    if (loginFormErrors[name]) {
-      setloginFormErrors({
-        ...loginFormErrors,
-        [name]: null,
-      });
-    }
+    // Clear the error for this field while typing // now done by validateloginForm
+    // if (loginFormErrors[name]) {
+    //   setloginFormErrors({
+    //     ...loginFormErrors,
+    //     [name]: null,
+    //   });
+    // }
+
+    // Update the button instantly using the fresh error object
+    const freshErrors = validateloginForm(updatedFormData);
+    const hasErrors = Object.keys(freshErrors).length > 0;
+    setSubmitDisabled(hasErrors);
+
   };
 
 
-  const validateloginForm = () => {
+  const validateloginForm = (currentFormData) => {
     const errors = {};
 
-    if (!loginFormData.mailserver.trim()) {
+    if (!currentFormData.mailserver) {
       errors.mailserver = 'logins.mailserverRequired';
     }
 
-    // if (!loginFormData.username.trim()) {
-    //   errors.username = 'logins.usernameRequired';
-    // } else if (!regexUsername.test(loginFormData.username)) {
-    //   errors.username = 'logins.usernameInvalid';
-    // }
+    if (!currentFormData.username.trim()) {
+      errors.username = 'logins.usernameRequired';
 
-    // this is done by react
-    // if (!loginFormData.mailbox.trim()) {
-      // errors.mailbox = 'logins.emailRequired';
-    // } else if (!regexEmailStrict.test(loginFormData.mailbox)) {
-      // errors.mailbox = 'logins.invalidEmail';
-    // }
+    } else if (!regexUsername.test(currentFormData.username.trim())) {
+      errors.username = 'logins.usernameInvalid';
+    }
 
-    // this is done by react
-    // if (!loginFormData.email.trim()) {
-      // errors.email = 'logins.emailRequired';
-    // } else if (!regexEmailStrict.test(loginFormData.email)) {
-      // errors.email = 'logins.invalidEmail';
-    // }
+    // this is done by react somehow but we need to also do it to release the save login button
+    if (!currentFormData.email.trim()) {
+      errors.email = 'logins.emailRequired';
+
+    } else if (!regexEmailStrict.test(currentFormData.email.trim())) {
+      errors.email = 'logins.emailInvalid';
+    }
 
     setloginFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    debugLog('ddebug setloginFormErrors errors:', errors)
+    return errors;
   };
 
 
@@ -176,9 +197,10 @@ const Profile = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!validateloginForm()) {
-      return;
-    }
+    // no need anymore since validateLoginForm is done after each change
+    // if (!validateloginForm()) {
+    //   return;
+    // }
 
     try {
       
@@ -305,6 +327,16 @@ const Profile = () => {
   };
 
 
+  // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same
+  const highlightOptionByDomain = (option, mailbox=undefined, className="") => {
+    let highlight = "";
+    if (mailbox) {
+      highlight = (mailbox == option) ? " bg-warning bg-opacity-25" : ((mailbox.match(option.split('@')[1])) ? " bg-warning bg-opacity-10" : "");
+    }
+    return className + highlight;
+  };
+
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -356,7 +388,7 @@ const Profile = () => {
 
         {!loginFormData.isAccount && (
           <FormField
-            type="mailbox"
+            type="text"
             id="mailbox"
             name="mailbox"
             label="logins.mailbox"
@@ -370,6 +402,33 @@ const Profile = () => {
           />
         )}
 
+        <Autocomplete
+          multiple
+          id="roles"
+          options={user.roles}
+          groupBy={(mailbox) => mailbox.split('@')[1]}    // groupBy with an array of strings: so easy! create the group off the valuesdirectly!
+          filterSelectedOptions
+          disabled
+          
+          value={user.roles}
+          renderOption={(props, option) => (
+            <li
+              {...props}
+              className={highlightOptionByDomain(option, user.mailbox, props.className)}
+              key={option}
+            >
+            {option}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              sx={{ minWidth: 0 }}
+              label={t('logins.roles')}
+            />
+          )}
+        />
+
         <FormField
           type="text"
           id="username"
@@ -381,6 +440,7 @@ const Profile = () => {
           error={loginFormErrors.username}
           helpText="logins.usernameHelp"
           required
+          disabled={!loginFormData.isAdmin}
         />
 
         <FormField
@@ -393,6 +453,7 @@ const Profile = () => {
           placeholder="user@domain.com"
           error={loginFormErrors.email}
           helpText="logins.emailHelp"
+          required
         />
 
         <FormField
@@ -411,6 +472,7 @@ const Profile = () => {
           icon="floppy"
           text="logins.updateLogin"
           className="me-2"
+          disabled={submitDisabled}
         />
         <Button
           variant="primary"
