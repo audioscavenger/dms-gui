@@ -170,8 +170,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - bugfix: frontend randomely bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
-* [ ] 1.5.99 - bugfix: logout produces axios API request aborted error with status code 401 <empty string>
+* [ ] 1.5.99 - bugfix: dbUpgrade start  UPGRADE to 1.5.38 seems to execute twice
 
+* [x] 1.5.39 - bugfix: /logout now catches errors properly, hook and index.js updated along with api.mjs and logout doesn't flash the login screen twice anymore
+* [x] 1.5.39 - bugfix: api.interceptors.response.use() now process error items properly + added ddebug delay() to show errors before page refresh
+* [x] 1.5.39 - bugfix: logout produces axios API request aborted error with status code 401 / AxiosError: Request failed with status code 502: refactor api.mks with cacheWrap
 * [x] 1.5.38 - backend: must find a way to delete the database on start: added environment DATABASE_RESET=true and clear message on start
 * [x] 1.5.38 - bugfix: My Profile page refresh does not log user out after server restart: cannot reproduce
 * [x] 1.5.37 - bugfix: My Profile page shows a 0 when the loginFormData.isAccount is false == always use double negation to make sure it's a boolean!
@@ -339,7 +342,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.4.9 - frontend: non admins have access to Accounts but not isAccount users
 * [x] 1.4.9 - frontend: bugfix with all those 0 when !user.isAdmin
 * [x] 1.4.9 - security: some calls for non admins fail silently instead of spitting a 403
-* [x] 1.4.9 - logout actually works now, window.location.replace instead of navigate
+* [x] 1.4.9 - logout actually works now, window.location.replace() instead of navigate
 * [x] 1.4.9 - getScopes now takes roles to spit out only containers associated with roles
 * [x] 1.4.8 - upgraded all modules
 * [x] 1.4.8 - frontend/Settings: introduce restart dms-gui button and added killMe(errorcode)

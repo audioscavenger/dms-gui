@@ -41,12 +41,26 @@ export const AuthProvider = ({ children }) => {
 
   // call this function to sign out logged in user
   const logout = async (to="/login") => {
-    // debugLog('useAuth /logout');
-    // setUser(null);
-    logoutUser();
-    window.localStorage.clear();
-    // navigate(to, { replace: true }); // To get rig of menus and navbar profile, we need to reload, not navigate
-    window.location.replace(to);
+    try {
+      // 1. Wait for the server to clear cookies and remove the DB token
+      await logoutUser();
+      window.localStorage.clear();
+
+    } catch (err) {
+      // Silently catch any leftover trace so the UI doesn't break
+      console.debug("Logout cleanup:", err.message);
+      
+    } finally {
+      // 2. Clear frontend state/tokens once the network call finishes
+      window.localStorage.clear();
+
+      // 3. Perform the clean redirect
+      window.location.replace(to);
+    }
+
+    // logoutUser();
+    // window.localStorage.clear();
+    // window.location.replace(to);  // navigate(to, { replace: true }); // To get rig of menus and navbar profile, we need to reload, not navigate
   };
 
   const value = useMemo(
