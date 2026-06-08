@@ -52,8 +52,9 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.5.37
+ARG DMSGUI_VERSION=1.5.38
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
+ARG DATABASE_RESET 
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
 # RUN apk add --no-cache docker-cli
@@ -92,6 +93,8 @@ RUN busybox dos2unix /app/*.sh
 
 # Expose port for the application
 # EXPOSE 3001
+
+ENV DATABASE_RESET=$DATABASE_RESET
 
 # Start just node itself when slim is used for main stage: however JWT_SECRET regen will be missing
 # CMD ["node", "/app/backend/index.js"]

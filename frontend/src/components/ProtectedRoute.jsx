@@ -20,12 +20,12 @@ export const ProtectedRoute = ({
   // user is not authenticated, no access
   if (!user) return <Navigate to="/login" {...rest} />;
   
-  // Control admin access to admin pges
+  // Control admin access to admin pages
   if (isAdmin && !user.isAdmin) {
     return <Navigate to="/profile" {...rest} />;
   }
   
-  // console.debug('ddebug ProtectedRoute useAuth return children');
+  // console.debug('ddebug ProtectedRoute useAuth return children:', children);
   return children;
   // return Component;
 };

@@ -20,6 +20,7 @@ export const env = {
   DATABASE: ((process.env.isDEMO || '').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
   DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
   DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo.sqlite3',
+  DATABASE_RESET: ((process.env.DATABASE_RESET || '').toLowerCase() == 'true') ? true : false,
 
   // some selectors in the DKIM UI
   DKIM_KEYTYPES: ['rsa','ed25519'],

@@ -7,6 +7,7 @@ import {
   reduxPropertiesOfObj,
 } from '../common.mjs';
 import {
+  color,
   debugLog,
   errorLog,
   execSetup,
@@ -817,8 +818,12 @@ export const dbAll = (sql, params={}, ...anonParams) => {
 // dbInit is not async, hell no
 export const dbInit = (reset=false) => {
 
-  debugLog(`start`);
-  if (reset) exec(`rm -f ${env.DATABASE}`);
+  if (reset) {
+    debugLog(`${color.HIG}${color.REV}start ${color.r} RESET DATABASE`);
+    exec(`rm -f ${env.DATABASE}`);
+  } else {
+    debugLog(`${color.REV}start ${color.g} production`);
+  }
   dbOpen();
   let result;
 
@@ -883,7 +888,7 @@ export const dbInit = (reset=false) => {
 
 // dbUpgrade is not async, hell no
 export const dbUpgrade = () => {
-  debugLog(`start`);
+  debugLog(`${color.REV}start  UPGRADE to ${env.DMSGUI_VERSION}`);
 
   dbOpen();
   let result, db_version, match;

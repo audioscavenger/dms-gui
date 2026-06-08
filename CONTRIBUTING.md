@@ -162,20 +162,18 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - backend: execInContainerAPI logs cleartext passwords when loggin in / create new accounts, can we send encrypted data instead or at least show asterisks?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
-* [ ] 1.5.99 - Logins: trying to demote the last admin should show an alert error with the correct message
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
-* [ ] 1.5.99 - Accounts: delete a linked account shoudl also delete the login
+* [ ] 1.5.99 - Accounts: delete a linked account should also delete the login: maybe not after all
 
 * [ ] 1.5.99 - bugfix: Dashboard: rebootMe simply logs you out
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
-* [ ] 1.5.99 - bugfix: backend: must find a way to delete the database depending on certain versions
-* [ ] 1.5.99 - bugfix: Logins bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
-* [ ] 1.5.99 - bugfix: delete login fails: sql[logins].delete is missing [undefined] (deleteEntry logins id=19 for scope=undefined and key=undefined)
+* [ ] 1.5.99 - bugfix: frontend randomely bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 * [ ] 1.5.99 - bugfix: logout produces axios API request aborted error with status code 401 <empty string>
 
-* [ ] 1.5.38 - bugfix: My Profile page refresh does not log user out after server restart
+* [x] 1.5.38 - backend: must find a way to delete the database on start: added environment DATABASE_RESET=true and clear message on start
+* [x] 1.5.38 - bugfix: My Profile page refresh does not log user out after server restart: cannot reproduce
 * [x] 1.5.37 - bugfix: My Profile page shows a 0 when the loginFormData.isAccount is false == always use double negation to make sure it's a boolean!
 * [x] 1.5.37 - bugfix: My Profile should disable submit button until form is valid
 * [x] 1.5.37 - bugfix: My Profile should show roles
@@ -201,7 +199,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.33 - bugfix: Logins doesn't show error messages
 * [x] 1.5.33 - bugfix: updateDB always returned success
 * [x] 1.5.32 - bugfix: delete the only one admin login shows "sql[logins].delete is missing [undefined]"
-* [x] 1.5.32 - bugfix: Cannot deactivate the last admin, how will you administer dms-gui? message is not shown in the gui
+* [x] 1.5.32 - bugfix: Cannot deactivate/delete/demote the last admin, how will you administer dms-gui? message is not shown in the gui
 * [x] 1.5.31 - bugfix: upon changing logged in user's userName or mailbox, log it out immediately upon success as the TLS token is now tempered
 * [x] 1.5.30 - DataTable shows row in red text upon any modification
 * [x] 1.5.29 - bug: DashboardCard values for accounts etc don't refresh when I call fetchAccounts etc; useLocalStorage has been upgraded but no luck

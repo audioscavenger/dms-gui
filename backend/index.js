@@ -1862,10 +1862,10 @@ app.listen(env.PORT_NODEJS, async () => {
     });
   };
 
-  // dbInit();         // apply patches etc
-  dbInit(true);     // reset db: 1.5.10 to 1.5.25; also debug mode since 1.5.28
+  // apply patches etc
+  dbInit(env.DATABASE_RESET);     // reset db: 1.5.10 to 1.5.25; also debug mode since 1.5.28
   dbUpgrade();
-  await refreshTokens();  // delete all user's refreshToken as the secret has changed after a restart
+  await refreshTokens();      // delete all user's refreshToken as the secret has changed after a restart
 
   if (env.AES_SECRET == 'changeme') {
     errorLog(`

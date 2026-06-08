@@ -2,8 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal'; // Import Modal
-import { useAuth } from '../hooks/useAuth';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
 // import Chip from '@mui/material/Chip';
@@ -39,6 +37,8 @@ import {
   SelectField,
 } from '../components/index.jsx';
 
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from '../hooks/useAuth';
 
 const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
