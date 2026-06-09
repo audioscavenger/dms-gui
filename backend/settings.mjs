@@ -295,7 +295,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
       if (targetDict?.Authorization) {
 
         results = await execSetup('help', targetDict);
-        if (!results.returncode) {
+        if (!results?.returncode) {
           status.status.status = "running";
 
         } else {
@@ -323,7 +323,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
         }
 
         if (test == 'execSetup') {
-          return {success: !results.returncode, message: status};
+          return {success: !results?.returncode, message: status, returncode: results?.returncode};
         }
 
         const [result_top, result_disk] = await Promise.all([
@@ -384,6 +384,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
 
         if (!result_disk.returncode) {
           status.resources.diskUsage = Number(result_disk.stdout);
+
         } else {
           errorLog(result_disk.stderr);
           status.resources.error = result_disk.stderr;    // transmit actual error to frontend
@@ -742,7 +743,7 @@ export const pullDoveConf = async (targetDict={}) => {
     const command = `doveconf`;
 
     const results = await execCommand(command, targetDict);
-    if (!results.returncode) {
+    if (!results?.returncode) {
       const doveconf = await readDovecotConfFile(results.stdout);
       // debugLog(`doveconf:`, doveconf);   // super large output, beware
       
@@ -788,7 +789,7 @@ try {
   // if we found fts override plugin, let's load it
   if (ftsMount) {
     const results = await execCommand(`cat ${ftsMount}`, targetDict);
-    if (!results.returncode) {
+    if (!results?.returncode) {
       debugLog(`dovecot file content:`, results.stdout);
       const ftsConfig = await readDovecotConfFile(results.stdout);
       debugLog(`dovecot json:`, ftsConfig);
@@ -817,7 +818,7 @@ export const pullDOVECOT = async (targetDict={}) => {
     const command = `dovecot --version`;
 
     const results = await execCommand(command, targetDict);   // 2.3.19.1 (9b53102964)
-    if (!results.returncode) {
+    if (!results?.returncode) {
       const DOVECOT_VERSION = results.stdout.split(" ")[0];
       debugLog(`DOVECOT_VERSION:`, DOVECOT_VERSION);
       
@@ -842,7 +843,7 @@ try {
   const targetDict = getTargetDict(plugin, containerName);
 
   const results = await execCommand(`doveconf mail_plugins`, targetDict);   // results.stdout = "mail_plugins = quota fts fts_xapian zlib"
-  if (!results.returncode) {
+  if (!results?.returncode) {
     // [ "mail_plugins", "quota", "fts", "fts_xapian", "zlib" ]
     // the bellow will add those items: envs.DOVECOT_QUOTA, DOVECOT_FTS, DOVECOT_FTP_XAPIAN and DOVECOT_ZLIB
     for (const PLUGIN of results.stdout.split(/[=\s]+/)) {
@@ -869,7 +870,7 @@ export const pullDkimRspamd = async (targetDict={}) => {
   try {
 
     results = await execCommand(command, targetDict);
-    if (!results.returncode) {
+    if (!results?.returncode) {
       debugLog(`dkim file content:`, results.stdout);
       dkimConfig = await readDkimFile(results.stdout);
       debugLog(`dkim json:`, dkimConfig);
@@ -1371,7 +1372,7 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
 
           const targetDict = getTargetDict(plugin, containerName);
           results = await execCommand(command[plugin][schema].kill, targetDict);
-          if (results.returncode) return {success: false, error: results.stderr};
+          if (results?.returncode) return {success: false, error: results.stderr, returncode: results?.returncode};
 
         } else return {success: false, error: `kill command missing for ${plugin} schema=${schema}`};
       }

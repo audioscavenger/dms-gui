@@ -190,7 +190,7 @@ export const pullAccountsFromDMS = async (containerName=null) => {
 
     debugLog(`execSetup(${command})`, targetDict);
     const results = await execSetup(command, targetDict);
-    if (!results.returncode) {
+    if (!results?.returncode) {
     
       // Parse multiline output with regex to extract email and size information
       // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
@@ -252,7 +252,7 @@ export const pullAccountsFromDMS = async (containerName=null) => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, error: ErrorMsg };
+      return { success: false, error: ErrorMsg, returncode: results?.returncode };
     }
 
     debugLog(`Found ${accounts.length} accounts`, accounts);
@@ -279,7 +279,7 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
     debugLog(`Adding new mailbox account for ${containerName}: ${mailbox}`);
     if (schema == 'dms') results = await execSetup(`email add ${mailbox} '${password}'`, targetDict);
 
-    if (!results.returncode) {
+    if (!results?.returncode) {
       
       const { salt, hash } = await hashPassword(password ?? '');
       result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash}, containerName);
@@ -301,7 +301,7 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
     } else {
       let ErrorMsg = await formatDMSError('addAccount', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, error: ErrorMsg};
+      return { success: false, error: ErrorMsg, returncode: results?.returncode};
     }
     
   } catch (error) {
@@ -330,7 +330,7 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
     if (schema == 'dms') results = await execSetup(`email del -y ${mailbox}`, targetDict);
     debugLog('ddebug execSetup', results)
 
-    if (!results.returncode) {
+    if (!results?.returncode) {
       successLog(`Mailbox Account deleted: ${mailbox}`);
       
       result = await deleteEntry('accounts', mailbox, 'mailbox', containerName);
@@ -359,7 +359,7 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, error: ErrorMsg };
+      return { success: false, error: ErrorMsg, returncode: results?.returncode };
     }
     
   } catch (error) {
@@ -379,12 +379,16 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
   if (!mailbox) return {success: false, error: 'mailbox is null'};
   if (!command) return {success: false, error: 'command is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
-  debugLog(`for ${containerName}: ${command} ${mailbox}`, jsonDict);
+  const anonymizedJsonDict = (jsonDict?.password) ? {...jsonDict, password: '********'} : jsonDict;
+  debugLog(`for ${containerName}: ${command} ${mailbox}`, anonymizedJsonDict);
 
   const doveadm = {
     index: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#index
       mailbox: true,
       cmd: 'doveadm index -u {mailbox} -q \\*',
+      defaults: {
+        none: null,
+      },
       api: [["index", {"mailboxMask": "{box}", "allUsers": false, "user": "{mailbox}"}, "dms-gui"]],
       stdout: false,
       messages: {
@@ -394,6 +398,9 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     indexerList: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list
       mailbox: true,
       cmd: 'doveadm index -u {mailbox} -q \\*',
+      defaults: {
+        none: null,
+      },
       api: [["index", {"userMask": "{mailbox}"}, "dms-gui"]],
       stdout: true,
       messages: {
@@ -403,6 +410,9 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     list: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
       mailbox: true,
       cmd: 'doveadm mailbox list -u {mailbox}',
+      defaults: {
+        none: null,
+      },
       stdout: true,
       messages: {
         pass: 'Folder list for {mailbox}:',
@@ -416,6 +426,9 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     subscribed: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
       mailbox: true,
       cmd: 'doveadm mailbox list -u {mailbox} -s',
+      defaults: {
+        none: null,
+      },
       stdout: true,
       messages: {
         pass: 'Subscribed folder list for {mailbox}:',
@@ -442,7 +455,7 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     mailboxStatus: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
       mailbox: true,
       cmd: 'doveadm mailbox status -u {mailbox} {field} {box}',
-    api: [["mailboxStatus", {"field": ["{field}"], "user": "{mailbox}", "mailboxMask": ["{box}"]}, "dms-gui"]],
+      api: [["mailboxStatus", {"field": ["{field}"], "user": "{mailbox}", "mailboxMask": ["{box}"]}, "dms-gui"]],
       defaults: {
         field: 'all',
         box: 'INBOX',
@@ -467,32 +480,44 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_6076763531fadb68571400008e1fe135_exp.db
       // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_e170c41cf00be3687d3400008e1fe135_exp.db
     },
+    loginUser: {  // doveadm auth test ${login.message.mailbox} '${password}'
+      mailbox: true,
+      cmd: `doveadm auth test {mailbox} '{password}'`,
+      api: [["auth", {"user": "{mailbox}", "password": "{password}"}, "dms-gui"]],    // TODO: TBD, I did not bother to check
+      defaults: {
+        none: null,
+      },
+      stdout: false,
+      messages: {
+        pass: '{mailbox} logged in',
+      },
+      timeout: 4,
+    },
   }
 
   try {
     if (!doveadm[command]) throw new Error(`unknown command: ${command}`);
     const targetDict = getTargetDict('mailserver', containerName);
+    if (doveadm[command].timeout) targetDict.timeout = doveadm[command].timeout;
     
+    let jsonDictMerged = {...doveadm[command]?.defaults, ...jsonDict};
     let formattedCommand = doveadm[command].cmd.replace(/{mailbox}/g, mailbox);
     let formattedPass    = doveadm[command].messages.pass.replace(/{mailbox}/g, mailbox);
-    // also apply whatever is in the jsonDict if anything like fields or mailboxes... and also apply defaults if any
-    // by parsing the defaults instead of the jsonDict, we also ensure only valid keys are replaced
-    if (doveadm[command]?.defaults) {
-      for (const [key, defaultValue] of Object.entries(doveadm[command].defaults)) {
-        formattedCommand = (jsonDict[key]) ? formattedCommand.replace(`{${key}}`, jsonDict[key]) : formattedCommand.replace(`{${key}}`, defaultValue);
-        formattedPass = (jsonDict[key]) ? formattedPass.replace(`{${key}}`, jsonDict[key]) : formattedPass.replace(`{${key}}`, defaultValue);
+
+    // variables replacement in cmd and pass message
+    for (const [key, value] of Object.entries(jsonDictMerged)) {
+        formattedCommand =  formattedCommand.replace(`{${key}}`, value);
+        formattedPass =     formattedPass.replace(`{${key}}`, value);
       }
-    }
     
     const results = await execCommand(formattedCommand, targetDict);
-    if (!results.returncode) {
-      
+    if (!results?.returncode) {
       successLog(formattedPass, results.stdout);
       return { success: true, message: results.stdout };
       
     } else {
       errorLog(results.stderr);
-      return { success: false, error: results.sterr };
+      return { success: false, error: results.sterr, returncode: results?.returncode };
     }
     
   } catch (error) {

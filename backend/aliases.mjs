@@ -129,17 +129,17 @@ export const pullAliasesFromDMS = async (containerName=null) => {
     const results = await execSetup(command, targetDict);
     // debugLog('ddebug results',results)
     
-    if (!results.returncode) {
+    if (!results?.returncode) {
       aliases = await parseAliasesFromDMS(results.stdout);
       infoLog(`Found ${aliases.length} aliases`);
       
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return {success: false, error:ErrorMsg};
+      return { success: false, error:ErrorMsg, returncode: results?.returncode };
     }
 
-    return {success: true, message: aliases};
+    return { success: true, message: aliases };
     
   } catch (error) {
     errorLog(error.message);
@@ -195,7 +195,7 @@ export const pullPostfixRegexFromDMS = async (containerName=null) => {
 
     debugLog(`execSetup(${command})`);
     const results = await execCommand(command, targetDict);
-    if (!results.returncode) {
+    if (!results?.returncode) {
       
       regexes = await parsePostfixRegexFromDMS(results.stdout);
       infoLog(`Found ${regexes.length} regexes`);
@@ -203,9 +203,9 @@ export const pullPostfixRegexFromDMS = async (containerName=null) => {
     } else {
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return {success: false, error: ErrorMsg};
+      return { success: false, error: ErrorMsg, returncode: results?.returncode };
     }
-    return {success: true, message: regexes};
+    return { success: true, message: regexes };
     
   } catch (error) {
     errorLog(error.message);
@@ -259,7 +259,7 @@ export const addAlias = async (containerName=null, source=null, destination=null
       debugLog(`Adding new alias: ${source} -> ${destination}`);
     
       results = await execSetup(`alias add ${source} ${destination}`, targetDict);
-      if (!results.returncode) {
+      if (!results?.returncode) {
         
         result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0}, containerName);
         if (result.success) {
@@ -272,7 +272,7 @@ export const addAlias = async (containerName=null, source=null, destination=null
       }
       let ErrorMsg = await formatDMSError('execSetup', results.stderr);
       errorLog(ErrorMsg);
-      return { success: false, error: ErrorMsg };
+      return { success: false, error: ErrorMsg, returncode: results?.returncode };
       
     // this is a regex
     } else {
@@ -280,12 +280,12 @@ export const addAlias = async (containerName=null, source=null, destination=null
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
       results = await execCommand(command, targetDict);
-      if (!results.returncode) {
+      if (!results?.returncode) {
         
         // reload postfix
         command = `postfix reload`;
         results = await execCommand(command, targetDict);
-        if (!results.returncode) {
+        if (!results?.returncode) {
           
           result = dbRun(sql.aliases.insert.alias, {source:JSON.stringify(source), destination:destination, regex:1}, containerName);
           if (result.success) {
@@ -297,11 +297,11 @@ export const addAlias = async (containerName=null, source=null, destination=null
           
         }
         errorLog(results.stderr);
-        return { success: false, error: results.stderr };
+        return { success: false, error: results.stderr, returncode: results?.returncode };
         
       }
       errorLog(results.stderr);
-      return { success: false, error: results.stderr };
+      return { success: false, error: results.stderr, returncode: results?.returncode };
     }
     
   } catch (error) {
@@ -331,7 +331,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
       
       results = await execSetup(`alias del ${source} ${destination}`, targetDict);
       debugLog(`------------------------------- Alias deleted results:`, results);
-      if (!results.returncode) {
+      if (!results?.returncode) {
         result = deleteEntry('aliases', source, 'bySource', containerName);
         if (result.success) {
           successLog(`Alias deleted: ${source}`);
@@ -343,7 +343,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
         errorLog(ErrorMsg);
-        return { success: false, error: ErrorMsg };
+        return { success: false, error: ErrorMsg, returncode: results?.returncode };
       }
     
     // this is regex, must stringify
@@ -354,7 +354,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
       let command = `grep -Fv '${source} ${destination}' ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
       results = await execCommand(command, targetDict);
       debugLog(`------------------------------- Alias regex deleted results:`, results);
-      if (!results.returncode) {
+      if (!results?.returncode) {
         successLog(`Alias regex deleted: ${source}`);
         
         const result = deleteEntry('aliases', source, 'bySource', containerName);
@@ -364,7 +364,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
           // reload postfix
           command = `postfix reload`;
           results = await execCommand(command, targetDict);
-          if (!results.returncode) {
+          if (!results?.returncode) {
             
             successLog(`postfix reloaded`);
             return result;
@@ -376,7 +376,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
         
       }
       errorLog(results.stderr);
-      return { success: false, error: results.stderr };
+      return { success: false, error: results.stderr, returncode: results?.returncode };
 
     }
     

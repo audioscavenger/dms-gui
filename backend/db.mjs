@@ -1070,7 +1070,7 @@ export const changePassword = async (table, id, password, schema, containerName)
 
       debugLog(`Updating account password for id ${id} in ${containerName}...`);
       results = await execSetup(`email update ${id} "${password}"`, targetDict);
-      if (!results.returncode) {
+      if (!results?.returncode) {
         
         debugLog(`Updating password for id ${id} in ${table} (${containerName})...`);
         result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
@@ -1080,7 +1080,7 @@ export const changePassword = async (table, id, password, schema, containerName)
       } else {
         let ErrorMsg = await formatDMSError('execSetup', results.stderr);
         errorLog(ErrorMsg);
-        return { success: false, error: ErrorMsg };
+        return { success: false, error: ErrorMsg, returncode: results?.returncode };
       }
       
     } else {

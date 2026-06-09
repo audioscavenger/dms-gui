@@ -668,7 +668,7 @@ async (req, res) => {
   }
 });
 
-// Endpoint for updating a mailbox account; only password is covered atm
+// Endpoint for updating a mailbox account; only password in local db is covered atm
 /**
  * @swagger
  * /api/accounts/{schema}/{containerName}/{mailbox}:
@@ -729,7 +729,7 @@ async (req, res) => {
     jsonDict = {...req.body, schema:schema};
 
     if (req.user.isAdmin) {
-      result = await updateDB('accounts', mailbox,jsonDict, containerName);
+      result = await updateDB('accounts', mailbox, jsonDict, containerName);
 
     } else {
       // const roles = await getRoles(req.user.mailbox);

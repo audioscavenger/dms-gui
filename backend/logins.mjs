@@ -21,22 +21,23 @@
 //   moveKeyToLast,
 // } from '../common.mjs'
 import {
+  doveadm,
+} from './accounts.mjs';
+import {
   debugLog,
   errorLog,
-  execCommand,
   infoLog,
   successLog,
-  warnLog,
+  warnLog
 } from './backend.mjs';
 
 import {
   dbAll,
   dbGet,
   dbRun,
-  getTargetDict,
   hashPassword,
   sql,
-  verifyPassword,
+  verifyPassword
 } from './db.mjs';
 
 
@@ -208,22 +209,35 @@ export const loginUser = async (credential=null, password='') => {
       if (login.message.isActive) {
         if (login.message.isAccount) {
           if (login.message.mailserver) {
-            const targetDict = getTargetDict('mailserver', login.message.mailserver);
-            targetDict.timeout = 5;
-            let command = `doveadm auth test ${login.message.mailbox} '${password}'`;
-            results = await execCommand(command, targetDict);
-            if (!results.returncode) {
-              successLog(`${credential} logged in successfully`);
-              
-            } else {
-              message = `${credential} password invalid`;
-              warnLog(message);
-              login.message = message;
-              login.success = false;
-            }
+            if (login.message.mailbox) {
+              // const targetDict = getTargetDict('mailserver', login.message.mailserver);
+              // targetDict.timeout = 5;
+              // let command = `doveadm auth test ${login.message.mailbox} '${password}'`;
+              // results = await execCommand(command, targetDict);
 
+              // doveadm(schema='dms', containerName=null, command=null, mailbox=null, jsonDict={})   // jsonDict = {mailbox:"mail@x.y", password:"password"}
+              // TODO: transfer the schema dms/Poste etc somehow or get a way to retrieve it; we are fare far way for that anyways
+              results = await doveadm('dms', login.message.mailserver, 'loginUser', login.message.mailbox, {mailbox: login.message.mailbox, password: password});
+
+              if (!results?.returncode) {
+                successLog(`${credential} logged in successfully`);
+                
+              } else {
+                message = `${credential} password invalid`;
+                warnLog(message);
+                login.message = message;
+                login.success = false;
+                login.returncode = results?.returncode;
+              }
+
+            } else {
+              message = `${credential} does not have a mailbox`;
+              errorLog(message);
+              login.success = false;
+              login.message = message;
+            }
           } else {
-            message = `${credential} mailbox does not have a mailserver assigned yet, where do we log that one?`;
+            message = `${credential} does not have a mailserver assigned yet`;
             errorLog(message);
             login.success = false;
             login.message = message;

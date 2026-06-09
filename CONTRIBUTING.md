@@ -169,8 +169,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 
-* [ ] 1.5.45 - backend: move loginUser for accounts to accounts>doveadm function
-
+* [ ] 1.5.46 - accounts: implement doveadm change password
+* [x] 1.5.45 - logins: isAccount mailbox login now calls doveadm
+* [x] 1.5.45 - backend: added results?.returncode in all return failures
+* [x] 1.5.45 - bugfix: accounts: doveadm would not replace jsonDict when defaults are absent; added none: null when no defaults are needed
+* [x] 1.5.45 - backend: move loginUser for accounts to accounts>doveadm function
 * [x] 1.5.44 - backend: execInContainerAPI/addLogin/loginUser logs anonimized passwords with ********
 * [x] 1.5.43 - bugfix: upon login useAuth navigates to /dashboard if mailserver and admin password is updated, /settings or /profile otherwise
 * [x] 1.5.43 - bugfix: ServerInfos table does not show boolean values; it's fixed but i can't remember when
