@@ -172,7 +172,7 @@ export const getRoles = async (credential=null) => {
 // mailserver used to be containerName, now we want configID
 // addLogin will not create a mailbox by itself, while addAccount will create a login for it
 export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
-  debugLog(mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles);
+  debugLog(mailbox, username, '********', email, isAdmin, isActive, isAccount, mailserver, roles);
 
   try {
     // even when password is undefined, we can get a hash value
@@ -210,7 +210,7 @@ export const loginUser = async (credential=null, password='') => {
           if (login.message.mailserver) {
             const targetDict = getTargetDict('mailserver', login.message.mailserver);
             targetDict.timeout = 5;
-            let command = `doveadm auth test ${login.message.mailbox} "${password}"`;
+            let command = `doveadm auth test ${login.message.mailbox} '${password}'`;
             results = await execCommand(command, targetDict);
             if (!results.returncode) {
               successLog(`${credential} logged in successfully`);

@@ -279,6 +279,10 @@ export const execInContainerAPI = async (command=null, targetDict={}, ...rest) =
     // debugLog('ddebug checkPort result',result)   // { success: false, error: 'running' } // whyyyyyyyyyyyyy
     if (result.success) {
 
+      const anonymizedCommand = command
+        .replace(/(email add \S+) ([\S]+)/, "$1 '********'")            // `email add mail@x.y 'password'` -> `email add mail@x.y '********'`
+        .replace(/(doveadm auth test \S+) ([\S]+)/, "$1 '********'");   // `doveadm auth test mail@x.y 'password'` -> `doveadm auth test mail@x.y '********'`
+
       const jsonData = Object.assign({}, 
         {
           command: command,
@@ -300,7 +304,7 @@ export const execInContainerAPI = async (command=null, targetDict={}, ...rest) =
         };
         
       } else {
-        successLog('command:', command);              // WARNING this will show cleartext passwords when loggin in users
+        successLog('command:', anonymizedCommand);  
         return {
           returncode: response.returncode,
           stdout: response.stdout.toString('utf8'),

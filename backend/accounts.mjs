@@ -277,7 +277,7 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
     const targetDict = getTargetDict('mailserver', containerName);
 
     debugLog(`Adding new mailbox account for ${containerName}: ${mailbox}`);
-    if (schema == 'dms') results = await execSetup(`email add ${mailbox} ${password}`, targetDict);
+    if (schema == 'dms') results = await execSetup(`email add ${mailbox} '${password}'`, targetDict);
 
     if (!results.returncode) {
       

@@ -81,13 +81,13 @@ export const Login = () => {
     // debugLog('ddebug isFirstRun result', result);
     
     // if we can login with the default user, display first run welcome message
-    
     if (result.success) {
       setFirstRun(true);
 
       if (result?.isDEMO || isDEMO) {
         setIsDEMO(true);
         setSuccessMessage('logins.isDEMO');
+
       } else {
         setIsDEMO(false);
         setSuccessMessage('logins.isFirstRun');
@@ -142,7 +142,12 @@ export const Login = () => {
         // now we can pull and setState for available mailservers; await a little so the Settings page don't pull it twice
         await fetchMailservers();
 
-        (firstRun) ? await login(result.message, "/settings") : await login(result.message);
+        // until the admin changes its name or password, we redirect to /settings or /profile
+        if (firstRun) {
+           (!result.message.mailserver) ? await login(result.message, "/settings") : await login(result.message, "/profile");
+         } else {
+          await login(result.message);
+         }
 
       // this will never happen with a 401 login denied unless the backend returns 200, which it won't. HTTP error codes exist for a reason and we will use them.
       } else {

@@ -159,26 +159,28 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete mailbox
 * [ ] 1.5.99 - retested: create/delete alias
 
+* [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - Settings: pulls everything when submitting new DMS, with progress bars
-* [ ] 1.5.99 - backend: pull aliases can only be done by an admin currently, that's by design.
-* [ ] 1.5.99 - backend: execInContainerAPI logs cleartext passwords when loggin in / create new accounts, can we send encrypted data instead or at least show asterisks?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
-* [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: delete a linked account should also delete the login: maybe not after all
 
-* [ ] 1.5.99 - bugfix: Dashboard: rebootMe simply logs you out
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
-* [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 
+* [ ] 1.5.45 - backend: move loginUser for accounts to accounts>doveadm function
+
+* [x] 1.5.44 - backend: execInContainerAPI/addLogin/loginUser logs anonimized passwords with ********
+* [x] 1.5.43 - bugfix: upon login useAuth navigates to /dashboard if mailserver and admin password is updated, /settings or /profile otherwise
+* [x] 1.5.43 - bugfix: ServerInfos table does not show boolean values; it's fixed but i can't remember when
 * [x] 1.5.42 - bugfix: dbUpgrade seems to execute twice
 * [x] 1.5.41 - bugfix: FINALLY! frontend logger correctly shows clickable line numbers pointing to the exact files
 * [x] 1.5.40 - bugfix: never run a blind npm audit fix on frontend anymore; since the uuid regression, it always bombs
 * [x] 1.5.40 - bugfix: added to frontend: react-transition-group@4.4.5 --save-exact AND webpack-cli@latest webpack-dev-server@latest
 * [x] 1.5.40 - bugfix: upgraded all packages to latest and frontend had to add overrides: "uuid": "^11.1.1"; removed as it breaks dependencies
 * [x] 1.5.40 - bugfix: frontend randomely bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. This bug was officially patched and resolved in react-i18next versions 17.0.4 and higher. Versions 17.0.8 fixed it!
+* [x] 1.5.39 - bugfix: Dashboard: rebootMe simply logs you out; fixed by fixing /logout
 * [x] 1.5.39 - bugfix: /logout now catches errors properly, hook and index.js updated along with api.mjs and logout doesn't flash the login screen twice anymore
 * [x] 1.5.39 - bugfix: api.interceptors.response.use() now process error items properly + added ddebug delay() to show errors before page refresh
 * [x] 1.5.39 - bugfix: logout produces axios API request aborted error with status code 401 / AxiosError: Request failed with status code 502: refactor api.mks with cacheWrap
@@ -720,6 +722,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [-] - backend/db: update sql{} with prepared common statements to speed up getModule API calls even more
 * [-] - backend/settings: pullServerEnvs should also look for quota? --> nope, api call dump config
 * [-] - frontend/Dashboard: where do we display Health/StartedAt etc? - don't care and don't use docker.sock anymore
+* [x] - backend: pull aliases can only be done by an admin currently, that's by design.
 
 
 ## Misc

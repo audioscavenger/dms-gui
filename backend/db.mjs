@@ -819,10 +819,10 @@ export const dbAll = (sql, params={}, ...anonParams) => {
 export const dbInit = (reset=false) => {
 
   if (reset) {
-    debugLog(`${color.HIG}${color.REV}start ${color.r} RESET DATABASE`);
+    infoLog(`${color.HIG}${color.REV}start ${color.r} RESET DATABASE`);
     exec(`rm -f ${env.DATABASE}`);
   } else {
-    debugLog(`${color.REV}start ${color.g} production`);
+    infoLog(`${color.REV}start ${color.g} production`);
   }
   dbOpen();
   let result;
@@ -871,13 +871,13 @@ export const dbInit = (reset=false) => {
     }
   }
   dbClose();
-  debugLog(`${color.REV}done`);
+  infoLog(`${color.REV}${color.g}done`);
 };
 
 
 // dbUpgrade is not async, hell no
 export const dbUpgrade = () => {
-  debugLog(`${color.REV}start  UPGRADE to ${env.DMSGUI_VERSION}`);
+  infoLog(`${color.REV}start  UPGRADE to ${env.DMSGUI_VERSION}`);
 
   dbOpen();
   let result, db_version, match;
@@ -974,7 +974,7 @@ export const dbUpgrade = () => {
   }
   dbClose();
   dbOpen();
-  debugLog(`end`);
+  infoLog(`${color.REV}${color.g}done`);
 };
 
 // ("ALTER TABLE logins ADD salt xxx".match(/ALTER[\s]+TABLE[\s]+[\"]?(\w+)[\"]?[\s]+ADD[\s]+(\w+)/i)[2] == 'column "salt" already exists'.match(/column[\s]+[\"]?(\w+)[\"]?[\s]+already[\s]+exists/i)[1])
