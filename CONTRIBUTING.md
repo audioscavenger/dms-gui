@@ -172,8 +172,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
-* [ ] 1.5.99 - bugfix: dbUpgrade start  UPGRADE to 1.5.38 seems to execute twice
 
+* [x] 1.5.42 - bugfix: dbUpgrade seems to execute twice
 * [x] 1.5.41 - bugfix: FINALLY! frontend logger correctly shows clickable line numbers pointing to the exact files
 * [x] 1.5.40 - bugfix: never run a blind npm audit fix on frontend anymore; since the uuid regression, it always bombs
 * [x] 1.5.40 - bugfix: added to frontend: react-transition-group@4.4.5 --save-exact AND webpack-cli@latest webpack-dev-server@latest

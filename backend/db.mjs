@@ -871,18 +871,7 @@ export const dbInit = (reset=false) => {
     }
   }
   dbClose();
-
-  
-  try {
-    dbUpgrade();
-    
-  } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
-  }
-  debugLog(`end`);
+  debugLog(`${color.REV}done`);
 };
 
 
