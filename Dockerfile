@@ -52,7 +52,7 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.5.39
+ARG DMSGUI_VERSION=1.5.40
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 ARG DATABASE_RESET 
 
@@ -71,7 +71,7 @@ COPY common.*js* ./
 # Copy backend from backend-builder
 COPY --from=backend-builder /app/backend /app/backend
 
-# Copy frontend build from frontend-builder
+# Only copy the static production build folder
 COPY --from=frontend-builder /app/frontend/dist /app/frontend
 
 # this only detects changes in /backend and does not recompile the frontend. half useful

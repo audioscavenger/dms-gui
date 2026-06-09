@@ -34,10 +34,17 @@ const AlertMessage = ({
       onClose={() => setShowAlert(false)}   // 👈 Changes state to false on 'X'
       {...rest}
     >
-      {Translate(message, translate)}
+      {/* Wrapper ensures i18n props do not bleed onto the Bootstrap Alert DOM node */}
+      <span>
+        {Translate(message, translate)}
+      </span>
     </RBAlert>
   );
 };
 
 export default AlertMessage;
       // {translate ? t(message) : message}
+
+// using <Trans> inside a bootstrap alert causes this error:
+// React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `i18nisdynamiclist` instead. If you accidentally passed it from a parent component, remove it from the DOM element. Component Stack: 
+// The warning happens because the react-bootstrap component (<RBAlert>) scans its direct children and attempts to pass down its internal animation/state props to them via cloning. Because your custom Translate helper is returning a <Trans> component directly as the root child, the props from React-Bootstrap mix with the internal properties of react-i18next and bleed onto the final DOM element.To fix this while keeping your HTML formatting, you simply need to wrap the output of your Translate() helper inside a plain HTML tag like a <span> or a <div>. This creates a boundary that prevents react-bootstrap and react-i18next from passing conflicting props to each other.

@@ -12,7 +12,15 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx|mjs|cjs)$/,
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
+        resolve: {
+          fullySpecified: false // Tells webpack to allow extensionless paths inside .mjs files
+        }
+      },
+      {
+        test: /\.(js|jsx|cjs)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',

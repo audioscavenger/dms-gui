@@ -34,6 +34,7 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 
 ## chores:
 
+* [ ] - frontend: maybe npm install react-router-dom@latest axios@latest one day?
 * [ ] - unify all frontend errors with {success:false, message, and unified error codes} **WIP**
 * [x] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
 * [x] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
@@ -116,7 +117,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
 alias buildup='docker-compose down --volumes; docker-compose up --build --force-recreate'
-alias buildup='docker-compose down --volumes; docker-compose build --no-cache; docker-compose up --force-recreate'   # if you need to redetect all files for some reason
+alias buildup='docker-compose down --volumes; docker-compose build --no-cache; docker-compose up --force-recreate'   # if you need to redetect changes and purge all caches
 run --rm --entrypoint ls audioscavenger/dms-gui:latest -la /app
 <!--
 drwxr-xr-x    1 root     root          4096 Apr 19 17:01 .
@@ -168,10 +169,14 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Dashboard: rebootMe simply logs you out
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
-* [ ] 1.5.99 - bugfix: frontend randomely bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element.
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 * [ ] 1.5.99 - bugfix: dbUpgrade start  UPGRADE to 1.5.38 seems to execute twice
+* [ ] 1.5.99 - bugfix: frontend logger correctly shows the file and line in error
 
+* [x] 1.5.40 - bugfix: never run a blind npm audit fix on frontend anymore; since the uuid regression, it always bombs
+* [x] 1.5.40 - bugfix: added to frontend: react-transition-group@4.4.5 --save-exact AND webpack-cli@latest webpack-dev-server@latest
+* [x] 1.5.40 - bugfix: upgraded all packages to latest and frontend had to add overrides: "uuid": "^11.1.1"; removed as it breaks dependencies
+* [x] 1.5.40 - bugfix: frontend randomely bombs with React does not recognize the `i18nIsDynamicList` prop on a DOM element. This bug was officially patched and resolved in react-i18next versions 17.0.4 and higher. Versions 17.0.8 fixed it!
 * [x] 1.5.39 - bugfix: /logout now catches errors properly, hook and index.js updated along with api.mjs and logout doesn't flash the login screen twice anymore
 * [x] 1.5.39 - bugfix: api.interceptors.response.use() now process error items properly + added ddebug delay() to show errors before page refresh
 * [x] 1.5.39 - bugfix: logout produces axios API request aborted error with status code 401 / AxiosError: Request failed with status code 502: refactor api.mks with cacheWrap
@@ -839,14 +844,23 @@ npx npm-check-updates -u
 npm install
 npm audit fix
   found 0 vulnerabilities
+  npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+  npm warn allow-scripts   @scarf/scarf@1.4.0 (install: (install scripts present))
+  npm warn allow-scripts   better-sqlite3@12.10.0 (install: node-gyp rebuild)
+  npm warn allow-scripts   ssh2@1.17.0 (install: (install scripts present))
+  npm warn allow-scripts   protobufjs@7.6.2 (postinstall: node scripts/postinstall)
+  npm warn allow-scripts
+  npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+npm approve-scripts --all
 
 
-## frontend upgrade commands: from the OS
+## frontend upgrade commands: from the OS; do that once
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 source ~/.bashrc
-
-## make sure your local node is the same as the VM:
 nvm install 24.9.0
+
+## make sure your local node is the same as the VM: do that each time
+source ~/.bashrc
 nvm use 24.9.0
 node -v
 
@@ -857,7 +871,7 @@ cd /docker/dms/dms-gui/frontend
 npm version
 {
   'dms-gui-frontend': '1.0.0',
-  npm: '11.12.1',
+  npm: '11.16.0',
   node: '24.9.0',
   acorn: '8.15.0',
   ada: '3.2.7',
@@ -888,27 +902,165 @@ npm version
 }
 
 npx npm-check-updates -u
- @babel/core                        ^7.28.5  →   ^7.29.0
- @babel/preset-env                  ^7.28.5  →   ^7.29.2
- @mui/material                       ^7.3.6  →    ^9.0.0
- axios                              ^1.13.2  →   ^1.15.0
- babel-loader                       ^10.0.0  →   ^10.1.1
- css-loader                          ^7.1.2  →    ^7.1.4
- html-webpack-plugin                 ^5.6.5  →    ^5.6.6
- i18next                            ^25.7.3  →   ^26.0.4
- i18next-browser-languagedetector    ^8.2.0  →    ^8.2.1
- prettier                             3.7.4  →     3.8.2
- react                              ^19.2.3  →   ^19.2.5
- react-dom                          ^19.2.3  →   ^19.2.5
- react-i18next                      ^16.5.0  →   ^17.0.3
- react-router-dom                   ^7.11.0  →   ^7.14.1
- webpack                           ^5.104.1  →  ^5.106.1
- webpack-cli                         ^6.0.1  →    ^7.0.2
- webpack-dev-server                  ^5.2.2  →    ^5.2.3
+  @babel/core           ^7.29.0  →   ^7.29.7    [missing time]
+  @babel/preset-env     ^7.29.2  →   ^7.29.7    [missing time]
+  @babel/preset-react   ^7.28.5  →   ^7.29.7    [missing time]
+  @mui/material          ^9.0.0  →    ^9.1.0    [missing time]
+  axios                 ^1.15.0  →   ^1.17.0    [missing time]
+  html-webpack-plugin    ^5.6.6  →    ^5.6.7    [missing time]
+  i18next               ^26.0.4  →   ^26.3.1    [missing time]
+  prettier                3.8.2  →     3.8.3    [missing time]
+  react                 ^19.2.5  →   ^19.2.7    [missing time]
+  react-dom             ^19.2.5  →   ^19.2.7    [missing time]
+  react-i18next         ^17.0.3  →   ^17.0.8    [missing time]
+  react-router-dom      ^7.14.1  →   ^7.17.0    [missing time]
+  webpack              ^5.106.1  →  ^5.107.2    [missing time]
+  webpack-cli            ^7.0.2  →    ^7.0.3    [missing time]
+  webpack-dev-server     ^5.2.3  →    ^5.2.4    [missing time]
 
 npm install
-npm audit fix
+# npm audit fix ## never again!
   found 0 vulnerabilities
+
+
+## finally, purge all caches and rebuild
+cd /docker/dms/dms-gui
+docker-compose build --no-cache
+docker-compose up --build --force-recreate
+
+
+
+
+################################ since last webpack upgrade 2026-06-08:
+# npm audit report
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install webpack-dev-server@1.16.5, which is a breaking change
+node_modules/uuid
+  sockjs  >=0.3.17
+  Depends on vulnerable versions of uuid
+  node_modules/sockjs
+    webpack-dev-server  >=2.0.0-beta
+    Depends on vulnerable versions of sockjs
+    node_modules/webpack-dev-server
+      webpack-cli  >=7.0.0
+      Depends on vulnerable versions of webpack-dev-server
+      node_modules/webpack-cli
+
+## and build fails:
+ > [frontend-builder 7/7] RUN npm run build:
+0.452
+0.452 > dms-gui-frontend@1.0.0 build
+0.452 > webpack --mode development
+0.452
+10.24 assets by info 307 KiB [immutable]
+10.24   asset 1295669cd4e305c97f2c.woff?e34853135f9e39acf64315236852cd5a 176 KiB [emitted] [immutable] [from: node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff?e34853135f9e39acf64315236852cd5a] (auxiliary name: main)
+10.24   asset 92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a 131 KiB [emitted] [immutable] [from: node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2?e34853135f9e39acf64315236852cd5a] (auxiliary name: main)
+10.24 asset bundle.js 4.92 MiB [emitted] (name: main)
+10.24 asset favicon-32x32.png 1.1 KiB [emitted]
+10.24 asset index.html 616 bytes [emitted]
+10.24 orphan modules 332 KiB [orphan] 249 modules
+10.24 runtime modules 3.13 KiB 11 modules
+10.24 modules by path ./node_modules/ 3.26 MiB (javascript) 307 KiB (asset)
+10.24   javascript modules 3.26 MiB 609 modules
+10.24   asset modules 307 KiB (asset) 84 bytes (javascript) 2 modules
+10.24 modules by path ./src/ 433 KiB
+10.24   javascript modules 415 KiB 33 modules
+10.24   json modules 17.9 KiB 2 modules
+10.24 modules by mime type image/svg+xml 5.03 KiB
+10.24   data:image/svg+xml,%3csvg xmlns=%27.. 281 bytes [built] [code generated]
+10.24   data:image/svg+xml,%3csvg xmlns=%27.. 281 bytes [built] [code generated]
+10.24   + 17 modules
+10.24 ./frontend.mjs 8.57 KiB [built] [code generated]
+10.24 ../common.mjs 17.1 KiB [built] [code generated]
+10.24
+10.24 ERROR in ./node_modules/@mui/material/internal/Transition.mjs 10:0-83
+10.24 Module not found: Error: Can't resolve 'react-transition-group/TransitionGroupContext' in '/app/frontend/node_modules/@mui/material/internal'
+10.24 Did you mean 'TransitionGroupContext.js'?
+10.24 BREAKING CHANGE: The request 'react-transition-group/TransitionGroupContext' failed to resolve only because it was resolved as fully specified
+...
+
+## solution:
+## 1. modify webpack
+module.exports = {
+  // ... rest of your config ...
+  module: {
+    rules: [
+      // 1. ADD THIS AT THE VERY TOP OF YOUR RULES ARRAY:
+      {
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
+        resolve: {
+          fullySpecified: false // Tells webpack to allow extensionless paths inside .mjs files
+        }
+      },
+      // 2. Your existing babel/js/jsx loaders continue below:
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: { loader: 'babel-loader' }
+      }
+    ]
+  }
+};
+
+## 2. Regenerate lockfile locally
+cd /docker/dms/dms-gui/frontend
+
+# a. Manually add the dual-compatibility package to your host dependencies
+npm install react-transition-group@4.4.5 --save-exact 
+
+# b. Re-compile the frozen package-lock file
+npm install
+
+## 3. Run build alias with build-cache bypass
+# Force docker compose build to drop cache and process stage 1 fresh
+cd /docker/dms/dms-gui
+docker-compose build --no-cache
+
+# Run your standard execution container startup
+buildup
+################################
+
+################################ option 2: Update the Root Developer Utility Triggering the Chain
+cd /docker/dms/dms-gui/frontend
+npm install --save-dev webpack-cli@latest webpack-dev-server@latest
+
+# Clean local state
+rm -rf node_modules package-lock.json
+npm install
+  # npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+################################ option 2: Update the Root Developer Utility Triggering the Chain
+
+################################ option 1: Force a targeted update on the nested package range
+npm update uuid --depth=10
+  # npm warn update The --depth option no longer has any effect. See RFC0019.
+  # npm warn update https://github.com/npm/rfcs/blob/latest/implemented/0019-remove-update-depth-option.md
+################################ option 1: Force a targeted update on the nested package range
+
+################################ option 3: Force a Clean Sub-dependency Audit Fix
+cd /docker/dms/dms-gui/frontend
+npm audit fix --json
+npm update uuid
+# uuid": {"version": "8.3.2", ...}
+
+# there is no solution. don't run npm audit fix and move on with your life
+rm package-lock.json
+npm install
+
+# Force docker compose build to drop cache and process stage 1 fresh
+cd /docker/dms/dms-gui
+docker-compose build --no-cache
+
+# Run your standard execution container startup
+buildup
+
+################################ option 3: Force a Clean Sub-dependency Audit Fix
+
 
 -->
 
