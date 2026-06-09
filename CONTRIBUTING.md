@@ -146,6 +146,8 @@ multiarch*      docker-container
 default         docker
  \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
 docker container prune -f && docker image prune -f
+docker system df
+docker builder prune -a -f
 docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
 
@@ -171,8 +173,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: ServerInfos table does not show boolean values
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 * [ ] 1.5.99 - bugfix: dbUpgrade start  UPGRADE to 1.5.38 seems to execute twice
-* [ ] 1.5.99 - bugfix: frontend logger correctly shows the file and line in error
 
+* [x] 1.5.41 - bugfix: FINALLY! frontend logger correctly shows clickable line numbers pointing to the exact files
 * [x] 1.5.40 - bugfix: never run a blind npm audit fix on frontend anymore; since the uuid regression, it always bombs
 * [x] 1.5.40 - bugfix: added to frontend: react-transition-group@4.4.5 --save-exact AND webpack-cli@latest webpack-dev-server@latest
 * [x] 1.5.40 - bugfix: upgraded all packages to latest and frontend had to add overrides: "uuid": "^11.1.1"; removed as it breaks dependencies

@@ -69,7 +69,8 @@ api.interceptors.response.use(
     const httpStatus = error.response?.status || 'Network/Timeout Error';  // 502 401 403...
     const errorMessage = error.message || 'No message provided';
     const isLogoutRequest = errorUrl.includes('/logout');
-    debugLog(`ddebug WAIT5 api interceptor error Url: [${errorUrl}] | Status: ${httpStatus} | Code: ${errorResponseCode} | Message: ${errorMessage}`); await delay(5000);
+    // debugLog(`ddebug WAIT5 api interceptor error Url: [${errorUrl}] | Status: ${httpStatus} | Code: ${errorResponseCode} | Message: ${errorMessage}`); await delay(5000);
+    
       // Url: [/logout] | Status: Network/Timeout Error | Code: No message provided | Message: Request aborted <empty string>
       // Url: [/configs/mailserver] | Status: 403 | Code: INVALID_TOKEN | Message: Request failed with status code 403 <empty string> frontend.mjs:71:25
       // Url: [/infos] | Status: 403 | Code: INVALID_TOKEN | Message: Request failed with status code 403 <empty string>
@@ -111,7 +112,7 @@ api.interceptors.response.use(
     // 4. Handle software errors: If access token expired, try to refresh
     if ((errorResponseCode === 'TOKEN_EXPIRED' || errorResponseCode === 'REFRESH_TOKEN_EXPIRED') && !originalRequest._retry) {
       if (isRefreshing) {
-        debugLog(`ddebug WAIT5 api interceptor start with ${errorResponseCode} isRefreshing`); await delay(5000); 
+        // debugLog(`ddebug WAIT5 api interceptor start with ${errorResponseCode} isRefreshing`); await delay(5000); 
 
         // Queue this request while refresh is in progress
         return new Promise((resolve, reject) => {
@@ -129,7 +130,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        debugLog('ddebug WAIT6 api Call refresh endpoint'); await delay(6000); 
+        // debugLog('ddebug WAIT6 api Call refresh endpoint'); await delay(6000); 
         // Call refresh endpoint
         await api.post('/refresh');
         
@@ -140,7 +141,7 @@ api.interceptors.response.use(
         return api(originalRequest);
 
       } catch (refreshError) {
-        debugLog('ddebug WAIT7 api Refresh failed - redirect to login'); await delay(7000); 
+        // debugLog('ddebug WAIT7 api Refresh failed - redirect to login'); await delay(7000); 
 
         isRefreshing = false;
         processQueue(refreshError);
@@ -183,7 +184,7 @@ api.interceptors.response.use(
         }
     }
 
-    debugLog(`ddebug WAIT33 error ${errorResponseCode}:`); console.debug(error); await delay(33000); // AxiosError: Request failed with status code 502
+    // debugLog(`ddebug WAIT33 error ${errorResponseCode}:`); console.debug(error); await delay(33000); // AxiosError: Request failed with status code 502
     return Promise.reject(error);
   }
 );
