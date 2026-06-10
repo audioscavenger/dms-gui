@@ -18,6 +18,7 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+  getValueFromArrayOfObj,
   regexUsername,
   regexEmailStrict,
 } from '../../../common.mjs';

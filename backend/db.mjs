@@ -7,10 +7,12 @@ import {
   reduxPropertiesOfObj,
 } from '../common.mjs';
 import {
+  updateAccount,
+} from './accounts.mjs';
+import {
   color,
   debugLog,
   errorLog,
-  execSetup,
   infoLog,
   successLog
 } from './backend.mjs';
@@ -853,12 +855,12 @@ export const dbInit = (reset=false) => {
             debugLog(`table ${table} result.message:`, result.message);
 
           // the below can never happen
-          // } else if (result.error && result.error.match(/already exists/i)) {
+          // } else if (result?.error && result?.error.match(/already exists/i)) {
           //   infoLog(`${table}: exist`);
 
           } else {
-            errorLog(`${table}: ${result?.code}: ${result.error}`);
-            throw new Error(`${table}: ${result?.code}: ${result.error}`);
+            errorLog(`${table}: ${result?.code}: ${result?.error}`);
+            throw new Error(`${table}: ${result?.code}: ${result?.error}`);
           }
 
         } else infoLog(`${table}: exist`);
@@ -1058,40 +1060,34 @@ export const verifyPassword = async (credential=null, password='', table='logins
 
 
 // Function to update a password in a table
-export const changePassword = async (table, id, password, schema, containerName) => {
-  let result, results;
+// for accounts: id=accounts.mailbox
+// for logins: id=logins.id
+export const changePassword = async (table, id, password, scope) => {
+  let result;
+  infoLog(`Call to update password for account id=${id} in table=${table} for scope=${scope}...`);
 
   try {
     const { salt, hash } = await hashPassword(password ?? '');
     
     // special case for accounts as we need to run a command in the container
     if (table == 'accounts') {
-      const targetDict = getTargetDict('mailserver', containerName);
+      debugLog(`Updating account password for id ${id} in ${scope}...`);
 
-      debugLog(`Updating account password for id ${id} in ${containerName}...`);
-      results = await execSetup(`email update ${id} "${password}"`, targetDict);
-      if (!results?.returncode) {
-        
-        debugLog(`Updating password for id ${id} in ${table} (${containerName})...`);
-        result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:containerName }, id);
-        successLog(`Password updated for id ${id} in ${table} (${containerName})`);
-        return { success: true, message: `Password updated for id ${id} in ${table} (${containerName})`};
-        
-      } else {
-        let ErrorMsg = await formatDMSError('execSetup', results.stderr);
-        errorLog(ErrorMsg);
-        return { success: false, error: ErrorMsg, returncode: results?.returncode };
+      result = await updateAccount('dms', scope, id, password);
+      if (!result.success) {
+        errorLog(result?.error);
+        return { success: false, error: result?.error, returncode: result.returncode };
       }
-      
-    } else {
-      debugLog(`Updating password for id ${id} in ${table}...`);
-      result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:containerName }, id);  // doesn't hurt to add scope even when unused
-      if (result.success) {
-        successLog(`Password updated for id ${id} in ${table}`);
-        return { success: true, message: `Password updated for id ${id} in ${table}` };
-        
-      } else return result;
     }
+      
+    // update password in local database
+    debugLog(`Updating password for account id=${id} in table=${table} for scope=${scope}...`);
+    result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:scope }, id);  // doesn't hurt to add scope even when unused
+    if (result.success) {
+      successLog(`Password updated for account id=${id} in table=${table} for scope=${scope}`);
+      return { success: true, message: `Password updated for account id=${id} in table=${table} for scope=${scope}` };
+      
+    } else return result;
     
   } catch (error) {
     // errorLog(error.message);
@@ -1109,7 +1105,8 @@ export const changePassword = async (table, id, password, schema, containerName)
 
 // Function to update a table in the db; id can very well be an array as well
 export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  // jsonDict = { column:value, .. }
-  debugLog(`${table} id=${id} for scope=${scope}; encrypt=${encrypt}`, jsonDict);   // don't show jsonDict as it may contain a password
+  const anonymizedJsonDict = (jsonDict?.password) ? {...jsonDict, password: '********'} : jsonDict;
+  debugLog(`${table} id=${id} for scope=${scope}; encrypt=${encrypt}`, anonymizedJsonDict);
 
   let result, scopedValues, value2test, testResult;
   let messages = [];
@@ -1151,6 +1148,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
       if (typeof value == sql[table].keys[key]) {   // example: 0 or 1 are numbers so that's okay
         
         // password has its own function
+        // for accounts: id=accounts.mailbox
+        // for logins: id=logins.id
         if (key == 'password') {
           return changePassword(table, id, value, scope);
           
@@ -1441,24 +1440,6 @@ export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
     // throw error;
   }
 };
-
-
-// module.exports = {
-//   DB,
-//   sql,
-//   dbOpen,
-//   dbInit,
-//   dbUpgrade,
-//   dbRun,
-//   dbGet,
-//   dbAll,
-//   dbCount,
-//   hashPassword,
-//   verifyPassword,
-//   changePassword,
-//   updateDB,
-//   deleteEntry,
-// };
 
 
 // debug = true;

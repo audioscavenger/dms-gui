@@ -373,6 +373,48 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
   }
 };
 
+// COMMAND email :=
+//     setup email add <EMAIL ADDRESS> [<PASSWORD>]
+//     setup email update <EMAIL ADDRESS> [<PASSWORD>]
+//     setup email del [ OPTIONS... ] <EMAIL ADDRESS> [ <EMAIL ADDRESS>... ]
+//     setup email restrict <add|del|list> <send|receive> [<EMAIL ADDRESS>]
+//     setup email list
+// Function to update a mailbox password; shema is needed because of the remote command involved
+export const updateAccount = async (schema='dms', containerName=null, mailbox=null, password=null) => {
+  if (!password) return {success: false, error: 'password is null'};
+  if (!mailbox) return {success: false, error: 'containerName is null'};
+  if (!containerName) return {success: false, error: 'containerName is null'};
+
+  let results;
+  try {
+    const targetDict = getTargetDict('mailserver', containerName);
+
+    // dms setup could take who know how long sowe increase it a little
+    targetDict.timeout = 6;
+    if (schema == 'dms') results = await execSetup(`email update ${mailbox} '${password}'`, targetDict);
+    debugLog('ddebug execSetup', results);  // { returncode: 0, stdout: '', stderr: '' }
+
+    if (!results?.returncode) {
+      successLog(`Password updated for ${mailbox}`);
+      return { success: true, message: `Password updated for ${mailbox}` };
+      
+    } else {
+      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      errorLog(ErrorMsg);
+      return { success: false, error: ErrorMsg, returncode: results?.returncode };
+    }
+    
+  } catch (error) {
+    errorLog(error.message);
+    throw new Error(error.message);
+    // TODO: we should return smth to theindex API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+};
+
 // doveadm function for mailboxes
 // https://doc.dovecot.org/2.4.1/core/admin/doveadm.html
 export const doveadm = async (schema='dms', containerName=null, command=null, mailbox=null, jsonDict={}) => {   // jsonDict = {field:"messages unseen vsize", box:"INBOX Junk"}

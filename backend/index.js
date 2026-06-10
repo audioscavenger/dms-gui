@@ -728,12 +728,13 @@ async (req, res) => {
     let result, jsonDict;
     jsonDict = {...req.body, schema:schema};
 
-    if (req.user.isAdmin) {
-      result = await updateDB('accounts', mailbox, jsonDict, containerName);
+      // user isAdmin OR (is NOT admin AND (isAccount only OR handles multiple mailboxes))
+    if (req.user.isAdmin || (req.user.isAccount && (req.user?.mailbox == mailbox || req.user.roles.includes(mailbox)))) {
+      result = await updateDB('accounts', mailbox, jsonDict, containerName)
 
+    // hack tentative
     } else {
-      // const roles = await getRoles(req.user.mailbox);
-      result = (req.user.roles.includes(mailbox)) ? await updateDB('accounts', mailbox, jsonDict, containerName) : {success: false, error: 'Permission denied'};
+      result = {success: false, error: 'Permission denied'};
     }
     res.json(result);
     

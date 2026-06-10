@@ -101,6 +101,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - pull compress/indexing method and maybe statistics on the dashboard?
 * [ ] - switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
 * [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
+* [ ] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup?
+* [ ] - 2. update all execSetup calls in accounts/aliases
 
 ### Settings:
 * [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
@@ -169,7 +171,17 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 
-* [ ] 1.5.46 - accounts: implement doveadm change password
+* [ ] 1.5.49 - accounts: calls execSetup() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}
+* [ ] 1.5.48 - bugfix: Logins: changing password there for isAccount changes the logins password instead of the accounts password
+* [ ] 1.5.47 - bugfix: Profile: failure to change password from the modal does not close the modal but error is displayed
+* [ ] 1.5.47 - bugfix: Accounts: failure to change password from the modal does not close the modal and no error is displayed
+* [x] 1.5.46 - Profile and Accounts correctly update isAccount/non-admin password in DMS
+* [x] 1.5.46 - bugfix: Profile: was missing getValueFromArrayOfObj definition
+* [x] 1.5.46 - backend: correctly display anonymizedCommand instead of command: we hide passwords
+* [x] 1.5.46 - accounts: created updateAccount
+* [x] 1.5.46 - db: changePassword simply calls updateAccount extra on top of dbRun: we change the password in both DMS and the local db
+* [x] 1.5.46 - index.js: call updateDB for app.patch('/api/accounts/:schema/:containerName/:mailbox') based off conditions
+* [x] 1.5.46 - accounts: updateAccount does not exist because it's done by db/changePassword called by updateDb: i don't think that's the correct way at all
 * [x] 1.5.45 - logins: isAccount mailbox login now calls doveadm
 * [x] 1.5.45 - backend: added results?.returncode in all return failures
 * [x] 1.5.45 - bugfix: accounts: doveadm would not replace jsonDict when defaults are absent; added none: null when no defaults are needed

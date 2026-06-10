@@ -102,9 +102,12 @@ export const debugLog = async (message, ...data) => { if (env.debug) logger('deb
 export const execSetup = async (setupCommand=null, targetDict={}, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
-  // const command = `${env.DMS_SETUP_SCRIPT} ${setupCommand}`;
   const command = `${targetDict.setupPath} ${setupCommand}`;
-  debugLog(`Executing setup command: ${setupCommand}`);
+  const anonymizedCommand = command
+    .replace(/(email add \S+) ([\S]+)/, "$1 '********'")            // `email add mail@x.y 'password'` -> `email add mail@x.y '********'`
+    .replace(/(doveadm auth test \S+) ([\S]+)/, "$1 '********'");   // `doveadm auth test mail@x.y 'password'` -> `doveadm auth test mail@x.y '********'`
+  debugLog(`Executing setup command: ${anonymizedCommand}`);
+
   return execCommand(command, targetDict, ...rest);
 };
 
@@ -112,7 +115,11 @@ export const execSetup = async (setupCommand=null, targetDict={}, ...rest) => {
 export const execCommand = async (command=null, targetDict={}, ...rest) => {
   // The setup.sh script is usually located at /usr/local/bin/setup.sh or /usr/local/bin/setup in docker-mailserver
   
-  debugLog(`Executing system command: ${command}`);
+  const anonymizedCommand = command
+    .replace(/(email add \S+) ([\S]+)/, "$1 '********'")            // `email add mail@x.y 'password'` -> `email add mail@x.y '********'`
+    .replace(/(doveadm auth test \S+) ([\S]+)/, "$1 '********'");   // `doveadm auth test mail@x.y 'password'` -> `doveadm auth test mail@x.y '********'`
+  debugLog(`Executing system command: ${anonymizedCommand}`);
+
   const result = await execInContainerAPI(command, targetDict, ...rest);
   // debugLog('ddebug result', result)
   return result;
@@ -588,6 +595,9 @@ export const writeFile = async (file=null, content='') => {
 };
 
 
+// examples:
+// let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+// let ErrorMsg = await formatDMSError('addAccount', results.stderr);
 export const formatDMSError = async (errorMsg=null, error=null) => {
   // Unfortunately, we cannot list all the error types from dms just here
   // var patterns = [
@@ -665,3 +675,79 @@ export const getContainer = containerName => {
 //   getContainer,
 //   processTopData,
 // };
+
+// dms commands to implement:
+// SETUP(1)
+
+// NAME
+//     setup - 'docker-mailserver' Administration & Configuration CLI
+
+// SYNOPSIS
+//     setup [ OPTIONS... ] COMMAND [ help | ARGUMENTS... ]
+
+//     COMMAND := { email | alias | quota | dovecot-master | config | relay | debug } SUBCOMMAND
+
+// DESCRIPTION
+//     This is the main administration command that you use for all your interactions with
+//     'docker-mailserver'. Initial setup, configuration, and much more is done with this CLI tool.
+
+//     Most subcommands can provide additional information and examples by appending 'help'.
+//     For example: 'setup email add help'
+
+// [SUB]COMMANDS
+//     COMMAND email :=
+//         setup email add <EMAIL ADDRESS> [<PASSWORD>]
+//         setup email update <EMAIL ADDRESS> [<PASSWORD>]
+//         setup email del [ OPTIONS... ] <EMAIL ADDRESS> [ <EMAIL ADDRESS>... ]
+//         setup email restrict <add|del|list> <send|receive> [<EMAIL ADDRESS>]
+//         setup email list
+
+//     COMMAND alias :=
+//         setup alias add <EMAIL ADDRESS> <RECIPIENT>
+//         setup alias del <EMAIL ADDRESS> <RECIPIENT>
+//         setup alias list
+
+//     COMMAND quota :=
+//         setup quota set <EMAIL ADDRESS> [<QUOTA>]
+//         setup quota del <EMAIL ADDRESS>
+
+//     COMMAND dovecot-master :=
+//         setup dovecot-master add <USERNAME> [<PASSWORD>]
+//         setup dovecot-master update <USERNAME> [<PASSWORD>]
+//         setup dovecot-master del [ OPTIONS... ] <USERNAME> [ <USERNAME>... ]
+//         setup dovecot-master list
+
+//     COMMAND config :=
+//         setup config dkim [ ARGUMENTS... ]
+
+//     COMMAND relay :=
+//         setup relay add-auth <DOMAIN> <USERNAME> [<PASSWORD>]
+//         setup relay add-domain <DOMAIN> <HOST> [<PORT>]
+//         setup relay exclude-domain <DOMAIN>
+
+//     COMMAND fail2ban :=
+//         setup fail2ban
+//         setup fail2ban ban <IP>
+//         setup fail2ban unban <IP>
+//         setup fail2ban log
+//         setup fail2ban status
+
+//     COMMAND debug :=
+//         setup debug fetchmail
+//         setup debug getmail
+//         setup debug login <COMMANDS>
+//         setup debug show-mail-logs
+
+// EXAMPLES
+//     setup email add test@example.com
+//         Add the email account test@example.com. You will be prompted
+//         to input a password afterwards since no password was supplied.
+
+//     setup config dkim keysize 2048 domain 'example.com,not-example.com'
+//         Creates keys of length 2048 for the domains in comma-seperated list.
+//         This is necessary when using LDAP as the required domains cannot be inferred.
+
+//     setup config dkim help
+//         This will provide you with a detailed explanation on how to use the
+//         config dkim command, showing what arguments can be passed and what they do.
+
