@@ -161,6 +161,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete mailbox
 * [ ] 1.5.99 - retested: create/delete alias
 
+* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.doctusit.com/api/loginUser because it violates the following directive: “connect-src 'none'”
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - Settings: pulls everything when submitting new DMS, with progress bars
@@ -171,17 +172,22 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
 
-* [ ] 1.5.49 - accounts: calls execSetup() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}
-* [ ] 1.5.48 - bugfix: Logins: changing password there for isAccount changes the logins password instead of the accounts password
-* [ ] 1.5.47 - bugfix: Profile: failure to change password from the modal does not close the modal but error is displayed
-* [ ] 1.5.47 - bugfix: Accounts: failure to change password from the modal does not close the modal and no error is displayed
+* [ ] 1.5.48 - accounts: calls execSetup() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}
+* [ ] 1.5.48 - Profile: when login in with isFirstRun=true we should Alert "You should change your password"
+* [x] 1.5.47 - realization: the more I fix bugs the more I discover it's just the starting scope that was incomplete and lacked definitions.
+* [x] 1.5.47 - realization: Also I'm alone to do that and the task is humongous, AND not a single person can think of everything from the start.
+* [x] 1.5.47 - index.js: clear distinctions among 3 scenarios when updating a DMS account password
+* [x] 1.5.47 - bugfix: Logins: changing password there for isAccount correctly changes the mailbox password just like in Profile
+* [x] 1.5.47 - bugfix: Logins: make sure failure to change password from the modal does close the modal and error is displayed
+* [x] 1.5.47 - bugfix: Profile: failure to change password from the modal does not close the modal but error is displayed
+* [x] 1.5.47 - bugfix: Accounts: failure to change password from the modal does not close the modal and no error is displayed
 * [x] 1.5.46 - Profile and Accounts correctly update isAccount/non-admin password in DMS
 * [x] 1.5.46 - bugfix: Profile: was missing getValueFromArrayOfObj definition
 * [x] 1.5.46 - backend: correctly display anonymizedCommand instead of command: we hide passwords
 * [x] 1.5.46 - accounts: created updateAccount
 * [x] 1.5.46 - db: changePassword simply calls updateAccount extra on top of dbRun: we change the password in both DMS and the local db
 * [x] 1.5.46 - index.js: call updateDB for app.patch('/api/accounts/:schema/:containerName/:mailbox') based off conditions
-* [x] 1.5.46 - accounts: updateAccount does not exist because it's done by db/changePassword called by updateDb: i don't think that's the correct way at all
+* [x] 1.5.46 - accounts: updateAccount does not exist because it's done by db/changePassword called by updateDb: I don't think that's the correct way at all
 * [x] 1.5.45 - logins: isAccount mailbox login now calls doveadm
 * [x] 1.5.45 - backend: added results?.returncode in all return failures
 * [x] 1.5.45 - bugfix: accounts: doveadm would not replace jsonDict when defaults are absent; added none: null when no defaults are needed

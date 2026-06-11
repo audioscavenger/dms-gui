@@ -641,8 +641,9 @@ const Logins = () => {
 
   // Close password change modal
   const handleClosePasswordModal = () => {
+    setPasswordFormErrors({});
     setShowPasswordModal(false);
-    setSelectedLogin(null);
+    setSelectedAccount(null);
   };
 
   // Handle input changes for password change form
@@ -692,13 +693,28 @@ const Logins = () => {
     }
 
     try {
-      const result = await updateLogin(
-        selectedLogin.id,
-        { password: passwordFormData.newPassword }
-      );
+      let result;
+      // result = await updateLogin(
+      //   selectedLogin.id,
+      //   { password: passwordFormData.newPassword }
+      // );
+      if (selectedLogin.isAccount) {
+        result = await updateAccount(
+          getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
+          containerName,
+          selectedLogin.mailbox,
+          { password: passwordFormData.newPassword }
+        );
+      
+      // normal dms-gui local account
+      } else {
+        result = await updateLogin(
+          selectedLogin.id,
+          { password: passwordFormData.newPassword }
+        );
+      }
       if (result.success) {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.username}));
-        handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result?.error);
       
@@ -706,6 +722,8 @@ const Logins = () => {
       errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
+
+    handleClosePasswordModal(); // Close the modal
   };
 
   // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same

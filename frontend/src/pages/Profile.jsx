@@ -246,6 +246,7 @@ const Profile = () => {
 
   // Close password change modal
   const handleClosePasswordModal = () => {
+    setPasswordFormErrors({});
     setShowPasswordModal(false);
     setSelectedLogin(null);
   };
@@ -308,7 +309,7 @@ const Profile = () => {
           { password: passwordFormData.newPassword }
         );
       
-      // normal dms-gui account
+      // normal dms-gui local account
       } else {
         result = await updateLogin(
           selectedLogin.id,
@@ -317,7 +318,6 @@ const Profile = () => {
       }
       if (result.success) {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.mailbox}));
-        handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result?.error);
       
@@ -325,6 +325,8 @@ const Profile = () => {
       errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
+
+    handleClosePasswordModal(); // Close the modal
   };
 
 

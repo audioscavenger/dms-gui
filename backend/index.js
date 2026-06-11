@@ -728,8 +728,10 @@ async (req, res) => {
     let result, jsonDict;
     jsonDict = {...req.body, schema:schema};
 
-      // user isAdmin OR (is NOT admin AND (isAccount only OR handles multiple mailboxes))
-    if (req.user.isAdmin || (req.user.isAccount && (req.user?.mailbox == mailbox || req.user.roles.includes(mailbox)))) {
+    // Regardless of if we are updating logins only or accounts (+logins), there are 3 distinct scenarios:
+    if (    req.user.isAdmin                                    // user isAdmin -> we do whatever an admin wants
+        || (req.user.isAccount && req.user?.mailbox == mailbox) // user isAccount only AND it's their mailbox
+        || (req.user.roles.includes(mailbox))) {                // user handles multiple mailboxes, cannot be isAccount
       result = await updateDB('accounts', mailbox, jsonDict, containerName)
 
     // hack tentative

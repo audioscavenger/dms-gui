@@ -260,6 +260,7 @@ const Accounts = () => {
 
   // Close password change modal
   const handleClosePasswordModal = () => {
+    setPasswordFormErrors({});
     setShowPasswordModal(false);
     setSelectedAccount(null);
   };
@@ -311,7 +312,8 @@ const Accounts = () => {
     }
 
     try {
-      const result = await updateAccount(
+      let result;
+      result = await updateAccount(
         getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
         containerName,
         selectedAccount.mailbox,
@@ -319,7 +321,6 @@ const Accounts = () => {
       );
       if (result.success) {
         setSuccessMessage(t('password.passwordUpdated', {username:selectedAccount.mailbox}));
-        handleClosePasswordModal(); // Close the modal
         
       } else setErrorMessage(result?.error);
       
@@ -327,7 +328,9 @@ const Accounts = () => {
       errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
     }
-  };
+
+    handleClosePasswordModal(); // Close the modal
+};
   
   
   
