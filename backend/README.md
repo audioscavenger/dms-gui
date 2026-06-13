@@ -27,15 +27,15 @@ npm start
 Configure the `.dms-gui.env` file with the appropriate environment variables:
 
 ```
-## dms-gui Configuration: all is handled byREact.
-## React is incompatible with environment set variables
-## Only the defaults used in dms-gui will be mentionned here.
-## Don't set those variables as they will not be read
-## DMS_CONTAINER=dms
-## DMS_SETUP_SCRIPT=/usr/local/bin/setup
-## DMS_API_PORT=8888
-## DMS_API_KEY=matches "dms-uuid" set in dms-gui
-## DMS_API_SIZE=1024 / max body size accepted
+## dms-gui Configuration: all *should* be handled by dms-gui, and *will* be overriden in the end.
+## The backend will read those values nonetheless and pre-fill the Settings page with them.
+## DMS_CONTAINER=dms                      // the official name is docker-mailserver, dms is shorter and nicer
+## DMS_SETUP_SCRIPT=/usr/local/bin/setup  // docker-mailserver's setup.sh path, could change one day
+## DMS_CONFIG_PATH=/tmp/docker-mailserver // docker-mailserver's internal, hard-coded mount for /config
+## DKIM_SELECTOR_DEFAULT=mail             // docker-mailserver's internal, hard-coded default DKIM selector
+## DMS_API_PORT=8888                      // default port for the dms-gui's Python API injected into mailserver
+## DMS_API_KEY=uuid                       // or whatever you like, must match the one in dms-gui (created there or vice-versa)
+## DMS_API_SIZE=1024                      // max payload size the mailserver API will accept
 
 ## Optional: Dev Environment
 # PORT_NODEJS=3001

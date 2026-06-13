@@ -53,8 +53,7 @@ export const Login = () => {
 
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
-  // const [firstRun, setFirstRun] = useState(false);
-  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this could be used elsewhere as well
+  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
   
   const [errorMessage, setErrorMessage] = useState(null);
@@ -144,6 +143,8 @@ export const Login = () => {
 
         // until the admin changes its name or password, we redirect to /settings or /profile
         if (firstRun) {
+          // no default mailserver? /settings
+          //    default mailserver but default password? /profile
            (!result.message.mailserver) ? await login(result.message, "/settings") : await login(result.message, "/profile");
          } else {
           await login(result.message);

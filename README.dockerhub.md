@@ -217,12 +217,12 @@ DATABASE=${DMSGUI_CONFIG_PATH}/dms-gui.sqlite3
 
 ## Override the daily restart of the container, with this simple trick: default is 11PM
 ## The container must restart regularly to regenerate the secret keys. Security first.
-##           ┌────────────── second (optional)
-##           │ ┌──────────── minute
-##           │ │ ┌────────── hour
-##           │ │ │  ┌──────── day of month
-##           │ │ │  │ ┌────── month
-##           │ │ │  │ │ ┌──── day of week
+##           ┌─────────────── second (optional)
+##           │ ┌───────────── minute
+##           │ │ ┌─────────── hour
+##           │ │ │  ┌──────── day of month 1-31
+##           │ │ │  │ ┌────── month        1-12
+##           │ │ │  │ │ ┌──── day of week  1-7
 ##           │ │ │  │ │ │
 ##           │ │ │  │ │ │
 ##           * * *  * * *
@@ -253,11 +253,11 @@ The ones you should never alter unless you want to develop:
 
 ### Environment Variables for dms REST API in compose
 
-- `DMS_API_HOST`: defaults to 0.0.0.0
-- `DMS_API_PORT`: defaults to 8888
-- `DMS_API_KEY`: format is "dms-uuid" or whatever you like, must be created in dms-gui first
-- `DMS_API_SIZE`: defaults to 1024
-- `LOG_LEVEL`: defaults to 'info', value is set in your `mailserver.env`
+- `DMS_API_HOST`: 0.0.0.0                   // dms-gui's Python API injected into mailserver will use any address
+- `DMS_API_PORT`: 8888                      // default port for the dms-gui's Python API injected into mailserver
+- `DMS_API_KEY`: uuid                       // or whatever you like, must match the one in dms-gui (created there or vice-versa)
+- `DMS_API_SIZE`: 1024                      // max payload size the mailserver API will accept
+- `LOG_LEVEL`: info                         // *info, debug, warn, error: value should be set in your `mailserver.env`
 
 ## Language Support
 
@@ -525,7 +525,7 @@ This REST API logs what it does in `logs/supervisor/rest-api.log` like any other
 To use it with a Node.js client, it's pretty basic and simple:
 
 ```js
-const DMS_API_KEY = 'dms-uuid';
+const DMS_API_KEY = 'uuid';
 const jsonData = {
   command: 'ls -l /some/folder',
   timeout: 4,

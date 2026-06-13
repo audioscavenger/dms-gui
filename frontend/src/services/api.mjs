@@ -70,7 +70,7 @@ api.interceptors.response.use(
     const errorMessage = error.message || 'No message provided';
     const isLogoutRequest = errorUrl.includes('/logout');
     // debugLog(`ddebug WAIT5 api interceptor error Url: [${errorUrl}] | Status: ${httpStatus} | Code: ${errorResponseCode} | Message: ${errorMessage}`); await delay(5000);
-    
+
       // Url: [/logout] | Status: Network/Timeout Error | Code: No message provided | Message: Request aborted <empty string>
       // Url: [/configs/mailserver] | Status: 403 | Code: INVALID_TOKEN | Message: Request failed with status code 403 <empty string> frontend.mjs:71:25
       // Url: [/infos] | Status: 403 | Code: INVALID_TOKEN | Message: Request failed with status code 403 <empty string>
@@ -206,7 +206,7 @@ const cacheWrap = async (apiCallFunc) => {
 };
 
 
-// Server status API
+// Server status API // not too fond of passing settings directly from the GUI
 export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   debugLog('api getServerStatus settings:', settings);
@@ -469,11 +469,12 @@ export const getRoles = async credential => {
   });
 };
 
-// initAPI to define or generate a new DMS_API_KEY
-export const initAPI = async (plugin, schema, containerName, dms_api_key_param) => {
-  if (!containerName) return {success: false, error: 'containerName is required'};
+// initAPI: generate a DMS_API_KEY or save it and inject API
+export const initAPI = async (plugin, schema, containerName, action, dms_api_key_param) => {
+  if (!action) return {success: false, error: 'action is required'};
   
   const params = {};
+  if (action !== undefined) params.action = action;
   if (dms_api_key_param !== undefined) params.dms_api_key_param = dms_api_key_param;
   
   return await cacheWrap(async () => {

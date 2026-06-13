@@ -48,16 +48,18 @@ const Profile = () => {
 
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
+  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [warningMessage, setWarningMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   
   // State for new login inputs ----------------------------------
   const [loginFormData, setloginFormData] = useState(user);
   // errors must not be initialized as there are no errors for a valid user Profile
-  const [loginFormErrors, setloginFormErrors] = useState({});
+  const [formErrors, setformErrors] = useState({});
   const [submitDisabled, setSubmitDisabled] = useState(true);
 
   // State for password change modal -------------------------------
@@ -74,10 +76,11 @@ const Profile = () => {
   
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    debugLog('user',user);
+    debugLog('user', user);
     setLoading(true);
     if (!mailservers || !mailservers.length) fetchMailservers();
     setloginFormData(user);
+    if (firstRun) setSuccessMessage('password.isFirstRun');
     setLoading(false);
     debugLog('loginFormData',loginFormData);
   }, [user]);
@@ -125,7 +128,7 @@ const Profile = () => {
   };
 
 
-  const handleLoginInputChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
     let jsonDict, inputValue;
@@ -144,15 +147,10 @@ const Profile = () => {
     setloginFormData(updatedFormData);
     debugLog('loginFormData:', updatedFormData);
 
-    setloginFormData({
-      ...loginFormData,
-      [name]: type === 'number' ? Number(value) : value
-    });
-
     // Clear the error for this field while typing // now done by validateloginForm
-    // if (loginFormErrors[name]) {
-    //   setloginFormErrors({
-    //     ...loginFormErrors,
+    // if (formErrors[name]) {
+    //   setformErrors({
+    //     ...formErrors,
     //     [name]: null,
     //   });
     // }
@@ -187,8 +185,8 @@ const Profile = () => {
       errors.email = 'logins.emailInvalid';
     }
 
-    setloginFormErrors(errors);
-    debugLog('ddebug setloginFormErrors errors:', errors)
+    setformErrors(errors);
+    debugLog('ddebug setformErrors errors:', errors)
     return errors;
   };
 
@@ -353,6 +351,7 @@ const Profile = () => {
       <h2 className="mb-4">{Translate('logins.profilePage')}</h2>
       
       <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="warning" message={warningMessage} />
       <AlertMessage type="success" message={successMessage} />
       
       <Form onSubmit={handleLoginSave} className="form-wrapper">
@@ -361,7 +360,7 @@ const Profile = () => {
           id="isAdmin"
           name="isAdmin"
           label="logins.isAdmin"
-          error={loginFormErrors.isAdmin}
+          error={formErrors.isAdmin}
           defaultChecked={loginFormData.isAdmin}
           disabled
         />
@@ -371,7 +370,7 @@ const Profile = () => {
           id="isAccount"
           name="isAccount"
           label="logins.isAccountChoice"
-          error={loginFormErrors.isAccount}
+          error={formErrors.isAccount}
           defaultChecked={loginFormData.isAccount && !loginFormData.isAdmin}
           disabled
         />
@@ -381,10 +380,10 @@ const Profile = () => {
           name="mailserver"
           label="logins.mailserver"
           value={loginFormData?.mailserver || mailservers[0]?.containerName || null}
-          onChange={handleLoginInputChange}
+          onChange={handleInputChange}
           options={mailservers}
           placeholder="logins.mailserverRequired"
-          error={loginFormErrors.mailserver}
+          error={formErrors.mailserver}
           helpText="logins.mailserverRequired"
           required
         />
@@ -396,9 +395,9 @@ const Profile = () => {
             name="mailbox"
             label="logins.mailbox"
             value={loginFormData.mailbox}
-            onChange={handleLoginInputChange}
+            onChange={handleInputChange}
             placeholder="user@domain.com"
-            error={loginFormErrors.mailbox}
+            error={formErrors.mailbox}
             helpText="logins.mailboxHelp"
             required
             disabled
@@ -438,9 +437,9 @@ const Profile = () => {
           name="username"
           label="logins.username"
           value={loginFormData.username}
-          onChange={handleLoginInputChange}
+          onChange={handleInputChange}
           placeholder="admin"
-          error={loginFormErrors.username}
+          error={formErrors.username}
           helpText="logins.usernameHelp"
           required
           disabled={!loginFormData.isAdmin}
@@ -452,9 +451,9 @@ const Profile = () => {
           name="email"
           label="logins.email"
           value={loginFormData.email}
-          onChange={handleLoginInputChange}
+          onChange={handleInputChange}
           placeholder="user@domain.com"
-          error={loginFormErrors.email}
+          error={formErrors.email}
           helpText="logins.emailHelp"
           required
         />
@@ -464,7 +463,7 @@ const Profile = () => {
           id="isActive"
           name="isActive"
           label="logins.isActive"
-          error={loginFormErrors.isActive}
+          error={formErrors.isActive}
           defaultChecked={loginFormData.isActive}
           disabled
         />

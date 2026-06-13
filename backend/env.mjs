@@ -14,8 +14,8 @@ export const env = {
   TZ: process.env.TZ || 'UTC',
 
   // internals of dms-gui
-  FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // for cors if you really are crazy with this sort of security
-  API_URL  : process.env.API_URL || '/api',               // for cors too
+  FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // security: cors
+  API_URL  : process.env.API_URL || '/api',               // security: cors
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
   DATABASE: ((process.env.isDEMO || '').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
   DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
@@ -27,6 +27,7 @@ export const env = {
   DKIM_KEYSIZES: ['1024','2048'],
   DKIM_KEYTYPE_DEFAULT: 'rsa',
   DKIM_KEYSIZE_DEFAULT: 2048,
+  DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'),  // hardcoded in DMS
 
   // variables we will capture from DMS 
   DMS_OPTIONS  : [
@@ -46,11 +47,16 @@ export const env = {
   // other DMS internals defaults
   DMS_SETUP_SCRIPT: ((process.env.DMS_SETUP_SCRIPT) ? process.env.DMS_SETUP_SCRIPT : '/usr/local/bin/setup'),
   DMS_CONFIG_PATH: ((process.env.DMS_CONFIG_PATH) ? process.env.DMS_CONFIG_PATH : '/tmp/docker-mailserver'),
-  DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'), // hardcoded in DMS
-  protocol: "http",
-  port: 8888,
-  timeout: 4,
-  containerName: "dms",
+  
+  // other defaults we read but overriden by the GUI
+  DMS_CONTAINER: ((process.env.DMS_CONTAINER) ? process.env.DMS_CONTAINER : 'dms'),                           // YOUR docker-mailserver container name
+  DMS_API_KEY: ((process.env.DMS_API_KEY) ? process.env.DMS_API_KEY : ''),                                    // should be generated in the GUI
+  
+  // other dms-gui Python API defaults
+  protocol: "http",                // why would an API inside a controlled internal network and set of containers that YOU control be anything else?
+  port: 8888,                      // default port for the dms-gui's Python API injected into mailserver
+  timeout: 4,                      // can be changed from the GUI and dynamically upgraded for specific commands like mailbox indexing or deletion
+  containerName: "dms",            // the official name is docker-mailserver, dms is shorter and nicer
 
   // JWT_SECRET and JWT_SECRET_REFRESH regenerated when container starts, and will invalidates all sessions
   JWT_SECRET: process.env.JWT_SECRET,
@@ -79,12 +85,12 @@ export const env = {
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),
 
   // enable a daily restart of the container with this simple trick: default is 11PM
-  //                                              ┌────────────── second (optional)
-  //                                              │ ┌──────────── minute
-  //                                              │ │ ┌────────── hour
-  //                                              │ │ │  ┌──────── day of month
-  //                                              │ │ │  │ ┌────── month
-  //                                              │ │ │  │ │ ┌──── day of week
+  //                                              ┌─────────────── second (optional)
+  //                                              │ ┌───────────── minute
+  //                                              │ │ ┌─────────── hour
+  //                                              │ │ │  ┌──────── day of month 1-31
+  //                                              │ │ │  │ ┌────── month        1-12
+  //                                              │ │ │  │ │ ┌──── day of week  1-7
   //                                              │ │ │  │ │ │
   //                                              │ │ │  │ │ │
   //                                              * * *  * * *
@@ -361,6 +367,9 @@ export const plugins =
       DKIM_ENABLED: 'true',
       DKIM_SELECTOR: 'dkim',
       DKIM_PATH: '/tmp/docker-mailserver/rspamd/dkim/rsa-2048-$selector-$domain.private.txt'
+    },
+    Poste: {
+      keys: {}
     },
   },
 

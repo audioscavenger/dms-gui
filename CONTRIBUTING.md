@@ -155,6 +155,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 ## history:
 
+* [ ] 1.5.99 - before releasing 1.6.0, it should be made clear how to modify compose of dms/dms-gui, the env files, and in which order
 * [ ] 1.5.99 - update demo database
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete login
@@ -171,9 +172,16 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 * [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
+* [ ] 1.5.99 - accounts: calls execSetup() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}
 
-* [ ] 1.5.48 - accounts: calls execSetup() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}
-* [ ] 1.5.48 - Profile: when login in with isFirstRun=true we should Alert "You should change your password"
+* [x] 1.5.48 - settings: rewrite yet again the initAPI mechanics
+* [x] 1.5.48 - FormContainerAdd: rewrite yet again the initAPI mechanics
+* [x] 1.5.48 - FormContainerAdd: test API button is the one that should send the uuid for testing, inject button should NOT save anything in the db at all
+* [x] 1.5.48 - FormContainerAdd: dynamic buttons enablement by passing form errors to the validation function like in Profile
+* [x] 1.5.48 - FormContainerAdd: when redirect to /settings with isFirstRun=true we should Alert "Please fill in the required fields: blah" -> firstRun is now useLocalStorage
+* [x] 1.5.48 - FormContainerAdd: move Alerts on top
+* [x] 1.5.48 - README: various updates throughout
+* [x] 1.5.48 - Profile: when redirect to /profile with isFirstRun=true we should Alert "You should change your password" -> firstRun is now useLocalStorage
 * [x] 1.5.47 - realization: the more I fix bugs the more I discover it's just the starting scope that was incomplete and lacked definitions.
 * [x] 1.5.47 - realization: Also I'm alone to do that and the task is humongous, AND not a single person can think of everything from the start.
 * [x] 1.5.47 - index.js: clear distinctions among 3 scenarios when updating a DMS account password

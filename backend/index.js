@@ -322,9 +322,10 @@ async (req, res) => {
     const { plugin, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const test = ('test' in req.query) ? req.query.test : null;
-    const { settings } = req.body;
+    // const { settings } = req.body;
 
-    const status = await getServerStatus(plugin, containerName, test, settings);
+    // const status = await getServerStatus(plugin, containerName, test, settings); // I think one one api like initAPI should be allowed to pass settings directly from the GUI
+    const status = await getServerStatus(plugin, containerName, test);
     res.json(status);
 
   } catch (error) {
@@ -1772,10 +1773,10 @@ async (req, res) => {
   try {
     const { plugin, schema, containerName } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
-    const { dms_api_key_param } = req.body;
+    const { action, dms_api_key_param } = req.body;
     
-    const dms_api_key_response = await initAPI(plugin, schema, containerName, dms_api_key_param);
-    res.json(dms_api_key_response);
+    const result = await initAPI(plugin, schema, containerName, action, dms_api_key_param);
+    res.json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);

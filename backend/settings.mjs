@@ -1229,80 +1229,53 @@ export const getDomains = async (containerName=null, name=null) => {
 
 
 // Creates API script and conf file for DMS
-// 1. if    dms_api_key_param, use it and replace value in db 
-// 2. if no dms_api_key_param, use what's in db
-// 3. if no dms_api_key_param and nothing in db, generate it
-// 4. if    dms_api_key_param == 'regen',  regenerate it and save in db
-// 4. if    dms_api_key_param == 'inject', only inject API files to DMS config folder
-// 5. always create script and conf file at the end
-export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, dms_api_key_param=null) => {
-  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, dms_api_key_param:${dms_api_key_param})`);
+// if    action == 'gen',  generate and return it
+// if    action == 'inject', inject API files to DMS config folder
+export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, action=null, formValues={}) => {
+  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, action:${action}, formValues:, formValues)`);
+  if (!action)              return {success: false, error: 'initAPI: action is required'};
   if (!containerName)       return {success: false, error: 'initAPI: containerName is required'};
   if (!schema)              return {success: false, error: 'initAPI: schema is required'};
   if (!plugin)              return {success: false, error: 'initAPI: plugin is required'};
 
   
-  let result, dms_api_key_db, dms_api_key_new;
+  let result;
   try {
-    
-    // inject API files and exit if inject is passed
-    debugLog(`Injecting API scripts to ${containerName}...`);
-    result = await createAPIfiles(schema);
-    if (dms_api_key_param == 'inject') return result;
-    
-    // get what key is in db if any
-    result = await getSetting(plugin, containerName, "DMS_API_KEY");
-    if (result.success) dms_api_key_db = result.message;
-    debugLog(`success: ${result.success}, dms_api_key_db: ${dms_api_key_db}, error:`, result?.error);
+    // action=gen: return uuid and exit; done at the GUI level now
+    switch (action) {
+    case 'gen':
+      const dms_api_key_param = crypto.randomUUID();
+      debugLog(`dms_api_key_param=gen`, dms_api_key_param);
+      result = {success: true, message: dms_api_key_param};
+      break;
 
-    // replace key when key is passed
-    if (dms_api_key_param) {
-
-      // regen is passed
-      if (dms_api_key_param == 'regen') {
-        dms_api_key_new = containerName + "-" + crypto.randomUUID();
-        debugLog(`dms_api_key_new=regen`, dms_api_key_new);
-
-      // inject API was passed
-      } else if (dms_api_key_param == 'inject') {
-        dms_api_key_new = dms_api_key_param;
-        debugLog(`dms_api_key_new=inject`);
-
-      // use key vparam passed
-      } else {
-        dms_api_key_new = dms_api_key_param;
-        debugLog(`dms_api_key_new=param`, dms_api_key_new);
-      }
-    }
-
-    // nothing passed
-    if (!dms_api_key_new) {
-
-      // but key exist in db
-      if (dms_api_key_db) {
-        dms_api_key_new = dms_api_key_db;
-        debugLog(`regen dms_api_key_new=dms_api_key_db`, dms_api_key_new);
-
-      // and key is not in db: generate
-      } else {
-        dms_api_key_new = containerName + "-" + crypto.randomUUID();
-        debugLog(`generate dms_api_key_new=`, dms_api_key_new);
-      }
-    }
-
-    // save key in db only if there is a config, do not try to save it during testing before a config exists
-    if (result.success && dms_api_key_new != dms_api_key_db && dms_api_key_param != 'inject') {
-      debugLog(`Saving DMS_API_KEY=`, dms_api_key_new);
-      
-      let jsonArrayOfObjects = [{name:'DMS_API_KEY', value:dms_api_key_new}];
-      result = await saveSettings(plugin, schema, scope, containerName, jsonArrayOfObjects);
+    case 'inject':
+      debugLog(`Injecting API scripts to ${containerName}...`);
+      result = await createAPIfiles(schema);
       if (!result.success) return result;
 
-    // } else return {success: true, message: dms_api_key_new}; // this is when we test the API only // stupid: how can we test the API without the injection?
-    }
-        
-    return {success: false, error: result?.error};
+        // // we need to save it in the db or the subsequent call to getServerStatus to validate it will fail
+        // debugLog(`Saving API DMS_API_KEY=`, dms_api_key_param);
+        // let jsonArrayOfObjects = [{name:'DMS_API_KEY', value:dms_api_key_param}];
+        // // saveSettings = async (plugin='mailserver', schema=null, scope=null, containerName=null, jsonArrayOfObjects=[], encrypted=false)
+        // result = await saveSettings(plugin, schema, 'dms-gui', containerName, jsonArrayOfObjects);
+      break;
 
+    case 'test':
+      if (Object.keys(formValues).length) {
+        debugLog(`Injecting API scripts to ${containerName}...`);
+        result = await createAPIfiles(schema);
+        if (!result.success) return result;
+
+        result = getServerStatus('mailserver', containerName, 'execSetup', formValues);
+
+      } else {
+        result = {success: false, message: 'Injection refused when dms_api_key_param is missing'};
+      }
+    }
+
+    return result;
+    
   } catch (error) {
     errorLog(error.message);
     throw new Error(error.message);
