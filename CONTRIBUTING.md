@@ -170,9 +170,10 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: delete a linked account should also delete the login: maybe not after all
 
-* [ ] 1.5.99 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
-* [ ] 1.5.99 - bugfix: Logins UI should reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable
+* [ ] 1.5.51 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
 
+* [x] 1.5.50 - feature: Logins page do reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable; that allows a linked mailbox to handle aliases of other mailboxes!
+* [x] 1.5.50 - bugfix: backend was missing getTargetDict
 * [x] 1.5.49 - index.js: security: does not spit 401 anymore for loginUser as we cannot hide them at all from the console
 * [x] 1.5.49 - Logins: we should hide the failed default login tentative from the console as it spits out an Axios 401 error
 * [x] 1.5.49 - backend: moved doveadm() to backend

@@ -15,6 +15,9 @@ import {
   regexPrintOnly
 } from '../common.mjs';
 import {
+  getTargetDict
+} from './db.mjs';
+import {
   env
 } from './env.mjs';
 
