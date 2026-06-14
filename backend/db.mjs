@@ -210,8 +210,8 @@ logins: {
   },
   
   insert: {
-    login:    `INSERT INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
-    fromDMS:  `--deprecated REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
+    login:    `INSERT INTO logins (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
+    fromDMSdeprecated:  `REPLACE INTO logins (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
   },
   
   update: {
@@ -1061,7 +1061,7 @@ export const verifyPassword = async (credential=null, password='', table='logins
 
 // Function to update a password in a table
 // for accounts: id=accounts.mailbox
-// for logins: id=logins.id
+// for logins: id=logins.key
 export const changePassword = async (table, id, password, scope) => {
   let result;
   infoLog(`Call to update password for account id=${id} in table=${table} for scope=${scope}...`);
@@ -1149,7 +1149,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
         
         // password has its own function
         // for accounts: id=accounts.mailbox
-        // for logins: id=logins.id
+        // for logins: id=logins.key
         if (key == 'password') {
           return changePassword(table, id, value, scope);
           
@@ -1484,12 +1484,12 @@ export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
 // sql = { logins: { update: { isAdmin: `UPDATE logins set isAdmin = @isAdmin WHERE username = ?`, } } }
 // dbRun(sql.logins.update.isAdmin, {isAdmin:value}, username) // works
 
-// dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@doctusit.com'},{username:'user2',mailbox:'admin@doctusit.com'}], containerName)
+// dbRun(`REPLACE INTO roles (username, mailbox, scope) VALUES (@username, @mailbox, ?)`, [{username:'user2',mailbox:'ops@domain.com'},{username:'user2',mailbox:'admin@domain.com'}], containerName)
 // DB.prepare(`SELECT username, mailbox from roles WHERE 1=1 AND scope = @scope`).all(containerName)
 
 // DB.prepare(`SELECT r.username, a.mailbox FROM accounts a LEFT JOIN roles r ON r.mailbox   = a.mailbox  WHERE 1=1 AND a.scope=r.scope AND a.scope = @scope`).all({scope:containerName})
-// { username: 'user2', mailbox: 'ops@doctusit.com' },
-// { username: 'user2', mailbox: 'admin@doctusit.com' }
+// { username: 'user2', mailbox: 'ops@domain.com' },
+// { username: 'user2', mailbox: 'admin@domain.com' }
 
 // DB.prepare(`SELECT l.username, r.mailbox FROM logins l   LEFT JOIN roles r ON r.username  = l.username WHERE 1=1 AND r.scope = @scope`).all({scope:containerName})
 

@@ -63,8 +63,8 @@ const Accounts = () => {
 
   const [accounts, setAccounts] = useLocalStorage("accounts", []);
   // [
-    // { mailbox: "eric@aaa.com", domain: "aaa.com", username: "eric@aaa.com", … }
-    // { mailbox: "admin@bbb.com", domain: "bbb.com", username: "admin@bbb.com", … }
+    // { domain: "aaa.com", mailbox: "eric@aaa.com", username: "eric@aaa.com", storage: { used: "565M", total: "5.2G", percent: "10" } }
+    // { domain: "bbb.com", mailbox: "admin@bbb.com", username: "admin@bbb.com", storage: { used: "0M", total: "5.2G", percent: "0" } }
 
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
@@ -101,17 +101,33 @@ const Accounts = () => {
 
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
-    fetchAccounts();
+    fetchAll();
   }, [mailservers, containerName]);
 
-  const fetchAccounts = async (refresh=false) => {
-    refresh = !user.isAdmin ? false : refresh;
-    
+  const fetchAll = async (refresh=false) => {
+
     try {
       setLoading(true);
       setErrorMessage(null);
       setSuccessMessage(null);
       
+      await Promise.all([
+        fetchAccounts(refresh),
+        fetchDOVECOT_FTS(),
+      ]);
+
+    } catch (error) {
+      // each fetch has its own error handling
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAccounts = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
+    
+    try {
       // const [accountsData, DOVECOT_FTSdata] = await Promise.all([
       //   getAccounts(containerName, refresh),
       //   getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS'),
@@ -121,21 +137,28 @@ const Accounts = () => {
         debugLog('ddebug accountsData', accountsData);
         setAccounts(accountsData.message);
 
-        const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
-        debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
-        if (DOVECOT_FTSdata?.success) {
-          setDOVECOT_FTS(DOVECOT_FTSdata.message);
-          
-        } else setErrorMessage(DOVECOT_FTSdata?.error);
-
       } else setErrorMessage(accountsData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
       setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
-      
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchDOVECOT_FTS = async (refresh=false) => {
+    refresh = !user.isAdmin ? false : refresh;
+    
+    try {
+      const DOVECOT_FTSdata = await getServerEnvs('mailserver', containerName, refresh, 'DOVECOT_FTS');
+      debugLog('ddebug DOVECOT_FTSdata', DOVECOT_FTSdata);
+      if (DOVECOT_FTSdata?.success) {
+        setDOVECOT_FTS(DOVECOT_FTSdata.message);
+        
+      } else setErrorMessage(DOVECOT_FTSdata?.error);
+
+    } catch (error) {
+      errorLog(t('api.errors.fetchServerEnvs'), error);
+      setErrorMessage(t('api.errors.fetchServerEnvs'), ": ", error);
     }
   };
 
@@ -201,7 +224,8 @@ const Accounts = () => {
           confirmPassword: '',
           createLogin: 1,
         });
-        fetchAccounts(true); // Refresh the accounts list
+
+        fetchAccounts(); // Refresh the accounts list fast, since getAccounts will do the work in the backend, we don't bother adding a manually crafted data line in current DataTable state
         setSuccessMessage('accounts.accountCreated');
         
       } else setErrorMessage(result?.error);
@@ -498,7 +522,7 @@ const Accounts = () => {
             variant="warning"
             size="sm"
             icon="arrow-repeat"
-            title={t('common.forceResync')}
+            title={t('accounts.forceResync')}
             onClick={() => handleDoveadm('forceResync', account.mailbox)}
             className="me-2"
           />

@@ -162,18 +162,34 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete mailserver
 
-* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.doctusit.com/api/loginUser because it violates the following directive: “connect-src 'none'”
+* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/loginUser because it violates the following directive: “connect-src 'none'”
+* [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
+* [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
+* [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
+
+* [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
+* [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
+* [ ] 1.5.99 - frontend: /dashboard first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
-* [ ] 1.5.99 - Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
-* [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
+* [ ] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
-* [ ] 1.5.55 - Accounts: recreate an account when the login for that mailbox still exist should not error out, should either do getLogin or kill the error
-* [ ] 1.5.55 - Accounts: delete a linked account should also delete the login: maybe not after all
-* [ ] 1.5.55 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins
-* [ ] 1.5.55 - bugfix: fetchAccounts(true) calls getAccounts and calls addLogin blindly and they all fail since they already exist, add getLogin first
-* [ ] 1.5.54 - bugfix: Accounts: handleSubmitNewAccount triggers fetchAccounts(true), why not just add it the UI table entry?
+* [ ] 1.5.99 - bugfix: Logins: deleteLogin should just remove the UI table entry
+* [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
+* [ ] 1.5.55 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
+* [ ] 1.5.55 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
+* [ ] 1.5.55 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
+* [ ] 1.5.55 - bugfix: Accounts create "Create a dms-gui login for that account?" cannot be unchecked
+* [x] 1.5.54 - backend: updated urls and description of each doveadm command
+* [x] 1.5.54 - accounts: addAccount check getLogin before doing addLogin
+* [x] 1.5.54 - Accounts: recreate an account when the login for that mailbox still exist should not error out, should either do getLogin or kill the error; backend does it
+* [x] 1.5.54 - Logins: refactored fetchAll
+* [x] 1.5.54 - Accounts: refactored fetchAll
+* [x] 1.5.54 - bugfix: Accounts: handleSubmitNewAccount triggers fetchAccounts(): we need a formated storage object and I want the getAccounts backend to do that; it's fast enough
+* [x] 1.5.54 - bugfix: getAccounts properly filters accounts by roles passed; not used by any function yet
+* [x] 1.5.54 - bugfix: fetchAccounts(true) calls getAccounts and calls addLogin blindly and they all fail since they already exist: getAccounts does getLogin first
+* [x] 1.5.54 - Settings: pulls everything when submitting new DMS: done, by redirecting to /dashboard + isFirstRun=true in 1.5.4x - can't remember
 * [x] 1.5.53 - common: reduxArrayOfObjByValue now takes invert=true to filter out the array
 * [x] 1.5.53 - bugfix: Accounts: deleteAccount triggers fetchAccounts(true), why not just remove the UI table entry? yes do that
 * [x] 1.5.52 - frontend api security: api.interceptors.request.use((config) => encode all urls because mailbox uas an @ so let's encode everything!

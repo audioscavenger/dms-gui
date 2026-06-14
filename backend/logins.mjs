@@ -40,9 +40,13 @@ import {
 
 
 // this returns an objects
+// credential can be:
+// guess=true:  string: mailbox or username
+// guess=false: int:    id
+// guess=false: obj:    {key: value} with key=any column in that table
 export const getLogin = async (credential, guess=false) => {
   
-  let login = {success:false, error: 'invalid credential: neither string nor object'};
+  let result = {success:false, error: 'invalid credential: neither string nor object'};
   try {
     
     // we expect either an object like {id:id}|{mailbox:mailbox}|{username:username}
@@ -51,26 +55,26 @@ export const getLogin = async (credential, guess=false) => {
       
       // loginGuess should only be used for login purposes, and takes a string
       if (guess) {
-        login = dbGet(sql.logins.select.loginGuess, {mailbox: credential, username: credential});
+        result = dbGet(sql.logins.select.loginGuess, {mailbox: credential, username: credential});
 
       } else {
-        login = dbGet(sql.logins.select.login, {[sql.logins.id]: credential});
+        result = dbGet(sql.logins.select.login, {[sql.logins.key]: credential});
       }
 
     } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
-      login = dbGet(sql.logins.select.loginObj.replace("{key}", Object.keys(credential)[0]), credential);
+      result = dbGet(sql.logins.select.loginObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
-    if (login?.success) {
+    if (result?.success) {
       
-      if (login.message && Object.keys(login.message).length) {
-        infoLog(`Found login ${credential}:`, {isAdmin:login.message.isAdmin, isActive:login.message.isActive, isAccount:login.message.isAccount, roles:login.message.roles});
+      if (result.message && Object.keys(result.message).length) {
+        infoLog(`Found login ${credential}:`, {isAdmin:result.message.isAdmin, isActive:result.message.isActive, isAccount:result.message.isAccount, roles:result.message.roles});
 
         // now JSON.parse roles as it's stored stringified in the db
-        login.message.roles = (login.message?.roles) ? JSON.parse(login.message.roles) : [];
-      } else login.success = false;
+        result.message.roles = (result.message?.roles) ? JSON.parse(result.message.roles) : [];
+      } else result.success = false;
       
     }
-    return login;
+    return result;
     
   } catch (error) {
     errorLog(error.message);
@@ -146,7 +150,7 @@ export const getRoles = async (credential=null) => {
     // we expect either an object {id:id} or {id:id}|{mailbox:mailbox}|{username:username}
     // or a string: mailbox == what's in the id keay of that table
     if (typeof credential == "string") {
-      roles = dbGet(sql.logins.select.roles, {[sql.logins.id]: credential});
+      roles = dbGet(sql.logins.select.roles, {[sql.logins.key]: credential});
     } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
       roles = dbGet(sql.logins.select.rolesObj.replace("{key}", Object.keys(credential)[0]), credential);
     }

@@ -48,7 +48,7 @@ import {
   hashPassword,
   sql
 } from './db.mjs';
-import { addLogin } from './logins.mjs';
+import { addLogin, getLogin } from './logins.mjs';
 import { getConfigs } from './settings.mjs';
 
 
@@ -59,6 +59,8 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
   
   let result, config;
   let accounts = [];
+  let password = '';
+
   try {
     
     // refresh
@@ -99,7 +101,7 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
           });
           debugLog('ddebug accounts2save', accounts2save);
 
-          // now save accounts in db
+          // now save/refresh ALL accounts in db since we cannot filter by mailbox, DMS always returns the full list. We just don't have a choice
           // fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
           result = dbRun(sql.accounts.insert.fromDMS, accounts2save, containerName);
           if (result.success) {
@@ -119,15 +121,24 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
             // fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
             // result = dbRun(sql.logins.insert.fromDMS, logins2create);
 
-            for (const account of accounts2save) {
-              result = await addLogin(account.mailbox, account.mailbox, '', account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
-              if (!result.success) errorLog('addLogin:', result?.error);
+            // reduce the list of accounts down to a shortlist when provided
+            if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
+
+            for (const account of accounts) {
+
+              result = await getLogin(account.mailbox, true); // search if login exist by mailbox
+              if (!result.success) {
+
+                result = await addLogin(account.mailbox, account.mailbox, password, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
+                if (!result.success) {
+                  errorLog('addLogin:', result?.error);
+                }
+
+              } else debugLog(`login with mailbox=${account.mailbox} already exist`);
             }
             
           } else errorLog('sql.accounts.insert.fromDMS:', result?.error);
           
-          if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
-
         } else errorLog('pullAccountsFromDMS:', result?.error);
 
       } else errorLog(`getConfigs: ${containerName} not found`);
@@ -145,11 +156,11 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
     result = dbAll(sql.accounts.select.accounts, {}, containerName);
     if (result.success) {
       
-      // we could read DB_Logins and it is valid
+      // we could read filtered accounts from accounts table
       if (result.message.length) {
         infoLog(`Found ${result.message.length} entries in accounts`);
         
-        // now JSON.parse storage as it's stored stringified in the db
+        // now JSON.parse storage for the UI as it's stored stringified in the db
         accounts = result.message.map(account => { return { 
           ...account, 
           storage: JSON.parse(account?.storage) 
@@ -158,10 +169,10 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
         
       } else warnLog(`db accounts seems empty:`, result.message);
 
-      if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
       return {success: true, message: accounts};
       // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
 
+    // unknown error
     } else errorLog(result?.error);
     
     return result;
@@ -203,11 +214,11 @@ export const pullAccountsFromDMS = async (containerName=null) => {
       // debugLog(`email list RAW response:`, lines);
 
       for (let i = 0; i < lines.length; i++) {
-        debugLog(`email list line RAW  :`, lines[i]);
+        // debugLog(`email list RAW line    :`, lines[i]);
         
         // Clean the line from binary control characters
         const line = lines[i].replace(emailLineValidChars, '').trim();
-        debugLog(`email list line CLEAN:`, line);
+        // debugLog(`email list CLEAN line  :`, line);
 
         // Check if line contains * which indicates an account entry
         if (line.includes('*')) {
@@ -280,17 +291,26 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
 
     if (!results?.returncode) {
       
-      const { salt, hash } = await hashPassword(password ?? '');
+      const { salt, hash } = await hashPassword(password);
       result = dbRun(sql.accounts.insert.fromGUI, { mailbox:mailbox, domain:mailbox.split('@')[1], salt:salt, hash:hash}, containerName);
       if (result.success) {
         successLog(`Account created: ${mailbox}`);
         
         if (createLogin) {
-          // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
-          result = await addLogin(mailbox, mailbox, password ?? '', mailbox, 0, 1, 1, containerName, [mailbox]);
-          if (result.success) {
-            successLog(`Login created: ${mailbox}`);
-          } // login created
+
+          result = await getLogin(mailbox, true); // search if login exist by mailbox
+          if (!result.success) {
+
+            // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
+            result = await addLogin(mailbox, mailbox, password, mailbox, 0, 1, 1, containerName, [mailbox]);
+            if (result.success) {
+              successLog(`addLogin created: ${mailbox}`);
+
+            } else {
+              errorLog(`addLogin error: ${mailbox}: ${result?.error}`);
+            } // login created
+
+          } else infoLog(`addLogin:${mailbox} already exist`);
         
         } // also create login
         

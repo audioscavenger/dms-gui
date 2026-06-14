@@ -127,7 +127,7 @@
     "manageDNS": "Manage DNS",
     "newAccount": "Add New Account",
     "noAccounts": "No mailbox found. Add your first account or force a refresh.",
-    "index": "Force reindex",
+    "index": "FTS re-index",
     "mailboxStatus": "Get mailbox status",
     "doveadmExecuted": "doveadm executed",
     "storage": "Storage Usage",
@@ -290,7 +290,7 @@
       "fetchconfigs": "Error fetching configs",
       "loginUser": "Error invalid password",
       "ping": "Error while reaching server",
-      "reindexAccount": "Error reindexing account",
+      "reindexAccount": "Error re-indexing account",
       "saveSettings": "Error saving settings",
       "updateDNS": "Error updating DNS records",
       "updateLogin": "Error updating login"

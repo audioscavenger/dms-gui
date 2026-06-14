@@ -191,21 +191,25 @@ function FormContainerAdd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////// stopped using async
 
 
-  const fetchAll = () => {
-    setLoading(true);
-    setErrorMessage(null);
-    setWarningMessage(null);
-    setSuccessMessage(null);
+  const fetchAll = async () => {
 
-    debugLog('FormContainerAdd 1 fetchAll');
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      setWarningMessage(null);
+      setSuccessMessage(null);
+      
+      // this normally is pulled after successful login, may also call initFormValues
+      if (!mailservers || !mailservers.length) await fetchMailservers();
+      // this preloads container settings
+      if (containerName) await fetchContainerSettings(containerName);
 
-    // this normally is pulled after successful login, may also call initFormValues
-    if (!mailservers || !mailservers.length) fetchMailservers();
-    // this preloads container settings
-    if (containerName) fetchContainerSettings(containerName);
+    } catch (error) {
+      // each fetch has its own error handling
 
-    setLoading(false);
-
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchMailservers = async () => {

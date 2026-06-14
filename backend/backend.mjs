@@ -106,8 +106,13 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
   const anonymizedJsonDict = (jsonDict?.password) ? {...jsonDict, password: '********'} : jsonDict;
   debugLog(`for ${containerName}: ${command} ${mailbox}`, anonymizedJsonDict);
 
+  // https://doc.dovecot.org/main/core/summaries/doveadm.html
+  // https://manpages.ubuntu.com/manpages/jammy/man1/doveadm-mailbox.1.html
   const doveadm = {
-    index: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#index
+    
+    // https://doc.dovecot.org/main/core/summaries/doveadm.html#index
+    // Index user mailbox folder or folders.
+    index: {
       mailbox: true,
       cmd: 'doveadm index -u {mailbox} -q \\*',
       defaults: {
@@ -119,19 +124,25 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
         pass: 'Reindexing started for {mailbox}',
       },
     },
-    indexerList: {    // https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list
+
+    // https://doc.dovecot.org/main/core/summaries/doveadm.html#indexer%20list
+    // List queued index requests.
+    indexerList: {
       mailbox: true,
-      cmd: 'doveadm index -u {mailbox} -q \\*',
+      cmd: 'doveadm index list {mailbox}',
       defaults: {
         none: null,
       },
       api: [["index", {"userMask": "{mailbox}"}, "dms-gui"]],
       stdout: true,
       messages: {
-        pass: 'Reindexing started for {mailbox}',
+        pass: 'Queued index requests for {mailbox}:',
       },
     },
-    list: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
+    
+    // https://doc.dovecot.org/main/core/summaries/doveadm.html#mailbox%20list
+    // Get list of existing mailboxes.
+    list: {
       mailbox: true,
       cmd: 'doveadm mailbox list -u {mailbox}',
       defaults: {
@@ -147,7 +158,11 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       // Sent
       // INBOX
     },
-    subscribed: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20list
+
+    // https://doc.dovecot.org/main/core/summaries/doveadm.html#mailbox%20list
+    // https://doc.dovecot.org/main/core/man/doveadm-mailbox.1.html#mailbox-list
+    // When the -s option is present, only subscribed mailboxes will be listed. Listed subscriptions may also contain mailboxes that are already deleted.
+    listSubscribed: {
       mailbox: true,
       cmd: 'doveadm mailbox list -u {mailbox} -s',
       defaults: {
@@ -162,7 +177,10 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       // Trash
       // Sent
     },
-    metaGet: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20metadata%20list https://manpages.ubuntu.com/manpages/jammy/man1/doveadm-mailbox.1.html
+    
+    // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20metadata%20list
+    // List metadata for a mailbox.
+    metaGet: {
       mailbox: true,
       cmd: 'doveadm mailbox metadata list -p -u {mailbox} {box}',
       defaults: {
@@ -170,13 +188,16 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       },
       stdout: true,
       messages: {
-        pass: 'Metadata list for {mailbox}/{box}:',
+        pass: 'Metadata for {mailbox}/{box}:',
       },
       // /private/specialuse
       // /shared/vendor/vendor.dovecot/pvt/server/admin
       // /shared/vendor/vendor.dovecot/pvt/server/comment
     },
-    mailboxStatus: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+
+    // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+    // Show status of mailboxes.
+    mailboxStatus: {
       mailbox: true,
       cmd: 'doveadm mailbox status -u {mailbox} {field} {box}',
       api: [["mailboxStatus", {"field": ["{field}"], "user": "{mailbox}", "mailboxMask": ["{box}"]}, "dms-gui"]],
@@ -190,7 +211,11 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       },
       // INBOX messages=5119 recent=0 uidnext=5125 uidvalidity=1759246520 unseen=703 highestmodseq=356 vsize=459768297 guid=68e18d2db8f8db68550f00008e1fe135 firstsaved=1759247564
     },
-    forceResync: {   // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#mailbox%20status
+    
+    // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#force%20resync
+    // Under certain circumstances Dovecot may be unable to automatically solve problems with mailboxes. 
+    // In such situations the force-resync command may be helpful. It tries to fix all problems. 
+    forceResync: {
       mailbox: true,
       cmd: 'doveadm force-resync -u {mailbox} --mailbox-mask {box}',
       api: [["forceResync", {"allUsers": false, "user": "{mailbox}", "mailboxMask": "{box}"}, "dms-gui"]],
@@ -204,7 +229,11 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
       // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_6076763531fadb68571400008e1fe135_exp.db
       // doveadm(user@domain.com): Info: FTS Xapian: Optimize (1) : Checking expunges from db_e170c41cf00be3687d3400008e1fe135_exp.db
     },
-    loginUser: {  // doveadm auth test ${login.message.mailbox} '${password}'
+
+    // https://doc.dovecot.org/2.4.1/core/summaries/doveadm.html#auth%20test
+    // Test authentication for a user.
+    // doveadm auth test ${login.message.mailbox} '${password}'
+    loginUser: {
       mailbox: true,
       cmd: `doveadm auth test {mailbox} '{password}'`,
       api: [["auth", {"user": "{mailbox}", "password": "{password}"}, "dms-gui"]],    // TODO: TBD, I did not bother to check

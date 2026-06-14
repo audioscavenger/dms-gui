@@ -172,7 +172,7 @@ export const reduxArrayOfObjByValue = (array=[], key, values2Keep=[], invert = f
     const hasMatch = values2Keep.includes(item[key]);
     
     // If invert is true, invert the match behavior (remove matching items)
-    return inverse ? !hasMatch : hasMatch;
+    return invert ? !hasMatch : hasMatch;
   });
   
 };
