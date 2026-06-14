@@ -57,6 +57,33 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+
+// Safely encode all urls
+api.interceptors.request.use((config) => {
+  if (config.url) {
+    // 1. Split the URL path from any trailing query strings (?page=1)
+    const [path, queryString] = config.url.split('?');
+    
+    // 2. Split path by slashes, encode individual segments, and rejoin them
+    const encodedPath = path
+      .split('/')
+      .map(segment => {
+        // Skip encoding if the segment is already encoded or empty
+        if (!segment || segment.includes('%')) return segment;
+        return encodeURIComponent(segment);
+      })
+      .join('/');
+      
+    // 3. Reconstruct the full URL
+    config.url = queryString ? `${encodedPath}?${queryString}` : encodedPath;
+  }
+  return config;
+
+}, (error) => {
+  return Promise.reject(error);
+});
+
+
 // Response interceptor with automatic token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -387,9 +414,11 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
 export const deleteAccount = async (schema, containerName, mailbox) => {
   if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
-  
+  if (!mailbox) return {success: false, error: 'mailbox is required'};
+
   return await cacheWrap(async () => {
-    const response = await api.delete(`/accounts/${schema}/${containerName}/${mailbox}`);
+    // Encodes special characters like '@' and '.': done by the Axios interceptor but I leave encodeURIComponent here as a reminder
+    const response = await api.delete(`/accounts/${schema}/${containerName}/${encodeURIComponent(mailbox)}`);
     return response.data;
   });
 };

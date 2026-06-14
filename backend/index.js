@@ -646,19 +646,15 @@ async (req, res) => {
  *       500:
  *         description: Unable to delete account
  */
-app.delete('/api/accounts/:containerName/:mailbox', 
+app.delete('/api/accounts/:schema/:containerName/:mailbox', 
   authenticateToken, 
   requireActive, 
   requireAdmin, 
 async (req, res) => {
   try {
-    const { schema, containerName } = req.params;
-    if (!containerName) return res.status(400).json({ error: 'containerName is required' });
+    const { schema, containerName, mailbox } = req.params;
+    if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
-    const { mailbox } = req.params;
-    if (!mailbox) {
-      return res.status(400).json({ error: 'Mailbox is required' });
-    }
     const result = await deleteAccount(schema, containerName, mailbox);
     res.json(result);
     

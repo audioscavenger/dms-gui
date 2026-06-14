@@ -168,8 +168,14 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Settings: pulls everything when submitting new DMS, with progress bars
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
-* [ ] 1.5.99 - Accounts: delete a linked account should also delete the login: maybe not after all
 
+* [ ] 1.5.53 - Accounts: delete a linked account should also delete the login: maybe not after all
+* [ ] 1.5.53 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins
+* [ ] 1.5.53 - bugfix: fetchAccounts(true) calls getAccounts and calls addLogin blindly and they all fail since they already exist, add getLogin first
+* [ ] 1.5.53 - bugfix: Accounts: deleteAccount triggers fetchAccounts(true), why not just remove the UI table entry?
+* [x] 1.5.52 - frontend api security: api.interceptors.request.use((config) => encode all urls because mailbox uas an @ so let's encode everything!
+* [x] 1.5.52 - bugfix: index.js: app.delete('/api/accounts/:schema/containerName/:mailbox' was missing schema and a colon
+* [x] 1.5.52 - Accounts: DELETE https://dms.domain.com/api/accounts/dms/dms/test@xyz.com 404: must encode mailbox; Express automatically decodes URL parameters
 * [x] 1.5.51 - Logins: following this logic, we filter out the mailboxes from the dropdown that are already linked when isAccount checkbox is true
 * [x] 1.5.51 - bugfix: Logins: what happens when you create a linked mailbox user while another one exist for the same mailbox? UNIQUE constraint failed: logins.whatever constraint
 * [x] 1.5.50 - tested: a linked mailbox can indeed edit other mailboxes's aliases when they have the roles
