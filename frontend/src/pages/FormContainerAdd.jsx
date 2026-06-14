@@ -356,7 +356,7 @@ function FormContainerAdd() {
       try {
       
         // the backend does not have this new dms in db yet, so we must send also the formValues to help getTargetDict
-        // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(formValues, 'containerName'), 'execSetup', formValues);
+        // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(formValues, 'containerName'), 'execDMS', formValues);
         
         // initAPI will call getServerStatus by itself internally instead of passing formValue directly to the getServerStatus api, only admins can do that now
         const result = await initAPI('mailserver', getValueFromArrayOfObj(formValues, 'schema'), getValueFromArrayOfObj(formValues, 'containerName'), 'test', formValues);

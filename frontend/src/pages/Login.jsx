@@ -61,7 +61,7 @@ export const Login = () => {
 
   const { user, login, logout } = useAuth();
   
-  const [containerName, setContainerName] = useLocalStorage("containerName", '');
+  // const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
   
   // https://www.w3schools.com/react/react_useeffect.asp
@@ -72,7 +72,7 @@ export const Login = () => {
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
 
-    // since we are redirected here from the api when dms-gui has restarted with fresh secret keys, we need to logout first
+    // /login will act as /logout
     if (user) logout();
 
     setFirstRun(false);

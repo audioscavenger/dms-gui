@@ -326,13 +326,20 @@ export const deleteLogin = async id => {
   });
 };
 
-export const loginUser = async (credential, password, test=false) => {
+export const loginUser = async (credential, password, test = false) => {
   if (!credential) return false;
   if (!password) return false;
   
   return await cacheWrap(async () => {
-    const response = await api.post(`/loginUser`, { credential, password, test });
-    return response.data;
+    // try is needed ty catch the Axios 401 from popping out in the console when /login tries the default user/pass
+    try {
+      const response = await api.post(`/loginUser`, { credential, password, test });
+      return response.data;
+
+    } catch (error) {
+      // Return a clean structure so the frontend knows it failed without crashing
+      return { success: false, error: error.response?.data || error.message };
+    }
   });
 };
 

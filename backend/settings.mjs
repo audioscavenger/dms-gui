@@ -17,7 +17,7 @@ import {
   debugLog,
   errorLog,
   execCommand,
-  execSetup,
+  execDMS,
   infoLog,
   ping,
   successLog,
@@ -237,7 +237,7 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
 };
 
 
-// Function to get server status from DMS, you can add some extra test like ping or execSetup
+// Function to get server status from DMS, you can add some extra test like ping or execDMS
 export const getServerStatus = async (plugin='mailserver', containerName=null, test=undefined, settings=[]) => {
   debugLog(plugin, containerName, test, settings);
   if (!containerName)             return {success: false, error: 'getServerStatus: containerName is required'};
@@ -294,7 +294,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
       // debugLog('ddebug targetDict', targetDict);
       if (targetDict?.Authorization) {
 
-        results = await execSetup('help', targetDict);
+        results = await execDMS('help', targetDict);
         if (!results?.returncode) {
           status.status.status = "running";
 
@@ -322,7 +322,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
           return {success: true, message: status};
         }
 
-        if (test == 'execSetup') {
+        if (test == 'execDMS') {
           return {success: !results?.returncode, message: status, returncode: results?.returncode};
         }
 
@@ -1267,7 +1267,7 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
         result = await createAPIfiles(schema);
         if (!result.success) return result;
 
-        result = getServerStatus('mailserver', containerName, 'execSetup', formValues);
+        result = getServerStatus('mailserver', containerName, 'execDMS', formValues);
 
       } else {
         result = {success: false, message: 'Injection refused when dms_api_key_param is missing'};
@@ -1275,7 +1275,7 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
     }
 
     return result;
-    
+
   } catch (error) {
     errorLog(error.message);
     throw new Error(error.message);

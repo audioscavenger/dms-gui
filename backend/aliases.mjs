@@ -7,7 +7,7 @@ import {
   debugLog,
   errorLog,
   execCommand,
-  execSetup,
+  execDMS,
   formatDMSError,
   infoLog,
   successLog,
@@ -125,8 +125,8 @@ export const pullAliasesFromDMS = async (containerName=null) => {
   try {
     const targetDict = getTargetDict('mailserver', containerName);
 
-    debugLog(`execSetup(${command})`);
-    const results = await execSetup(command, targetDict);
+    debugLog(`execDMS(${command})`);
+    const results = await execDMS(command, targetDict);
     // debugLog('ddebug results',results)
     
     if (!results?.returncode) {
@@ -134,7 +134,7 @@ export const pullAliasesFromDMS = async (containerName=null) => {
       infoLog(`Found ${aliases.length} aliases`);
       
     } else {
-      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      let ErrorMsg = await formatDMSError('execDMS', results.stderr);
       errorLog(ErrorMsg);
       return { success: false, error:ErrorMsg, returncode: results?.returncode };
     }
@@ -193,7 +193,7 @@ export const pullPostfixRegexFromDMS = async (containerName=null) => {
   try {
     const targetDict = getTargetDict('mailserver', containerName);
 
-    debugLog(`execSetup(${command})`);
+    debugLog(`execDMS(${command})`);
     const results = await execCommand(command, targetDict);
     if (!results?.returncode) {
       
@@ -201,7 +201,7 @@ export const pullPostfixRegexFromDMS = async (containerName=null) => {
       infoLog(`Found ${regexes.length} regexes`);
     
     } else {
-      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      let ErrorMsg = await formatDMSError('execDMS', results.stderr);
       errorLog(ErrorMsg);
       return { success: false, error: ErrorMsg, returncode: results?.returncode };
     }
@@ -258,7 +258,7 @@ export const addAlias = async (containerName=null, source=null, destination=null
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
     
-      results = await execSetup(`alias add ${source} ${destination}`, targetDict);
+      results = await execDMS(`alias add ${source} ${destination}`, targetDict);
       if (!results?.returncode) {
         
         result = dbRun(sql.aliases.insert.alias, {source:source, destination:destination, regex:0}, containerName);
@@ -270,7 +270,7 @@ export const addAlias = async (containerName=null, source=null, destination=null
         return result;
         
       }
-      let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+      let ErrorMsg = await formatDMSError('execDMS', results.stderr);
       errorLog(ErrorMsg);
       return { success: false, error: ErrorMsg, returncode: results?.returncode };
       
@@ -329,7 +329,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
     if (source.match(regexEmailStrict)) {
       debugLog(`Deleting alias: ${source} -> ${destination}`);
       
-      results = await execSetup(`alias del ${source} ${destination}`, targetDict);
+      results = await execDMS(`alias del ${source} ${destination}`, targetDict);
       debugLog(`------------------------------- Alias deleted results:`, results);
       if (!results?.returncode) {
         result = deleteEntry('aliases', source, 'bySource', containerName);
@@ -341,7 +341,7 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
         return result;
         
       } else {
-        let ErrorMsg = await formatDMSError('execSetup', results.stderr);
+        let ErrorMsg = await formatDMSError('execDMS', results.stderr);
         errorLog(ErrorMsg);
         return { success: false, error: ErrorMsg, returncode: results?.returncode };
       }

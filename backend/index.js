@@ -3,6 +3,7 @@ import {
 } from '../common.mjs';
 import {
   debugLog,
+  doveadm,
   errorLog,
   infoLog,
   successLog
@@ -43,7 +44,6 @@ import {
 import {
   addAccount,
   deleteAccount,
-  doveadm,
   getAccounts,
 } from './accounts.mjs';
 
@@ -1496,7 +1496,8 @@ app.post('/api/loginUser', async (req, res, next) => {
       }
 
     } else {
-      res.status(401).json(user);   // TODO: do we really want to inform the frontend with exact error?
+      // res.status(401).json(user);   // this 401 error cannot be hidden from the browser when /login does the default user/pass test
+      res.json(user);
     }
 
   } catch (error) {

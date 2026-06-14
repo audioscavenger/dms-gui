@@ -21,10 +21,8 @@
 //   moveKeyToLast,
 // } from '../common.mjs'
 import {
-  doveadm,
-} from './accounts.mjs';
-import {
   debugLog,
+  doveadm,
   errorLog,
   infoLog,
   successLog,
