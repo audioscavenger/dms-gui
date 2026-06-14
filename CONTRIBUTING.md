@@ -169,10 +169,13 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 
-* [ ] 1.5.53 - Accounts: delete a linked account should also delete the login: maybe not after all
-* [ ] 1.5.53 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins
-* [ ] 1.5.53 - bugfix: fetchAccounts(true) calls getAccounts and calls addLogin blindly and they all fail since they already exist, add getLogin first
-* [ ] 1.5.53 - bugfix: Accounts: deleteAccount triggers fetchAccounts(true), why not just remove the UI table entry?
+* [ ] 1.5.55 - Accounts: recreate an account when the login for that mailbox still exist should not error out, should either do getLogin or kill the error
+* [ ] 1.5.55 - Accounts: delete a linked account should also delete the login: maybe not after all
+* [ ] 1.5.55 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins
+* [ ] 1.5.55 - bugfix: fetchAccounts(true) calls getAccounts and calls addLogin blindly and they all fail since they already exist, add getLogin first
+* [ ] 1.5.54 - bugfix: Accounts: handleSubmitNewAccount triggers fetchAccounts(true), why not just add it the UI table entry?
+* [x] 1.5.53 - common: reduxArrayOfObjByValue now takes invert=true to filter out the array
+* [x] 1.5.53 - bugfix: Accounts: deleteAccount triggers fetchAccounts(true), why not just remove the UI table entry? yes do that
 * [x] 1.5.52 - frontend api security: api.interceptors.request.use((config) => encode all urls because mailbox uas an @ so let's encode everything!
 * [x] 1.5.52 - bugfix: index.js: app.delete('/api/accounts/:schema/containerName/:mailbox' was missing schema and a colon
 * [x] 1.5.52 - Accounts: DELETE https://dms.domain.com/api/accounts/dms/dms/test@xyz.com 404: must encode mailbox; Express automatically decodes URL parameters

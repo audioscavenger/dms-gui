@@ -148,8 +148,7 @@ export const reduxArrayOfObjByKey = (array=[], keys2Keep=[]) => {
   return redux(array);
 };
 
-export const reduxArrayOfObjByValue = (array=[], key, values2Keep=[]) => {
-// this will reduce:
+// reduxArrayOfObjByValue will reduce (or filter out) Object entries by the value of a key:
   // data = [
   // {name: 'John', city: 'London', age: 42},
   // {name: 'Mike', city: 'Warsaw', age: 18},
@@ -161,10 +160,20 @@ export const reduxArrayOfObjByValue = (array=[], key, values2Keep=[]) => {
   // data = [
   // {name: 'John', city: 'London', age: 42},
   // ]
+export const reduxArrayOfObjByValue = (array=[], key, values2Keep=[], invert = false) => {
 
   if (!array.length) return [];
-  if (typeof values2Keep == "string") values2Keep = [values2Keep];
-  return array.filter(item => values2Keep.includes(item[key]));
+  // Normalize string inputs to an array
+  // if (typeof values2Keep == "string") values2Keep = [values2Keep];
+  values2Keep = typeof values2Keep === "string" ? [values2Keep] : values2Keep;
+
+  // return array.filter(item => values2Keep.includes(item[key]));
+  return array.filter(item => {
+    const hasMatch = values2Keep.includes(item[key]);
+    
+    // If invert is true, invert the match behavior (remove matching items)
+    return inverse ? !hasMatch : hasMatch;
+  });
   
 };
 

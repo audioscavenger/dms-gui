@@ -17,7 +17,7 @@ import {
 //   arrayOfStringToDict,
 //   obj2ArrayOfObj,
 //   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
+  reduxArrayOfObjByValue,
 //   reduxPropertiesOfObj,
 //   mergeArrayOfObj,
   getValueFromArrayOfObj,
@@ -62,6 +62,10 @@ const Accounts = () => {
   const [mailservers] = useLocalStorage("mailservers", []);
 
   const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  // [
+    // { mailbox: "eric@aaa.com", domain: "aaa.com", username: "eric@aaa.com", … }
+    // { mailbox: "admin@bbb.com", domain: "bbb.com", username: "admin@bbb.com", … }
+
   const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
 
   // Common states -------------------------------------------------
@@ -214,7 +218,8 @@ const Accounts = () => {
       try {
         const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, mailbox);
         if (result.success) {
-          fetchAccounts(true); // Refresh the accounts list
+          // fetchAccounts(true); // Refresh the accounts list
+          setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', mailbox, true));  // filter out the mailbox and the table will refresh itself
           setSuccessMessage('accounts.accountDeleted');
           
         } else setErrorMessage(result?.error);
