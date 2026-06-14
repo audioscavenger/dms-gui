@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
@@ -137,6 +137,14 @@ const Logins = () => {
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
 
+  // filter out the mailbox dropdown entries that are already used in logins
+  const filteredAccountOptions = useMemo(() => {
+    return accountOptions.filter(option => 
+      !logins.some(login => login.mailbox === option.value)
+    );
+  }, [logins, accountOptions]);
+
+
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
@@ -196,7 +204,6 @@ const Logins = () => {
     // debugLog('ddebug containerName', containerName);
 
     try {
-      // debugLog('ddebug containerName',containerName)
       const [accountsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         // getAccounts(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName),
         getAccounts(containerName),
@@ -204,7 +211,15 @@ const Logins = () => {
         debugLog('accountsData',accountsData)
 
       if (accountsData?.success) {
-        // Prepare account options for the select field
+        debugLog('ddebug accountsData', accountsData);
+        // { success: true,
+        //   message: [
+        //     { mailbox: "admin@aaa.com", domain: "aaa.com", username: "admin@aaa.com", storage: {} },
+        //     { mailbox: "chloe@bbb.com", domain: "bbb.com", username: "chloe@bbb.com", storage: {} },
+        //   ]
+        // }
+
+        // Prepare all account options for the select field; this will be trimmed down by fetchAll
         setAccountOptions(accountsData.message.map((account) => ({
           value: account.mailbox,
           label: account.mailbox,
@@ -233,6 +248,14 @@ const Logins = () => {
 
       if (loginsData?.success) {
         debugLog('loginsData', loginsData);
+        // { success: true, 
+        //   message: [
+        //     { id: 1, username: "admin", mailbox: "admin@dms-gui.com", email: "admin@dms-gui.com", isAccount: 0, isActive: 1, isAdmin: 1, mailserver: "dms", roles: Array [] },
+        //     { id: 2, username: "test", mailbox: "test@aaa.com", email: "test@xyz.com", isAccount: 0, isActive: 1, isAdmin: 1, mailserver: "dms", roles: Array [] },
+        //   ]
+        // }
+
+
         let loginsDataAltered = await formatLoginsForTable(loginsData.message, currentEditedData);
         debugLog('loginsDataAltered', loginsDataAltered);
         setLogins(loginsDataAltered);
@@ -978,11 +1001,11 @@ const Logins = () => {
           id="mailbox"
           name="mailbox"
           label="accounts.mailbox"
-          value={pluck(accountOptions, 'value').includes(newLoginformData.mailbox) ? newLoginformData.mailbox : ""}
+          value={pluck(filteredAccountOptions, 'value').includes(newLoginformData.mailbox) ? newLoginformData.mailbox : ""}
           onChange={handleNewLoginInputChange}
-          options={accountOptions}
+          options={filteredAccountOptions}
           placeholder="accounts.mailboxRequired"
-          error={newLoginFormErrors.mailbox}
+          error={(filteredAccountOptions.length) ? newLoginFormErrors.mailbox : t('logins.mailboxNothingToPick')}
           helpText="accounts.mailboxHelp"
           required
         />

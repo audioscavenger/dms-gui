@@ -64,6 +64,7 @@
     "emailInvalid": "Email format is invalid",
     "mailbox": "Mailbox",
     "mailboxRequired": "Mailbox is required",
+    "mailboxNothingToPick": "All mailboxes are already linked!",
     "mailboxInvalid": "Mailbox format is invalid",
     "mailboxHelp": "Actual mailbox or simply a secondary login",
     "emailHelp": "External email Address for password recovery",

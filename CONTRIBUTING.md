@@ -170,8 +170,9 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: delete a linked account should also delete the login: maybe not after all
 
-* [ ] 1.5.51 - bugfix: Logins: what happens when you create a linked user while another one exist for the same mailbox? Afraid to try
-
+* [x] 1.5.51 - Logins: following this logic, we filter out the mailboxes from the dropdown that are already linked when isAccount checkbox is true
+* [x] 1.5.51 - bugfix: Logins: what happens when you create a linked mailbox user while another one exist for the same mailbox? UNIQUE constraint failed: logins.whatever constraint
+* [x] 1.5.50 - tested: a linked mailbox can indeed edit other mailboxes's aliases when they have the roles
 * [x] 1.5.50 - feature: Logins page do reset the roles to only the user's mailbox when re-linking the mailbox in the DataTable; that allows a linked mailbox to handle aliases of other mailboxes!
 * [x] 1.5.50 - bugfix: backend was missing getTargetDict
 * [x] 1.5.49 - index.js: security: does not spit 401 anymore for loginUser as we cannot hide them at all from the console
@@ -181,7 +182,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.48 - settings: rewrite yet again the initAPI mechanics
 * [x] 1.5.48 - FormContainerAdd: rewrite yet again the initAPI mechanics
 * [x] 1.5.48 - FormContainerAdd: test API button is the one that should send the uuid for testing, inject button should NOT save anything in the db at all
-* [x] 1.5.48 - FormContainerAdd: dynamic buttons enablement by passing form errors to the validation function like in Profile
+* [x] 1.5.48 - FormContainerAdd: dynamic buttons enablement by passing form errors to the validation function like in Profile and Logins
 * [x] 1.5.48 - FormContainerAdd: when redirect to /settings with isFirstRun=true we should Alert "Please fill in the required fields: blah" -> firstRun is now useLocalStorage
 * [x] 1.5.48 - FormContainerAdd: move Alerts on top
 * [x] 1.5.48 - README: various updates throughout
