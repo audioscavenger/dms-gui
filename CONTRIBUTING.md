@@ -177,10 +177,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] 1.5.99 - bugfix: Logins: deleteLogin should just remove the UI table entry
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
-* [ ] 1.5.55 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
-* [ ] 1.5.55 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
-* [ ] 1.5.55 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
-* [ ] 1.5.55 - bugfix: Accounts create "Create a dms-gui login for that account?" cannot be unchecked
+* [ ] 1.5.56 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
+* [ ] 1.5.56 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
+* [ ] 1.5.56 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
+* [x] 1.5.55 - Accounts: delete mailbox has a scary Modal
+* [x] 1.5.55 - bugfix: Accounts create "Create a dms-gui login for that account?" cannot be unchecked
 * [x] 1.5.54 - backend: updated urls and description of each doveadm command
 * [x] 1.5.54 - accounts: addAccount check getLogin before doing addLogin
 * [x] 1.5.54 - Accounts: recreate an account when the login for that mailbox still exist should not error out, should either do getLogin or kill the error; backend does it

@@ -72,8 +72,9 @@ const Accounts = () => {
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  
-  // State for new account inputs ----------------------------------
+  const [selectedAccount, setSelectedAccount] = useState(null);
+
+  // State for new new account inputs ------------------------------
   const [newAccountformData, setNewAccountFormData] = useState({
     mailbox: '',
     password: '',
@@ -81,9 +82,9 @@ const Accounts = () => {
     createLogin: 1,
   });
   const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
   // State for password change modal -------------------------------
-  const [selectedAccount, setSelectedAccount] = useState(null);
   const passwordFormRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordFormData, setPasswordFormData] = useState({
@@ -163,10 +164,17 @@ const Accounts = () => {
   };
 
   const handleNewAccountInputChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target; // Destructure 'checked'
+    
+    let inputValue;
+    if (type === 'checkbox') {
+      inputValue = checked ? 1 : 0; // Assign 1 or 0 based on checked state
+    } else {
+      inputValue = type === 'number' ? Number(value) : value;
+    }
     setNewAccountFormData({
       ...newAccountformData,
-      [name]: type === 'number' ? Number(value) : value,
+      [name]: inputValue,
     });
 
     // Clear the error for this field while typing
@@ -236,24 +244,58 @@ const Accounts = () => {
     }
   };
 
-  const handleDelete = async (mailbox) => {
-    setErrorMessage(null);
-    if (window.confirm(t('accounts.confirmDelete', { mailbox:mailbox }))) {
-      try {
-        const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, mailbox);
-        if (result.success) {
-          // fetchAccounts(true); // Refresh the accounts list
-          setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', mailbox, true));  // filter out the mailbox and the table will refresh itself
-          setSuccessMessage('accounts.accountDeleted');
+  const handleConfirmDeleteAccount = async (account) => {
+
+    // if (window.confirm(t('accounts.confirmDelete', { mailbox:account.mailbox }))) {
+    //   try {
+    //     const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, account.mailbox);
+    //     if (result.success) {
+    //       // fetchAccounts(true); // Refresh the accounts list
+    //       setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', account.mailbox, true));  // filter out the mailbox and the table will refresh itself
+    //       setSuccessMessage('accounts.accountDeleted');
           
-        } else setErrorMessage(result?.error);
+    //     } else setErrorMessage(result?.error);
         
-      } catch (error) {
-        errorLog(t('api.errors.deleteAccount'), error.message);
-        setErrorMessage('api.errors.deleteAccount', error.message);
+    //   } catch (error) {
+    //     errorLog(t('api.errors.deleteAccount'), error.message);
+    //     setErrorMessage('api.errors.deleteAccount', error.message);
+    //   }
+
+    // }
+
+    setSelectedAccount(account);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Handles the actual deletion after confirmation from the modal
+  const handleDeleteAccountModal = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, selectedAccount.mailbox);
+      if (result.success) {
+        setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', selectedAccount.mailbox, true));
+        setSuccessMessage('accounts.accountDeleted');
+        
+      } else {
+        setErrorMessage(result?.error);
       }
+    } catch (error) {
+      errorLog(t('api.errors.deleteAccount'), error.message);
+      setErrorMessage('api.errors.deleteAccount', error.message);
+
+    } finally {
+      handleCloseDeleteConfirmModal();
     }
   };
+
+  // Closes the delete confirmation modal
+  const handleCloseDeleteConfirmModal = () => {
+    setShowDeleteConfirmModal(false);
+    setSelectedAccount(null);
+  };
+
 
   const handleDoveadm = async (command, mailbox) => {
     setErrorMessage(null);
@@ -283,7 +325,6 @@ const Accounts = () => {
       newPassword: '',
       confirmPassword: '',
     });
-    setPasswordFormErrors({});
     setShowPasswordModal(true);
   };
 
@@ -359,7 +400,7 @@ const Accounts = () => {
     }
 
     handleClosePasswordModal(); // Close the modal
-};
+  };
   
   
   
@@ -431,7 +472,7 @@ const Accounts = () => {
 
   if (isLoading) {
     return <LoadingSpinner />;
-  }
+  };
   
   // Column definitions for existing accounts table
   const columns = [
@@ -504,7 +545,7 @@ const Accounts = () => {
               size="sm"
               icon="trash"
               title={t('accounts.confirmDelete', { mailbox: account.mailbox })}
-              onClick={() => handleDelete(account.mailbox)}
+              onClick={() => handleConfirmDeleteAccount(account)}
               className="me-2"
             />
           }
@@ -629,43 +670,40 @@ const Accounts = () => {
       <Accordion tabs={accountTabs}>
       </Accordion>
 
-      {/* Password Change Modal using react-bootstrap */}
+      {/* Password Change Modal */}
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
+            {/* selectedAccount is null by default, must use ? */}
             {Translate('password.changePassword')} - {selectedAccount?.mailbox}{' '}
-            {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedAccount && ( // Ensure selectedAccount exists before rendering form
-            <form onSubmit={handleSubmitPasswordChange} ref={passwordFormRef}>
-              <FormField
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                label="password.newPassword"
-                value={passwordFormData.newPassword}
-                onChange={handlePasswordInputChange}
-                error={passwordFormErrors.newPassword}
-                required
-              />
+          <form onSubmit={handleSubmitPasswordChange} ref={passwordFormRef}>
+            <FormField
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              label="password.newPassword"
+              value={passwordFormData.newPassword}
+              onChange={handlePasswordInputChange}
+              error={passwordFormErrors.newPassword}
+              required
+            />
 
-              <FormField
-                type="password"
-                id="confirmPasswordModal"
-                name="confirmPassword"
-                label="password.confirmPassword"
-                value={passwordFormData.confirmPassword}
-                onChange={handlePasswordInputChange}
-                error={passwordFormErrors.confirmPassword}
-                required
-              />
-            </form>
-          )}
+            <FormField
+              type="password"
+              id="confirmPasswordModal"
+              name="confirmPassword"
+              label="password.confirmPassword"
+              value={passwordFormData.confirmPassword}
+              onChange={handlePasswordInputChange}
+              error={passwordFormErrors.confirmPassword}
+              required
+            />
+          </form>
         </Modal.Body>
         <Modal.Footer>
-          {/* Use refactored Button component */}
           <Button
             variant="secondary"
             onClick={handleClosePasswordModal}
@@ -679,23 +717,45 @@ const Accounts = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* DNS Modal using react-bootstrap */}
-      <Modal show={showDNSModal} onHide={handleCloseDNSModal}>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteConfirmModal} onHide={handleCloseDeleteConfirmModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('accounts.manageDNS')} - {selectedAccount?.domain}{' '}
-            {/* Use optional chaining */}
+            {/* selectedAccount is null by default, must use ? */}
+            {Translate('accounts.confirmDeleteTitle')} - {selectedAccount?.mailbox}{' '}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedAccount && ( // Ensure selectedAccount exists before rendering form
-            <form onSubmit={handleSubmitDNSChange} ref={dnsFormRef}>
-              TBD
-            </form>
-          )}
+          <p>{Translate('accounts.confirmDeleteBody')}</p>
         </Modal.Body>
         <Modal.Footer>
-          {/* Use refactored Button component */}
+          <Button
+            variant="secondary"
+            onClick={handleCloseDeleteConfirmModal}
+            text="common.cancel"
+          />
+          <Button
+            variant="danger"
+            onClick={handleDeleteAccountModal}
+            text="accounts.deleteAccount"
+          />
+        </Modal.Footer>
+      </Modal>
+      
+      {/* DNS Modal */}
+      <Modal show={showDNSModal} onHide={handleCloseDNSModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {/* selectedAccount is null by default, must use ? */}
+            {Translate('accounts.manageDNS')} - {selectedAccount?.domain}{' '}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmitDNSChange} ref={dnsFormRef}>
+            TBD
+          </form>
+        </Modal.Body>
+        <Modal.Footer>
           <Button
             variant="secondary"
             onClick={handleCloseDNSModal}
