@@ -15,7 +15,7 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
-  moveKeyToLast,
+  getValueFromArrayOfObj,
   pluck,
   regexUsername,
   regexEmailStrict,
@@ -27,7 +27,7 @@ import {
   deleteLogin,
   updateLogin,
   getAccounts,
-  getConfigs,
+  updateAccount,
 } from '../services/api.mjs';
 
 import {
@@ -619,7 +619,7 @@ const Logins = () => {
   const handleClosePasswordModal = () => {
     setPasswordFormErrors({});
     setShowPasswordModal(false);
-    setSelectedAccount(null);
+    setSelectedLogin(null);
   };
 
   // Handle input changes for password change form
@@ -668,38 +668,43 @@ const Logins = () => {
       return;
     }
 
+    let result = {success:false, message: ''};
     try {
-      let result;
-      // result = await updateLogin(
-      //   selectedLogin.id,
-      //   { password: passwordFormData.newPassword }
-      // );
-      if (selectedLogin.isAccount) {
-        result = await updateAccount(
-          getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
-          containerName,
-          selectedLogin.mailbox,
-          { password: passwordFormData.newPassword }
-        );
-      
-      // normal dms-gui local account
-      } else {
-        result = await updateLogin(
-          selectedLogin.id,
-          { password: passwordFormData.newPassword }
-        );
-      }
+
+      // normal dms-gui local account; always done, otherwise how will the user login when we turn it to normal user?
+      result = await updateLogin(
+        selectedLogin.id,
+        { password: passwordFormData.newPassword }
+      );
       if (result.success) {
-        setSuccessMessage(t('password.passwordUpdated', {username:selectedLogin.username}));
-        
+        result.message = t('password.passwordUpdated', {key:'username', value:selectedLogin.username});
+
+        // change mailbox password when user isAccount
+        if (selectedLogin.isAccount) {
+          result = await updateAccount(
+            getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
+            containerName,
+            selectedLogin.mailbox,
+            { password: passwordFormData.newPassword }
+          );
+        }
+        if (result.success) {
+          result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedLogin.mailbox});
+        } else {
+          setErrorMessage(result?.error);
+        }
+          
       } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
+
+    } finally {
+      if (result.success) setSuccessMessage(result.message);
+      handleClosePasswordModal(); // Close the modal
     }
 
-    handleClosePasswordModal(); // Close the modal
   };
 
   // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same

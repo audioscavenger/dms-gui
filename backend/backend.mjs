@@ -1037,3 +1037,338 @@ export const doveadmAPIforTesting = async (containerName=null, command=null, mai
 */
 
 
+                                                                                                                              
+// https://patorjk.com/software/taag/#p=display&f=Big+Mono+9&t=doveconf+-P&x=none&v=4&h=4&w=80&we=false                                                                                                                   
+//      █                                                                                                                        
+//      █                                       █                                                                     █          
+//      █                                       █                                                                     █          
+//   ██▓█   ███   █░ ░█   ███    ▓██▒   ███   █████                █▒██▒          █▒██▒  ███   █▓██    ███    █▒██▒ █████  ▒███▒ 
+//  █▓ ▓█  █▓ ▓█  ▓▒ ▒▓  ▓▓ ▒█  ▓█  ▓  █▓ ▓█    █                  █▓ ▒█          ██  █ ▓▓ ▒█  █▓ ▓█  █▓ ▓█   ██  █   █    █▒ ░█ 
+//  █   █  █   █  ▒█ █▒  █   █  █░     █   █    █                  █   █          █     █   █  █   █  █   █   █       █    █▒░   
+//  █   █  █   █   █ █   █████  █      █   █    █            ███   █   █          █     █████  █   █  █   █   █       █    ░███▒ 
+//  █   █  █   █   █▓█   █      █░     █   █    █                  █   █          █     █      █   █  █   █   █       █       ▒█ 
+//  █▓ ▓█  █▓ ▓█   ▒█▒   ▓▓  █  ▓█  ▓  █▓ ▓█    █░                 █   █          █     ▓▓  █  █▓ ▓█  █▓ ▓█   █       █░   █░ ▒█ 
+//   ██▓█   ███    ░█░    ███▒   ▓██▒   ███     ▒██                █   █          █      ███▒  █▓██    ███    █       ▒██  ▒███▒ 
+//                                                                                             █                                 
+// docker exec -it dms dovecot -n reports
+/*
+  # 2.3.19.1 (9b53102964): /etc/dovecot/dovecot.conf
+  # Pigeonhole version 0.5.19 (4eae2f79)
+  # OS: Linux 6.8.0-31-generic x86_64 Debian 12.11 ext4
+  # Hostname: mx.domain.com
+  auth_master_user_separator = *
+  auth_mechanisms = plain login
+  auth_verbose = yes
+  auth_verbose_passwords = sha1:6
+  doveadm_api_key = # hidden, use -P to show it
+  doveadm_password = # hidden, use -P to show it
+  hostname = mx.domain.com
+  lda_mailbox_autocreate = yes
+  lda_mailbox_autosubscribe = yes
+  listen = *
+  mail_home = /var/mail/%d/%n/home/
+  mail_location = maildir:/var/mail/%d/%n
+  mail_plugins = " quota fts fts_xapian zlib"
+  mail_privileged_group = docker
+  maildir_stat_dirs = yes
+  managesieve_notify_capability = mailto
+  managesieve_sieve_capability = fileinto reject envelope encoded-character vacation subaddress comparator-i;ascii-numeric relational regex imap4flags copy include variables body enotify environment mailbox date index ihave duplicate mime foreverypart extracttext special-use imapflags notify imapsieve vnd.dovecot.imapsieve vnd.dovecot.pipe vnd.dovecot.filter
+  namespace inbox {
+    inbox = yes
+    location =
+    mailbox Drafts {
+      auto = subscribe
+      special_use = \Drafts
+    }
+    mailbox Junk {
+      auto = subscribe
+      special_use = \Junk
+    }
+    mailbox Sent {
+      auto = subscribe
+      special_use = \Sent
+    }
+    mailbox Trash {
+      auto = subscribe
+      special_use = \Trash
+    }
+    prefix =
+  }
+  passdb {
+    args = scheme=SHA512-CRYPT username_format=%u /etc/dovecot/userdb
+    driver = passwd-file
+    mechanisms = plain login
+  }
+  passdb {
+    args = scheme=SHA512-CRYPT username_format=%u /etc/dovecot/masterdb
+    driver = passwd-file
+    master = yes
+    result_success = continue
+  }
+  plugin {
+    fts = xapian
+    fts_autoindex = yes
+    fts_autoindex_exclude = \Trash
+    fts_autoindex_exclude2 = \Junk
+    fts_enforced = yes
+    fts_xapian = partial=3 full=20 verbose=0
+    imapsieve_mailbox1_before = file:/usr/lib/dovecot/sieve-pipe/learn-spam.sieve
+    imapsieve_mailbox1_causes = COPY
+    imapsieve_mailbox1_name = Junk
+    imapsieve_mailbox2_before = file:/usr/lib/dovecot/sieve-pipe/learn-ham.sieve
+    imapsieve_mailbox2_causes = COPY
+    imapsieve_mailbox2_from = Junk
+    imapsieve_mailbox2_name = INBOX
+    quota = count:User quota
+    quota_grace = 10%%
+    quota_max_mail_size = 314M
+    quota_rule = *:storage=5242M
+    quota_rule2 = Trash:storage=+50M
+    quota_status_nouser = DUNNO
+    quota_status_overquota = 552 5.2.2 Mailbox is full
+    quota_status_success = DUNNO
+    quota_vsizes = yes
+    quota_warning = storage=95%% quota-warning 95 %u %d
+    quota_warning2 = storage=80%% quota-warning 80 %u %d
+    quota_warning3 = -storage=100%% quota-warning below %u %d
+    sieve = ~/.dovecot.sieve
+    sieve_after = /usr/lib/dovecot/sieve-global/after/
+    sieve_before = /usr/lib/dovecot/sieve-global/before/
+    sieve_dir = ~/sieve
+    sieve_extensions = +notify +imapflags +special-use +vnd.dovecot.pipe +vnd.dovecot.filter
+    sieve_filter_bin_dir = /usr/lib/dovecot/sieve-filter
+    sieve_global_extensions = +editheader
+    sieve_pipe_bin_dir = /usr/lib/dovecot/sieve-pipe
+    sieve_plugins = sieve_imapsieve sieve_extprograms
+    zlib_save = zstd
+  }
+  postmaster_address = postmaster@domain.com
+  protocols = " imap lmtp sieve"
+  service aggregator {
+    chroot =
+  }
+  service anvil {
+    chroot =
+  }
+  service auth {
+    unix_listener /dev/shm/sasl-auth.sock {
+      group = postfix
+      mode = 0660
+      user = postfix
+    }
+    unix_listener auth-master {
+      group = docker
+      mode = 0600
+      user = docker
+    }
+    unix_listener auth-userdb {
+      group = docker
+      mode = 0666
+      user = docker
+    }
+  }
+  service director {
+    chroot =
+  }
+  service doveadm {
+    inet_listener {
+      port = 2425
+    }
+    inet_listener http {
+      port = 8080
+    }
+    unix_listener doveadm-server {
+      user = dovecot
+    }
+  }
+  service imap-login {
+    chroot =
+    inet_listener imaps {
+      port = 993
+      ssl = yes
+    }
+  }
+  service imap-urlauth-login {
+    chroot =
+  }
+  service imap {
+    vsz_limit = 1 G
+  }
+  service indexer-worker {
+    vsz_limit = 2 G
+  }
+  service ipc {
+    chroot =
+  }
+  service lmtp {
+    unix_listener lmtp {
+      group = postfix
+      mode = 0660
+    }
+  }
+  service managesieve-login {
+    chroot =
+  }
+  service old-stats {
+    chroot =
+  }
+  service pop3-login {
+    chroot =
+    inet_listener pop3s {
+      ssl = yes
+    }
+  }
+  service quota-status {
+    client_limit = 1
+    executable = quota-status -p postfix
+    inet_listener {
+      address = 127.0.0.1
+      port = 65265
+    }
+  }
+  service quota-warning {
+    executable = script /usr/local/bin/quota-warning
+    unix_listener quota-warning {
+      group = dovecot
+      mode = 0660
+      user = dovecot
+    }
+  }
+  service stats {
+    unix_listener stats-reader {
+      mode = 00
+    }
+    unix_listener stats-writer {
+      mode = 00
+    }
+  }
+  service submission-login {
+    chroot =
+  }
+  ssl = required
+  ssl_cert = </etc/letsencrypt/live/domain.com/fullchain.pem
+  ssl_cipher_list = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+  ssl_dh = # hidden, use -P to show it
+  ssl_key = # hidden, use -P to show it
+  ssl_prefer_server_ciphers = yes
+  stats_writer_socket_path =
+  userdb {
+    args = username_format=%u /etc/dovecot/userdb
+    default_fields = uid=docker gid=docker home=/var/mail/%d/%u/home/
+    driver = passwd-file
+  }
+  protocol lmtp {
+    mail_plugins = " quota fts fts_xapian zlib sieve"
+  }
+  protocol imap {
+    mail_plugins = " quota fts fts_xapian zlib zlib imap_quota imap_sieve"
+  }
+  protocol pop3 {
+    mail_plugins = " quota fts fts_xapian zlib zlib"
+  }
+  protocol lda {
+    mail_plugins = " quota fts fts_xapian zlib sieve"
+  }
+*/
+
+
+
+                                                                             
+// https://patorjk.com/software/taag/#p=display&f=Big+Mono+9&t=doveconf+-P&x=none&v=4&h=4&w=80&we=false                                                                                                                   
+//      █                                              ▒██                      
+//      █                                              █░                 █████░
+//      █                                              █                  █   ▓█
+//   ██▓█   ███   █░ ░█   ███    ▓██▒   ███   █▒██▒  █████                █    █
+//  █▓ ▓█  █▓ ▓█  ▓▒ ▒▓  ▓▓ ▒█  ▓█  ▓  █▓ ▓█  █▓ ▒█    █                  █   ▓█
+//  █   █  █   █  ▒█ █▒  █   █  █░     █   █  █   █    █                  █████░
+//  █   █  █   █   █ █   █████  █      █   █  █   █    █            ███   █     
+//  █   █  █   █   █▓█   █      █░     █   █  █   █    █                  █     
+//  █▓ ▓█  █▓ ▓█   ▒█▒   ▓▓  █  ▓█  ▓  █▓ ▓█  █   █    █                  █     
+//   ██▓█   ███    ░█░    ███▒   ▓██▒   ███   █   █    █                  █     
+                                                                             
+/*
+# 2.3.19.1 (9b53102964): /etc/dovecot/dovecot.conf
+# Pigeonhole version 0.5.19 (4eae2f79)
+# OS: Linux 6.8.0-31-generic x86_64 Debian 12.11 ext4
+# Hostname: mx.domain.com
+# NOTE: Send doveconf -n output instead when asking for help.
+auth_anonymous_username = anonymous
+auth_cache_negative_ttl = 1 hours
+auth_cache_size = 0
+auth_cache_ttl = 1 hours
+auth_cache_verify_password_with_worker = no
+auth_debug = no
+auth_debug_passwords = no
+auth_default_realm =
+auth_failure_delay = 2 secs
+auth_gssapi_hostname =
+auth_krb5_keytab =
+auth_master_user_separator = *
+auth_mechanisms = plain login
+auth_policy_check_after_auth = yes
+auth_policy_check_before_auth = yes
+auth_policy_hash_mech = sha256
+auth_policy_hash_nonce =
+auth_policy_hash_truncate = 12
+auth_policy_log_only = no
+auth_policy_reject_on_fail = no
+auth_policy_report_after_auth = yes
+auth_policy_request_attributes = login=%{requested_username} pwhash=%{hashed_password} remote=%{rip} device_id=%{client_id} protocol=%s session_id=%{session}
+auth_policy_server_api_header =
+auth_policy_server_timeout_msecs = 2000
+auth_policy_server_url =
+auth_proxy_self =
+auth_realms =
+auth_socket_path = auth-userdb
+auth_ssl_require_client_cert = no
+auth_ssl_username_from_cert = no
+auth_stats = no
+auth_use_winbind = no
+auth_username_chars = abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890.-_@
+auth_username_format = %Lu
+auth_username_translation =
+auth_verbose = yes
+auth_verbose_passwords = sha1:6
+auth_winbind_helper_path = /usr/bin/ntlm_auth
+auth_worker_max_count = 30
+base_dir = /run/dovecot
+config_cache_size = 1 M
+debug_log_path =
+default_client_limit = 1000
+default_idle_kill = 1 mins
+default_internal_group = dovecot
+default_internal_user = dovecot
+default_login_user = dovenull
+default_process_limit = 100
+default_vsz_limit = 256 M
+deliver_log_format = msgid=%m: %$
+dict_db_config =
+director_flush_socket =
+director_mail_servers =
+director_max_parallel_kicks = 100
+director_max_parallel_moves = 100
+director_output_buffer_size = 10 M
+director_ping_idle_timeout = 30 secs
+director_ping_max_timeout = 1 mins
+director_servers =
+director_user_expire = 15 mins
+director_user_kick_delay = 2 secs
+director_username_hash = %Lu
+disable_plaintext_auth = yes
+dotlock_use_excl = yes
+doveadm_allowed_commands =
+doveadm_api_key = c9ed3894-7c23-4e71-be7e-bb23cff5d55e
+doveadm_http_rawlog_dir =
+doveadm_password = doveadm_password
+doveadm_port = 0
+doveadm_socket_path = doveadm-server
+doveadm_ssl = no
+doveadm_username = doveadm
+doveadm_worker_count = 0
+dsync_alt_char = _
+dsync_commit_msgs_interval = 100
+dsync_features =
+...
+ */
+
+

@@ -98,11 +98,11 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - how easy is it to detect if an account without linked login is in a role for another login?
 * [x] - always create logins for each detected account, but let admins disable them as they attache roles to some users?
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
-* [ ] - pull compress/indexing method and maybe statistics on the dashboard?
+* [x] - pull compress/indexing method and maybe statistics on the dashboard?
 * [ ] - switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
 * [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
-* [ ] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup?
-* [ ] - 2. update all execDMS calls in accounts/aliases
+* [-] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup? name is execDMS and no not yet
+* [-] - 2. update all execDMS calls in accounts/aliases - maybe one day when we implement Poste, to avoid duping all functions?
 
 ### Settings:
 * [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
@@ -181,6 +181,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 * [ ] 1.5.99 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
 * [ ] 1.5.57 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
+* [ ] 1.5.58 - bugfix: Accounts show all mailboxes for standard user
+* [ ] 1.5.58 - bugfix: Aliases show all mailboxes in the dropdown for isAccount users; permission correctly denied when choosing destination != their mailbox
+* [x] 1.5.57 - translation: password.passwordUpdated takes 2 parameters: key and value
+* [x] 1.5.57 - Profile: changing password for isAccount also updates the logins password
+* [x] 1.5.57 - Logins: changing password for isAccount also updates the logins password
 * [x] 1.5.56 - Logins: cleanRoles for getLogin/getLogins/getRoles removes missing mailboxes, this way whenever someone alter and saves that login, roles will be updated in db
 * [x] 1.5.55 - Accounts: delete mailbox has a scary Modal
 * [x] 1.5.55 - bugfix: Accounts create "Create a dms-gui login for that account?" cannot be unchecked

@@ -381,8 +381,9 @@ const Accounts = () => {
       return;
     }
 
+    let result = {success:false, message:''};
     try {
-      let result;
+
       result = await updateAccount(
         getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
         containerName,
@@ -390,16 +391,19 @@ const Accounts = () => {
         { password: passwordFormData.newPassword }
       );
       if (result.success) {
-        setSuccessMessage(t('password.passwordUpdated', {username:selectedAccount.mailbox}));
+        result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedAccount.mailbox});
         
       } else setErrorMessage(result?.error);
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
       setErrorMessage('api.errors.changePassword');
+
+    } finally {
+      if (result.success) setSuccessMessage(result.message);
+      handleClosePasswordModal(); // Close the modal
     }
 
-    handleClosePasswordModal(); // Close the modal
   };
   
   
