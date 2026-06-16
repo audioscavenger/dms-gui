@@ -179,8 +179,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - bugfix: Logins: deleteLogin should just remove the UI table entry
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
-* [ ] 1.5.99 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
 
+* [x] 1.5.59 - Accounts: delete a linked account should also delete the login
 * [x] 1.5.58 - bugfix: deleteAccount does not remove the mailbox from all user's roles in logins table; not trivial and unneeded: cleanRoles does the job
 * [x] 1.5.58 - bugfix: Accounts show all mailboxes for standard user
 * [x] 1.5.58 - bugfix: Aliases show all mailboxes in the dropdown for isAccount users; permission correctly denied when choosing destination != their mailbox

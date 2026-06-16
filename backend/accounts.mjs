@@ -366,11 +366,23 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
             result = await deleteAlias(containerName, alias.source, alias.destination);
             debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
             if (result.success) {
+
               successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
+
             } else warnLog(`alias delete failed: ${alias.source} -> ${alias.destination}`);
           }
         }
-        
+
+        // now delete linked login if exist
+        result = await getLogin(mailbox, true); // search if login exist by mailbox
+        if (result.success) {
+
+          // delete linked login
+          if (result.message.isAccount && !result.message.isAdmin) result = await deleteEntry('logins', result.message.id, 'id');
+
+        // no login associated for some reason, we still return success as everything else is deleted
+        } else result = {success:true}
+
       } else warnLog(`Failed to delete Account: ${mailbox}`, result.message);
 
       return result;

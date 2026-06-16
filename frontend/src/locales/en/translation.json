@@ -118,7 +118,7 @@
     "cannotUpdatePassword": "Unable to update password. Please try again.",
     "confirmDelete": "Are you sure you want to delete account {{mailbox}}?",
     "confirmDeleteTitle": "Delete mailbox",
-    "confirmDeleteBody": "<strong>DANGER ZONE</strong><br /><br />Are you sure you want to <strong>permanently</strong> delete this mailbox along with <br />◽ all associated aliases<br />◽ <strong>ALL THE EMAILS INSIDE</strong>",
+    "confirmDeleteBody": "<strong>DANGER ZONE</strong><br /><br />Are you sure you want to <strong>permanently</strong> delete this mailbox along with <br />◽ associated linked login<br />◽ all associated aliases<br />◽ <strong>ALL THE EMAILS INSIDE</strong>",
     "deleteAccount": "Delete",
     "createLogin": "Create a dms-gui login for that account?",
     "dnsUpdated": "DNS records updated",
