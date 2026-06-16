@@ -157,7 +157,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] v1.6.0 - before releasing 1.6.0, it should be made clear how to modify the compose of dms/dms-gui, the env files, and in which order
 * [ ] 1.5.99 - update demo database
-* [ ] 1.5.99 - retested: create/delete alias
+* [ ] 1.5.99 - retested: create/delete alias for admin/standard/isAccount
 * [ ] 1.5.99 - retested: create/delete mailbox
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete mailserver
@@ -180,9 +180,11 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 * [ ] 1.5.99 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
-* [ ] 1.5.57 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
-* [ ] 1.5.58 - bugfix: Accounts show all mailboxes for standard user
-* [ ] 1.5.58 - bugfix: Aliases show all mailboxes in the dropdown for isAccount users; permission correctly denied when choosing destination != their mailbox
+
+* [x] 1.5.58 - bugfix: deleteAccount does not remove the mailbox from all user's roles in logins table; not trivial and unneeded: cleanRoles does the job
+* [x] 1.5.58 - bugfix: Accounts show all mailboxes for standard user
+* [x] 1.5.58 - bugfix: Aliases show all mailboxes in the dropdown for isAccount users; permission correctly denied when choosing destination != their mailbox
+* [x] 1.5.58 - bugfix: getAccounts roles redux was not done on the dbAll query
 * [x] 1.5.57 - translation: password.passwordUpdated takes 2 parameters: key and value
 * [x] 1.5.57 - Profile: changing password for isAccount also updates the logins password
 * [x] 1.5.57 - Logins: changing password for isAccount also updates the logins password

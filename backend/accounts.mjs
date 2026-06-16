@@ -121,9 +121,6 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
             // fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
             // result = dbRun(sql.logins.insert.fromDMS, logins2create);
 
-            // reduce the list of accounts down to a shortlist when provided
-            if (roles.length) accounts = reduxArrayOfObjByValue(accounts, 'mailbox', roles);
-
             for (const account of accounts) {
 
               result = await getLogin(account.mailbox, true); // search if login exist by mailbox
@@ -156,6 +153,9 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
     result = dbAll(sql.accounts.select.accounts, {}, containerName);
     if (result.success) {
       
+      // reduce the list of accounts down to a shortlist when provided
+      if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'mailbox', roles);
+
       // we could read filtered accounts from accounts table
       if (result.message.length) {
         infoLog(`Found ${result.message.length} entries in accounts`);

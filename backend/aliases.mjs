@@ -28,6 +28,7 @@ import { getConfigs } from './settings.mjs';
 
 
 export const getAliases = async (containerName=null, refresh=false, roles=[]) => {
+  debugLog(containerName, refresh, roles);
   if (!containerName) return {success: false, error: 'containerName is null'};
   refresh = env.isDEMO ? false : refresh;
   
