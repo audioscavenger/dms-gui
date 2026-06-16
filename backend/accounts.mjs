@@ -54,7 +54,7 @@ import { getConfigs } from './settings.mjs';
 
 export const getAccounts = async (containerName=null, refresh=false, roles=[]) => {
   debugLog(containerName, refresh, roles);
-  if (!containerName) return {success: false, error: 'containerName is needed'};
+  // if (!containerName) return {success: false, error: 'containerName is needed'};   // accounts table does not store mailserver, why would that be required?
   refresh = env.isDEMO ? false : refresh;
   
   let result, config;
@@ -63,12 +63,12 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
 
   try {
     
-    // refresh
-    if (refresh) {
+    // refresh only possible if containerName is passed
+    if (refresh && containerName) {
 
       // get schema
       // getConfigs(plugin, roles=[], name=undefined)
-      result = await getConfigs('mailserver', undefined, containerName);
+      result = await getConfigs('mailserver', roles, containerName);
       // message: [
       //   {
       //     value: 'dms',

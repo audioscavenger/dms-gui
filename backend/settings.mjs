@@ -121,6 +121,11 @@ export const getSettings = (plugin='mailserver', containerName=null, name=null, 
 
 
 // this returns all configs, and roles are mailboxes or logins id
+// configs = await getConfigs('mailserver')
+// [
+//   {value:dms,	plugin:mailserver,schema:dms,	scope:dms-gui},
+//   {value:dms2,	plugin:mailserver,schema:dms,	scope:dms-gui},
+// ]
 export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
   debugLog(plugin, roles, name);
 

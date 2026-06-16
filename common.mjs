@@ -244,16 +244,46 @@ export const getValueFromArrayOfObj = (array, propValues, keyName='name', keyVal
 };
 
 
-// this will return ALL the value found in a list of props, from an array of objects like:
-// array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => ["value1"]
-export const getValuesFromArrayOfObj = (array, propValues, keyName='name', keyValue='value') => {
-  let output = [];
-  if (!Array.isArray(array)) return output;
-  if (!Array.isArray(propValues)) propValues = [propValues];
-  for (const item of array.filter(item => propValues.includes(item[keyName]) )) {
-    output.push(item[keyValue]);
-  }
-  return output;
+// this will return ALL the keyValue found in a list of props, from an array of objects like:
+// array = [ {name: 'prop1', value: 'value1'}, {name: 'prop2', value: 'value2'}, {name: 'prop1', value: 'value3'} ]
+// getValuesFromArrayOfObj(array, 'prop1') = ["value1", "value3"]
+export const getValuesFromArrayOfObj = (array, propValues, keyName = 'name', keyValue = 'value') => {
+  if (!Array.isArray(array)) return [];
+  
+  // Ensure propValues is always an array for comparison
+  const searchValues = Array.isArray(propValues) ? propValues : [propValues];
+  console.log("Evaluating Array:", JSON.stringify(array));
+
+  return array
+    .filter(item => searchValues.includes(item[keyName]))
+    .map(item => item[keyValue]);
+};
+
+
+// this will return ALL the values for key=keyName
+// array = [ {name: 'prop1', value: 'value1'}, {name: 'prop2', value: 'value2'}, {name: 'prop1', value: 'value3'} ]
+// getAllValuesByKey(array, 'name')       = ["prop1", "prop2", "prop1"]
+// getAllValuesByKey(array, 'name', true) = ["prop1", "prop2"]
+export const getAllValuesByKey = (array, keyName = 'name', keepUnique = false) => {
+  if (!Array.isArray(array)) return [];
+  
+  const values = array.map(item => item[keyName]);
+  
+  // If true, pass the array through a Set to filter out duplicates
+  return keepUnique ? [...new Set(values)] : values;
+};
+
+
+// keep only the strings that exist in another array
+// myStrings = ['apple', 'banana', 'cherry', 'date']; allowed = ['banana', 'date', 'elderberry'];
+// keepMatchingStrings(myStrings, allowed) = ['banana', 'date']
+export const keepMatchingStrings = (sourceArray, allowedArray) => {
+  if (!Array.isArray(sourceArray) || !Array.isArray(allowedArray)) return [];
+
+  // Creating a Set optimizes performance for the lookup
+  const allowedSet = new Set(allowedArray);
+
+  return sourceArray.filter(item => allowedSet.has(item));
 };
 
 

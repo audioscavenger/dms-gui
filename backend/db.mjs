@@ -203,6 +203,7 @@ logins: {
     admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
     roles:    `SELECT roles from logins WHERE 1=1 AND id = @id`,
     rolesObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
+    rolesGuess: `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
     salt:     `SELECT salt from logins WHERE id = ?`,
     hash:     `SELECT hash from logins WHERE id = ?`,
     saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
@@ -353,8 +354,8 @@ accounts: {
                AND c.plugin = 'mailserver' 
                AND c.name = ? 
                ORDER BY a.domain, a.mailbox`,
-    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
-    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name) AND mailbox = ?`,
+    mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name LIKE @name)`,
+    mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name LIKE @name) AND mailbox LIKE ?`,
     saltHash: `SELECT salt, hash FROM accounts WHERE mailbox = @mailbox`,
     configs:  `SELECT DISTINCT name as value, 'mailserver' as plugin, schema, 'dms-gui' as scope FROM accounts a LEFT JOIN configs c ON c.id = a.configID WHERE 1=1 AND mailbox IN (?)`,
   },

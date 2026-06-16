@@ -175,11 +175,13 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [ ] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
+* [ ] 1.5.99 - Logins: implement cancel button in the table?
 * [ ] 1.5.99 - bugfix: Logins: deleteLogin should just remove the UI table entry
 * [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
-* [ ] 1.5.56 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
-* [ ] 1.5.56 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
-* [ ] 1.5.56 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
+* [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
+* [ ] 1.5.99 - Accounts: delete a linked account should also delete the login; in what world do we transform a linked mailbox to a standard user we don't even handle their mailbox?
+* [ ] 1.5.57 - bugfix: deleteAccount should also remove the mailbox from all user's roles in logins table; does not seem trivial as current logged in user profile also need to update
+* [x] 1.5.56 - Logins: cleanRoles for getLogin/getLogins/getRoles removes missing mailboxes, this way whenever someone alter and saves that login, roles will be updated in db
 * [x] 1.5.55 - Accounts: delete mailbox has a scary Modal
 * [x] 1.5.55 - bugfix: Accounts create "Create a dms-gui login for that account?" cannot be unchecked
 * [x] 1.5.54 - backend: updated urls and description of each doveadm command

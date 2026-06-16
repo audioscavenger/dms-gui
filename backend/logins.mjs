@@ -1,25 +1,7 @@
-// import {
-//   regexColors,
-//   regexPrintOnly,
-//   regexFindEmailStrict,
-//   regexEmailStrict,
-//   regexMatchPostfix,
-//   regexUsername,
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
-// } from '../common.mjs'
+import {
+  getAllValuesByKey,
+  keepMatchingStrings
+} from '../common.mjs';
 import {
   debugLog,
   doveadm,
@@ -70,7 +52,7 @@ export const getLogin = async (credential, guess=false) => {
         infoLog(`Found login ${credential}:`, {isAdmin:result.message.isAdmin, isActive:result.message.isActive, isAccount:result.message.isAccount, roles:result.message.roles});
 
         // now JSON.parse roles as it's stored stringified in the db
-        result.message.roles = (result.message?.roles) ? JSON.parse(result.message.roles) : [];
+        result.message.roles = (result.message?.roles) ? cleanRoles(JSON.parse(result.message.roles)) : [];
       } else result.success = false;
       
     }
@@ -93,8 +75,9 @@ export const getLogins = async (credentials=null, guess=false) => {
   debugLog(credentials, guess);
   if (credentials && !Array.isArray(credentials)) return getLogin(credentials, guess);
 
-  let result;
+  let result, accounts;
   let logins = [];
+  let mailboxes = [];
   try {
     
     debugLog(`credentials=`, credentials);
@@ -115,11 +98,24 @@ export const getLogins = async (credentials=null, guess=false) => {
       }
       
     } else {
-      result = dbAll(sql.logins.select.logins);
-      if (result.success) {
-        // now JSON.parse roles as it's stored stringified in the db
-        logins = result.message.map(login => { return { ...login, roles: JSON.parse(login.roles) }; });
+      logins = dbAll(sql.logins.select.logins);
+      if (logins.success) {
+
+        // get all uniq and existing mailboxes here and pass it to cleanRoles otherwise it's gonna query the db for each login
+        result = dbAll(sql.accounts.select.mailboxes, {name:'%'});
+          // [
+          //   { mailbox: "admin@aaa.com" },
+          //   { mailbox: "chloe@bbb.com" },
+          // ]
+        if (result.success) {
+          mailboxes = getAllValuesByKey(result.message, 'mailbox', true);
+          debugLog('mailboxes =', mailboxes)
+        }
+
+        // don't forget to JSON.parse roles as it's stored stringified in the db
+        logins = logins.message.map(login => { return { ...login, roles: cleanRoles(JSON.parse(login.roles), mailboxes) }; });
         infoLog(`Found ${logins.length} entries in logins`);
+        // debugLog('ddebug Found logins =', logins)
       }
     }
     
@@ -141,6 +137,29 @@ export const getLogins = async (credentials=null, guess=false) => {
 };
 
 
+// cleaning up string-encoded array of roles in the db off missing mailboxes is not fun, let's do it here
+export const cleanRoles = (roles=[], validMailboxes=[]) => {
+  if (!Array.isArray(roles)) roles = [roles];
+  if (!Array.isArray(validMailboxes)) validMailboxes = [validMailboxes];
+
+  if (validMailboxes.length == 0) {
+    // get all uniq and existing mailboxes in one go if not passed
+    let result = dbAll(sql.accounts.select.mailboxes, {name:'%'});
+      // [
+      //   { mailbox: "admin@aaa.com" },
+      //   { mailbox: "chloe@bbb.com" },
+      // ]
+    if (result.success) {
+      validMailboxes = getAllValuesByKey(result.message, 'mailbox', true);
+    }
+  }
+
+  // debugLog('ddebug roles=',roles, 'validMailboxes=', validMailboxes);
+  return keepMatchingStrings(roles, validMailboxes);
+
+};
+
+
 // this returns an array
 export const getRoles = async (credential=null) => {
 
@@ -151,11 +170,14 @@ export const getRoles = async (credential=null) => {
     // or a string: mailbox == what's in the id keay of that table
     if (typeof credential == "string") {
       roles = dbGet(sql.logins.select.roles, {[sql.logins.key]: credential});
+
     } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
       roles = dbGet(sql.logins.select.rolesObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
     if (roles?.success) {
-      return {success: true, message: JSON.parse(roles.message)};
+      // cleaning up string-encoded array of roles in the db off missing mailboxes is not fun, let's do it here
+      let cleanedRoles = cleanRoles(JSON.parse(roles.message));
+      return {success: true, message: cleanedRoles};
       
     }
     return roles;

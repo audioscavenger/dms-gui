@@ -351,53 +351,6 @@ const Logins = () => {
     
   };
 
-  const handleNewLoginCheckboxChange = (e) => {
-    debugLog(newLoginformData);
-    const { name, checked } = e.target;
-    
-    // special cases ------------------------------
-    let jsonDict = {[name]: (checked) ? 1 : 0};
-    
-    if (name == 'isAdmin' && checked) {
-      debugLog('isAccount ==> 0');
-      // disable isAccount checkbox and SelectField
-      jsonDict.isAccount = 0;
-    }
-
-    if (name == 'isAccount') {
-      if (checked) {
-        debugLog('isAccount ==> 1');
-        // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
-        if (pluck(accountOptions, 'value').includes(newLoginformData.mailbox)) {
-          jsonDict.roles = [newLoginformData.mailbox]
-
-        } else {
-          // we MUST reset mailbox since it is not in the official list
-          jsonDict.mailbox = '';
-          jsonDict.roles = [];
-        }
-    
-      // isAccount is unchecked, we should reset the roles
-      } else {
-        jsonDict.roles = [];
-      }
-    }
-
-    // Calculate the exact next state
-    const updatedFormData = {
-      ...newLoginformData,
-      ...jsonDict
-    };
-    setNewLoginFormData(updatedFormData);
-    debugLog('newLoginformData:', updatedFormData);
-
-    // Update the button instantly using the fresh error object
-    const freshErrors = validateNewLoginForm(updatedFormData);
-    const hasErrors = Object.keys(freshErrors).length > 0;
-    setSubmitDisabled(hasErrors);
-
-  };
-
   const handleNewLoginRolesChange = (e, newValue) => {  // newValue is an arrey with all the options selected
     
     debugLog('newValue', newValue);
