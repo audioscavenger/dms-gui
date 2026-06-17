@@ -57,6 +57,7 @@ const Logins = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedLogin, setSelectedLogin] = useState(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   
   // Form states --------------------------------------------------
   const [accountOptions, setAccountOptions] = useState([]);
@@ -495,24 +496,60 @@ const Logins = () => {
   };
 
 
-  const handleLoginDelete = async (login) => {
+  // const handleLoginDelete = async (login) => {
+  //   setErrorMessage(null);
+  //   setSuccessMessage(null);
+
+  //   if (window.confirm(t('logins.confirmDelete', { username:login.username }))) {
+  //     try {
+  //       const result = await deleteLogin(login.id);
+  //       if (result.success) {
+  //         setSuccessMessage('logins.loginDeleted');
+  //         fetchAll(); // Refresh the logins list
+          
+  //       } else setErrorMessage(result?.error);
+        
+  //     } catch (error) {
+  //       errorLog(t('api.errors.deleteLogin'), error.message);
+  //       setErrorMessage('api.errors.deleteLogin', error.message);
+  //     }
+  //   }
+  // };
+
+
+  const handleConfirmDeleteLogin = async (login) => {
+    setSelectedLogin(login);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Handles the actual deletion after confirmation from the modal
+  const handleDeleteLoginModal = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (window.confirm(t('logins.confirmDelete', { username:login.username }))) {
-      try {
-        const result = await deleteLogin(login.id);
-        if (result.success) {
-          setSuccessMessage('logins.loginDeleted');
-          fetchAll(); // Refresh the logins list
-          
-        } else setErrorMessage(result?.error);
+    try {
+      const result = await deleteLogin(setSelectedLogin.id);
+      if (result.success) {
+        setLogins(reduxArrayOfObjByValue(logins, 'id', setSelectedLogin.id, true));
+        removeIdFromEditedData(setSelectedLogin.id);
+        setSuccessMessage('logins.loginDeleted');
         
-      } catch (error) {
-        errorLog(t('api.errors.deleteLogin'), error.message);
-        setErrorMessage('api.errors.deleteLogin', error.message);
+      } else {
+        setErrorMessage(result?.error);
       }
+    } catch (error) {
+      errorLog(t('api.errors.deleteLogin'), error.message);
+      setErrorMessage('api.errors.deleteLogin', error.message);
+
+    } finally {
+      handleCloseDeleteConfirmModal();
     }
+  };
+
+  // Closes the delete confirmation modal
+  const handleCloseDeleteConfirmModal = () => {
+    setShowDeleteConfirmModal(false);
+    setSelectedLogin(null);
   };
 
 
@@ -869,7 +906,7 @@ const Logins = () => {
             size="sm"
             icon="trash"
             title={t('logins.confirmDelete', { username: login.mailbox })}
-            onClick={() => handleLoginDelete(login)}
+            onClick={() => handleConfirmDeleteLogin(login)}
             className="me-2"
           />
           <Button
@@ -1115,11 +1152,36 @@ const Logins = () => {
       <Accordion tabs={loginTabs}>
       </Accordion>
 
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteConfirmModal} onHide={handleCloseDeleteConfirmModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {/* selectedLogin is null by default, must use ? */}
+            {(selectedLogin && selectedLogin.admin) ? Translate('logins.confirmDeleteTitle') : Translate('logins.confirmDeleteTitle') - selectedLogin?.mailbox}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>{Translate('logins.confirmDeleteBody')}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={handleCloseDeleteConfirmModal}
+            text="common.cancel"
+          />
+          <Button
+            variant="danger"
+            onClick={handleDeleteLoginModal}
+            text="logins.deleteLogin"
+          />
+        </Modal.Footer>
+      </Modal>
+      
       {/* Password Change Modal using react-bootstrap */}
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {(selectedLogin && selectedLogin.admin) ? Translate('password.changePassword') : Translate('password.changePassword')} - {selectedLogin?.mailbox}{' '}
+            {(selectedLogin && selectedLogin.admin) ? Translate('password.changePassword') : Translate('password.changePassword') - selectedLogin?.mailbox}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

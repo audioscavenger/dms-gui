@@ -166,6 +166,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
 * [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
 * [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
+* [ ] 1.5.99 - frontend: first load bombs: downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a
 
 * [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
 * [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
@@ -176,11 +177,12 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
 * [ ] 1.5.99 - Logins: implement cancel button in the table?
-* [ ] 1.5.99 - bugfix: Logins: deleteLogin should just remove the UI table entry
-* [ ] 1.5.99 - Logins: deleting a login should show a modal with option to also delete the mailbox AND remove the mailbox from all roles AND then refresh the page
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 
-* [x] 1.5.59 - Accounts: delete a linked account should also delete the login
+* [ ] 1.5.60 - Logins: deleteLogin modal should show an option to also delete the mailbox
+* [x] 1.5.59 - Logins: deleting a login should show a modal
+* [x] 1.5.59 - performance: Logins: deleteLogin should just remove the UI table entry instead of fetchLogins
+* [x] 1.5.58 - Accounts: delete a linked account should also delete the login
 * [x] 1.5.58 - bugfix: deleteAccount does not remove the mailbox from all user's roles in logins table; not trivial and unneeded: cleanRoles does the job
 * [x] 1.5.58 - bugfix: Accounts show all mailboxes for standard user
 * [x] 1.5.58 - bugfix: Aliases show all mailboxes in the dropdown for isAccount users; permission correctly denied when choosing destination != their mailbox
