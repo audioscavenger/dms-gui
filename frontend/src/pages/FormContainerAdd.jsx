@@ -15,9 +15,9 @@ import {
 } from '../../../common.mjs';
 
 import {
-  getAccounts,
-  getServerEnvs,
-  getAliases,
+  // getAccounts,
+  // getServerEnvs,
+  // getAliases,
   getServerStatus,
   getConfigs,
   getSettings,

@@ -75,12 +75,13 @@ const Accounts = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
 
   // State for new new account inputs ------------------------------
-  const [newAccountformData, setNewAccountFormData] = useState({
+  const newAccountformDataINIT = {
     mailbox: '',
     password: '',
     confirmPassword: '',
     createLogin: 1,
-  });
+  };
+  const [newAccountformData, setNewAccountFormData] = useState(newAccountformDataINIT);
   const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
@@ -226,12 +227,7 @@ const Accounts = () => {
         newAccountformData.createLogin,
       );
       if (result.success) {
-        setNewAccountFormData({
-          mailbox: '',
-          password: '',
-          confirmPassword: '',
-          createLogin: 1,
-        });
+        setNewAccountFormData(newAccountformDataINIT);
 
         fetchAccounts(); // Refresh the accounts list fast, since getAccounts will do the work in the backend, we don't bother adding a manually crafted data line in current DataTable state
         setSuccessMessage('accounts.accountCreated');
@@ -244,25 +240,27 @@ const Accounts = () => {
     }
   };
 
+
+  // Handle alsoDeleteLogin checkbox
+  const handleAlsoDeleteLoginInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    debugLog('{ name, value, type, checked }',{ name, value, type, checked });
+    
+    let inputValue;
+    // Determine the actual value based on the element type
+    if (type === 'checkbox') {
+      inputValue = checked ? 1 : 0; // Directly assigns 1 or 0
+      
+      let updatedSelectedAccount = {
+        ...selectedAccount,
+        [name]: inputValue
+      };
+      setSelectedAccount(updatedSelectedAccount);
+    
+    } // ignore anything else
+  };
+
   const handleConfirmDeleteAccount = async (account) => {
-
-    // if (window.confirm(t('accounts.confirmDelete', { mailbox:account.mailbox }))) {
-    //   try {
-    //     const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, account.mailbox);
-    //     if (result.success) {
-    //       // fetchAccounts(true); // Refresh the accounts list
-    //       setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', account.mailbox, true));  // filter out the mailbox and the table will refresh itself
-    //       setSuccessMessage('accounts.accountDeleted');
-          
-    //     } else setErrorMessage(result?.error);
-        
-    //   } catch (error) {
-    //     errorLog(t('api.errors.deleteAccount'), error.message);
-    //     setErrorMessage('api.errors.deleteAccount', error.message);
-    //   }
-
-    // }
-
     setSelectedAccount(account);
     setShowDeleteConfirmModal(true);
   };
@@ -273,7 +271,7 @@ const Accounts = () => {
     setSuccessMessage(null);
 
     try {
-      const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, selectedAccount.mailbox);
+      const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, !!selectedAccount?.alsoDeleteLogin);
       if (result.success) {
         setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', selectedAccount.mailbox, true));
         setSuccessMessage('accounts.accountDeleted');
@@ -587,17 +585,28 @@ const Accounts = () => {
 
   const FormNewAccount = (
           <form onSubmit={handleSubmitNewAccount} className="form-wrapper">
-            <FormField
-              type="mailbox"
-              id="mailbox"
-              name="mailbox"
-              label="accounts.mailbox"
-              value={newAccountformData.mailbox}
-              onChange={handleNewAccountInputChange}
-              placeholder="user@domain.com"
-              error={newAccountFormErrors.mailbox}
-              required
-            />
+            <div>
+              <FormField
+                type="email"
+                id="mailbox"
+                name="mailbox"
+                label="accounts.mailbox"
+                value={newAccountformData.mailbox}
+                onChange={handleNewAccountInputChange}
+                maxLength={254}
+                groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+                placeholder="user@domain.com"
+                error={newAccountFormErrors.mailbox}
+                required
+              />
+              
+              {/* The Live Character Counter Badge */}
+              <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+                <span className={newAccountformData.mailbox?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
+                  {newAccountformData.mailbox?.length || 0}/254
+                </span>
+              </div>
+            </div>
 
             <FormField
               type="password"
@@ -679,7 +688,7 @@ const Accounts = () => {
         <Modal.Header closeButton>
           <Modal.Title>
             {/* selectedAccount is null by default, must use ? */}
-            {Translate('password.changePassword')} - {selectedAccount?.mailbox}{' '}
+            {Translate('password.changePassword')}: {selectedAccount?.mailbox}{' '}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -726,11 +735,25 @@ const Accounts = () => {
         <Modal.Header closeButton>
           <Modal.Title>
             {/* selectedAccount is null by default, must use ? */}
-            {Translate('accounts.confirmDeleteTitle')} - {selectedAccount?.mailbox}{' '}
+            {Translate('accounts.confirmDeleteTitle')}: {selectedAccount?.mailbox}{' '}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>{Translate('accounts.confirmDeleteBody')}</p>
+          {selectedAccount && ( // Ensure selectedAccount exists before rendering form
+            <>
+              {!!selectedAccount?.username && ( // Ensure selectedAccount has a login attached
+                <FormField
+                  type="checkbox"
+                  id="alsoDeleteLogin"
+                  name="alsoDeleteLogin"
+                  label="accounts.confirmAlsoDeleteLogin"
+                  onChange={handleAlsoDeleteLoginInputChange}
+                  isChecked={!!selectedAccount?.alsoDeleteLogin}
+                />
+              )}
+            </>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button

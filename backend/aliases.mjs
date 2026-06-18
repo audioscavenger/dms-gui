@@ -79,8 +79,9 @@ export const getAliases = async (containerName=null, refresh=false, roles=[]) =>
             errorLog(result?.error);
           }
 
-          if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
-          return {success: true, message: aliases};
+          // no, we let the db call return those results
+          // if (roles.length) result.message = reduxArrayOfObjByValue(aliases, 'destination', roles);
+          // return result;
 
         } else errorLog('pullPostfixRegexFromDMS:', result?.error);
 
@@ -95,12 +96,13 @@ export const getAliases = async (containerName=null, refresh=false, roles=[]) =>
         infoLog(`Found ${result.message.length} entries in aliases`);
         result.message = result.message.map(alias => { return { ...alias, source: (alias.regex) ? JSON.parse(alias.source) : alias.source}; });
         
-      } else {
-        warnLog(`db aliases seems empty:`, aliases);
-      }
+      } else infoLog(`No aliases found on ${containerName}`);
     }
 
-    if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'destination', roles);
+    if (roles.length) {
+      result.message = reduxArrayOfObjByValue(result.message, 'destination', roles);
+      if (!result.message.length) infoLog(`No aliases found on ${containerName} for roles`, roles);
+    }
     return result;
     
   } catch (error) {
@@ -160,24 +162,28 @@ export const parseAliasesFromDMS = async (stdout='') => {
   const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
   const regexAliasDMS = /\*\s+(\S+@\S+)\s+(\S+@\S+)/;
 
-  for (let i = 0; i < lines.length; i++) {
+  // for (let i = 0; i < lines.length; i++) {
+  for (const rawLine of lines) {
+
+    // Check if line contains * which indicates an alias entry
+    if (!rawLine.includes('*')) continue;
+
     // Clean the line from binary control characters
-    const line = lines[i].replace(emailLineValidChars, '').trim();
+    // const line = lines[i].replace(emailLineValidChars, '').trim();
+    const line = rawLine.replace(emailLineValidChars, '').trim();
 
-    if (line.includes('*')) {
-      const match = line.match(regexAliasDMS);
-      if (match) {
-        const source = match[1];
-        const destination = match[2];
-        debugLog(`Parsed alias: ${source} -> ${destination}`);
+    const match = line.match(regexAliasDMS);
+    if (match) {
+      const source = match[1];
+      const destination = match[2];
+      debugLog(`Parsed alias: ${source} -> ${destination}`);
 
-        aliases.push({
-          source,
-          destination,
-        });
-      } else {
-        warnLog(`Failed to parse alias line: ${line}`);
-      }
+      aliases.push({
+        source,
+        destination,
+      });
+    } else {
+      warnLog(`Failed to parse alias line: ${line}`);
     }
   }
 
@@ -248,6 +254,7 @@ export const parsePostfixRegexFromDMS = async (stdout='') => {
 
 // Function to add an alias
 export const addAlias = async (containerName=null, source=null, destination=null) => {
+  debugLog(containerName, source, destination);
   if (!destination) return {success: false, error: 'destination is null'};
   if (!source) return {success: false, error: 'source is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};

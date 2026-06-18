@@ -91,6 +91,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 ### Logins:
 * [ ] - find a way to offer mailbox changePassword for logins with multiple mailbox roles
 * [ ] - handle each mailbox's password vs each login user, they are different
+* [ ] - should we prevent usernames made of digits only?
 
 ### Accounts:
 * [x] - do we keep auto create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
@@ -103,6 +104,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
 * [-] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup? name is execDMS and no not yet
 * [-] - 2. update all execDMS calls in accounts/aliases - maybe one day when we implement Poste, to avoid duping all functions?
+* [ ] - Add delete my account in Profile
 
 ### Settings:
 * [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
@@ -163,6 +165,8 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete mailserver
 
 * [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/loginUser because it violates the following directive: “connect-src 'none'”
+* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms/dms because it violates the following directive: “connect-src 'none'”
+* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms?refresh=false because it violates the following directive: “connect-src 'none'”
 * [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
 * [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
 * [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
@@ -179,7 +183,21 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - Logins: implement cancel button in the table?
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 
-* [ ] 1.5.60 - Logins: deleteLogin modal should show an option to also delete the mailbox
+* [x] 1.5.60 - api: refuse to let linked account users add regex aliases by themselves
+* [x] 1.5.60 - performance: pullAccountsFromDMS, parseAliasesFromDMS, pluck, plucks
+* [x] 1.5.60 - performance: convert array.includes to set.has
+* [x] 1.5.60 - Logins: complete reset of fetchAll()
+* [x] 1.5.60 - Logins/Profile/Accounts: display counter for username and mailbox
+* [x] 1.5.60 - Logins: regexUsername is limited to 36 chars
+* [x] 1.5.60 - common: regexUsername is limited to 36 chars
+* [x] 1.5.60 - common: regexEmailStrict and regexFindEmailStrict have a limit of 254 chars; RFC 3696; RFC 2821
+* [x] 1.5.60 - bugfix: typeof parseInt("") is NaN which is a "number"; pfffff fixed ALL integer checks everywhere
+* [x] 1.5.60 - api: better error handling: api returns result.message instead of result.error to comply with try/catch
+* [x] 1.5.60 - Accounts: deleteAccount modal should show an option to also delete the mailbox: alsoDeleteLogin
+* [x] 1.5.60 - Logins: deleteLogin modal should show an option to also delete the mailbox: alsoDeleteMailbox
+* [x] 1.5.60 - frontend: getLogin does not take guess=true anymore
+* [x] 1.5.60 - logins: getLogin does not take guess=true anymore
+* [x] 1.5.60 - logins: getLogin takes credentials=number/mailbox/username/object
 * [x] 1.5.59 - Logins: deleting a login should show a modal
 * [x] 1.5.59 - performance: Logins: deleteLogin should just remove the UI table entry instead of fetchLogins
 * [x] 1.5.58 - Accounts: delete a linked account should also delete the login

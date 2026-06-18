@@ -132,7 +132,7 @@ const Dashboard = () => {
         setServerStatus(statusData.message);
         
         // handle API errors
-        if (['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown'].includes(statusData.message.status.status)) {
+        if (new Set(['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown']).has(statusData.message.status.status)) {
           setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
         } else {
 

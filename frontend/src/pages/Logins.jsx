@@ -17,7 +17,9 @@ import {
 import {
   getValueFromArrayOfObj,
   pluck,
+  plucks,
   regexUsername,
+  reduxArrayOfObjByValue,
   regexEmailStrict,
 } from '../../../common.mjs';
 
@@ -56,7 +58,7 @@ const Logins = () => {
   const [isLoading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [selectedLogin, setSelectedLogin] = useState(null);
+  const [selectedLogin, setSelectedLogin] = useState({});
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   
   // Form states --------------------------------------------------
@@ -99,7 +101,7 @@ const Logins = () => {
   };
 
   // State for new login inputs ----------------------------------
-  const [newLoginformData, setNewLoginFormData] = useState({
+  const newLoginformDataINIT = {
     mailbox: '',
     username: '',
     password: '',
@@ -108,9 +110,10 @@ const Logins = () => {
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
-    mailserver: user?.mailserver,
+    mailserver: '', // Leave empty here, we will populate it dynamically
     roles: [],
-  });
+  };
+  const [newLoginformData, setNewLoginFormData] = useState(newLoginformDataINIT);
 
   // errors must be initialized unfortunately, otherwise the save login button is never disabled
   const [newLoginFormErrors, setNewLoginFormErrors] = useState({
@@ -186,10 +189,19 @@ const Logins = () => {
       setLoading(true);
       setErrorMessage(null);
       setSuccessMessage(null);
+      setLogins([]);
+      setEditedData({});
+      setAccountOptions([]);
+      setRolesAvailable([]);
+      setNewLoginFormData(newLoginformDataINIT);
+      setNewLoginFormErrors({});
+      setSelectedLogin({});
+      setSubmitDisabled(true);
+      setShowDeleteConfirmModal(false);
       
       await Promise.all([
         fetchAccounts(),
-        fetchLogins(),
+        fetchLogins({}),
       ]);
 
     } catch (error) {
@@ -307,7 +319,7 @@ const Logins = () => {
 
     if (name == 'isAccount' && checked) {
       // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
-      if (pluck(accountOptions, 'value').includes(newLoginformData.mailbox)) {
+      if (plucks(accountOptions, 'value').has(newLoginformData.mailbox)) {
         debugLog(`isAccount ==> 1: adding ${newLoginformData.mailbox} to the roles`);
         jsonDict.roles = [newLoginformData.mailbox]
 
@@ -434,18 +446,7 @@ const Logins = () => {
       );
       if (result.success) {
         setSuccessMessage('logins.loginCreated');
-        setNewLoginFormData({
-          mailbox: '',
-          username: '',
-          password: '',
-          confirmPassword: '',
-          email: '',
-          isAdmin: 0,
-          isAccount: 0,
-          isActive: 1,
-          mailserver: '',
-          roles: [],
-        });
+        setNewLoginFormData(newLoginformDataINIT);
         fetchAll(); // Refresh the logins list
         
       } else setErrorMessage(result?.error);
@@ -517,6 +518,25 @@ const Logins = () => {
   // };
 
 
+  // Handle alsoDeleteMailbox checkbox
+  const handleAlsoDeleteMailboxInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    debugLog('{ name, value, type, checked }',{ name, value, type, checked });
+    
+    let inputValue;
+    // Determine the actual value based on the element type
+    if (type === 'checkbox') {
+      inputValue = checked ? 1 : 0; // Directly assigns 1 or 0
+      
+      let updatedSelectedLogin = {
+        ...selectedLogin,
+        [name]: inputValue
+      };
+      setSelectedLogin(updatedSelectedLogin);
+    
+    } // ignore anything else
+  };
+
   const handleConfirmDeleteLogin = async (login) => {
     setSelectedLogin(login);
     setShowDeleteConfirmModal(true);
@@ -528,10 +548,11 @@ const Logins = () => {
     setSuccessMessage(null);
 
     try {
-      const result = await deleteLogin(setSelectedLogin.id);
+      debugLog('selectedLogin:', selectedLogin);
+      const result = await deleteLogin(selectedLogin.id, !!selectedLogin?.alsoDeleteMailbox);
       if (result.success) {
-        setLogins(reduxArrayOfObjByValue(logins, 'id', setSelectedLogin.id, true));
-        removeIdFromEditedData(setSelectedLogin.id);
+        setLogins(reduxArrayOfObjByValue(logins, 'id', selectedLogin.id, true));
+        removeIdFromEditedData(selectedLogin.id);
         setSuccessMessage('logins.loginDeleted');
         
       } else {
@@ -539,7 +560,7 @@ const Logins = () => {
       }
     } catch (error) {
       errorLog(t('api.errors.deleteLogin'), error.message);
-      setErrorMessage('api.errors.deleteLogin', error.message);
+      setErrorMessage('api.errors.deleteLogin');
 
     } finally {
       handleCloseDeleteConfirmModal();
@@ -779,11 +800,12 @@ const Logins = () => {
         <>
         <span className="d-none">{login.mailbox}</span>
         <FormField
-          type="mailbox"
+          type="email"
           id="mailbox"
           name="mailbox"
           value={getFieldValue(login.id, 'mailbox')}
           onChange={(e) => handleLoginChange(e, login, "mailbox", e.target.value)}
+          maxLength={254}
           groupClass=""
           className="form-control-sm"
           required
@@ -803,6 +825,7 @@ const Logins = () => {
           name="username"
           value={getFieldValue(login.id, 'username')}
           onChange={(e) => handleLoginChange(e, login, "username", e.target.value)}
+          maxLength={36}
           groupClass=""
           className="form-control-sm"
           required
@@ -978,25 +1001,36 @@ const Logins = () => {
         required
       />
 
-      <FormField
-        type="text"
-        id="username"
-        name="username"
-        label="logins.username"
-        value={newLoginformData.username}
-        onChange={handleNewLoginInputChange}
-        placeholder="admin"
-        error={newLoginFormErrors.username}
-        helpText="logins.usernameHelp"
-        required
-      />
+      <div>
+        <FormField
+          type="text"
+          id="username"
+          name="username"
+          label="logins.username"
+          value={newLoginformData.username}
+          onChange={handleNewLoginInputChange}
+          maxLength={36}
+          groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+          placeholder="admin"
+          error={newLoginFormErrors.username}
+          helpText="logins.usernameHelp"
+          required
+        />
+        
+        {/* The Live Character Counter Badge */}
+        <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+          <span className={newLoginformData.username?.length >= 30 ? "text-danger fw-bold" : "text-muted"}>
+            {newLoginformData.username?.length || 0}/36
+          </span>
+        </div>
+      </div>
 
       {newLoginformData.isAccount && (
         <SelectField
           id="mailbox"
           name="mailbox"
           label="accounts.mailbox"
-          value={pluck(filteredAccountOptions, 'value').includes(newLoginformData.mailbox) ? newLoginformData.mailbox : ""}
+          value={plucks(filteredAccountOptions, 'value').has(newLoginformData.mailbox) ? newLoginformData.mailbox : ""}
           onChange={handleNewLoginInputChange}
           options={filteredAccountOptions}
           placeholder="accounts.mailboxRequired"
@@ -1005,18 +1039,30 @@ const Logins = () => {
           required
         />
       ) || (
-        <FormField
-          type="mailbox"
-          id="mailbox"
-          name="mailbox"
-          label="logins.mailbox"
-          value={newLoginformData.mailbox}
-          onChange={handleNewLoginInputChange}
-          placeholder="user@domain.com"
-          error={newLoginFormErrors.mailbox}
-          helpText="logins.mailboxHelp"
-          required
-        />
+        <div>
+          <FormField
+            type="email"
+            id="mailbox"
+            name="mailbox"
+            label="logins.mailbox"
+            value={newLoginformData.mailbox}
+            onChange={handleNewLoginInputChange}
+            maxLength={254}
+            groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+            placeholder="user@domain.com"
+            error={newLoginFormErrors.mailbox}
+            helpText="logins.mailboxHelp"
+            required
+          />
+          
+          {/* The Live Character Counter Badge */}
+          <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+            <span className={newLoginformData.mailbox?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
+              {newLoginformData.mailbox?.length || 0}/254
+            </span>
+          </div>
+        </div>
+
       )}
 
       <Autocomplete
@@ -1047,17 +1093,29 @@ const Logins = () => {
         )}
       />
 
-      <FormField
-        type="email"
-        id="email"
-        name="email"
-        label="logins.email"
-        value={newLoginformData.email}
-        onChange={handleNewLoginInputChange}
-        placeholder="user@domain.com"
-        error={newLoginFormErrors.email}
-        helpText="logins.emailHelp"
-      />
+      <div>
+        <FormField
+          type="email"
+          id="email"
+          name="email"
+          label="logins.email"
+          value={newLoginformData.email}
+          onChange={handleNewLoginInputChange}
+          maxLength={254}
+          groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+          placeholder="user@domain.com"
+          error={newLoginFormErrors.email}
+          helpText="logins.emailHelp"
+          required
+        />
+        
+        {/* The Live Character Counter Badge */}
+        <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+          <span className={newLoginformData.email?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
+            {newLoginformData.email?.length || 0}/254
+          </span>
+        </div>
+      </div>
 
       <Row className="mb-3">
         <FormField
@@ -1157,11 +1215,25 @@ const Logins = () => {
         <Modal.Header closeButton>
           <Modal.Title>
             {/* selectedLogin is null by default, must use ? */}
-            {(selectedLogin && selectedLogin.admin) ? Translate('logins.confirmDeleteTitle') : Translate('logins.confirmDeleteTitle') - selectedLogin?.mailbox}
+            {Translate('logins.confirmDeleteTitle')}: {selectedLogin?.username} / {selectedLogin?.mailbox}{' '}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{Translate('logins.confirmDeleteBody')}</p>
+          {selectedLogin && ( // Ensure selectedLogin exists before rendering form
+            <>
+              <p>{Translate('logins.confirmDeleteBody')}</p>
+              {!!selectedLogin?.isAccount && selectedLogin?.mailbox && ( // Ensure selectedLogin has a mailbox and isAccount
+                <FormField
+                  type="checkbox"
+                  id="alsoDeleteMailbox"
+                  name="alsoDeleteMailbox"
+                  label="logins.confirmAlsoDeleteMailbox"
+                  onChange={handleAlsoDeleteMailboxInputChange}
+                  isChecked={!!selectedLogin?.alsoDeleteMailbox}
+                />
+              )}
+            </>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -1181,7 +1253,7 @@ const Logins = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {(selectedLogin && selectedLogin.admin) ? Translate('password.changePassword') : Translate('password.changePassword') - selectedLogin?.mailbox}
+            {Translate('password.changePassword')}: {selectedLogin?.username} / {selectedLogin?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

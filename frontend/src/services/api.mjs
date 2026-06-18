@@ -86,17 +86,62 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor with automatic token refresh
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response) => response,   // Any status code within the range of 2xx triggers this function
 
-    const originalRequest = error.config;
-    const errorUrl = error.config?.url || 'Unknown URL';
-    const errorCode = error.code;
-    const errorResponseCode = error.response?.data?.code || 'No message provided';
-    const httpStatus = error.response?.status || 'Network/Timeout Error';  // 502 401 403...
-    const errorMessage = error.message || 'No message provided';
-    const isLogoutRequest = errorUrl.includes('/logout');
-    // debugLog(`ddebug WAIT5 api interceptor error Url: [${errorUrl}] | Status: ${httpStatus} | Code: ${errorResponseCode} | Message: ${errorMessage}`); await delay(5000);
+  async (error) => {
+    // Any status codes outside the range of 2xx trigger this function
+    // debugLog('interceptor error', error);
+      // AxiosError: Request failed with status code 401  // login denied
+      // AxiosError: Request aborted
+      // AxiosError: Request failed with status code 520  // invalid password
+      // AxiosError: Request failed with status code 500  // backend index catch error
+
+    const originalRequest = error.config;                                               // Axios object
+    const errorUrl = error.config?.url || 'Unknown URL';                                // /api call that failed
+    const errorCode = error.code;                                                       // browser error: ERR_BAD_REQUEST
+    const errorResponse = error.response;                                               // actual response sent back by backend server if any
+    const errorResponseMessage = error.response?.data || 'No data provided';            // actual JSON object sent back by backend server
+    const errorResponseCode = error.response?.data?.code || 'CODE_MISSING';             //  custom codes we can handle like TOKEN_EXPIRED
+    const errorResponseError = error.response?.data?.error || 'No error provided';      //  custom error message added by all modules
+    const httpStatus = error.response?.status || 'Network/Timeout Error';               // 502 401 403...
+    const errorAxiosMessage = error.message || 'Unknown Axios error';                   // generic string generated locally by Axios or browser
+    
+    let isLogoutRequest = errorUrl.includes('/logout');
+
+    debugLog('error: originalRequest', originalRequest);
+    debugLog('error: errorUrl', errorUrl);
+    debugLog('error: errorCode', errorCode);
+    debugLog('error: errorResponse', errorResponse);
+    debugLog('error: errorResponseMessage', errorResponseMessage);
+    debugLog('error: errorResponseCode', errorResponseCode);
+    debugLog('error: errorResponseError', errorResponseError);
+    debugLog('error: httpStatus', httpStatus);
+    debugLog('error: errorAxiosMessage', errorAxiosMessage);
+    debugLog('error: isLogoutRequest', isLogoutRequest);
+
+    // ---------------------- /logout
+    // originalRequest'      transitional: {…}, adapter: (3) […], transformRequest: (1) […], transformResponse: (1) […], timeout: 0, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", maxContentLength: -1, maxBodyLength: -1, env: {…}, … }
+    // errorUrl              /logout
+    // errorCode             ERR_BAD_REQUEST
+    // errorResponse         { data: { error: "Invalid token", code: "INVALID_TOKEN" }, status: 403, statusText: "", headers: {…}, config: {…}, request: XMLHttpRequest }
+    // errorResponseMessage  { error: "Invalid token", code: "INVALID_TOKEN" }
+    // errorResponseCode     INVALID_TOKEN
+    // errorResponseError    Invalid token
+    // httpStatus            403
+    // errorAxiosMessage     Request failed with status code 403
+    // isLogoutRequest       true
+
+    // ---------------------- /deleteLogin while module is missing from index
+    // originalRequest'      transitional: {…}, adapter: (3) […], transformRequest: (1) […], transformResponse: (1) […], timeout: 0, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", maxContentLength: -1, maxBodyLength: -1, env: {…}, … }
+    // errorUrl              /logins/13
+    // errorCode             ERR_BAD_RESPONSE
+    // errorResponse         { data: { error: "deleteLogin is not defined" }, status: 500, statusText: "", headers: {…}, config: {…}, request: XMLHttpRequest }
+    // errorResponseMessage  { error: "deleteLogin is not defined" }
+    // errorResponseCode     CODE_MISSING
+    // errorResponseError    deleteLogin is not defined
+    // httpStatus            500
+    // errorAxiosMessage     Request failed with status code 500
+    // isLogoutRequest       false
 
       // Url: [/logout] | Status: Network/Timeout Error | Code: No message provided | Message: Request aborted <empty string>
       // Url: [/configs/mailserver] | Status: 403 | Code: INVALID_TOKEN | Message: Request failed with status code 403 <empty string> frontend.mjs:71:25
@@ -117,26 +162,25 @@ api.interceptors.response.use(
       // also /logout doesn't work anymore
 
     // 1. If the browser intentionally canceled the request due to navigation, stop immediately
-    if (errorCode === 'ERR_CANCELED' || error.message === 'canceled' || error.message?.includes('aborted')) {
+    if (errorCode === 'ERR_CANCELED' || errorAxiosMessage.includes('canceled', 'aborted')) {
       return new Promise(() => {}); // Halts processing silently without error logs
     }
     
     // 2. If we are already heading to login, silence subsequent requests
-    if (isRedirectingToLogin) {
+    if (isLogoutRequest) {
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
 
-    // 3. Handle complete server crashes (502, 503, 504) or network failures
-    if (!error.response || httpStatus === 502 || httpStatus === 503 || httpStatus === 504) {
+    // 3. Handle complete server crashes (502, 503, 504) or network failures without backend response
+    if (!errorResponse || httpStatus === 502 || httpStatus === 503 || httpStatus === 504) {
       if (!isLogoutRequest) { // prevent infinite redirect loop
-        isRedirectingToLogin = true;
         // window.location.href = '/login';
         window.location.replace('/login');
       }
-      return Promise.reject(error);
+      return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
     
-    // 4. Handle software errors: If access token expired, try to refresh
+    // 4. Handle token errors: If access token expired, try to refresh
     if ((errorResponseCode === 'TOKEN_EXPIRED' || errorResponseCode === 'REFRESH_TOKEN_EXPIRED') && !originalRequest._retry) {
       if (isRefreshing) {
         // debugLog(`ddebug WAIT5 api interceptor start with ${errorResponseCode} isRefreshing`); await delay(5000); 
@@ -174,45 +218,53 @@ api.interceptors.response.use(
         processQueue(refreshError);
 
         // Refresh failed - redirect to login
-        isRedirectingToLogin = true;
+        isLogoutRequest = true;
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
 
-    // Handle other errors
-    switch (errorResponseCode) {
-      case 'NO_TOKEN':
-      case 'INVALID_TOKEN':
-      case 'NO_REFRESH_TOKEN':
-      case 'INVALID_REFRESH_TOKEN':
-      case 'REFRESH_TOKEN_EXPIRED':
-      case 'ERR_BAD_REQUEST':
-        if (!isLogoutRequest) { // prevent infinite redirect loop
-          isRedirectingToLogin = true;
+    // 5. Handle known error codes
+    if (!isLogoutRequest && errorResponseCode != 'CODE_MISSING') {
+      switch (errorResponseCode) {
+        case 'NO_TOKEN':
+        case 'INVALID_TOKEN':
+        case 'NO_REFRESH_TOKEN':
+        case 'INVALID_REFRESH_TOKEN':
+        case 'REFRESH_TOKEN_EXPIRED':
+        case 'ERR_BAD_REQUEST':
+          isLogoutRequest = true;
           // window.location.href = '/login';
           window.location.replace('/login');
-        }
-        break;
-      
-      case 'FORBIDDEN':
-        console.error('Permission denied');
-        break;
-      
-      case 'ACCOUNT_INACTIVE':
-        alert('Your account is inactive. Please contact support.');
-        break;
-      
-      default:
-        // Don't bomb console errors if the logout call safely fails during unauth states
-        if (!isRedirectingToLogin && !isLogoutRequest) {
-          // console.error('API Error:', errorResponseCode, error.response?.data?.error || 'Unknown error');
-          console.error('API Error:', errorResponseCode, error.response?.data?.error || error);   // AxiosError: Request failed with status code 502
-        }
+          break;
+        
+        case 'FORBIDDEN':
+          console.error('Permission denied');
+          break;
+        
+        case 'ACCOUNT_INACTIVE':
+          alert('Your account is inactive. Please contact support.');
+          break;
+        
+      }
     }
 
-    // debugLog(`ddebug WAIT33 error ${errorResponseCode}:`); console.debug(error); await delay(33000); // AxiosError: Request failed with status code 502
-    return Promise.reject(error);
+    // 6. If the server responded with a JSON error payload, extract it.
+    if (!isLogoutRequest && errorResponse && errorResponseMessage) {
+      debugLog('graceful fail');
+      return Promise.reject({
+        success: false,
+        // Fall back gracefully if error or code aren't strings
+        message: errorResponseError || errorResponseCode || errorAxiosMessage 
+      });
+    }
+    
+    // 7. unknown error
+    debugLog('ungraceful fail');
+    return Promise.reject({
+      success: false,
+      message: errorAxiosMessage
+    });
   }
 );
 
@@ -312,12 +364,12 @@ export const saveSettings = async (plugin, schema, scope, containerName, jsonArr
   });
 };
 
-export const getLogins = async ids => {
-  debugLog(`api getLogins ids`, ids);
-  const body = {ids: ids};
+// credentials = mailbox | username | id | [mailbox | username | id, ..]
+export const getLogins = async credentials => {
+  debugLog(`api getLogins credentials`, credentials);
+  const body = {credentials: credentials};
   
   return await cacheWrap(async () => {
-    debugLog(`api getLogins api.post(/getLogins`, body);
     const response = await api.post(`/getLogins`, body);
     return response.data;
   });
@@ -344,11 +396,12 @@ export const updateLogin = async (id, jsonDict) => {
   });
 };
 
-export const deleteLogin = async id => {
+export const deleteLogin = async (id, alsoDeleteMailbox=false) => {
   if (!id) return {success: false, error: 'id is required'};
-  
+
+  // api.delete cannot take a normal body
   return await cacheWrap(async () => {
-    const response = await api.delete(`/logins/${id}`);
+    const response = await api.delete(`/logins/${id}`, { data: { alsoDeleteMailbox: alsoDeleteMailbox }});
     return response.data;
   });
 };
@@ -357,6 +410,7 @@ export const loginUser = async (credential, password, test = false) => {
   if (!credential) return false;
   if (!password) return false;
   
+  // Axios Interceptor does that for every calls now, but this stays here for posterity
   return await cacheWrap(async () => {
     // try is needed ty catch the Axios 401 from popping out in the console when /login tries the default user/pass
     try {
@@ -411,14 +465,15 @@ export const addAccount = async (schema, containerName, mailbox, password, creat
   });
 };
 
-export const deleteAccount = async (schema, containerName, mailbox) => {
+export const deleteAccount = async (schema, containerName, mailbox, alsoDeleteLogin=false) => {
   if (!schema) return {success: false, error: 'schema is required'};
   if (!containerName) return {success: false, error: 'containerName is required'};
   if (!mailbox) return {success: false, error: 'mailbox is required'};
 
+  // api.delete cannot take a normal body
   return await cacheWrap(async () => {
     // Encodes special characters like '@' and '.': done by the Axios interceptor but I leave encodeURIComponent here as a reminder
-    const response = await api.delete(`/accounts/${schema}/${containerName}/${encodeURIComponent(mailbox)}`);
+    const response = await api.delete(`/accounts/${schema}/${containerName}/${encodeURIComponent(mailbox)}`, { data: {alsoDeleteLogin:alsoDeleteLogin}});
     return response.data;
   });
 };
@@ -470,6 +525,7 @@ export const addAlias = async (containerName=null, source, destination) => {
 export const deleteAlias = async (containerName=null, source, destination) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   
+  // api.delete cannot take a normal body
   return await cacheWrap(async () => {
     // Although the HTTP specification for DELETE requests does not explicitly define semantics for a request body, Axios allows you to include one by using the data property within the optional config object.
     const response = await api.delete(`/aliases/${containerName}`, { data: { source:source, destination:destination }});   // regex aliases cannot be url params

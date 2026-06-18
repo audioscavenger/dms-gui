@@ -3,13 +3,16 @@ export const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 // regexPrintOnly = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/;
 export const regexPrintOnly = /[^\S]/;
 
-export const regexFindEmailStrict = /([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)/;                     // example: x@y.z
-export const regexFindEmailRegex = /\/([\S]+@[\S]+)\//;                                     // example: /abuse@*/
-export const regexEmailStrict = /^[\w\.\-_]+@[\w\.\-_]+\.[\w]+$/;                           // example: x@y.z
+export const regexFindEmailStrict = /^(?=^.{1,254}$)([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)$/;     // example: x@y.z
+export const regexFindEmailRegex = /^\/([\S]+@[\S]+)\/$/;                                   // example: /abuse@*/
+export const regexExtractEmail = /\b(?=[^\s]{3,254}\b)([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)/g;   // extract email matches out of long paragraphs
+// export const regexEmailStrict = /^[\w\.\-_]+@[\w\.\-_]+\.[\w]+$/;
+export const regexEmailStrict = /^(?=^.{1,254}$)([\w\.\-_]+@[\w\.\-_]+\.[\w]+)$/;           // example: x@y.z
 export const regexEmailRegex = /^\/[\S]+@[\S]+\/$/;                                         // example: /abuse@*/
 
 export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+\.[\w]+)/;    // example: /^postmaster.*@.*.*/ admin@example.com
-export const regexUsername = /^[^\s]+$/;
+// export const regexUsername = /^[^\s]+$/;
+export const regexUsername = /^(?=^.{1,36}$)[\w\.\-_]+$/;
 
 // import {
 //   regexColors,
@@ -95,8 +98,12 @@ export const arrayOfStringToDict = (array=[], separator=',') => {
   if (!array.length) return [];
   let dict={};
   
-  if (typeof array == "string") {
-    array = array.split(/\r?\n/);
+  if (!Array.isArray(array)) {
+    if (typeof array == "string") {
+      array = array.split(/\r?\n/);
+    
+    // that's an error
+    } else return [];
   }
   
   array.map((item) => {
@@ -124,8 +131,7 @@ export const obj2ArrayOfObj = (obj={}, stringify=false, props=['name','value']) 
 };
 
 
-export const reduxArrayOfObjByKey = (array=[], keys2Keep=[]) => {
-// this will reduce:
+// reduxArrayOfObjByKey will reduce:
   // data = [
   // {name: 'John', city: 'London', age: 42},
   // {name: 'Mike', city: 'Warsaw', age: 18},
@@ -137,15 +143,30 @@ export const reduxArrayOfObjByKey = (array=[], keys2Keep=[]) => {
   // {name: 'John'},
   // {name: 'Mike'},
   // ]
+export const reduxArrayOfObjByKey = (array=[], keys2Keep=[]) => {
 
-  if (!array.length) return [];
-  if (typeof keys2Keep == "string") keys2Keep = [keys2Keep];
-  const redux = array => array.map(o => keys2Keep.reduce((acc, curr) => {
-    acc[curr] = o[curr];
-    return acc;
-  }, {}));
+  if (!Array.isArray(array) || !array.length) return [];
+
+  // 1. Force keys2Keep into a clean array structure, handling null/undefined/objects/strings
+  let normalizedKeys = [];
+  if (Array.isArray(keys2Keep)) {
+    normalizedKeys = keys2Keep;
+    
+  } else if (keys2Keep !== null && keys2Keep !== undefined) {
+    normalizedKeys = [keys2Keep]; // Handles strings, numbers, etc.
+  }
   
-  return redux(array);
+  // 2. Map over the array and rebuild objects with only the requested keys
+  return array.map(obj => 
+    normalizedKeys.reduce((acc, currentKey) => {
+      // Only copy the property if it actually exists in the source object
+      if (obj && Object.prototype.hasOwnProperty.call(obj, currentKey)) {
+        acc[currentKey] = obj[currentKey];
+      }
+      return acc;
+    }, {})
+  );
+
 };
 
 // reduxArrayOfObjByValue will reduce (or filter out) Object entries by the value of a key:
@@ -164,35 +185,37 @@ export const reduxArrayOfObjByValue = (array=[], key, values2Keep=[], invert = f
 
   if (!array.length) return [];
   // Normalize string inputs to an array
-  // if (typeof values2Keep == "string") values2Keep = [values2Keep];
-  values2Keep = typeof values2Keep === "string" ? [values2Keep] : values2Keep;
+  values2Keep = Array.isArray(values2Keep) ? values2Keep : [values2Keep];
 
-  // return array.filter(item => values2Keep.includes(item[key]));
+  // 2. Convert to a Set for blazing-fast O(1) lookups
+  const valuesSet = new Set(values2Keep);
+
   return array.filter(item => {
-    const hasMatch = values2Keep.includes(item[key]);
+    // --- CHANGE .includes TO .has HERE ---
+    const hasMatch = valuesSet.has(item[key]); 
     
     // If invert is true, invert the match behavior (remove matching items)
     return invert ? !hasMatch : hasMatch;
-  });
-  
+  });  
 };
 
-export const reduxPropertiesOfObj = (obj={}, keys2Keep=[]) => {
-// this will reduce:
-  // const person = {
-        // firstName: 'firstName',
-        // lastName:  'lastName',
-        // email:     'fake@email.tld',
-        // }
+// reduxPropertiesOfObj will reduce:
+// const person = {
+      // firstName: 'firstName',
+      // lastName:  'lastName',
+      // email:     'fake@email.tld',
+      // }
 // keeping:
   // keys2Keep = ['firstName']
 // to:
   // person = {
   // firstName: 'firstName',
   // }
+export const reduxPropertiesOfObj = (obj={}, keys2Keep=[]) => {
 
-  if (typeof keys2Keep == "string") keys2Keep = [keys2Keep];
+  keys2Keep = Array.isArray(keys2Keep) ? keys2Keep : [keys2Keep];
   const allKeys = Object.keys(obj);
+
   return allKeys.reduce((next, key) => {
     if (keys2Keep.includes(key)) {
       return { ...next, [key]: obj[key] };
@@ -239,8 +262,14 @@ export const mergeArrayOfObj = (a=[], b=[], prop='name') => {
 // array = [ {name: propValue, value: value1}, {name: prop2, value: value2}, .. ] => "value1"
 export const getValueFromArrayOfObj = (array, propValues, keyName='name', keyValue='value') => {
   if (!Array.isArray(array)) return null;
-  if (!Array.isArray(propValues)) propValues = [propValues];
-  return (array.find(item => propValues.includes(item[keyName]) )) ? array.find(item => propValues.includes(item[keyName]))[keyValue] : null;
+
+  // if (!Array.isArray(propValues)) propValues = [propValues];
+  // return foundItem ? foundItem[keyValue] : null;  return (array.find(item => propValues.includes(item[keyName]) )) ? array.find(item => propValues.includes(item[keyName]))[keyValue] : null;
+
+  const valuesSet = new Set(Array.isArray(propValues) ? propValues : [propValues]);
+  const foundItem = array.find(item => valuesSet.has(item[keyName]));
+  return foundItem ? foundItem[keyValue] : null;
+
 };
 
 
@@ -254,8 +283,12 @@ export const getValuesFromArrayOfObj = (array, propValues, keyName = 'name', key
   const searchValues = Array.isArray(propValues) ? propValues : [propValues];
   console.log("Evaluating Array:", JSON.stringify(array));
 
+  // return array
+    // .filter(item => searchValues.includes(item[keyName]))
+    // .map(item => item[keyValue]);
+  const searchSet = new Set(searchValues);
   return array
-    .filter(item => searchValues.includes(item[keyName]))
+    .filter(item => searchSet.has(item[keyName]))
     .map(item => item[keyValue]);
 };
 
@@ -287,12 +320,19 @@ export const keepMatchingStrings = (sourceArray, allowedArray) => {
 };
 
 
-// this will return the (uniq) and/or (sorted) values from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
+// this will return the (uniq) and/or (sorted) value(s) from an array of objects like [ {keyName: propName, keyValue: value1}, .. ] => [value1, ..]
 export const pluck = (array, keyValue='value', uniq=true, sorted=true) => {
   if (!Array.isArray(array)) return null;
   let values = array.map(item => item[keyValue]);
   let uniqValues = (uniq) ? [... new Set(values)] : values;
   return (sorted) ? uniqValues.sort() : uniqValues;
+};
+
+// shortcut to get a set of uniq, unsorted values
+export const plucks = (array, keyValue='value') => {
+  if (!Array.isArray(array)) return null;
+  let values = array.map(item => item[keyValue]);
+  return new Set(values);
 };
 
 

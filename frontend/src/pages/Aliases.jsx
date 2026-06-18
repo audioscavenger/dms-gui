@@ -11,7 +11,7 @@ import {
   regexEmailRegex,
   regexEmailStrict,
   regexFindEmailStrict,
-  pluck,
+  plucks,
 } from '../../../common.mjs';
 
 import {
@@ -168,7 +168,7 @@ const Aliases = () => {
 
     // Also test if source domain exist in domains when it's a mailbox match
     // I can't see how to really test for regex as the domain part can be regex too but let's do our best
-    if (matchEmailStrict && !pluck(accounts, 'domain').includes(matchEmailStrict[2])) {
+    if (matchEmailStrict && !plucks(accounts, 'domain').has(matchEmailStrict[2])) {
       errors.source = 'aliases.invalidSourceDomain';
       setErrorMessage(errors.source);
     }

@@ -123,7 +123,7 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
 
             for (const account of accounts) {
 
-              result = await getLogin(account.mailbox, true); // search if login exist by mailbox
+              result = await getLogin(account.mailbox); // search if login exist by mailbox
               if (!result.success) {
 
                 result = await addLogin(account.mailbox, account.mailbox, password, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
@@ -204,7 +204,8 @@ export const pullAccountsFromDMS = async (containerName=null) => {
     
       // Parse multiline output with regex to extract email and size information
       // const emailLineValidChars = /[\x00-\x1F\x7F-\x9F\x20-\x7E]/g;
-      const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
+      // const emailLineValidChars = /[^\w\.\~\.\-_@\s\*\%]/g;
+      const emailLineValidChars = /[^\w.~_@\s*%:-]/g;
       // const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\.\S+)\s+\(\s+([\w\.\~]+)\s+\/\s+([\w\.\~]+)\s+\)\s+\[(\d+)%\]/;
       const accountLineRegexQuotaON  = /(\*\s+)(\S+)@(\S+\S+)\s+([\w\.\~]+)\s+([\w\.\~]+)\s+(\d+)%/;
       const accountLineRegexQuotaOFF = /(\*\s+)(\S+)@(\S+\S+)/;
@@ -213,49 +214,50 @@ export const pullAccountsFromDMS = async (containerName=null) => {
       const lines = results.stdout.split('\n').filter((line) => line.trim().length > 0);
       // debugLog(`email list RAW response:`, lines);
 
-      for (let i = 0; i < lines.length; i++) {
-        // debugLog(`email list RAW line    :`, lines[i]);
+      // for (let i = 0; i < lines.length; i++) {
+      for (const rawLine of lines) {
+        
+        // Check if line contains * which indicates an account entry
+        // debugLog(`email list RAW line    :`, rawLine);
+        if (!rawLine.includes('*')) continue; 
         
         // Clean the line from binary control characters
-        const line = lines[i].replace(emailLineValidChars, '').trim();
+        const line = rawLine.replace(emailLineValidChars, '').trim();
         // debugLog(`email list CLEAN line  :`, line);
+        
+        const matchQuotaON  = line.match(accountLineRegexQuotaON);
+        const matchQuotaOFF = line.match(accountLineRegexQuotaOFF);
 
-        // Check if line contains * which indicates an account entry
-        if (line.includes('*')) {
-          const matchQuotaON  = line.match(accountLineRegexQuotaON);
-          const matchQuotaOFF = line.match(accountLineRegexQuotaOFF);
+        if (matchQuotaON) {
+          // matchQuotaON = [ "* user@domain.com ( 2.5G / 30G ) [8%]", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
+          // matchQuotaON = [ "* user@domain.com 2.5G 30G 8%", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
+          const mailbox = `${matchQuotaON[2]}@${matchQuotaON[3]}`;
+          
+          // this works only if Dovecot ENABLE_QUOTAS=1
+          const usedSpace = matchQuotaON[4];
+          const totalSpace = matchQuotaON[5] === '~' ? 'unlimited' : matchQuotaON[5];
+          const usagePercent = matchQuotaON[6];
 
-          if (matchQuotaON) {
-            // matchQuotaON = [ "* user@domain.com ( 2.5G / 30G ) [8%]", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
-            // matchQuotaON = [ "* user@domain.com 2.5G 30G 8%", "* ", "user", "domain.com", "2.5G", "30G", "8" ]
-            const mailbox = `${matchQuotaON[2]}@${matchQuotaON[3]}`;
-            
-            // this works only if Dovecot ENABLE_QUOTAS=1
-            const usedSpace = matchQuotaON[4];
-            const totalSpace = matchQuotaON[5] === '~' ? 'unlimited' : matchQuotaON[5];
-            const usagePercent = matchQuotaON[6];
+          debugLog(`Parsed account: ${mailbox}, Storage: ${usedSpace}/${totalSpace} [${usagePercent}%]`);
 
-            debugLog(`Parsed account: ${mailbox}, Storage: ${usedSpace}/${totalSpace} [${usagePercent}%]`);
+          accounts.push({
+            mailbox:mailbox,
+            storage: {
+              used: usedSpace,
+              total: totalSpace,
+              percent: usagePercent,
+            },
+          });
+        } else if  (matchQuotaOFF) {
+          // matchQuotaOFF = [ "* user@domain.com", "* ", "user", "domain.com" ]
+          const mailbox = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
 
-            accounts.push({
-              mailbox:mailbox,
-              storage: {
-                used: usedSpace,
-                total: totalSpace,
-                percent: usagePercent,
-              },
-            });
-          } else if  (matchQuotaOFF) {
-            // matchQuotaOFF = [ "* user@domain.com", "* ", "user", "domain.com" ]
-            const mailbox = `${matchQuotaOFF[2]}@${matchQuotaOFF[3]}`;
-
-            accounts.push({
-              mailbox:mailbox,
-              storage: {},
-            });
-          } else {
-            warnLog(`Failed to parse account line: ${line}`);
-          }
+          accounts.push({
+            mailbox:mailbox,
+            storage: {},
+          });
+        } else {
+          warnLog(`Failed to parse account line: ${line}`);
         }
       }
       
@@ -298,7 +300,7 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
         
         if (createLogin) {
 
-          result = await getLogin(mailbox, true); // search if login exist by mailbox
+          result = await getLogin(mailbox); // search if login exist by mailbox
           if (!result.success) {
 
             // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
@@ -336,7 +338,8 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
 
 
 // Function to delete an mailbox account; shema is needed because of the remote command involved
-export const deleteAccount = async (schema='dms', containerName=null, mailbox=null) => {
+// no check if account exist in dms-gui db because it may simply be missing
+export const deleteAccount = async (schema='dms', containerName=null, mailbox=null, alsoDeleteLogin=true) => {
   if (!mailbox) return {success: false, error: 'containerName is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
 
@@ -352,29 +355,31 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
     if (!results?.returncode) {
       successLog(`Mailbox Account deleted: ${mailbox}`);
       
-      result = await deleteEntry('accounts', mailbox, 'mailbox', containerName);
-      debugLog('ddebug deleteEntry',result)
-      if (result.success) {
-        successLog(`db entry deleted: ${mailbox}`);
+      // now delete aliases too
+      result = await getAliases(containerName, false, [mailbox]);
+      debugLog('ddebug getAliases',result)
+      if (result.success && result.message.length) {
 
-        // now delete aliases too
-        result = await getAliases(containerName, false, [mailbox]);
-        debugLog('ddebug getAliases',result)
-        if (result.success && result.message.length) {
+        for (const alias of result.message) {
+          result = await deleteAlias(containerName, alias.source, alias.destination);
+          debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
+          if (result.success) {
 
-          for (const alias of result.message) {
-            result = await deleteAlias(containerName, alias.source, alias.destination);
-            debugLog(`ddebug deleteAlias=${result.success}`,alias.source)
-            if (result.success) {
+            successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
 
-              successLog(`alias deleted: ${alias.source} -> ${alias.destination}`);
-
-            } else warnLog(`alias delete failed: ${alias.source} -> ${alias.destination}`);
-          }
+          } else warnLog(`alias delete failed: ${alias.source} -> ${alias.destination}`);
         }
+      }
 
-        // now delete linked login if exist
-        result = await getLogin(mailbox, true); // search if login exist by mailbox
+      // now delete account dms-gui database entry
+      result = await deleteEntry('accounts', mailbox, 'mailbox', containerName);
+      if (!result.success) {
+        warnLog(`Failed to delete Account: ${mailbox}`, result.message);
+      }
+
+      // now delete linked login if exist
+      if (alsoDeleteLogin) {
+        result = await getLogin(mailbox); // search if login exist by mailbox
         if (result.success) {
 
           // delete linked login
@@ -382,8 +387,7 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
 
         // no login associated for some reason, we still return success as everything else is deleted
         } else result = {success:true}
-
-      } else warnLog(`Failed to delete Account: ${mailbox}`, result.message);
+      }
 
       return result;
       

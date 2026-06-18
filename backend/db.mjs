@@ -195,18 +195,18 @@ logins: {
   },
   scope:  'mailserver',
   select: {
-    count:    `SELECT COUNT(*) count from logins WHERE 1=1 and mailserver = @mailserver`,
-    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND id = @id`,
-    loginObj:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
-    loginGuess: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    logins:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
-    admins:   `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:    `SELECT roles from logins WHERE 1=1 AND id = @id`,
-    rolesObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
-    rolesGuess: `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    salt:     `SELECT salt from logins WHERE id = ?`,
-    hash:     `SELECT hash from logins WHERE id = ?`,
-    saltHash: `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
+    count:      `SELECT COUNT(*) count from logins WHERE 1=1 and mailserver = @mailserver`,
+    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    loginById:  `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND id = @id`,
+    loginByObj: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
+    logins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
+    admins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
+    roles:      `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    rolesById:  `SELECT roles from logins WHERE 1=1 AND id = @id`,
+    rolesByObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
+    salt:       `SELECT salt from logins WHERE id = ?`,
+    hash:       `SELECT hash from logins WHERE id = ?`,
+    saltHash:   `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
     refreshToken: `SELECT * FROM logins WHERE id = ? AND refreshToken = @refreshToken`,
   },
   
@@ -1284,8 +1284,8 @@ export const deleteEntry = async (table, id, key, scope) => {
           // we pass the test
           result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
           if (result.success) {
-            successLog(`Entry deleted: ${id}`);
-            return {success: true, message: `Entry deleted: ${id}`};
+            successLog(`db id deleted: ${id}`);
+            return {success: true, message: `db id deleted: ${id}`};
             
           } else return result;
         
@@ -1299,8 +1299,8 @@ export const deleteEntry = async (table, id, key, scope) => {
         // no test
         result = dbRun(sql[table].delete[key], scopedValues, id);
         if (result.success) {
-          successLog(`Entry deleted: ${id}`);
-          return {success: true, message: `Entry deleted: ${id}`};
+          successLog(`db id deleted: ${id}`);
+          return {success: true, message: `db id deleted: ${id}`};
           
         } else return result;
       }

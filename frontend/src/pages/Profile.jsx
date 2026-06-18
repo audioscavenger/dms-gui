@@ -405,6 +405,7 @@ const Profile = () => {
             label="logins.mailbox"
             value={loginFormData.mailbox}
             onChange={handleInputChange}
+            maxLength={254}
             placeholder="user@domain.com"
             error={formErrors.mailbox}
             helpText="logins.mailboxHelp"
@@ -440,32 +441,54 @@ const Profile = () => {
           )}
         />
 
-        <FormField
-          type="text"
-          id="username"
-          name="username"
-          label="logins.username"
-          value={loginFormData.username}
-          onChange={handleInputChange}
-          placeholder="admin"
-          error={formErrors.username}
-          helpText="logins.usernameHelp"
-          required
-          disabled={!loginFormData.isAdmin}
-        />
-
-        <FormField
-          type="email"
-          id="email"
-          name="email"
-          label="logins.email"
-          value={loginFormData.email}
-          onChange={handleInputChange}
-          placeholder="user@domain.com"
-          error={formErrors.email}
-          helpText="logins.emailHelp"
-          required
-        />
+        <div>
+          <FormField
+            type="text"
+            id="username"
+            name="username"
+            label="logins.username"
+            value={loginFormData.username}
+            onChange={handleInputChange}
+            maxLength={36}
+            groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+            placeholder="admin"
+            error={formErrors.username}
+            helpText="logins.usernameHelp"
+            required
+            disabled={!loginFormData.isAdmin}
+          />
+          
+          {/* The Live Character Counter Badge */}
+          <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+            <span className={loginFormData.username?.length >= 30 ? "text-danger fw-bold" : "text-muted"}>
+              {loginFormData.username?.length || 0}/36
+            </span>
+          </div>
+        </div>
+        
+        <div>
+          <FormField
+            type="email"
+            id="email"
+            name="email"
+            label="logins.email"
+            value={loginFormData.email}
+            onChange={handleInputChange}
+            maxLength={254}
+            groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+            placeholder="user@domain.com"
+            error={formErrors.email}
+            helpText="logins.emailHelp"
+            required
+          />
+          
+          {/* The Live Character Counter Badge */}
+          <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+            <span className={loginFormData.email?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
+              {loginFormData.email?.length || 0}/254
+            </span>
+          </div>
+        </div>
 
         <FormField
           type="checkbox"
@@ -498,7 +521,7 @@ const Profile = () => {
       <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {Translate('password.changePassword')} - {selectedLogin?.username}{' '}
+            {Translate('password.changePassword')}: {selectedLogin?.username} / {selectedLogin?.mailbox}{' '}
             {/* Use optional chaining */}
           </Modal.Title>
         </Modal.Header>

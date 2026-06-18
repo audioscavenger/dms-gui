@@ -17,13 +17,13 @@ import {
   dbGet,
   dbInit,
   dbUpgrade,
-  deleteEntry,
   refreshTokens,
   updateDB,
 } from './db.mjs';
 
 import {
   addLogin,
+  deleteLogin,
   getLogins,
   getRoles,
   loginUser,
@@ -652,10 +652,10 @@ app.delete('/api/accounts/:schema/:containerName/:mailbox',
   requireAdmin, 
 async (req, res) => {
   try {
-    const { schema, containerName, mailbox } = req.params;
+    const { schema, containerName, mailbox, alsoDeleteLogin } = req.params;
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
-    const result = await deleteAccount(schema, containerName, mailbox);
+    const result = await deleteAccount(schema, containerName, mailbox, alsoDeleteLogin);
     res.json(result);
     
   } catch (error) {
@@ -863,9 +863,18 @@ async (req, res) => {
       // check source for obvious hack attempt. extract domains and see that they match. Only admins can create aliases for different domain then destination
       // TODO: we match full domains sub.domain.com, but maybe we should only match the main domain.com?
       let domainSource = source.match(regexFindEmailStrict);
-      let domainDest = destination.match(regexFindEmailStrict);
-      let domainsMatch = (domainSource.length == 3 && domainDest.length == 3 && domainSource[2].toLowerCase() == domainDest[2].toLowerCase()) ? true : false;
-      result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
+      debugLog('ddebug source,domainSource',source,domainSource);
+      
+      // atm we simply refuse to let linked account users add regex aliases by themselves
+      if (!domainSource && req.user.isAccount) {
+        result = {success:false, error: 'Permission denied'};
+        
+      } else {
+        let domainDest = destination.match(regexFindEmailStrict);
+        debugLog('ddebug destination,domainDest',destination,domainDest);
+        let domainsMatch = (domainSource?.length == 3 && domainDest?.length == 3 && domainSource[2].toLowerCase() == domainDest[2].toLowerCase()) ? true : false;
+        result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
+      }
     }
     res.status(201).json(result);
     
@@ -1203,9 +1212,9 @@ app.post('/api/getLogins',
   requireAdmin, 
 async (req, res) => {
   try {
-    const { ids } = req.body;
+    const { credentials } = req.body;
 
-    const logins = await getLogins(ids);
+    const logins = await getLogins(credentials);
     res.json(logins);
     
   } catch (error) {
@@ -1399,10 +1408,12 @@ app.delete('/api/logins/:id',
 async (req, res) => {
   try {
     const { id } = req.params;
+    const { alsoDeleteMailbox } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'id is required' });
     }
-    const result = await deleteEntry('logins', id, 'id');
+    // const result = await deleteEntry('logins', id, 'id');
+    const result = await deleteLogin(id, alsoDeleteMailbox);
     res.json(result);
     
   } catch (error) {

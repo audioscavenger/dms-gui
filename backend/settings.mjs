@@ -3,9 +3,9 @@ import {
   getValueFromArrayOfObj,
   jsonFixTrailingCommas,
   obj2ArrayOfObj,
-  pluck,
+  plucks,
   reduxArrayOfObjByValue,
-  reduxPropertiesOfObj,
+  reduxPropertiesOfObj
 } from '../common.mjs';
 import {
   command,
@@ -1345,8 +1345,7 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
     
       result = getConfigs(plugin);
       if (result.success) {
-        let containerNames = pluck(result.message, 'value');
-        if (containerNames.includes(containerName) && command[plugin][schema]?.kill) {
+        if (plucks(result.message, 'value').has(containerName) && command[plugin][schema]?.kill) {
 
           const targetDict = getTargetDict(plugin, containerName);
           results = await execCommand(command[plugin][schema].kill, targetDict);
