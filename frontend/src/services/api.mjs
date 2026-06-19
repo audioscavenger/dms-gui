@@ -167,20 +167,20 @@ api.interceptors.response.use(
     }
     
     // 2. If we are already heading to login, silence subsequent requests
-    if (isLogoutRequest) {
+    if (isRedirectingToLogin || isLogoutRequest) {
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
 
     // 3. Handle complete server crashes (502, 503, 504) or network failures without backend response
     if (!errorResponse || httpStatus === 502 || httpStatus === 503 || httpStatus === 504) {
       if (!isLogoutRequest) { // prevent infinite redirect loop
-        // window.location.href = '/login';
+        isRedirectingToLogin = true;
         window.location.replace('/login');
       }
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
     
-    // 4. Handle token errors: If access token expired, try to refresh
+    // 4. Handle standard Token Expiration (Attempt Token Refresh Loop)
     if ((errorResponseCode === 'TOKEN_EXPIRED' || errorResponseCode === 'REFRESH_TOKEN_EXPIRED') && !originalRequest._retry) {
       if (isRefreshing) {
         // debugLog(`ddebug WAIT5 api interceptor start with ${errorResponseCode} isRefreshing`); await delay(5000); 
@@ -218,48 +218,49 @@ api.interceptors.response.use(
         processQueue(refreshError);
 
         // Refresh failed - redirect to login
+        isRedirectingToLogin = true;
         isLogoutRequest = true;
         window.location.href = '/login';
-        return Promise.reject(refreshError);
+        // return Promise.reject(refreshError);
+        return new Promise(() => {}); // Return unresolved promise to halt execution silently
       }
     }
 
-    // 5. Handle known error codes
-    if (!isLogoutRequest && errorResponseCode != 'CODE_MISSING') {
-      switch (errorResponseCode) {
-        case 'NO_TOKEN':
-        case 'INVALID_TOKEN':
-        case 'NO_REFRESH_TOKEN':
-        case 'INVALID_REFRESH_TOKEN':
-        case 'REFRESH_TOKEN_EXPIRED':
-        case 'ERR_BAD_REQUEST':
-          isLogoutRequest = true;
-          // window.location.href = '/login';
-          window.location.replace('/login');
-          break;
-        
-        case 'FORBIDDEN':
-          console.error('Permission denied');
-          break;
-        
-        case 'ACCOUNT_INACTIVE':
-          alert('Your account is inactive. Please contact support.');
-          break;
-        
-      }
+    // Step 5: Handle Fatal Authentication Failures (Forced Logouts)
+    const fatalAuthCodes = new Set(['CODE_MISSING', 'NO_TOKEN', 'INVALID_TOKEN', 'NO_REFRESH_TOKEN', 'INVALID_REFRESH_TOKEN', 'REFRESH_TOKEN_EXPIRED', 'ERR_BAD_REQUEST']);
+    if (fatalAuthCodes.has(errorResponseCode)) {
+      isRedirectingToLogin = true; // Locks the gate so simultaneous requests are muted
+
+      // WIPE CLIENT STORAGE FLAGGING IMMEDIATELY
+      localStorage.removeItem('user'); 
+      sessionStorage.clear();
+      
+      window.location.replace('/login');
+      return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
 
-    // 6. If the server responded with a JSON error payload, extract it.
-    if (!isLogoutRequest && errorResponse && errorResponseMessage) {
+    // Step 6: Handle Non-Fatal Known Application Error Codes
+    switch (errorResponseCode) {
+      case 'FORBIDDEN':
+        console.error('Permission denied');
+        break;
+      
+      case 'ACCOUNT_INACTIVE':
+        alert('Your account is inactive. Please contact support.');
+        break;
+      
+    }
+
+    // 7. Normalized Safe Return Payload: extract response data if exist
+    if (errorResponse && errorResponseMessage) {
       debugLog('graceful fail');
       return Promise.reject({
         success: false,
-        // Fall back gracefully if error or code aren't strings
         message: errorResponseError || errorResponseCode || errorAxiosMessage 
       });
     }
     
-    // 7. unknown error
+    // 8. unknown error
     debugLog('ungraceful fail');
     return Promise.reject({
       success: false,
@@ -427,17 +428,20 @@ export const loginUser = async (credential, password, test = false) => {
 export const logoutUser = async () => {
   
   return await cacheWrap(async () => {
-    // Create an abort controller so we can cancel it cleanly if the page reloads
-    const controller = new AbortController();
+    const response = await api.post(`/logout`);
+    return response.data;
 
-    try {
-      const response = await api.post(`/logout`);
-      return response.data;
+    // // Create an abort controller so we can cancel it cleanly if the page reloads
+    // const controller = new AbortController();
 
-    } finally {
-      // Ensure it gets aborted when we move away
-      controller.abort();
-    }
+    // try {
+    //   const response = await api.post(`/logout`);
+    //   return response.data;
+
+    // } finally {
+    //   // Ensure it gets aborted when we move away
+    //   controller.abort();  // BUG: avorting controller after defining it will not help
+    // }
   });
 };
 

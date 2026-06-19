@@ -171,18 +171,25 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
 * [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
 * [ ] 1.5.99 - frontend: first load bombs: downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a
+* [ ] 1.5.99 - frontend: /login first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
 
 * [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
 * [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
-* [ ] 1.5.99 - frontend: /dashboard first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
 * [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
-* [ ] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
+* [-] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
-* [ ] 1.5.99 - Logins: implement cancel button in the table?
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 
+* [x] 1.5.61 - bugfix: useAuth: missing isDEMO in the useMemo state, fixed logout routine
+* [x] 1.5.61 - App: fixed routes and added Outlet, updated NavBar as well
+* [x] 1.5.61 - api: fixed api.interceptors.response.use finally
+* [x] 1.5.61 - index: refactored generateAccessToken and generateRefreshToken using strict rules for the payload
+* [x] 1.5.61 - index: all res.status amd res.json not have a return, following industry's standards 
+* [x] 1.5.61 - index: refactored cookies security and fixed /logout
+* [-] 1.5.61 - Logins: implement cancel button in the table? we could easily, but a refresh is prefered.
+* [x] 1.5.61 - frontend: /logout fails with uncaptured 401 when token is expired
 * [x] 1.5.60 - api: refuse to let linked account users add regex aliases by themselves
 * [x] 1.5.60 - performance: pullAccountsFromDMS, parseAliasesFromDMS, pluck, plucks
 * [x] 1.5.60 - performance: convert array.includes to set.has

@@ -41,26 +41,22 @@ export const AuthProvider = ({ children }) => {
 
   // call this function to sign out logged in user
   const logout = async (to="/login") => {
+    // 1. Instantly clear frontend local storage so that a refresh will not load stale data on initialization boots
+    // no need to setUser(null) since it's in localStorage
+    window.localStorage.clear();
+
     try {
-      // 1. Wait for the server to clear cookies and remove the DB token
+      // 2. Safely alert backend in the background
       await logoutUser();
-      window.localStorage.clear();
 
     } catch (err) {
       // Silently catch any leftover trace so the UI doesn't break
-      console.debug("Logout cleanup:", err.message);
+      console.debug("Logout cleanup, ignored error:", err.message);
       
     } finally {
-      // 2. Clear frontend state/tokens once the network call finishes
-      window.localStorage.clear();
-
-      // 3. Perform the clean redirect
+      // 3. Perform the clean redirect and wipe layouts out of memory
       window.location.replace(to);
     }
-
-    // logoutUser();
-    // window.localStorage.clear();
-    // window.location.replace(to);  // navigate(to, { replace: true }); // To get rig of menus and navbar profile, we need to reload, not navigate
   };
 
   const value = useMemo(
@@ -72,9 +68,13 @@ export const AuthProvider = ({ children }) => {
       mailservers,
       isDEMO,
     }),
-    [user, containerName, mailservers]
+    [user, containerName, mailservers, isDEMO]
   );
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 };
 
 export const useAuth = () => {

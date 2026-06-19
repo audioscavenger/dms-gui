@@ -6,7 +6,6 @@ import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
 import { useNavigate } from 'react-router-dom';
-// import { useTranslation } from 'react-i18next';
 
 import {
   ButtonDropdown,
@@ -22,12 +21,9 @@ const Navbar = ({
   ...rest
 }) => {
   // const { t } = useTranslation();
-  const { logout } = useAuth();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isDEMO] = useLocalStorage("isDEMO", false);
-  
   const navigate = useNavigate();
-  
   const [timeLeft, setTimeLeft] = useState({});
 
   useEffect(() => {
@@ -37,7 +33,6 @@ const Navbar = ({
 
     // Initial calculation
     setTimeLeft(calculateTimeLeft());
-
     return () => clearInterval(timer); // Cleanup on unmount
   }, []);
 
@@ -68,7 +63,7 @@ const Navbar = ({
 
 
   // console.debug('ddebug user', user);
-  // { email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
+  // user = { id: 1, mailbox: "admin@dms-gui.com", email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
 
   const profileItems = [
     { id: 1, title: "logins.profileLink", icon: "person-bounding-box",  onClick: () => navigate("/profile") },

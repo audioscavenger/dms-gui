@@ -149,25 +149,56 @@ SECURITY BENEFITS:
 ✅ All tokens are httpOnly cookies (XSS protection)
 */
 
+const cookieOptionsAccess = { 
+  httpOnly: true, 
+  secure: env.NODE_ENV === 'production',        // Use secure in production
+  sameSite: 'Strict',                           // 'None' or 'Lax' or 'Strict' (for CSRF protection)
+  maxAge: 3600000                               // 1h
+};
+
+const cookieOptionsRefresh = { 
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'Strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000               // 7 days
+};
+
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
-// Generate access token
-const generateAccessToken = (user) => {
+// Generate token
+const generateToken = (user, secret, expriry) => {
+  // if (!user?.id) throw new Error("Token generation aborted: User ID is required but was missing:", user);
+  // if (!user?.username) throw new Error("Token generation aborted: User username is required but was missing:", user);
+  // if (!user?.mailbox) throw new Error("Token generation aborted: User mailbox is required but was missing:", user);
+  // const payload = { id: user.id, username: user.username, mailbox: user.mailbox }; // Only store minimal data
+
+  // Destructure the user object to automatically strip exp and iat if they exist
+  // otherwise you will get a Bad "options.expiresIn" option the payload already has an "exp" property.
+  const { exp, iat, ...cleanPayload } = user;
+
   return jwt.sign(
-    user,
-    env.JWT_SECRET,
-    { expiresIn: env.ACCESS_TOKEN_EXPIRY }
+    cleanPayload,
+    secret,
+    { expiresIn: expriry }
   );
 };
 
+// Generate access token
+const generateAccessToken = (user) => {
+  return generateToken(
+    user,
+    env.JWT_SECRET,
+    env.ACCESS_TOKEN_EXPIRY
+  );
+};
 
 // Generate refresh token
 const generateRefreshToken = (user) => {
-  return jwt.sign(
-    { id: user.id, mailbox: user.mailbox }, // Only store minimal data
+  return generateToken(
+    user,
     env.JWT_SECRET_REFRESH, // Different secret!
-    { expiresIn: env.REFRESH_TOKEN_EXPIRY }
+    env.REFRESH_TOKEN_EXPIRY
   );
 };
 
@@ -215,7 +246,7 @@ const requireAdmin = (req, res, next) => {
 
 // Check if user is active
 const requireActive = (req, res, next) => {
-  if (!req.user || !req.user.isActive) {
+  if (!req.user || !req.user?.isActive) {
     return res.status(403).json({ 
       error: 'Account is inactive',
       code: 'ACCOUNT_INACTIVE' 
@@ -326,12 +357,12 @@ async (req, res) => {
 
     // const status = await getServerStatus(plugin, containerName, test, settings); // I think one one api like initAPI should be allowed to pass settings directly from the GUI
     const status = await getServerStatus(plugin, containerName, test);
-    res.json(status);
+    return res.json(status);
 
   } catch (error) {
     errorLog(`index /api/status: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -353,11 +384,11 @@ app.get('/api/infos',
 async (req, res) => {
   try {
     const infos = await getNodeInfos();
-    res.json(infos);
+    return res.json(infos);
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -415,12 +446,12 @@ async (req, res) => {
     debugLog('ddebug req.query:', req.query);
 
     const envs = await getServerEnvs(plugin, containerName, refresh, name);
-    res.json(envs);
+    return res.json(envs);
 
   } catch (error) {
     errorLog(`index /api/envs: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -469,12 +500,12 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       accounts = await getAccounts(containerName, false, req.user.roles);
     }
-    res.json(accounts);
+    return res.json(accounts);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve accounts' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -536,12 +567,12 @@ async (req, res) => {
       return res.status(400).json({ error: 'Mailbox and password are required' });
     }
     const result = await addAccount(schema, containerName, mailbox, password, createLogin);
-    res.status(201).json(result);
+    return res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -603,12 +634,12 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       result = (req.user.roles.includes(mailbox)) ? await doveadm(schema, containerName, command, mailbox, req.body) : {success: false, error: 'Permission denied'};
     }
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`PUT /api/doveadm: ${error.message}`);
     // res.status(500).json({ error: 'Unable to execute doveadm' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -656,12 +687,12 @@ async (req, res) => {
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
     const result = await deleteAccount(schema, containerName, mailbox, alsoDeleteLogin);
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -735,12 +766,12 @@ async (req, res) => {
     } else {
       result = {success: false, error: 'Permission denied'};
     }
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`index PATCH /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update Account' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -789,12 +820,12 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       result = await getAliases(containerName, false, req.user.roles);
     }
-    res.json(result);
+    return res.json(result);
 
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve aliases' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -868,7 +899,7 @@ async (req, res) => {
       // atm we simply refuse to let linked account users add regex aliases by themselves
       if (!domainSource && req.user.isAccount) {
         result = {success:false, error: 'Permission denied'};
-        
+
       } else {
         let domainDest = destination.match(regexFindEmailStrict);
         debugLog('ddebug destination,domainDest',destination,domainDest);
@@ -876,12 +907,12 @@ async (req, res) => {
         result = (req.user.roles.includes(destination) && domainsMatch) ? await addAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
       }
     }
-    res.status(201).json(result);
+    return res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create alias' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -944,11 +975,11 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       result = (req.user.roles.includes(destination)) ? await deleteAlias(containerName, source, destination) : {success:false, error: 'Permission denied'};
     }
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`DELETE /api/aliases: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1002,12 +1033,12 @@ async (req, res) => {
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;
 
     const settings = (req.user.isAdmin || req.user.id == scope) ? getSettings(plugin, containerName, name, encrypted) : {success:false, error:'Permission denied'};    // fails silently
-    res.json(settings);
+    return res.json(settings);
     
   } catch (error) {
     errorLog(`GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1049,11 +1080,11 @@ async (req, res) => {
     // for non-admins:  for mailserver plugin we send scope=roles, for anything else we send scope=userID
     debugLog(            `getConfigs(${plugin}, ${(req.user.isAdmin) ? [] : (plugin == 'mailserver') ? req.user.roles : [req.user.id]}, ${name})`)
     const configs = await getConfigs(plugin,      (req.user.isAdmin) ? [] : (plugin == 'mailserver') ? req.user.roles : [req.user.id],    name);
-    res.json(configs);
+    return res.json(configs);
     
   } catch (error) {
     errorLog(`GET /api/configs: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1126,12 +1157,12 @@ async (req, res) => {
     debugLog('ddebug containerName', containerName);
     debugLog('ddebug req.body', req.body);
     const result = await saveSettings(plugin, schema, scope, containerName, req.body, encrypted);     // req.body = [{name:name, value:value}, ..]
-    res.status(201).json(result);
+    return res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1173,12 +1204,12 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       result = (credential == req.user.mailbox) ? await getRoles(credential) : {success:false, error: 'Permission denied'};
     }
-    res.json(roles);
+    return res.json(roles);
     
   } catch (error) {
     errorLog(`index GET /api/roles: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve roles' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1215,12 +1246,12 @@ async (req, res) => {
     const { credentials } = req.body;
 
     const logins = await getLogins(credentials);
-    res.json(logins);
+    return res.json(logins);
     
   } catch (error) {
     errorLog(`index POST /api/getLogins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1291,12 +1322,12 @@ async (req, res) => {
     if (!password)  return res.status(400).json({ error: 'password is missing' });
 
     const result = await addLogin(mailbox, username, password, email, isAdmin, isAccount, isActive, mailserver, roles);
-    res.status(201).json(result);
+    return res.status(201).json(result);
     
   } catch (error) {
     errorLog(`index PUT /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Login' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1361,20 +1392,41 @@ async (req, res) => {
     }
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
-    let result;
+    let result = {success: false, error: 'Permission denied'};
     if (req.user.isAdmin) {
       result = await updateDB('logins', id, req.body);    // example: { isActive: 0 }
 
     } else {
-      result = (id == req.user.id) ? await updateDB('logins', id, req.body) : {success:false, error: 'Permission denied'};
+      // non admin users can only modify themselves
+      if (id == req.user.id) {
+        result = await updateDB('logins', id, req.body);
+       }
     }
-    debugLog(`index PATCH /api/logins/${id}`, result)
-    res.json(result);
+    debugLog(`index PATCH /api/logins/${id}`, result);
+
+    // must refresh tokens as the token signature may have changed
+    if (result.success && id == req.user.id) {
+      const updatedUser = {
+        ...req.user,
+        ...req.body
+      };
+      const accessToken = generateAccessToken(updatedUser);
+      const refreshToken = generateRefreshToken(updatedUser);
+
+      // Store refresh token in database
+      updateDB('logins', updatedUser.id, {refreshToken:refreshToken});
+
+      // Overwrite the cookies instantly so the frontend is up to date
+      res.cookie('accessToken', accessToken, cookieOptionsAccess);
+      res.cookie('refreshToken', refreshToken, cookieOptionsRefresh);
+    }
+
+    return res.json(result);
     
   } catch (error) {
     errorLog(`index PATCH /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update login' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1414,12 +1466,12 @@ async (req, res) => {
     }
     // const result = await deleteEntry('logins', id, 'id');
     const result = await deleteLogin(id, alsoDeleteMailbox);
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`index /api/login: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete login' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1471,45 +1523,32 @@ app.post('/api/loginUser', async (req, res, next) => {
     if (user.success) {
       if (env.isDEMO) user.message.isDEMO = true;
       if (test) {
-        res.json({success: true, isDEMO:env.isDEMO});  // just return true, not real login
+        return res.json({success: true, isDEMO:env.isDEMO});  // just return true, not real login
 
       } else {
         // Generate tokens
         const accessToken = generateAccessToken(user.message);
         const refreshToken = generateRefreshToken(user.message);
-        // debugLog('accessToken', accessToken);
-        // debugLog('refreshToken', refreshToken);
 
         // Store refresh token in database
         updateDB('logins', user.message.id, {refreshToken:refreshToken});
 
         // HTTP-Only Cookies (for Refresh Tokens):
-        res.cookie('accessToken', accessToken, { 
-          httpOnly: true, 
-          secure: env.NODE_ENV === 'production',        // Use secure in production
-          sameSite: 'Strict',                           // 'None' or 'Lax' or 'Strict' (for CSRF protection)
-          maxAge: 3600000                               // 1h
-        });
-
-        res.cookie('refreshToken', refreshToken, {
-          httpOnly: true,
-          secure: env.NODE_ENV === 'production',
-          sameSite: 'Strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000               // 7 days
-        });
+        res.cookie('accessToken', accessToken, cookieOptionsAccess);
+        res.cookie('refreshToken', refreshToken, cookieOptionsRefresh);
 
         // and we indeed send user's information with isAdmin, roles etc
-        res.json(user);
+        return res.json(user);
       }
 
     } else {
       // res.status(401).json(user);   // this 401 error cannot be hidden from the browser when /login does the default user/pass test
-      res.json(user);
+      return res.json(user);
     }
 
   } catch (error) {
     errorLog(`index POST /api/loginUser: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1544,7 +1583,7 @@ app.post('/api/refresh', async (req, res) => {
     const decoded = jwt.verify(refreshToken, env.JWT_SECRET_REFRESH);
 
     // Check if refresh token exists in database
-    const result = dbGet(sql.logins.select.refreshToken, decoded.id, {refreshToken:refreshToken});
+    const result = dbGet(sql.logins.select.refreshToken, decoded.id, {refreshToken:refreshToken});  // foth id and refreshToken must match in the db
     const user = (result.success) ? result.message : null;
 
     if (!user) {
@@ -1555,17 +1594,12 @@ app.post('/api/refresh', async (req, res) => {
     }
 
     // Generate new access token
-    const newAccessToken = generateAccessToken(user);
+    const accessToken = generateAccessToken({ id: user.id, username: user.username, mailbox: user.mailbox });
 
     // Set new access token cookie
-    res.cookie('accessToken', newAccessToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 15 * 60 * 1000 // 15 minutes
-    });
+    res.cookie('accessToken', accessToken, cookieOptionsAccess);
 
-    res.json({ 
+    return res.json({ 
       success: true,
       message: 'Token refreshed' 
     });
@@ -1577,8 +1611,17 @@ app.post('/api/refresh', async (req, res) => {
         code: 'REFRESH_TOKEN_EXPIRED' 
       });
     }
+
+    // New Isolated Handle: Token signature is completely corrupted or falsified
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({
+        error: 'Malformed or invalid token signature.',
+        code: 'INVALID_REFRESH_TOKEN'
+      });
+    }
+
     console.error('Refresh error:', error);
-    res.status(403).json({ 
+    return res.status(403).json({ 
       error: 'Failed to refresh token',
       code: 'REFRESH_ERROR' 
     });
@@ -1609,17 +1652,17 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
     updateDB('logins', req.user.id, {refreshToken:"null"});
 
     // Clear cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken', cookieOptionsAccess);
+    res.clearCookie('refreshToken', cookieOptionsRefresh);
 
-    res.json({ 
+    return res.json({ 
       success: true,
       message: 'Logged out successfully' 
     });
 
   } catch (error) {
     console.error('Logout error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Logout failed',
       code: 'LOGOUT_ERROR' 
     });
@@ -1666,12 +1709,12 @@ async (req, res) => {
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
 
     const domains = await getDomains(containerName, domain);
-    res.json(domains);
+    return res.json(domains);
     
   } catch (error) {
     errorLog(`index GET /api/domains/${domain}/${containerName}: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve domains' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1719,12 +1762,12 @@ async (req, res) => {
     if (!table) return res.status(400).json({ error: 'table is required' });
     
     const count = dbCount(table, containerName, schema);
-    res.json(count);
+    return res.json(count);
     
   } catch (error) {
     errorLog(`index GET /api/getCount: ${error.message}`);
     // res.status(500).json({ error: 'Unable to count table' });
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1784,11 +1827,11 @@ async (req, res) => {
     const { action, dms_api_key_param } = req.body;
     
     const result = await initAPI(plugin, schema, containerName, action, dms_api_key_param);
-    res.json(result);
+    return res.json(result);
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1836,11 +1879,11 @@ async (req, res) => {
     const { plugin, schema, containerName } = req.params;
     
     const result = killContainer(plugin, schema, containerName);
-    res.json({success:true, message: result?.message});
+    return res.json({success:true, message: result?.message});
     
   } catch (error) {
     errorLog(`index /api/killContainer: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -1854,7 +1897,7 @@ app.use((err, req, res, next) => {
 
   const isDevelopment = env.NODE_ENV === 'development';
 
-  res.status(err.status || 500).json({
+  return res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
     code: err.code || 'INTERNAL_ERROR',
     ...(isDevelopment && { stack: err.stack })

@@ -27,6 +27,34 @@ import {
 } from './db.mjs';
 
 
+// mailserver used to be containerName, now we want configID
+// addLogin will not create a mailbox by itself, while addAccount will create a login for it
+export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
+  debugLog(mailbox, username, '********', email, isAdmin, isActive, isAccount, mailserver, roles);
+
+  try {
+    // even when password is undefined, we can get a hash value
+    const { salt, hash } = await hashPassword(password ?? '');
+    // login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
+    const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, mailserver:mailserver, roles:JSON.stringify(roles) });
+    if (result.success) {
+      successLog(`Saved login ${username}:${mailbox}`);
+      
+    }
+    return result;
+
+  } catch (error) {
+    errorLog(error.message);
+    throw new Error(error.message);
+    // TODO: we should return smth to the index API instead of throwing an error
+    // return {
+      // status: 'unknown',
+      // error: error.message,
+    // };
+  }
+};
+
+
 // this returns an objects
 // credential can be:
 //  string: mailbox or username
@@ -254,34 +282,6 @@ export const getRoles = async (credential=null) => {
     }
     return roles;
     
-  } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
-    // TODO: we should return smth to the index API instead of throwing an error
-    // return {
-      // status: 'unknown',
-      // error: error.message,
-    // };
-  }
-};
-
-
-// mailserver used to be containerName, now we want configID
-// addLogin will not create a mailbox by itself, while addAccount will create a login for it
-export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
-  debugLog(mailbox, username, '********', email, isAdmin, isActive, isAccount, mailserver, roles);
-
-  try {
-    // even when password is undefined, we can get a hash value
-    const { salt, hash } = await hashPassword(password ?? '');
-    // login:    `REPLACE INTO logins  (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
-    const result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, mailserver:mailserver, roles:JSON.stringify(roles) });
-    if (result.success) {
-      successLog(`Saved login ${username}:${mailbox}`);
-      
-    }
-    return result;
-
   } catch (error) {
     errorLog(error.message);
     throw new Error(error.message);
