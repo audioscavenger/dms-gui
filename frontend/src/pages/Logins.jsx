@@ -20,6 +20,7 @@ import {
   plucks,
   regexUsername,
   reduxArrayOfObjByValue,
+  isNonEmptyDict,
   regexEmailStrict,
 } from '../../../common.mjs';
 
@@ -125,10 +126,6 @@ const Logins = () => {
   });
 
   // State for save login button ----------------------------------
-  // useEffect(() => {  // too laggy
-  //   Object.keys(newLoginFormErrors).length === 0 ? setSubmitDisabled(false) : setSubmitDisabled(true);
-  //   debugLog('Object.keys(newLoginFormErrors).length:', Object.keys(newLoginFormErrors).length)
-  // }, [newLoginFormErrors]);
   const [submitDisabled, setSubmitDisabled] = useState(true);
 
   // State for password change modal -------------------------------
@@ -359,7 +356,7 @@ const Logins = () => {
 
     // Update the button instantly using the fresh error object
     const freshErrors = validateNewLoginForm(updatedFormData);
-    const hasErrors = Object.keys(freshErrors).length > 0;
+    const hasErrors = isNonEmptyDict(freshErrors);
     setSubmitDisabled(hasErrors);
     
   };
@@ -713,7 +710,7 @@ const Logins = () => {
     }
 
     setPasswordFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   // Submit password change

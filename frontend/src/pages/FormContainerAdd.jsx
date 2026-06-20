@@ -11,6 +11,7 @@ import {
 } from '../../frontend.mjs';
 import {
   getValueFromArrayOfObj, 
+  isNonEmptyDict,
   mergeArrayOfObj,
 } from '../../../common.mjs';
 
@@ -450,7 +451,7 @@ function FormContainerAdd() {
     // 3. Immediately re-validate using the raw, updated array to unlock the button instantly
     // (We modify validateFormContainerAdd slightly below to accept a custom array if provided)
     const freshErrors = validateFormContainerAdd(updatedFormValues);
-    const hasErrors = Object.keys(freshErrors).length > 0;
+    const hasErrors = isNonEmptyDict(freshErrors);
     setFormValidated(!hasErrors);
 
     // try {
@@ -509,8 +510,8 @@ function FormContainerAdd() {
     // Update the button instantly using the fresh error object
     const freshErrors = validateFormContainerAdd(updatedFormData);
     debugLog('ddebug freshErrors:', freshErrors);
-    debugLog('ddebug Object.keys(freshErrors).length:', Object.keys(freshErrors).length);
-    const hasErrors = Object.keys(freshErrors).length > 0;
+    debugLog('ddebug Object.keys(freshErrors).length:', isNonEmptyDict(freshErrors));
+    const hasErrors = isNonEmptyDict(freshErrors);
     setFormValidated(!hasErrors);
 
   };
@@ -651,7 +652,6 @@ function FormContainerAdd() {
   };
 
 
-  // if (isLoading && !formValues && !Object.keys(formValues).length) {
   if (isLoading || !user.isAdmin) {
     return <LoadingSpinner />;
   } else debugLog('formValues:', formValues);

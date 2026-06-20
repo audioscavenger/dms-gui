@@ -6,13 +6,16 @@ export const env = {
   debug: ((process.env.DEBUG || 'false').toLowerCase() == 'true') ? true : false,
 
   // internals of dms-gui
-  DMSGUI_VERSION: (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION,
-  DMSGUI_DESCRIPTION: process.env.DMSGUI_DESCRIPTION,
+  DMSGUI_VERSION: (process.env.DMSGUI_VERSION || 'unknown').replace('v', ''),
+  DMSGUI_DESCRIPTION: process.env.DMSGUI_DESCRIPTION || 'unknown',
   HOSTNAME: process.env.HOSTNAME,
   ENV_MODE: process.env.ENV_MODE || 'production',
   PORT_FRONTEND: Number(process.env.PORT_FRONTEND) || 3001,
   PORT_BACKEND: Number(process.env.PORT_BACKEND) || 3000,
-  BACKEND_PROXY_URL: process.env.BACKEND_PROXY_URL || 'http://localhost:3000',  // should be your dms-gui container name!
+  FRONTEND_PROXY_URL: process.env.FRONTEND_PROXY_URL || 'http://localhost:3001',
+  BACKEND_PROXY_URL: process.env.BACKEND_PROXY_URL || 'http://localhost:3000',
+  NGINX_VERSION: process.env.NGINX_VERSION || null,
+
   API_URL  : process.env.API_URL || '/api',               // security: cors
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
   DATABASE: ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),

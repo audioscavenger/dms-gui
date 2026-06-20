@@ -4,6 +4,7 @@ const exec = promisify(execCb);
 
 import {
   getValueFromArrayOfObj,
+  isNonEmptyDict,
   reduxPropertiesOfObj,
 } from '../common.mjs';
 import {
@@ -1029,18 +1030,7 @@ export const verifyPassword = async (credential=null, password='', table='logins
     const saltHash = (login.success) ? login.message : false;
     // console.log('saltHash',saltHash);
 
-    // return new Promise((resolve, reject) => {
-    //   if (Object.keys(saltHash).length) {
-    //     if (saltHash.salt && saltHash.hash) {
-    //       crypto.scrypt(password, saltHash.salt, 64, (error, derivedKey) => {
-    //         if (error) return reject(error);
-    //         resolve(saltHash.hash === derivedKey.toString('hex'));
-    //       });
-    //     } else return reject(`please reset password for ${credential}`);
-    //   } else return reject(`username ${credential} not found`);
-    // });
-    if (saltHash && Object.keys(saltHash).length) {
-      // debugLog('Object.keys(saltHash).length=', Object.keys(saltHash).length);
+    if (isNonEmptyDict(saltHash)) {
       if (saltHash.salt && saltHash.hash) {
         const { salt, hash } = await hashPassword(password ?? '', saltHash.salt);
         // debugLog(`ddebug saltHash.salt = ${saltHash.salt} == ${salt} salt?`);
@@ -1117,13 +1107,13 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
       throw new Error(`unknown table ${table}`);
     }
     
-    if (!jsonDict || Object.keys(jsonDict).length == 0) {
+    if (!isNonEmptyDict(jsonDict)) {
       throw new Error('nothing to modify was passed');
     }
     
     // security: keep only keys defined in table.update[] == any column update is controled
     let validDict = reduxPropertiesOfObj(jsonDict, Object.keys(sql[table].keys));
-    if (!validDict || Object.keys(validDict).length == 0) {
+    if (!isNonEmptyDict(validDict)) {
       errorLog(`jsonDict is invalid: ${JSON.stringify(jsonDict)} not in`, sql[table].keys); // only dump stuff in container log
       throw new Error(`jsonDict is invalid`);
     }
@@ -1415,8 +1405,7 @@ export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
       //   }
       // }
 
-      debugLog(`ddebug result.message.length >= Object.keys(plugins[${plugin}][${schema}].keys: ${result.message.length} >= ${Object.keys(plugins[plugin][schema].keys).length}`);
-      if (result.success && result.message.length >= Object.keys(plugins[plugin][schema].keys).length) {
+      if (result.success && result.message.length >= isNonEmptyDict(plugins[plugin][schema].keys)) {
         // limit results to protocol, host, port, and also Authorization but we add everything because we end up needing schema sometimes
         // we could use a for loop over plugins[plugin][schema].keys but then the code becomes hard to debug
         let targetDict = {

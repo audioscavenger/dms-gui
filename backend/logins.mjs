@@ -1,5 +1,6 @@
 import {
   getAllValuesByKey,
+  isNonEmptyDict,
   keepMatchingStrings,
   regexEmailStrict,
   regexUsername
@@ -72,12 +73,12 @@ export const getLogin = async (credential) => {
     } else if (typeof credential == "string" && (regexEmailStrict.test(credential) || regexUsername.test(credential))) {
       result = dbGet(sql.logins.select.login, {mailbox: credential, username: credential});
 
-    } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
+    } else if (isNonEmptyDict(credential) == 1) {
       result = dbGet(sql.logins.select.loginByObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
     if (result.success) {
       
-      if (result.message && Object.keys(result.message).length) {
+      if (isNonEmptyDict(result.message)) {
         infoLog(`Found login ${credential}:`, {isAdmin:result.message.isAdmin, isActive:result.message.isActive, isAccount:result.message.isAccount, roles:result.message.roles});
 
         // now JSON.parse roles as it's stored stringified in the db
@@ -271,7 +272,7 @@ export const getRoles = async (credential=null) => {
     } else if (typeof credential == "string" && regexEmailStrict.test(credential)) {
       roles = dbGet(sql.logins.select.roles, {mailbox: credential, username: credential});
 
-    } else if (typeof credential == "object" && Object.keys(credential).length == 1) {
+    } else if (isNonEmptyDict(credential) == 1) {
       roles = dbGet(sql.logins.select.rolesByObj.replace("{key}", Object.keys(credential)[0]), credential);
     }
     if (roles?.success) {

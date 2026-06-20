@@ -8,6 +8,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
     publicPath: '/',
+    clean: true,
   },
   module: {
     rules: [
@@ -27,6 +28,14 @@ module.exports = {
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
           },
+        },
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/i,
+        type: 'asset/resource',
+        generator: {
+          // Removes trailing dynamic query parameters from being appended in CSS
+          filename: '[name][ext]', 
         },
       },
       {

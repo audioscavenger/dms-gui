@@ -92,6 +92,10 @@ const oasDefinition = swaggerJsdoc(options);
 
 
 // cors manual way
+// Tell Express to trust Cloudflare and SWAG proxy headers 
+// This makes sure secure cookies are correctly issued
+app.set('trust proxy', true); 
+
 // app.use(function(req, res, next) {
 //   res.header("Access-Control-Allow-Origin", "*");
 //   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -152,14 +156,14 @@ SECURITY BENEFITS:
 const cookieOptionsAccess = { 
   httpOnly: true, 
   secure: env.ENV_MODE === 'production',        // Use secure in production
-  sameSite: 'Strict',                           // 'None' or 'Lax' or 'Strict' (for CSRF protection)
+  sameSite: 'lax',                              // 'none' or 'lax' or 'strict' (for CSRF protection)
   maxAge: 3600000                               // 1h
 };
 
 const cookieOptionsRefresh = { 
   httpOnly: true,
   secure: env.ENV_MODE === 'production',
-  sameSite: 'Strict',
+  sameSite: 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000               // 7 days
 };
 
@@ -389,6 +393,7 @@ async (req, res) => {
   try {
     const infos = await getNodeInfos();
     return res.json(infos);
+    
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });

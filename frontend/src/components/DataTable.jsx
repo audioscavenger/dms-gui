@@ -6,6 +6,9 @@ import { Table, Form } from 'react-bootstrap';
 // import { useTranslation } from 'react-i18next';
 
 import {
+  isNonEmptyDict,
+} from '../../../common.mjs';
+import {
   debugLog,
 } from '../../frontend.mjs';
 
@@ -53,6 +56,8 @@ const DataTable = ({
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrders, setSortOrders] = useState({});       // { columnName: 0|1 }
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
+  const objects2stringify = new Set(['object', 'boolean']);
+  const objects2blank = new Set(['null', undefined]);
 
   const sortFunction = (col, currentData=[]) => {
     // we escape if currentData[0][col] is null == it's a rendered column; both data and currentData columns are null when rendered
@@ -65,7 +70,8 @@ const DataTable = ({
       // debugLog('ddebug sortFunction currentData=',currentData);
 
       // if currentData[0][col] is a dictionary
-      if (typeof currentData[0][col] == 'object') {
+      // if (typeof currentData[0][col] == 'object') {
+      if (isNonEmptyDict(currentData[0][col])) {
         // find the first object in an array which exists in another array
         let sortKey = null;
         // we will filter object data only if a key from this data object was passed
@@ -78,8 +84,8 @@ const DataTable = ({
             if (sortOrders[col] == 0) currentData.sort((a, b) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
             else                      currentData.sort((b, a) => Number(a[col][sortKey]) - Number(b[col][sortKey]) );
           } else {
-            if (sortOrders[col] == 0) currentData.sort((a, b) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
-            else                      currentData.sort((b, a) => JSON.stringify(a[col][sortKey]).localeCompare(JSON.stringify(b[col][sortKey])) );
+            if (sortOrders[col] == 0) currentData.sort((a, b) => (a[col][sortKey]).localeCompare(b[col][sortKey]) );
+            else                      currentData.sort((b, a) => (a[col][sortKey]).localeCompare(b[col][sortKey]) );
           }
 
         // optional: try and sort by the first key of object, whatever it is
@@ -93,14 +99,14 @@ const DataTable = ({
           }
         }
         
-      // or else stringify/number compare the currentData
+      // or else stringify/number compare the currentData that is sanitized already
       } else {
         if (Number(currentData[0][col])) {
           if (sortOrders[col] == 0) currentData.sort((a, b) => Number(a[col]) - Number(b[col]) );
           else                      currentData.sort((b, a) => Number(a[col]) - Number(b[col]) );
         } else {
-          if (sortOrders[col] == 0) currentData.sort((a, b) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
-          else                      currentData.sort((b, a) => JSON.stringify(a[col]).localeCompare(JSON.stringify(b[col])) );
+          if (sortOrders[col] == 0) currentData.sort((a, b) => (a[col]).localeCompare(b[col]) );
+          else                      currentData.sort((b, a) => (a[col]).localeCompare(b[col]) );
         }
       }
     } // not a rendered column
@@ -134,29 +140,49 @@ const DataTable = ({
 
   // BUG: crash when filtering objects: right-hand side of 'in' should be an object, got undefined
   const sortedAndFilteredData = useMemo(() => {
-    let currentData = [...data];
-    // debugLog(`currentData before sortedAndFilteredData`, currentData);
-    // debugLog(`                   columnFilters`,columnFilters);
+    // Remap data to a new dataset with objects and booleans stringified
+    let sanitizedData = data.map((row) => {
+      const sanitizedRow = { ...row };
+
+        columns.forEach((col) => {
+          const value = row[col.key];
+
+          // Stringify booleans and objects, undefined CANNOT and SHOULD NOT be in the data
+          const sanitizedValue = objects2stringify.has(typeof value) ? '' : value;
+          // Blank out null values
+          sanitizedRow[col.key] = objects2blank.has(sanitizedValue) ? JSON.stringify(sanitizedValue) : sanitizedValue;
+      });
+    return sanitizedRow;
+    });
+    // debugLog('data',data);
+    // debugLog('sanitizedData',sanitizedData);
 
     // Apply columnFilters?
     Object.keys(columnFilters).forEach((column) => {
       const filterValue = columnFilters[column].toLowerCase();
       if (filterValue) {
-        currentData = currentData.filter((row) =>
-          String(row[column]).toLowerCase().includes(filterValue)
-        );
+        sanitizedData = sanitizedData.filter((row) => {
+          const cellValue = row[column];
+          
+          // Handle null/undefined values safely so the app never crashes // no, data is sanitized
+          // if (cellValue === undefined || cellValue === null) return false;
+
+          // Safely converts numbers to strings, leaves regular strings alone
+          return String(cellValue).toLowerCase().includes(filterValue);
+        });
       }
     });
 
+
     // Apply sorting ? '▲' : '▼'
-    if (currentData.length && sortColumn) {
-      debugLog(`currentData before sortColumn=${sortColumn}`, currentData);
+    if (sanitizedData.length && sortColumn) {
+      debugLog(`sanitizedData before sortColumn=${sortColumn}`, sanitizedData);
       // works:
-      sortFunction(sortColumn, currentData);
+      sortFunction(sortColumn, sanitizedData);
     }
     
-    // debugLog(`currentData after  sortColumn=${sortColumn}`, currentData);
-    return currentData;
+    // debugLog(`sanitizedData after  sortColumn=${sortColumn}`, sanitizedData);
+    return sanitizedData;
   }, [data, sortColumn, sortOrders, columnFilters]);
 
   // import ChangeHighlight from 'react-change-highlight';

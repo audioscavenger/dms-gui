@@ -19,10 +19,10 @@ if [ "$ENV_MODE" = "development" ]; then
 
   # nodemon only detects changes in /backend and does not recompile the frontend. useless
   # https://www.metered.ca/blog/how-to-restart-your-node-js-apps-automatically-with-nodemon/
-  echo "DEVELOPMENT: Starting backend:${PORT_BACKEND}..."
+  echo "$ENV_MODE: Starting backend:${PORT_BACKEND} with nodemon..."
   cd /app/backend && nodemon index.js &
   
-  echo "DEVELOPMENT: Starting Webpack:${PORT_FRONTEND}..."
+  echo "$ENV_MODE: Starting Webpack:${PORT_FRONTEND}..."
   cd /app/frontend && npm run start &
   
   # Wait a moment to ensure apps are starting up
@@ -31,22 +31,24 @@ if [ "$ENV_MODE" = "development" ]; then
   sed -i "s|{{UPSTREAM_NGINX}}|${UPSTREAM_NGINX_DEVELOPMENT}|g" /etc/nginx/http.d/default.conf
   [ "$DEBUG" = "true" ] && echo [DEBUG] ls -la /app/frontend && ls -la /app/frontend && echo [DEBUG] cat -n /etc/nginx/http.d/default.conf && cat -n /etc/nginx/http.d/default.conf
 
-  # Start Nginx in the foreground (this keeps the container running)
-  # dms-gui has a way to kill nginx and restart the container
-  echo "DEVELOPMENT: Starting nginx:80..."
-  nginx -g "daemon off;"
-
 else
-  # Start Node in the FOREGROUND; /app/frontend/dist will be used
-  echo "PRODUCTION: Starting backend:${PORT_BACKEND}..."
-  cd /app/backend && node index.js &
+  # Start Node in the BACKGROUND; /app/frontend/dist will be used
+  if [ "$DEBUG" = "true" ]; then
+    echo "$ENV_MODE: Starting backend:${PORT_BACKEND}..."
+    cd /app/backend && nodemon index.js &
+  else
+    echo "$ENV_MODE: Starting backend:${PORT_BACKEND} with nodemon..."
+    cd /app/backend && node index.js &
+  fi
 
-  # Start Nginx in the foreground (this keeps the container running)
-  # dms-gui has a way to kill nginx and restart the container
   sed -i "s|{{UPSTREAM_NGINX}}|${UPSTREAM_NGINX_PRODUTION}|g" /etc/nginx/http.d/default.conf
   [ "$DEBUG" = "true" ] && echo [DEBUG] ls -la /app/frontend && ls -la /app/frontend && echo [DEBUG] cat -n /etc/nginx/http.d/default.conf && cat -n /etc/nginx/http.d/default.conf
 
-  echo "PRODUCTION: Starting nginx:80..."
-  nginx -g "daemon off;"
 fi
 
+# Start Nginx in the foreground (this keeps the container running)
+# dms-gui has a way to kill nginx and restart the container
+echo "$ENV_MODE: Starting nginx:80..."
+nginx -V 2>&1 | egrep "version|built"
+export NGINX_VERSION=$(nginx -v 2>&1 | cut -d/ -f2)
+nginx -g "daemon off;"

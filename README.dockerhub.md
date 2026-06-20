@@ -349,7 +349,9 @@ networks:
 
 #### Reverse proxy
 
-We recommend this reverse proxy for its simplicity: [swag](https://docs.linuxserver.io/general/swag/).
+We recommend **SWAG** reverse proxy for its simplicity: [swag](https://docs.linuxserver.io/general/swag/).
+
+Security Headers: parameters like X-Frame-Options, Content-Security-Policy, and X-Content-Type-Options are handled by proxy.conf and resolver.conf, or other files within swag.
 
 Sample proxy configuration:
 
@@ -372,8 +374,15 @@ server {
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
 
+    ## FORCES Lax mode on all cookies flowing from this upstream target: not working for some reason
+    # proxy_cookie_flags ~ secure httponly samesite=strict;
+    ## Appends standard attributes onto the root path cookie string:
+    ##   add:    secure, httponly, samesite=strict, samesite=lax, samesite=none
+    ##   remove: nosecure, nohttponly, nosamesite
+    proxy_cookie_path / "/; Secure; HttpOnly; SameSite=strict";
+
     set $upstream_app dms-gui;
-    set $upstream_port 3001;
+    set $upstream_port 3;
     set $upstream_proto http;
     proxy_pass $upstream_proto://$upstream_app:$upstream_port;
 
@@ -387,6 +396,13 @@ server {
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
+
+    ## FORCES Lax mode on all cookies flowing from this upstream target: not working for some reason
+    # proxy_cookie_flags ~ secure httponly samesite=strict;
+    ## Appends standard attributes onto the root path cookie string:
+    ##   add:    secure, httponly, samesite=strict, samesite=lax, samesite=none
+    ##   remove: nosecure, nohttponly, nosamesite
+    proxy_cookie_path / "/; Secure; HttpOnly; SameSite=strict";
 
     set $upstream_app dms-gui;
     set $upstream_port 80;

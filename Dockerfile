@@ -4,7 +4,7 @@
 #   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.5.25 .
 #   docker push audioscavenger/dms-gui --all-tags
 
-ARG DMSGUI_VERSION=1.5.62
+ARG DMSGUI_VERSION=1.5.63
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # -----------------------------------------------------
@@ -12,6 +12,7 @@ ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of D
 # https://dev.to/ptuladhar3/avoid-using-bloated-nodejs-docker-image-in-production-3doc
 # FROM node:slim AS frontend-builder
 FROM node:24-alpine AS frontend-builder
+# -----------------------------------------------------
 
 WORKDIR /app/frontend
 
@@ -32,6 +33,7 @@ RUN npm run build
 # Stage 2: Build backend
 # FROM node:slim AS backend-builder
 FROM node:24-alpine AS backend-builder
+# -----------------------------------------------------
 
 WORKDIR /app/backend
 
@@ -54,10 +56,7 @@ COPY backend/ ./
 # -----------------------------------------------------
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
-
-ARG DMSGUI_VERSION
-ARG DMSGUI_DESCRIPTION
-ARG DATABASE_RESET
+# -----------------------------------------------------
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
 # RUN apk add --no-cache docker-cli
@@ -85,12 +84,14 @@ RUN npm install -g nodemon
 # Copy Nginx configuration - nope, what for? use a reverse proxy!
 RUN mkdir -p /run/nginx
 
-# nginx from alpine:
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+# nginx from alpine: default.conf variables will be resilved by start.sh
+# COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/nginx.conf.template /etc/nginx/http.d/default.conf
 
 # Copy startup script
 COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+ARG DMSGUI_VERSION
 RUN touch /app/version.${DMSGUI_VERSION}
 RUN busybox dos2unix /app/*.sh
 
@@ -102,7 +103,11 @@ RUN busybox dos2unix /app/*.sh
 # Start Nginx and Node.js with all the security mechanics around JWT_SECRET
 CMD ["/app/start.sh"]
 
+# -----------------------------------------------------
 # Add metadata to image:
+ARG DEBUG
+ARG DMSGUI_VERSION
+ARG DMSGUI_DESCRIPTION
 LABEL org.opencontainers.image.title="dms-gui"
 LABEL org.opencontainers.image.vendor="audioscavenger"
 LABEL org.opencontainers.image.authors="audioscavenger on GitHub"
@@ -115,5 +120,8 @@ LABEL org.opencontainers.image.source="https://github.com/docker-mailserver/dock
 # Thus to maximize cache, keep these lines last:
 LABEL org.opencontainers.image.revision=${DMSGUI_VERSION}
 LABEL org.opencontainers.image.version=${DMSGUI_VERSION}
+# -----------------------------------------------------
+# Pass environment to start script:
+ENV DEBUG=${DEBUG}
 ENV DMSGUI_VERSION=${DMSGUI_VERSION}
 ENV DMSGUI_DESCRIPTION=${DMSGUI_DESCRIPTION}

@@ -1,6 +1,7 @@
 import {
   arrayOfStringToDict,
   getValueFromArrayOfObj,
+  isNonEmptyDict,
   jsonFixTrailingCommas,
   obj2ArrayOfObj,
   plucks,
@@ -398,7 +399,7 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
           if (result_top.stderr.match(/api_miss/)) status.status.status = "api_unset";   // API key is not defined in DMS compose
         }
 
-      } else if (!targetDict || Object.keys(targetDict).length) {
+      } else if (!isNonEmptyDict(targetDict)) {
         status.status.status = "unknown";   // targetDict likely missing something
         status.status.error = 'Missing elements in targetDict';
 
@@ -1101,7 +1102,7 @@ export const getServerEnvs = async (plugin='mailserver', containerName=null, ref
   debugLog(`will pullServerEnvs for ${containerName}`);
   const targetDict = getTargetDict(plugin, containerName);
   const pulledEnv = await pullServerEnvs(targetDict);
-  infoLog(`got ${Object.keys(pulledEnv).length} pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
+  infoLog(`got ${isNonEmptyDict(pulledEnv)} keys in pulledEnv from pullServerEnvs(${containerName})`, pulledEnv);
   
   if (pulledEnv && pulledEnv.length) {
     saveServerEnvs(plugin, targetDict.schema, targetDict.scope, containerName, pulledEnv);
@@ -1149,7 +1150,7 @@ export const saveServerEnvs = async (plugin='mailserver', schema=null, scope=nul
 
 // Function to get dms-gui server infos
 export const getNodeInfos = async () => {
-  return {success: true, message: [
+  let nodeInfos = [
     { name: 'debug', value: env.debug },
     { name: 'DMSGUI_VERSION', value: env.DMSGUI_VERSION },
     { name: 'DMSGUI_CONFIG_PATH', value: env.DMSGUI_CONFIG_PATH },
@@ -1157,10 +1158,20 @@ export const getNodeInfos = async () => {
     { name: 'TZ', value: env.TZ },
     { name: 'NODE_VERSION', value: process.version },
     { name: 'ENV_MODE', value: env.ENV_MODE },
-    { name: 'PORT_FRONTEND', value: env.PORT_FRONTEND },
     { name: 'PORT_BACKEND', value: env.PORT_BACKEND },
+    { name: 'BACKEND_PROXY_URL', value: env.BACKEND_PROXY_URL },
     { name: 'isDEMO', value: env.isDEMO },
-  ]};
+  ];
+  debugLog('ddebug nodeInfos',nodeInfos)
+
+
+  if (env.NGINX_VERSION) nodeInfos.push({ name: 'NGINX_VERSION', value: env.NGINX_VERSION });
+  if (env.ENV_MODE == 'development') {
+    nodeInfos.push({ name: 'PORT_FRONTEND', value: env.PORT_FRONTEND });
+    nodeInfos.push({ name: 'FRONTEND_PROXY_URL', value: env.FRONTEND_PROXY_URL });
+  }
+
+  return {success: true, message: nodeInfos};
 };
 
 
@@ -1269,7 +1280,7 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
       break;
 
     case 'test':
-      if (Object.keys(formValues).length) {
+      if (isNonEmptyDict(formValues)) {
         debugLog(`Injecting API scripts to ${containerName}...`);
         result = await createAPIfiles(schema);
         if (!result.success) return result;

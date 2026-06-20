@@ -6,6 +6,7 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+  isNonEmptyDict,
   mergeArrayOfObj,
 } from '../../../common.mjs';
 
@@ -125,7 +126,7 @@ function FormDomains() {
     // TODO: setupPath: maybe add an api call to execInContainer/execCommand to test if exist?
 
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   const handleSubmitSettings = async (e) => {

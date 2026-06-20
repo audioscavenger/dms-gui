@@ -20,6 +20,7 @@ import {
 import {
   getValueFromArrayOfObj,
   regexUsername,
+  isNonEmptyDict,
   regexEmailStrict,
 } from '../../../common.mjs';
 
@@ -157,7 +158,7 @@ const Profile = () => {
 
     // Update the button instantly using the fresh error object
     const freshErrors = validateloginForm(updatedFormData);
-    const hasErrors = Object.keys(freshErrors).length > 0;
+    const hasErrors = isNonEmptyDict(freshErrors);
     setSubmitDisabled(hasErrors);
 
   };
@@ -284,7 +285,7 @@ const Profile = () => {
     }
 
     setPasswordFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   // Submit password change
@@ -399,7 +400,7 @@ const Profile = () => {
 
         {!loginFormData.isAccount && (
           <FormField
-            type="text"
+            type="email"
             id="mailbox"
             name="mailbox"
             label="logins.mailbox"

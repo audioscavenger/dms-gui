@@ -8,6 +8,7 @@ import {
   errorLog,
 } from '../../frontend.mjs';
 import {
+  isNonEmptyDict,
   regexEmailRegex,
   regexEmailStrict,
   regexFindEmailStrict,
@@ -174,7 +175,7 @@ const Aliases = () => {
     }
 
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   const handleSubmit = async (e) => {

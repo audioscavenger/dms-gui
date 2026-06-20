@@ -149,9 +149,8 @@ multiarch*      docker-container
  \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
 default         docker
  \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
-docker container prune -f && docker image prune -f
+docker container prune -f && docker image prune -f && docker builder prune -a -f
 docker system df
-docker builder prune -a -f
 docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
 
@@ -170,9 +169,6 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
 * [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
 * [ ] 1.5.99 - frontend: pages bomb Source map error: request failed with status 401; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: installHook.js.map
-* [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
-* [ ] 1.5.99 - frontend: first load bombs: downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a
-* [ ] 1.5.99 - frontend: /login first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
 
 * [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
 * [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
@@ -181,8 +177,15 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [-] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
-* [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
-
+* [x] 1.5.63 - frontend: first load bombs with downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a: updated webpack and internal nginx
+* [x] 1.5.63 - common: added isNonEmptyDict everywhere
+* [x] 1.5.63 - frontend: DataTable: sanitize passed data with stringify objects
+* [x] 1.5.63 - settings: getNodeInfos: added ENV_MODE PORT_BACKEND BACKEND_PROXY_URL PORT_FRONTEND FRONTEND_PROXY_URL
+* [x] 1.5.63 - bugfix: fixed with webpack --mode development: /login first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
+* [x] 1.5.63 - webpack: added clean=true
+* [x] 1.5.63 - swag nginx: proxy_cookie_path / "/; Secure; HttpOnly; SameSite=strict";
+* [x] 1.5.63 - Login: first login bombs: 4 Cookie warnings: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten; awag nginx update to accept cookies in strict mode
+* [x] 1.5.63 - webpack --mode development --devtool eval-source-map
 * [x] 1.5.62 - webpack --mode development does indeed produce a dist folder
 * [x] 1.5.62 - nginx.conf becomes a template with BACKEND_PROXY_URL and UPSTREAM_NGINX
 * [x] 1.5.62 - bugfix: Dockerfile, webpack, development mode, trials and errors
@@ -790,6 +793,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 ## DECISIONS
 
+* [x] - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? YES AND This should be a profile option stored as a config set for any user
 * [x] - what happens when you delete a linked Account? Shouldn't the login be deleted too? YES
 * [ ] - bugfix: why is create login checkbox forced when creating an Account?
 * [-] - must pull all data with a progress bar after new container added successfully

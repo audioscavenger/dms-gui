@@ -85,6 +85,12 @@ const ServerInfos = () => {
       if (infosData?.success) {
         setInfos(infosData.message);
         debugLog('infosData', infosData.message);
+          // [
+          //   { name: "debug", value: true },
+          //   { name: "DMSGUI_VERSION", value: "1.5.63" },
+          //   { name: "PORT_BACKEND", value: 3000 },
+          //   ...
+          // ]
         
         setErrorMessage(null);
       

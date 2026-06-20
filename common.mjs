@@ -370,6 +370,11 @@ export const moveKeyToLast = (obj, keyToMove) => {
 };
 
 
+// isNonEmptyDict returns the number of keys in non empty objects == true
+export const isNonEmptyDict = (obj) => 
+  obj?.constructor === Object && Object.keys(obj).length;
+
+
 // module.exports = {
 //   funcName,
 //   fixStringType,

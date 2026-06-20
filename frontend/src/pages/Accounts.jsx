@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  isNonEmptyDict,
+} from '../../../common.mjs';
+import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
@@ -207,7 +210,7 @@ const Accounts = () => {
     }
 
     setNewAccountFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   const handleSubmitNewAccount = async (e) => {
@@ -366,7 +369,7 @@ const Accounts = () => {
     }
 
     setPasswordFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   // Submit password change
@@ -445,7 +448,7 @@ const Accounts = () => {
     const errors = {};
 
     setDNSFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isNonEmptyDict(errors);
   };
 
   // Submit password change
