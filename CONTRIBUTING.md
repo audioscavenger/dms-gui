@@ -169,6 +169,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms?refresh=false because it violates the following directive: “connect-src 'none'”
 * [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
 * [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
+* [ ] 1.5.99 - frontend: pages bomb Source map error: request failed with status 401; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: installHook.js.map
 * [ ] 1.5.99 - frontend: first load bombs: Cookie warnings 4: The value of the attribute “path” for the cookie “accessToken|refreshToken” has been overwritten. loginUser; Invalid “SameSite“ value for cookie “accessToken”. The supported values are: “Lax“, “Strict“, “None“.
 * [ ] 1.5.99 - frontend: first load bombs: downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a
 * [ ] 1.5.99 - frontend: /login first load bombs: NotFoundError: Node.insertBefore: Child to insert before is not a child of this node bootstrap-autofill-overlay.js:1453:30
@@ -182,6 +183,9 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] 1.5.99 - Accounts: should "Create a dms-gui login for that account?" be unchecked by default? This should be a profile option for admins
 
+* [x] 1.5.62 - webpack --mode development does indeed produce a dist folder
+* [x] 1.5.62 - nginx.conf becomes a template with BACKEND_PROXY_URL and UPSTREAM_NGINX
+* [x] 1.5.62 - bugfix: Dockerfile, webpack, development mode, trials and errors
 * [x] 1.5.61 - bugfix: useAuth: missing isDEMO in the useMemo state, fixed logout routine
 * [x] 1.5.61 - App: fixed routes and added Outlet, updated NavBar as well
 * [x] 1.5.61 - api: fixed api.interceptors.response.use finally
@@ -811,7 +815,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [-] - frontend: convert all the db.*.json into browser json storage? no, sqlite3
 * [-] - backend: added sql for accounts; nah, why?
 * [x] - frontend/pages: refactor validate*Form and load them from individual files
-* [-] - PORT_NODEJS: package.json / .env / webpack etc... use hard coded 3001 - so what
+* [-] - PORT_FRONTEND: package.json / .env / webpack etc... use hard coded 3001 - so what
 * [-] - backend: get rid of the common.js?
 * [-] - backend: explore Caddy idea https://github.com/orgs/docker-mailserver/discussions/4584#discussioncomment-14582516 - nope
 * [x] - backend: explore python API idea as seen here https://github.com/Mailu/Mailu/blob/master/core/dovecot/start.py - yay

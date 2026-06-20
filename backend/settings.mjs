@@ -1156,8 +1156,10 @@ export const getNodeInfos = async () => {
     { name: 'HOSTNAME', value: env.HOSTNAME },
     { name: 'TZ', value: env.TZ },
     { name: 'NODE_VERSION', value: process.version },
-    { name: 'NODE_ENV', value: env.NODE_ENV },
-    { name: 'PORT_NODEJS', value: env.PORT_NODEJS },
+    { name: 'ENV_MODE', value: env.ENV_MODE },
+    { name: 'PORT_FRONTEND', value: env.PORT_FRONTEND },
+    { name: 'PORT_BACKEND', value: env.PORT_BACKEND },
+    { name: 'isDEMO', value: env.isDEMO },
   ]};
 };
 

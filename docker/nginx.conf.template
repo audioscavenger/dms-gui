@@ -10,8 +10,9 @@ server {
 
   # Handle Single Page Application routing
   location / {
-    try_files $uri $uri/ /index.html;   # FRONTEND_NGINX_PRODUTION
-    # proxy_pass http://localhost:3001; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection 'upgrade'; # FRONTEND_NGINX_DEVELOPMENT
+    # try_files $uri $uri/ /index.html;   # FRONTEND_NGINX_PRODUTION
+    # proxy_pass http://localhost:3001; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; # FRONTEND_NGINX_DEVELOPMENT
+    {{UPSTREAM_NGINX}}                  # either one the the above as defined in args fron docker-compose
   }
 
   # Cache static assets
@@ -28,7 +29,7 @@ server {
 
   # Proxy API requests to the backend Node.js app
   location /api/ {
-    proxy_pass http://localhost:3000;
+    proxy_pass {{BACKEND_PROXY_URL}};                   # normally http://localhost:3000
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';

@@ -12,23 +12,35 @@ services:
       # options:
         # tag: dms
 
-    build: .                                        # uncomment me to build locally
+    build:                                              # comment me for production
+      context: .                                        # comment me for production
+      args:                                             # any ARG in Dockerfile must be there too; cannot use environment variables here either
+        - PORT_FRONTEND=3001
+        - FRONTEND_PROXY_URL=http://localhost:3001
+        - PORT_BACKEND=3000
+        - BACKEND_PROXY_URL=http://localhost:3000
+
+        - ENV_MODE=production
+        - UPSTREAM_NGINX=try_files $$uri $$uri/ /index.html;
+      #   - ENV_MODE=development                          # comment me for production
+      #   - UPSTREAM_NGINX=proxy_pass ${FRONTEND_PROXY_URL}; proxy_http_version 1.1; proxy_set_header Upgrade $$http_upgrade; proxy_set_header Connection "upgrade";  # comment me for production
     image: audioscavenger/dms-gui:latest
     container_name: dms-gui
     hostname: dms-gui
     restart: unless-stopped
     
     expose:
-      - 80      # frontend
-      - 3001    # docs
+      - 80      # frontend via internal nginx
+      - 3001    # frontend: webpack and docs
+      - 3000    # backend
       
     env_file: ./config/dms-gui/.dms-gui.env
     environment:
       - TZ=${TZ:-UTC}
-      - DATABASE_RESET=${DATABASE_RESET:-false}
-
-      # Set to true to enable debug logs for Docker commands
-      - DEBUG=true
+      # - isDEMO=true                                   # DEMO mode
+      # - DATABASE_RESET=true                           # to reset the database each time; used for DEMO
+      # - ENV_MODE=development                          # comment me for production
+      - DEBUG=true                                    # enable debugging
 
     volumes:
       - /etc/timezone:/etc/timezone:ro

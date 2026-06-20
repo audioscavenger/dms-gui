@@ -1159,8 +1159,10 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
           
           // add named scope to the scopedValues, even if not used in the query it won't fail
           // scopedValues = (sql[table].scope) ? {[key]:value, scope:scope} : {[key]:value};
+          // stringify arrays, dict, and null objects
           if (typeof value == 'object') {
             scopedValues = {[key]:JSON.stringify(value), scope:scope};
+
           } else {
             // updateDB logins id=10 for scope=undefined; encrypt=false { isActive: 0 } ==> that gives us scopedValues = {[isActive]:0, scope:undefined};
             scopedValues = {[key]:value, scope:scope};
@@ -1330,8 +1332,8 @@ export const refreshTokens = async (credentials) => {
     
     let result = dbRun(sql.logins.update.refreshTokens, credentials);
     if (result.success) {
-      successLog(`tokens refreshed:`, credentials ?? '*');
-      return {success: true, message: `tokens refreshed:`};
+      successLog(`${color.m}tokens deleted for user: ${credentials ?? '*'}`);
+      return {success: true, message: `tokens deleted for user: ${credentials ?? '*'}`};
       
     } else return result;
 

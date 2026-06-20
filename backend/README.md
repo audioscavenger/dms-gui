@@ -38,10 +38,12 @@ Configure the `.dms-gui.env` file with the appropriate environment variables:
 ## DMS_API_SIZE=1024                      // max payload size the mailserver API will accept
 
 ## Optional: Dev Environment
-# PORT_NODEJS=3001
-# API_URL=http://localhost:3001
-# NODE_ENV=development
-NODE_ENV=production
+# PORT_FRONTEND=3001
+# PORT_BACKEND=3000
+# API_URL=/api
+# BACKEND_PROXY_URL=http://localhost:3000
+# ENV_MODE=development
+ENV_MODE=production
 
 ## Debugging
 DEBUG=true

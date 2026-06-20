@@ -162,7 +162,11 @@ api.interceptors.response.use(
       // also /logout doesn't work anymore
 
     // 1. If the browser intentionally canceled the request due to navigation, stop immediately
-    if (errorCode === 'ERR_CANCELED' || errorAxiosMessage.includes('canceled', 'aborted')) {
+    if (  errorCode == 'ERR_CANCELED'
+       || errorCode == 'INTERNAL_ERROR'
+       || errorResponseCode == 'CODE_MISSING'
+       || errorAxiosMessage.includes('canceled', 'aborted')
+       ) {
       return new Promise(() => {}); // Halts processing silently without error logs
     }
     
@@ -227,7 +231,14 @@ api.interceptors.response.use(
     }
 
     // Step 5: Handle Fatal Authentication Failures (Forced Logouts)
-    const fatalAuthCodes = new Set(['CODE_MISSING', 'NO_TOKEN', 'INVALID_TOKEN', 'NO_REFRESH_TOKEN', 'INVALID_REFRESH_TOKEN', 'REFRESH_TOKEN_EXPIRED', 'ERR_BAD_REQUEST']);
+    const fatalAuthCodes = new Set([
+      'NO_TOKEN', 
+      'INVALID_TOKEN', 
+      'NO_REFRESH_TOKEN', 
+      'INVALID_REFRESH_TOKEN', 
+      'REFRESH_TOKEN_EXPIRED', 
+      'ERR_BAD_REQUEST'
+      ]);
     if (fatalAuthCodes.has(errorResponseCode)) {
       isRedirectingToLogin = true; // Locks the gate so simultaneous requests are muted
 

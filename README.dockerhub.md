@@ -186,8 +186,8 @@ Rename `./config/dms-gui/.dms-gui.env.example` as `./config/dms-gui/.dms-gui.env
 ###############################################################################
 
 ## Optional: Dev Environment
-# NODE_ENV=development
-NODE_ENV=production
+# ENV_MODE=development
+ENV_MODE=production
 
 ## Debugging
 # DEBUG=true
@@ -247,9 +247,10 @@ All is optional, as they will be superseeded by the ones defined and saved withi
 - `isDEMO`: set false to disable colors in backend logs (*false)
 The ones you should never alter unless you want to develop:
 
-- `PORT_NODEJS`: Internal port for the Node.js server (*3001)
-- `API_URL`: defaults to `http://localhost:3001`
-- `NODE_ENV`: Node.js environment: (*production or development)
+- `PORT_FRONTEND`: Internal port for the Node.js server (*3001)
+- `API_URL`: defaults to `/api`
+- `BACKEND_PROXY_URL`: defaults to `http://localhost:3000`
+- `ENV_MODE`: Node.js environment: (*production or development)
 
 ### Environment Variables for dms REST API in compose
 
@@ -466,7 +467,7 @@ Subject to heavily change over time, please use https://dms.domain.com/docs for 
 
 OAS description of all API endpoints is available at:
 * using compose + proxy: http://localhost/docs or https://dms.domain.com/docs (with proxy)
-* using raw ports: http://localhost:3001/
+* using raw ports: http://localhost:3000/
 
 ![API](https://github.com/audioscavenger/dms-gui/blob/main/assets/dms-gui-docs.webp?raw=true)
 <!--
@@ -652,7 +653,7 @@ npm install
 npm audit fix
 ```
 
-After running both parts, the application will be available at http://localhost:3001
+After running both parts, the application will be available at http://localhost:3000
 
 ## License
 

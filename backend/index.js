@@ -2,6 +2,7 @@ import {
   regexFindEmailStrict
 } from '../common.mjs';
 import {
+  color,
   debugLog,
   doveadm,
   errorLog,
@@ -99,10 +100,9 @@ const oasDefinition = swaggerJsdoc(options);
 
 // cors the react way https://expressjs.com/en/resources/middleware/cors.html
 debugLog('env.API_URL',env.API_URL)
-debugLog('env.FRONTEND_URL',env.FRONTEND_URL)
+debugLog('env.BACKEND_PROXY_URL',env.BACKEND_PROXY_URL)
 // const allowedOrigins = [
 //   env.API_URL,              // Development
-//   env.FRONTEND_URL,         // Production from docker    // another shit to maintain
 // ];
 // const corsOptions = {
 //   origin: function (origin, callback) {
@@ -151,14 +151,14 @@ SECURITY BENEFITS:
 
 const cookieOptionsAccess = { 
   httpOnly: true, 
-  secure: env.NODE_ENV === 'production',        // Use secure in production
+  secure: env.ENV_MODE === 'production',        // Use secure in production
   sameSite: 'Strict',                           // 'None' or 'Lax' or 'Strict' (for CSRF protection)
   maxAge: 3600000                               // 1h
 };
 
 const cookieOptionsRefresh = { 
   httpOnly: true,
-  secure: env.NODE_ENV === 'production',
+  secure: env.ENV_MODE === 'production',
   sameSite: 'Strict',
   maxAge: 7 * 24 * 60 * 60 * 1000               // 7 days
 };
@@ -167,7 +167,7 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 
 // Generate token
-const generateToken = (user, secret, expriry) => {
+const generateToken = (userPayload, secret, expriry) => {
   // if (!user?.id) throw new Error("Token generation aborted: User ID is required but was missing:", user);
   // if (!user?.username) throw new Error("Token generation aborted: User username is required but was missing:", user);
   // if (!user?.mailbox) throw new Error("Token generation aborted: User mailbox is required but was missing:", user);
@@ -175,28 +175,30 @@ const generateToken = (user, secret, expriry) => {
 
   // Destructure the user object to automatically strip exp and iat if they exist
   // otherwise you will get a Bad "options.expiresIn" option the payload already has an "exp" property.
-  const { exp, iat, ...cleanPayload } = user;
+  const { exp, iat, ...userPayloadClean } = userPayload;
 
   return jwt.sign(
-    cleanPayload,
+    userPayloadClean,
     secret,
     { expiresIn: expriry }
   );
 };
 
 // Generate access token
-const generateAccessToken = (user) => {
+const generateAccessToken = (userPayload) => {
+  infoLog(`${color.m}generateAccessToken for user ${userPayload?.username}`);
   return generateToken(
-    user,
+    userPayload,
     env.JWT_SECRET,
     env.ACCESS_TOKEN_EXPIRY
   );
 };
 
 // Generate refresh token
-const generateRefreshToken = (user) => {
+const generateRefreshToken = (userPayload) => {
+  infoLog(`${color.m}generateRefreshToken for user ${userPayload?.username}`);
   return generateToken(
-    user,
+    userPayload,
     env.JWT_SECRET_REFRESH, // Different secret!
     env.REFRESH_TOKEN_EXPIRY
   );
@@ -236,6 +238,7 @@ const authenticateToken = (req, res, next) => {
 // requireAdmin middleware checks if req.user.isAdmin is true
 const requireAdmin = (req, res, next) => {
   if (!req.user.isAdmin) {
+    errorLog(`Non-admin user ${req.user?.username} just tried to access`, req.originalUrl);
     return res.status(403).json({ 
       error: 'Admin access required',
       code: 'FORBIDDEN' 
@@ -247,6 +250,7 @@ const requireAdmin = (req, res, next) => {
 // Check if user is active
 const requireActive = (req, res, next) => {
   if (!req.user || !req.user?.isActive) {
+    errorLog(`Inactive user ${req.user?.username} just tried to login`);
     return res.status(403).json({ 
       error: 'Account is inactive',
       code: 'ACCOUNT_INACTIVE' 
@@ -259,7 +263,7 @@ const requireActive = (req, res, next) => {
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
 
-// app.options('*', cors()) // include pre-flight across-the-board before other routes
+app.options('/*splat', cors()) // include pre-flight across-the-board before other routes
 
 // Parser
 // https://www.codemzy.com/blog/parse-booleans-express-query-params
@@ -443,7 +447,6 @@ async (req, res) => {
 
     const refresh = ('refresh' in req.query) ? req.query.refresh   : false;
     const name = ('name' in req.query) ? req.query.name : null;
-    debugLog('ddebug req.query:', req.query);
 
     const envs = await getServerEnvs(plugin, containerName, refresh, name);
     return res.json(envs);
@@ -1649,7 +1652,7 @@ app.post('/api/refresh', async (req, res) => {
 app.post('/api/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from database
-    updateDB('logins', req.user.id, {refreshToken:"null"});
+    updateDB('logins', req.user.id, {refreshToken:"null"}); // "null" string won't be stored, it's just that better-sqlite3 does not take objects
 
     // Clear cookies
     res.clearCookie('accessToken', cookieOptionsAccess);
@@ -1895,7 +1898,7 @@ async (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
 
-  const isDevelopment = env.NODE_ENV === 'development';
+  const isDevelopment = env.ENV_MODE === 'development';
 
   return res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
@@ -1905,8 +1908,28 @@ app.use((err, req, res, next) => {
 });
 
 
-app.listen(env.PORT_NODEJS, async () => {
-  infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} NodeJS ${process.version} running on port ${env.PORT_NODEJS}`);
+// ============================================
+// Serve Production Files
+// ============================================
+// import path from 'path';
+// import { fileURLToPath } from 'url';
+
+// // 1. Serve static files from the compiled frontend directory
+// // Recreate __filename and __dirname for ES modules
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// // 2. Fix the React Router 404/Login Bug
+// // If a route doesn't match an API endpoint, serve index.html so React Router can load
+// // app.all('/*splat', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/index.html'));} );
+// // app.get('/*splat', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/index.html'));} );
+// app.use((req, res) => { res.status(404).json( res.sendFile(path.join(__dirname, '../frontend/index.html')) ) });
+
+// ============================================
+// BACKEND APP LISTEN
+// ============================================
+app.listen(env.PORT_BACKEND, async () => {
+  infoLog(`dms-gui-backend ${env.DMSGUI_VERSION} NodeJS ${process.version} running on port ${env.PORT_BACKEND}`);
   debugLog('🐞 debug mode is ENABLED');
 
   // https://github.com/ncb000gt/node-cron    // internal crontan

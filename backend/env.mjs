@@ -3,24 +3,22 @@ import crypto from 'node:crypto';
 
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 export const env = {
-  debug: ((process.env.DEBUG || '').toLowerCase() == 'true') ? true : false,
+  debug: ((process.env.DEBUG || 'false').toLowerCase() == 'true') ? true : false,
 
-  // const { name, version, description }: require('./package.json');
+  // internals of dms-gui
   DMSGUI_VERSION: (process.env.DMSGUI_VERSION.split("v").length == 2) ? process.env.DMSGUI_VERSION.split("v")[1] : process.env.DMSGUI_VERSION,
   DMSGUI_DESCRIPTION: process.env.DMSGUI_DESCRIPTION,
   HOSTNAME: process.env.HOSTNAME,
-  NODE_ENV: process.env.NODE_ENV || 'production',
-  PORT_NODEJS: Number(process.env.PORT_NODEJS) || 3001,
-  TZ: process.env.TZ || 'UTC',
-
-  // internals of dms-gui
-  FRONTEND_URL  : process.env.FRONTEND_URL || '/api',     // security: cors
+  ENV_MODE: process.env.ENV_MODE || 'production',
+  PORT_FRONTEND: Number(process.env.PORT_FRONTEND) || 3001,
+  PORT_BACKEND: Number(process.env.PORT_BACKEND) || 3000,
+  BACKEND_PROXY_URL: process.env.BACKEND_PROXY_URL || 'http://localhost:3000',  // should be your dms-gui container name!
   API_URL  : process.env.API_URL || '/api',               // security: cors
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
-  DATABASE: ((process.env.isDEMO || '').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
+  DATABASE: ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
   DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
   DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo.sqlite3',
-  DATABASE_RESET: ((process.env.DATABASE_RESET || '').toLowerCase() == 'true') ? true : false,
+  DATABASE_RESET: ((process.env.DATABASE_RESET || 'false').toLowerCase() == 'true') ? true : false,
 
   // some selectors in the DKIM UI
   DKIM_KEYTYPES: ['rsa','ed25519'],
@@ -30,6 +28,7 @@ export const env = {
   DKIM_SELECTOR_DEFAULT: ((process.env.DKIM_SELECTOR_DEFAULT) ? process.env.DKIM_SELECTOR_DEFAULT : 'mail'),  // hardcoded in DMS
 
   // variables we will capture from DMS 
+  TZ: process.env.TZ || 'UTC',
   DMS_OPTIONS  : [
     'TZ',
     'DMS_RELEASE',
@@ -99,7 +98,7 @@ export const env = {
   LOG_COLORS: (process.env.LOG_COLORS === 'false') ? false : true,
 
   // DEMO will activate a mock database and disable all refresh options
-  isDEMO : ((process.env.isDEMO || '').toLowerCase() == 'true') ? true : false,
+  isDEMO : ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? true : false,
   github : 'https://github.com/audioscavenger/dms-gui',
   wiki : 'https://github.com/audioscavenger/dms-gui',
   dockerhub : 'https://hub.docker.com/repositories/audioscavenger',

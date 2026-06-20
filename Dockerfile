@@ -4,6 +4,9 @@
 #   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.5.25 .
 #   docker push audioscavenger/dms-gui --all-tags
 
+ARG DMSGUI_VERSION=1.5.62
+ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
+
 # -----------------------------------------------------
 # Stage 1: Build frontend https://hub.docker.com/_/node
 # https://dev.to/ptuladhar3/avoid-using-bloated-nodejs-docker-image-in-production-3doc
@@ -52,9 +55,9 @@ COPY backend/ ./
 # Stage 3: Final image with Nginx and Node.js
 FROM node:24-alpine
 
-ARG DMSGUI_VERSION=1.5.61
-ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
-ARG DATABASE_RESET 
+ARG DMSGUI_VERSION
+ARG DMSGUI_DESCRIPTION
+ARG DATABASE_RESET
 
 # alpine Install Nginx and Docker client - what is docker-cli for?
 # RUN apk add --no-cache docker-cli
@@ -93,8 +96,6 @@ RUN busybox dos2unix /app/*.sh
 
 # Expose port for the application
 # EXPOSE 3001
-
-ENV DATABASE_RESET=$DATABASE_RESET
 
 # Start just node itself when slim is used for main stage: however JWT_SECRET regen will be missing
 # CMD ["node", "/app/backend/index.js"]
