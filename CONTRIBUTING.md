@@ -64,6 +64,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [x] - show controlled mailboxes as a disabled select
 * [x] - add extra/external email to logins for pw recovery, this will solve the cannot change email address canandrum on Profile page
 * [x] - make sure non-admin users can modify aliases _only_ for the mailboxes they control - roles are controlled by the backend
+* [ ] - Display statistics like https://poste.io/
 
 ### Dashboard:
 * [ ] - add statistics about hacking attempts
@@ -166,17 +167,16 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/loginUser because it violates the following directive: “connect-src 'none'”
 * [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms/dms because it violates the following directive: “connect-src 'none'”
 * [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms?refresh=false because it violates the following directive: “connect-src 'none'”
-* [ ] 1.5.99 - frontend: pages bomb Source map error: can't access property "sources", map is undefined; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: react_devtools_backend_compact.js.map
-* [ ] 1.5.99 - frontend: pages bomb Source map error: unsupported protocol for sourcemap request webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js.map; Resource URL: webpack://dms-gui-frontend/node_modules/html-parse-stringify/dist/html-parse-stringify.module.js?; Source Map URL: html-parse-stringify.module.js.map
-* [ ] 1.5.99 - frontend: pages bomb Source map error: request failed with status 401; Resource URL: https://dms.domain.com/%3Canonymous%20code%3E; Source Map URL: installHook.js.map
 
 * [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
 * [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
-* [ ] 1.5.99 - frontend: mailservers dropdown in the branding
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [-] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
+* [x] 1.5.64 - frontend: mailserver/containerName selection dropdown in the branding
+* [x] 1.5.64 - frontend: Content-Security-Policy warning was fixed in 1.5.63
+* [x] 1.5.64 - frontend: internal nginx updated with map extension fixed all other unsupported protocol for sourcemap request etc
 * [x] 1.5.63 - frontend: first load bombs with downloadable font: download failed (font-family: "bootstrap-icons" style:normal weight:400 stretch:100 src index:0): status=2152398850 source: https://dms.domain.com/92ea18a81d737146ff04.woff2?e34853135f9e39acf64315236852cd5a: updated webpack and internal nginx
 * [x] 1.5.63 - common: added isNonEmptyDict everywhere
 * [x] 1.5.63 - frontend: DataTable: sanitize passed data with stringify objects

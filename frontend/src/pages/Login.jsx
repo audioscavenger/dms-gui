@@ -103,26 +103,16 @@ export const Login = () => {
 
       if (mailserversData?.success) {
         // this will be all containers in db except dms-gui
-        debugLog('Login fetchMailservers: mailserversData', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
+        debugLog('fetchMailservers: mailserversData', mailserversData); // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
   
         // update selector list
         setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
         
-        // debugLog('Login user?.mailserver', user?.mailserver);
-        // debugLog('Login mailserversData.message[0]', mailserversData.message[0]);
-        // if (user?.mailserver) {
-        //   setContainerName(user.mailserver);              // sets user favorite
-        // } else if (mailserversData.message.length) {
-        //   setContainerName(mailserversData.message[0]);   // set first one in list
-        // }
-        
-      // } else setErrorMessage(mailserversData?.error);  // fails silently
-      }
+      } // else setErrorMessage(mailserversData?.error);
 
-    // fails silently
     } catch (error) {
       // errorLog(t('api.errors.fetchConfigs'), error);
-      // setErrorMessage('api.errors.fetchConfigs');
+      setErrorMessage('api.errors.fetchConfigs');
     }
   };
     

@@ -13,7 +13,7 @@ import { debugLog } from '../../frontend.mjs';
 export const AuthProvider = ({ children }) => {
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
   const [containerName, setContainerName] = useLocalStorage("containerName", '');
-  const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
+  const [mailservers] = useLocalStorage("mailservers", []);
   const [user, setUser] = useLocalStorage("user", null);
   const navigate = useNavigate();
 

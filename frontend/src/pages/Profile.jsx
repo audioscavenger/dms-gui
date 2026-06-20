@@ -79,7 +79,7 @@ const Profile = () => {
   useEffect(() => {
     debugLog('user', user);
     setLoading(true);
-    if (!mailservers || !mailservers.length) fetchMailservers();
+    // if (!mailservers || !mailservers.length) fetchMailservers();
     setloginFormData(user);
     if (firstRun) setSuccessMessage('password.isFirstRun');
     setLoading(false);
@@ -103,30 +103,6 @@ const Profile = () => {
   //     setErrorMessage('api.errors.fetchProfile');
   //   }
   // };
-
-
-  const fetchMailservers = async () => {
-    
-    debugLog(`fetchMailservers call getConfigs()`);
-    try {
-      const [mailserversData] = await Promise.all([
-        getConfigs('mailserver'),
-      ]);
-
-      if (mailserversData?.success) {
-        // this will be all containers in db except dms-gui
-        debugLog('fetchMailservers: mailserversData', mailserversData);   // [ {value:'containerName'}, .. ]
- 
-        // update selector list
-        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
-
-      } else setErrorMessage(mailserversData?.error);
-
-    } catch (error) {
-      errorLog(t('api.errors.fetchSettings'), error);
-      setErrorMessage('api.errors.fetchSettings');
-    }
-  };
 
 
   const handleInputChange = (e) => {

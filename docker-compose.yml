@@ -15,11 +15,6 @@ services:
     build:                                              # comment me for production
       context: .                                        # comment me for production
       args:                                             # any ARG in Dockerfile must be there too; cannot use environment variables here either
-        - PORT_FRONTEND=3001
-        - FRONTEND_PROXY_URL=http://localhost:3001
-        - PORT_BACKEND=3000
-        - BACKEND_PROXY_URL=http://localhost:3000
-
         - ENV_MODE=production
         - UPSTREAM_NGINX=try_files $$uri $$uri/ /index.html;
       #   - ENV_MODE=development                          # comment me for production

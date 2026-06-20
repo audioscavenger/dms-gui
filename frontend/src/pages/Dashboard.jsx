@@ -82,7 +82,7 @@ const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
-    if (!mailservers || !mailservers.length) return;
+    if (!mailservers.length) return;
     if (!containerName) return;
 
     fetchDashboard();

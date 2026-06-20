@@ -108,7 +108,7 @@ function FormContainerAdd() {
 
   useEffect(() => {
     if (formValuesSubmitted) {
-      // pull mailservers to refresh the select field list and branding selector and show the API reminder
+      // pull mailservers to refresh the select field list and branding selector and maybe show the API reminder
       debugLog('FormContainerAdd call fetchMailservers()');
       fetchMailservers();
 
@@ -201,7 +201,7 @@ function FormContainerAdd() {
       setSuccessMessage(null);
       
       // this normally is pulled after successful login, may also call initFormValues
-      if (!mailservers || !mailservers.length) await fetchMailservers();
+      // if (!mailservers.length) await fetchMailservers();
       // this preloads container settings
       if (containerName) await fetchContainerSettings(containerName);
 
@@ -215,40 +215,25 @@ function FormContainerAdd() {
 
   const fetchMailservers = async () => {
     
-    debugLog('FormContainerAdd 2 fetchMailservers mailservers:', mailservers);
     try {
-      // Show the discovered mailservers in the dropdown
       const [mailserversData] = await Promise.all([
         getConfigs('mailserver'),
       ]);
 
-      debugLog('FormContainerAdd 3 mailserversData:', mailserversData);   // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
       if (mailserversData?.success) {
+        // this will be all containers in db except dms-gui
+        debugLog('fetchMailservers: mailserversData', mailserversData); // [ {value:containerName', plugin:'mailserver', schema:'dms', scope:'dms-gui'}, ..]
 
-        if (mailserversData.message.length) {
-          // update selector list
-          debugLog(`FormContainerAdd 4 setMailservers:`, mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));
-          setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
+        // update selector list
+        debugLog(`FormContainerAdd 4 setMailservers:`, mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));
+        setMailservers(mailserversData.message.map(mailserver => { return { ...mailserver, label:mailserver.value } }));   // duplicate value as label for the select field
 
-
-        // nothing yet in database, preset form defaults: done by useState()
-        // } else {
-          // if no container exist yet, we also preset the schema and protocol values, as the values would never be set until the user change them
-          // numbers are stored as text because they would transform into floats otherwise
-          // initFormValues();
-        }
-
-      } else {
-        setErrorMessage(mailserversData?.error);
-        setMailservers([]);
-      }
+      } else setErrorMessage(mailserversData?.error);
 
     } catch (error) {
       errorLog(t('api.errors.fetchConfigs'), error);
       setErrorMessage('api.errors.fetchConfigs');
     }
-
-    return false;
   };
 
 

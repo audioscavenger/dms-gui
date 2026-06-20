@@ -21,8 +21,11 @@ const Navbar = ({
   ...rest
 }) => {
   // const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth();                                             // { id: 1, mailbox: "admin@dms-gui.com", email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
   const [isDEMO] = useLocalStorage("isDEMO", false);
+  const [containerName, setContainerName] = useLocalStorage("containerName", ''); // "dms"
+  const [mailservers] = useLocalStorage("mailservers", []);                       // [{ value: "dms", plugin: "mailserver", schema: "dms", scope: "dms-gui"}, ..]
+
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState({});
 
@@ -62,21 +65,34 @@ const Navbar = ({
   };
 
 
-  // console.debug('ddebug user', user);
-  // user = { id: 1, mailbox: "admin@dms-gui.com", email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
-
   const profileItems = [
     { id: 1, title: "logins.profileLink", icon: "person-bounding-box",  onClick: () => navigate("/profile") },
     { id: 2, title: "logins.logout",      icon: "box-arrow-right",      onClick: () => handleLogout() },
   ];
 
+              // size="sm"
   return (
     <RBNavbar bg="dark" variant="dark" expand="lg">
       <Container fluid>
-        <RBNavbar.Brand as={Link} to="/">
-          <i className="bi bi-envelope-fill me-2"></i>
-          {Translate(isDEMO ? 'app.titleDemo' : 'app.title')}{' '}
-        </RBNavbar.Brand>
+        {mailservers.length > 1 ? (
+          <div className="d-flex align-items-center me-3">
+            <i className="bi bi-envelope-fill text-white me-2"></i>
+            <ButtonDropdown
+              variant="dark"
+              text={containerName}
+              items={mailservers.map((mailserver, index) => ({
+                id: index,
+                title: `Mailserver: ${mailserver.value}`,
+                onClick: () => setContainerName(mailserver.value)
+              }))}
+            />
+          </div>
+        ) : (
+          <RBNavbar.Brand as={Link} to="/">
+            <i className="bi bi-envelope-fill me-2"></i>
+            {Translate(isDEMO ? 'app.titleDemo' : `Mailserver: ${containerName}`)}{' '}
+          </RBNavbar.Brand>
+        )}
         {isDEMO && 
           <Button
             variant="primary"
