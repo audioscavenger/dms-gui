@@ -56,8 +56,8 @@ const DataTable = ({
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrders, setSortOrders] = useState({});       // { columnName: 0|1 }
   const [columnFilters, setColumnFilters] = useState({}); // { columnName: 'filterValue' }
-  const objects2stringify = new Set(['object', 'boolean']);
-  const objects2blank = new Set(['null', undefined]);
+  const objects2stringify = new Set(['boolean']);
+  const objects2blank = new Set([null, 'null', undefined, 'undefined']);
 
   const sortFunction = (col, currentData=[]) => {
     // we escape if currentData[0][col] is null == it's a rendered column; both data and currentData columns are null when rendered
@@ -148,9 +148,9 @@ const DataTable = ({
           const value = row[col.key];
 
           // Stringify booleans and objects, undefined CANNOT and SHOULD NOT be in the data
-          const sanitizedValue = objects2stringify.has(typeof value) ? '' : value;
+          const sanitizedValue = objects2stringify.has(typeof value) ? String(value) : value;
           // Blank out null values
-          sanitizedRow[col.key] = objects2blank.has(sanitizedValue) ? JSON.stringify(sanitizedValue) : sanitizedValue;
+          sanitizedRow[col.key] = objects2blank.has(sanitizedValue) ? '' : sanitizedValue;
       });
     return sanitizedRow;
     });

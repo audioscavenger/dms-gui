@@ -105,7 +105,7 @@
     "updateLogin": "Update",
     "updated": "Login {{username}} updated",
     "username": "Login username",
-    "usernameHelp": "Login username to login on this portal",
+    "usernameHelp": "Username to login on this portal: limited character set",
     "usernameInvalid": "username contains invalid characters",
     "usernameRequired": "username is required",
     "welcome": "Welcome",

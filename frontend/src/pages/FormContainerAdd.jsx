@@ -436,7 +436,7 @@ function FormContainerAdd() {
     // 3. Immediately re-validate using the raw, updated array to unlock the button instantly
     // (We modify validateFormContainerAdd slightly below to accept a custom array if provided)
     const freshErrors = validateFormContainerAdd(updatedFormValues);
-    const hasErrors = isNonEmptyDict(freshErrors);
+    const hasErrors = !!isNonEmptyDict(freshErrors);
     setFormValidated(!hasErrors);
 
     // try {

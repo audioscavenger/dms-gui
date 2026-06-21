@@ -111,7 +111,7 @@ const Logins = () => {
     isAdmin: 0,
     isAccount: 0,
     isActive: 1,
-    mailserver: '', // Leave empty here, we will populate it dynamically
+    mailserver: containerName, // Leave empty here, we will populate it dynamically
     roles: [],
   };
   const [newLoginformData, setNewLoginFormData] = useState(newLoginformDataINIT);
@@ -356,7 +356,7 @@ const Logins = () => {
 
     // Update the button instantly using the fresh error object
     const freshErrors = validateNewLoginForm(updatedFormData);
-    const hasErrors = isNonEmptyDict(freshErrors);
+    const hasErrors = !!isNonEmptyDict(freshErrors);
     setSubmitDisabled(hasErrors);
     
   };

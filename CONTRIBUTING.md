@@ -45,6 +45,11 @@ The **done** list versions is in reverse order, as you want to see the most rece
 
 The TODO list rank is in order, as you naturally read from top to bottom and therefore, the most difficult ones are at the top.
 
+## backend
+* [-] - backend: implement uuid for all id columns: NO BENEFITS. I never go there, ids are uniq and I trust the SQL queries, why change that?
+* [ ] - implement roles table
+
+
 ## Design
 
 ### NavBar:
@@ -165,6 +170,12 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [ ] 1.5.99 - accounts: mailboxes should have a managedBy column with users found having the role or display a similar, disabled roles selector
+* [ ] 1.5.67 - implement roles table or use settings for that purpose
+* [-] 1.5.66 - backend: implement uuid for all id columns: NO BENEFITS. I never go there, ids are uniq and I trust the SQL queries, why change that?
+* [x] 1.5.66 - logins: what happens when 2 users have the same role? yes they can. It's by design I swear.
+* [x] 1.5.66 - Logins: cannot release AddLogin button: hasErrors = !!isNonEmptyDict(freshErrors); mailserverRequired, why? INIT starts with containerName
+* [x] 1.5.66 - standard users can see their mailboxes but storage usage is "N/A"; fixed: DataTable has better stringify/nullify selection
 * [x] 1.5.65 - time to release?
 * [x] 1.5.65 - bugfix: frontend: change password broke out of the blue: isNonEmptyDict(errors) with no errors is 0 == false which broke the form validations
 * [x] 1.5.65 - update demo database

@@ -134,7 +134,7 @@ const Profile = () => {
 
     // Update the button instantly using the fresh error object
     const freshErrors = validateloginForm(updatedFormData);
-    const hasErrors = isNonEmptyDict(freshErrors);
+    const hasErrors = !!isNonEmptyDict(freshErrors);
     setSubmitDisabled(hasErrors);
 
   };

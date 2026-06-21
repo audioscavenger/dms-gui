@@ -73,6 +73,7 @@ settings: {
     configID:'number', 
     isMutable:'number', 
   },
+  // we don't digg of this table, we use config table instead
   // select: {
   //   count:    `SELECT COUNT(*) count FROM settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
   //   settings: `SELECT name, value FROM settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
