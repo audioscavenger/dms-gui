@@ -175,7 +175,7 @@ const Aliases = () => {
     }
 
     setFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   const handleSubmit = async (e) => {

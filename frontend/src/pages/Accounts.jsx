@@ -210,7 +210,7 @@ const Accounts = () => {
     }
 
     setNewAccountFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   const handleSubmitNewAccount = async (e) => {
@@ -360,7 +360,7 @@ const Accounts = () => {
 
     if (!passwordFormData.newPassword) {
       errors.newPassword = 'password.passwordRequired';
-    } else if (passwordFormData.newPassword.length < 8) {
+    } else if (!user.isAdmin && passwordFormData.newPassword.length < 8) {
       errors.newPassword = 'password.passwordLength';
     }
 
@@ -369,7 +369,7 @@ const Accounts = () => {
     }
 
     setPasswordFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   // Submit password change
@@ -448,7 +448,7 @@ const Accounts = () => {
     const errors = {};
 
     setDNSFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   // Submit password change

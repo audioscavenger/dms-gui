@@ -79,7 +79,7 @@ const Profile = () => {
   useEffect(() => {
     debugLog('user', user);
     setLoading(true);
-    // if (!mailservers || !mailservers.length) fetchMailservers();
+    // if (!mailservers.length) fetchMailservers();
     setloginFormData(user);
     if (firstRun) setSuccessMessage('password.isFirstRun');
     setLoading(false);
@@ -251,8 +251,7 @@ const Profile = () => {
     if (!passwordFormData.newPassword) {
       errors.newPassword = 'password.passwordRequired';
 
-    // admins can do anything including disregard password length
-    } else if (passwordFormData.newPassword.length < 8 && !user.isAdmin) {
+    } else if (!user.isAdmin && passwordFormData.newPassword.length < 8 && !user.isAdmin) {
       errors.newPassword = 'password.passwordLength';
     }
 
@@ -261,7 +260,7 @@ const Profile = () => {
     }
 
     setPasswordFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   // Submit password change

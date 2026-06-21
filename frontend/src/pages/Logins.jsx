@@ -701,7 +701,8 @@ const Logins = () => {
 
     if (!passwordFormData.newPassword) {
       errors.newPassword = 'password.passwordRequired';
-    } else if (passwordFormData.newPassword.length < 8) {
+
+    } else if (!user.isAdmin && passwordFormData.newPassword.length < 8) {
       errors.newPassword = 'password.passwordLength';
     }
 
@@ -710,7 +711,7 @@ const Logins = () => {
     }
 
     setPasswordFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   // Submit password change

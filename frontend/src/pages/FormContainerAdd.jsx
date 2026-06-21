@@ -494,9 +494,7 @@ function FormContainerAdd() {
 
     // Update the button instantly using the fresh error object
     const freshErrors = validateFormContainerAdd(updatedFormData);
-    debugLog('ddebug freshErrors:', freshErrors);
-    debugLog('ddebug Object.keys(freshErrors).length:', isNonEmptyDict(freshErrors));
-    const hasErrors = isNonEmptyDict(freshErrors);
+    const hasErrors = !!isNonEmptyDict(freshErrors);
     setFormValidated(!hasErrors);
 
   };

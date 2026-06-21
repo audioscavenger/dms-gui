@@ -370,9 +370,9 @@ export const moveKeyToLast = (obj, keyToMove) => {
 };
 
 
-// isNonEmptyDict returns the number of keys in non empty objects == true
+// isNonEmptyDict returns true only obj is a non empty disctionary
 export const isNonEmptyDict = (obj) => 
-  obj?.constructor === Object && Object.keys(obj).length;
+  obj?.constructor === Object && Object.keys(obj).length > 0;
 
 
 // module.exports = {

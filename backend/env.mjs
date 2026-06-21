@@ -18,9 +18,11 @@ export const env = {
 
   API_URL  : process.env.API_URL || '/api',               // security: cors
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
-  DATABASE: ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? '/app/config/dms-gui-demo.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
-  DATABASE_SAMPLE: '/app/config/dms-gui-example.sqlite3',
-  DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo.sqlite3',
+  // DEMO will activate a mock database and disable all refresh options
+  isDEMO : ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? true : false,
+  DATABASE: ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? '/app/config/dms-gui-demo-live.sqlite3' : (process.env.DATABASE || '/app/config/dms-gui.sqlite3'),
+  DATABASE_SAMPLE: '/app/config/dms-gui-demo.sqlite3',
+  DATABASE_SAMPLE_LIVE: '/app/config/dms-gui-demo-live.sqlite3',
   DATABASE_RESET: ((process.env.DATABASE_RESET || 'false').toLowerCase() == 'true') ? true : false,
 
   // some selectors in the DKIM UI
@@ -100,8 +102,6 @@ export const env = {
 
   LOG_COLORS: (process.env.LOG_COLORS === 'false') ? false : true,
 
-  // DEMO will activate a mock database and disable all refresh options
-  isDEMO : ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? true : false,
   github : 'https://github.com/audioscavenger/dms-gui',
   wiki : 'https://github.com/audioscavenger/dms-gui',
   dockerhub : 'https://hub.docker.com/repositories/audioscavenger',

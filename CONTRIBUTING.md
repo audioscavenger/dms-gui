@@ -2,7 +2,7 @@ This project is a GUI for DMS email server, just like the admin container of Mai
 
 I work on this solo, until someone finds an interest in it.
 
-This GUI relies on a simple python API to execute `system` and `setup` commands inside the DMS container. This architecture is modular enough, allowing to add other mail servers like Poste.io in the future.
+This GUI relies on a simple python API to execute `system` and `setup` commands inside the DMS container. This architecture is modular enough, allowing to add other gui-less mail server projects in the future.
 
 # Primary goals:
 
@@ -10,11 +10,11 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 2. [x] refactor, fix all the bugs, document and define scope: **done**
 3. [x] ability to load/save/refresh data from json files or dms commands: **done**
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
-5. [x] add a login page  **done**
+5. [x] add a login page with JWT+session cookies **done**
 6. [x] add a Profile page and ability to change mailbox passwords  **done**
 7. [ ] add Domains+DNS+DKIM entries page
-8. [ ] add DNS push/update entries with (dnscontrol)[https://github.com/StackExchange/dnscontrol]
-9. [ ] add Backup/Import menu entries and code
+8. [ ] add Backup/Import menu entries and code
+9. [ ] add DNS push/update entries with (dnscontrol)[https://github.com/StackExchange/dnscontrol]
 
 # Extra goals:
 
@@ -25,12 +25,10 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 
 ## BUGS:
 
-* [ ] - frontend/LeftSidebar: LeftSidebar cannot collapse properly
+* [ ] - frontend/LeftSidebar: LeftSidebar collapse button is too large
 * [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
-* [x] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
-* [x] - frontend/Logins: Invalid DOM property `class`. Did you mean `className`? - syntax error, fixed
-* [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node
-* [ ] - backend/accounts: delete account still fails to delete aliases - pretty sure it's fixed, must retest
+* [-] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
+* [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node happens sometimes
 
 ## chores:
 
@@ -51,7 +49,6 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ### NavBar:
 * [ ] - save user's lang in logins table?
-* [ ] - have container selector in lieu of the branding
 
 ### LeftMenu:
 * [ ] - refactor LeftSidebar to be collapsible and extend main container
@@ -61,16 +58,14 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ] - add entry to Imports page
 
 ### Profile:
-* [x] - show controlled mailboxes as a disabled select
-* [x] - add extra/external email to logins for pw recovery, this will solve the cannot change email address canandrum on Profile page
-* [x] - make sure non-admin users can modify aliases _only_ for the mailboxes they control - roles are controlled by the backend
-* [ ] - Display statistics like https://poste.io/
 
 ### Dashboard:
+* [ ] - Display statistics like https://poste.io/
 * [ ] - add statistics about hacking attempts
 * [ ] - add statistics and actions for fail2ban, it's a bitch to handle with command line
 
 ### Domains:
+* [ ] - implement grid checkbox actions
 * [ ] - start with a DataTable page of domains and see where we go
 * [ ] - add dkim modules and exec calls
 * [ ] - add DNS entries mechanics
@@ -90,28 +85,31 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
   * DNS modal button: display 1 domain entries as table with push/pull all or individual entries
 
 ### Logins:
-* [ ] - find a way to offer mailbox changePassword for logins with multiple mailbox roles
-* [ ] - handle each mailbox's password vs each login user, they are different
+* [ ] - implement grid checkbox actions
 * [ ] - should we prevent usernames made of digits only?
 
 ### Accounts:
+* [ ] - implement grid checkbox actions
 * [x] - do we keep auto create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
-* [x] - each account must have either a linked login, or a login with that role must exist
-* [ ] - how easy is it to detect if an account without linked login is in a role for another login?
-* [x] - always create logins for each detected account, but let admins disable them as they attache roles to some users?
+* [x] - 1. always create logins for each detected account, but let admins disable them as they attach roles to some users
+* [x] - 2. each account must have either a linked login, or a login with that role must exist: NO, they can live without a login
+* [ ] - 3. each account should show when they are unmanaged or login-less
+* [ ] - 4. how easy is it to detect if an account without linked login is in a role for another login?
 * [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
-* [x] - pull compress/indexing method and maybe statistics on the dashboard?
-* [ ] - switch fts and quota etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
+* [ ] - switch FTS/quota/etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
 * [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
 * [-] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup? name is execDMS and no not yet
 * [-] - 2. update all execDMS calls in accounts/aliases - maybe one day when we implement Poste, to avoid duping all functions?
 * [ ] - Add delete my account in Profile
+* [ ] - 1. Implement queued commands?
+* [ ] - 2. add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table?
+* [ ] - 3. add a delay before issuing the mailbox delete command, that the user can cancel at the frontend?
 
 ### Settings:
 * [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
 
 ### Backups:
-* [ ] - start working on this
+* [ ] - start working on mailbox backups
 
 ### Imports:
 * [ ] - start working on mailbox imports, with 2 mbox formats: /domain/user like DMS vs /user@domain like Mailu
@@ -164,16 +162,13 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete mailserver
 
-* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/loginUser because it violates the following directive: “connect-src 'none'”
-* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms/dms because it violates the following directive: “connect-src 'none'”
-* [ ] 1.5.99 - frontend: pages sometimes bomb with Content-Security-Policy: (Report-Only policy) The page’s settings would block the loading of a resource (connect-src) at https://dms.domain.com/api/accounts/dms?refresh=false because it violates the following directive: “connect-src 'none'”
-
-* [ ] 1.5.99 - Accounts: add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table
-* [ ] 1.5.99 - accounts: add a delay before issuing the mailbox delete command, that the user can cancel at the frontend
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
-* [-] 1.5.99 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth?
 
+* [x] 1.5.65 - time to release?
+* [x] 1.5.65 - bugfix: frontend: change password broke out of the blue: isNonEmptyDict(errors) with no errors is 0 == false which broke the form validations
+* [x] 1.5.65 - update demo database
+* [-] 1.5.65 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth? maybe. don't care enough.
 * [x] 1.5.64 - frontend: mailserver/containerName selection dropdown in the branding
 * [x] 1.5.64 - frontend: Content-Security-Policy warning was fixed in 1.5.63
 * [x] 1.5.64 - frontend: internal nginx updated with map extension fixed all other unsupported protocol for sourcemap request etc
@@ -439,7 +434,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.2 - bugfix in frontend
 * [x] 1.5.2 - bugfix in deleteAlias and getAliases
 * [x] 1.5.2 - bugfix in deleteEntry
-* [x] 1.5.2 - added demo data as dms-gui-example.sqlite3 and new variable `DEMO=true` that uses dms-gui-demo.sqlite3 reset when container restarts
+* [x] 1.5.2 - added demo data as dms-gui-demo.sqlite3 and new variable `DEMO=true` that uses dms-gui-demo-live.sqlite3 reset when container restarts
 * [x] 1.5.1 - minor README updates
 * [x] v1.5.0 - release
 * [x] 1.4.9 - backend: a ton of bugfixes

@@ -5,8 +5,15 @@ export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toStr
 export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
 # use demo database
-[ "$isDEMO" = "true" ] && cp /app/config/dms-gui-example.sqlite3 /app/config/dms-gui-demo.sqlite3
-[ "$isDEMO" = "true" ] && touch /app/config/isDemo || rm -f /app/config/isDemo
+if [ "$isDEMO" = "true" ]; then
+  cp /app/config/dms-gui-demo.sqlite3 /app/config/dms-gui-demo-live.sqlite3
+  touch /app/config/isDemo || rm -f /app/config/isDemo
+  echo "------------------------------------------------------------------------"
+  echo "------------------------------------------------------------------------"
+  echo "-                          DEMO IS LIVE                                -"
+  echo "------------------------------------------------------------------------"
+  echo "------------------------------------------------------------------------"
+fi
 
 # resolve variables in internal nginx.conf template with gettext:
 # envsubst '$UPSTREAM_NGINX $BACKEND_PROXY_URL' < /etc/nginx/default.conf.template > /etc/nginx/http.d/default.conf

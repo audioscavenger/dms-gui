@@ -1332,7 +1332,7 @@ export const createAPIfiles = async (schema='dms') => {
 
 export const killContainer = async (plugin='dms-gui', schema='dms-gui', containerName='dms-gui', errorcode=0) => {
   if (env.isDEMO && containerName == 'dms-gui') {
-    childProcess.exec(`cp ${env.DATABASE_SAMPLE} ${DATABASE_SAMPLE_LIVE}`, (error, stdout, stderr) => {
+    childProcess.exec(`cp ${env.DATABASE_SAMPLE} ${env.DATABASE_SAMPLE_LIVE}`, (error, stdout, stderr) => {
       if (error) {
         errorLog(`exec error: ${error}`);
         return;

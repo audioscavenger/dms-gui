@@ -126,7 +126,7 @@ function FormDomains() {
     // TODO: setupPath: maybe add an api call to execInContainer/execCommand to test if exist?
 
     setFormErrors(errors);
-    return isNonEmptyDict(errors);
+    return !isNonEmptyDict(errors);
   };
 
   const handleSubmitSettings = async (e) => {
