@@ -167,15 +167,26 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete login
 * [ ] 1.5.99 - retested: create/delete mailserver
 
+* [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and /accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
-* [ ] 1.5.99 - accounts: mailboxes should have a managedBy column with users found having the role or display a similar, disabled roles selector
-* [ ] 1.5.67 - implement roles table or use settings for that purpose
+* [x] 1.5.67 - bugfix: deleteEntry in sql
+* [x] 1.5.67 - common: added array2ArrayOfObj
+* [x] 1.5.67 - Accounts: added Autocomplete field just like for roles
+* [x] 1.5.67 - index: correct use of resetTokens instead of injecting "null"
+* [x] 1.5.67 - index: PATCH/login extracts roles and add them separately
+* [x] 1.5.67 - sql: renamed refreshTokens to resetTokens
+* [x] 1.5.67 - sql: bugfix in update.refreshToken
+* [x] 1.5.67 - sql: select.accounts taps into roles to return an array of managers column
+* [x] 1.5.67 - logins: add/remove/get logins update the roles table
+* [x] 1.5.67 - BREAKING CHANGE: implement roles table
+* [x] 1.5.67 - db: added length checks for CHECK(length(username) <= 36), email and mailbox(254)
+* [x] 1.5.67 - backend: clear distinction between getRolesFromLogins and getRolesFromRoles
 * [-] 1.5.66 - backend: implement uuid for all id columns: NO BENEFITS. I never go there, ids are uniq and I trust the SQL queries, why change that?
 * [x] 1.5.66 - logins: what happens when 2 users have the same role? yes they can. It's by design I swear.
-* [x] 1.5.66 - Logins: cannot release AddLogin button: hasErrors = !!isNonEmptyDict(freshErrors); mailserverRequired, why? INIT starts with containerName
-* [x] 1.5.66 - standard users can see their mailboxes but storage usage is "N/A"; fixed: DataTable has better stringify/nullify selection
+* [x] 1.5.66 - bugfix: Logins: cannot release AddLogin button: hasErrors = !!isNonEmptyDict(freshErrors); mailserverRequired, why? INIT starts with containerName
+* [x] 1.5.66 - bugfix: standard users can see their mailboxes but storage usage is "N/A"; fixed: DataTable has better stringify/nullify selection
 * [x] 1.5.65 - time to release?
 * [x] 1.5.65 - bugfix: frontend: change password broke out of the blue: isNonEmptyDict(errors) with no errors is 0 == false which broke the form validations
 * [x] 1.5.65 - update demo database

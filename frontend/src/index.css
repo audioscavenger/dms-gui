@@ -152,6 +152,12 @@ tr .MuiChip-root  {
 .MuiAutocomplete-input {
   min-width: 1px !important;
 }
+
+/* restore opacity or we can't read the text */
+.Mui-disabled {
+  opacity: 1 !important;
+}
+
 /* -------------------- Autocomplete -------------------- */
 
 /* -------------------- misc -------------------- */

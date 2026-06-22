@@ -16,7 +16,6 @@ import {
 } from '../../frontend.mjs';
 import {
   getValueFromArrayOfObj,
-  pluck,
   plucks,
   regexUsername,
   reduxArrayOfObjByValue,
@@ -235,7 +234,7 @@ const Logins = () => {
           label: account.mailbox,
         })));
 
-        let mailboxes = (pluck(accountsData.message, 'mailbox', true, false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
+        let mailboxes = (plucks(accountsData.message, 'mailbox', false));  // we keep only an array of uniq (true) mailbox names [box1@domain.com, ..], already sorted by domain and no extra sort (false)
         setRolesAvailable(mailboxes);
         debugLog('mailboxes',mailboxes)
 
@@ -316,7 +315,7 @@ const Logins = () => {
 
     if (name == 'isAccount' && checked) {
       // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
-      if (plucks(accountOptions, 'value').has(newLoginformData.mailbox)) {
+      if (plucks(accountOptions).has(newLoginformData.mailbox)) {
         debugLog(`isAccount ==> 1: adding ${newLoginformData.mailbox} to the roles`);
         jsonDict.roles = [newLoginformData.mailbox]
 

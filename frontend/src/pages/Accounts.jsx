@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import Modal from 'react-bootstrap/Modal'; // Import Modal
+import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
+
+// https://mui.com/material-ui/react-autocomplete/#multiple-values
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 
 import {
+  plucks,
   isNonEmptyDict,
 } from '../../../common.mjs';
 import {
@@ -53,10 +60,6 @@ import {
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
-import { useRef } from 'react';
-import Modal from 'react-bootstrap/Modal'; // Import Modal
-import ProgressBar from 'react-bootstrap/ProgressBar'; // Import ProgressBar
-
 const Accounts = () => {
   const sortKeysInObject = ['percent'];
   const { t } = useTranslation();
@@ -76,7 +79,9 @@ const Accounts = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
-
+  // Roles states -------------------------------------------------- // https://mui.com/material-ui/react-autocomplete/#multiple-values
+  const [rolesAvailable, setRolesAvailable] = useState([]);
+  
   // State for new new account inputs ------------------------------
   const newAccountformDataINIT = {
     mailbox: '',
@@ -115,6 +120,7 @@ const Accounts = () => {
       setLoading(true);
       setErrorMessage(null);
       setSuccessMessage(null);
+      setRolesAvailable([]);
       
       await Promise.all([
         fetchAccounts(refresh),
@@ -141,6 +147,8 @@ const Accounts = () => {
       if (accountsData?.success) {
         debugLog('ddebug accountsData', accountsData);
         setAccounts(accountsData.message);
+        // also set managers available for the disabled selector
+        setRolesAvailable(plucks(accountsData.message, 'managers', false));
 
       } else setErrorMessage(accountsData?.error);
 
@@ -507,6 +515,40 @@ const Accounts = () => {
     { 
       key: 'username',
       label: 'logins.login',
+    },
+    { 
+      key: 'managers',
+      label: 'accounts.managers',
+      noSort: true,
+      render: (account) => (
+        <>
+        <Autocomplete
+          multiple
+          id="managers"
+          size="small"
+          options={rolesAvailable}
+          filterSelectedOptions
+          disabled
+          
+          value={account.managers}
+          renderOption={(props, option) => (
+            <li
+              {...props}
+              key={option}
+            >
+            {option}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              sx={{ minWidth: 0 }}
+              label={t('accounts.managers')}
+            />
+          )}
+        />
+        </>
+      ),
     },
     {
       key: 'storage',

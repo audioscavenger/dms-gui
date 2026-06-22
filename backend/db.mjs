@@ -58,6 +58,7 @@ export const sqlMatch = {
 
 export const sql = {
 
+// https://patorjk.com/software/taag/#p=display&f=ANSI+Regular&t=ROLES&x=none&v=4&h=4&w=80&we=false
 // ███████ ███████ ████████ ████████ ██ ███    ██  ██████  ███████ 
 // ██      ██         ██       ██    ██ ████   ██ ██       ██      
 // ███████ █████      ██       ██    ██ ██ ██  ██ ██   ███ ███████ 
@@ -65,15 +66,17 @@ export const sql = {
 // ███████ ███████    ██       ██    ██ ██   ████  ██████  ███████ 
 settings: {
 
-  scope:  true,
   key:  'name',
   keys:   {
+    id:'number', 
     name:'string', 
     value:'string', 
     configID:'number', 
     isMutable:'number', 
   },
-  // we don't digg of this table, we use config table instead
+  scope:  true,
+
+  // we don't dig of this table, we use config table instead
   // select: {
   //   count:    `SELECT COUNT(*) count FROM settings WHERE 1=1 AND isMutable = ${env.isMutable}`,
   //   settings: `SELECT name, value FROM settings WHERE 1=1 AND isMutable = ${env.isMutable} AND scope = @scope`,
@@ -115,6 +118,53 @@ settings: {
   ],
 },
 
+// ██████   ██████  ██      ███████ ███████ 
+// ██   ██ ██    ██ ██      ██      ██      
+// ██████  ██    ██ ██      █████   ███████ 
+// ██   ██ ██    ██ ██      ██           ██ 
+// ██   ██  ██████  ███████ ███████ ███████ 
+roles: {
+
+  key:  'loginID',
+  keys:   {
+    id:'number', 
+    loginID:'number', 
+    role:'string', 
+  },
+  scope:  false,
+  
+  select: {
+    count:            `SELECT COUNT(*) count FROM roles`,
+    roles:            `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username))`,
+    rolesById:        `SELECT role        FROM roles WHERE 1=1 AND loginID = @loginID`,
+    rolesByObj:       `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND {key} = @{key})`,
+    granteeUsernames: `SELECT json_group_array(username) as managers FROM logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND role = @role`,
+  },
+  
+  insert: {
+    role:     `REPLACE INTO roles (loginID, role) VALUES (@loginID, ?)`,
+  },
+  
+  update: {
+    role:     `REPLACE INTO roles (loginID, role) VALUES (?, @role)`,
+  },
+
+  delete: {
+    loginID:  `DELETE FROM roles WHERE 1=1 AND loginID = ?`,
+  },
+
+  init:   `BEGIN TRANSACTION;
+          CREATE    TABLE IF NOT EXISTS roles (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          loginID   INTEGER NOT NULL,
+          role      TEXT NOT NULL,
+          UNIQUE    (loginID, role)
+          );
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('roles', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
+  
+},
+
 //  ██████  ██████  ███    ██ ███████ ██  ██████  ███████
 // ██      ██    ██ ████   ██ ██      ██ ██       ██     
 // ██      ██    ██ ██ ██  ██ █████   ██ ██   ███ ███████
@@ -122,7 +172,6 @@ settings: {
 //  ██████  ██████  ██   ████ ██      ██  ██████  ███████
 configs: {
 
-  scope:  false,
   key:  'name',
   keys:   {
     name:'string', 
@@ -130,6 +179,7 @@ configs: {
     schema:'string', 
     scope:'string', 
   },
+  scope:  false,
   select: {
     count:    `SELECT COUNT(*) count FROM configs `,
     id:       `SELECT id FROM configs WHERE 1=1 AND plugin = @plugin AND (name LIKE ?)`,
@@ -141,7 +191,33 @@ configs: {
   },
   
   insert: {
+    //    name        plugin      schema      scope
+    //    -----------------------------------------
+    // 1	DB_VERSION	dms-gui	    DB_VERSION  dms-gui
+    // 2	dms	        mailserver	dms         dms-gui
+    // 3	roles       dms-gui     logins      mailserver
+    
     config:   `INSERT  INTO configs (name, plugin, schema, scope) VALUES (?, @plugin, @schema, @scope) RETURNING id`,
+
+    // 1	DB_VERSION	dms-gui	    DB_VERSION  dms-gui
+    //    -----------------------------------------
+      // name	            value	                configID  isMutable
+      // ----------------------------------------------------------
+      // settings	        1.5.46	              1	        0
+      // configs	        1.5.46	              1	        0
+
+    // 2	dms	        mailserver	dms         dms-gui
+    //    -----------------------------------------
+      // name	            value	                configID  isMutable
+      // ----------------------------------------------------------
+      // schema	          dms	                  2	        1
+      // protocol	        http	                2	        1
+      // DMS_API_PORT	    8888	                2	        1
+      // timeout	        4	                    2	        1
+      // setupPath	      /usr/local/bin/setup	2	        1
+      // containerName	  dms	                  2	        1
+      // DOVECOT_VERSION	2.3.19.1	            2	        0
+
     setting:  `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE name = ? AND plugin = @plugin), 1)`,
     env:      `REPLACE INTO settings (name, value, configID, isMutable) VALUES (@name, @value, (select id FROM configs WHERE name = ? AND plugin = @plugin), 0)`,
   },
@@ -155,7 +231,6 @@ configs: {
     envs:     `DELETE FROM settings WHERE 1=1 AND isMutable = ${env.isImmutable} AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin)`,
     settings: `DELETE FROM settings WHERE 1=1 AND isMutable = ${env.isMutable}   AND configID = (select id FROM configs WHERE name = ? AND plugin = @plugin)`,
   },
-  
   init:   `BEGIN TRANSACTION;
           CREATE    TABLE IF NOT EXISTS configs (
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -192,20 +267,24 @@ logins: {
     isAccount:'number', 
     mailserver:'string', 
     refreshToken:'string', 
-    roles:'object',
     password:'string',
   },
   scope:  'mailserver',
   select: {
     count:      `SELECT COUNT(*) count from logins WHERE 1=1 and mailserver = @mailserver`,
-    login:      `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    loginById:  `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND id = @id`,
-    loginByObj: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
-    logins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
-    admins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
-    roles:      `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
-    rolesById:  `SELECT roles from logins WHERE 1=1 AND id = @id`,
-    rolesByObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
+    // login:      `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    // loginById:  `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND id = @id`,
+    // loginByObj: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
+    // logins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
+    // admins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
+    login:      `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND (mailbox = @mailbox OR username = @username) GROUP BY l.id`,
+    loginById:  `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.id = @id GROUP BY l.id`,
+    loginByObj: `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.{key} = @{key} GROUP BY l.id`,
+    logins:     `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 GROUP BY l.id`,
+    admins:     `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND isAdmin = 1 GROUP BY l.id`,
+    // roles:      `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
+    // rolesById:  `SELECT roles from logins WHERE 1=1 AND id = @id`,
+    // rolesByObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
     salt:       `SELECT salt from logins WHERE id = ?`,
     hash:       `SELECT hash from logins WHERE id = ?`,
     saltHash:   `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
@@ -213,14 +292,16 @@ logins: {
   },
   
   insert: {
-    login:    `INSERT INTO logins (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles)`,
-    fromDMSdeprecated:  `REPLACE INTO logins (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
+    // since 1.5.67 we have the roles table
+    // login:    `INSERT INTO logins (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver, roles) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver, @roles) RETURNING id`,
+    login:    `INSERT INTO logins (mailbox, username, email, salt, hash, isAdmin, isAccount, isActive, mailserver) VALUES (@mailbox, @username, @email, @salt, @hash, @isAdmin, @isAccount, @isActive, @mailserver) RETURNING id`,
   },
   
   update: {
     password: `UPDATE logins set salt=@salt, hash=@hash WHERE id = ?`,
-    refreshToken: `UPDATE logins set refreshToken = NULL WHERE id = ?`,
-    refreshTokens: `UPDATE logins set refreshToken = NULL`,
+    refreshToken: `UPDATE logins set refreshToken = @refreshToken WHERE id = ?`,
+    resetToken: `UPDATE logins set refreshToken = NULL WHERE id = ?`,
+    resetTokens: `UPDATE logins set refreshToken = NULL`,
     mailbox: {
       undefined: {
         desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
@@ -302,10 +383,9 @@ logins: {
           isActive  BIT DEFAULT 1,
           isAccount BIT DEFAULT 1,
           mailserver  TEXT,
-          refreshToken  TEXT,
-          roles     TEXT DEFAULT '[]'
+          refreshToken  TEXT
           );
-          INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount, roles) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0, '[]');
+          INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0);
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('logins', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
           COMMIT;`,
   
@@ -348,14 +428,33 @@ accounts: {
   scope:  'name',
   select: {
     count:    `SELECT COUNT(*) count from accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = @name)`,
-    accounts: `SELECT a.mailbox, a.domain, a.storage, l.username 
+    // accounts: `SELECT a.mailbox, a.domain, a.storage, l.username
+    //            FROM accounts a 
+    //            LEFT JOIN configs c ON c.id = a.configID 
+    //            LEFT JOIN logins l ON l.mailbox = a.mailbox 
+    //            WHERE 1=1 
+    //            AND c.plugin = 'mailserver' 
+    //            AND c.name = ? 
+    //            ORDER BY a.domain, a.mailbox`,
+
+    // since 1.5.67 with table roles:
+    accounts: `SELECT a.mailbox, a.domain, a.storage, l.username, json_group_array(m.username) AS managers
                FROM accounts a 
                LEFT JOIN configs c ON c.id = a.configID 
                LEFT JOIN logins l ON l.mailbox = a.mailbox 
+               LEFT JOIN roles r ON r.role = a.mailbox 
+               LEFT JOIN logins m ON m.id = r.loginID 
                WHERE 1=1 
                AND c.plugin = 'mailserver' 
                AND c.name = ? 
+               GROUP BY a.mailbox
                ORDER BY a.domain, a.mailbox`,
+              // mailbox          domain      storage                                       login             managers
+              // --------------------------------------------------------------------------------------------------------------
+              // admin@domain.com	domain.com	{"used":"6.8M","total":"5.2G","percent":"0"}	admin@domain.com	[null]
+              // chloe@domain.com	domain.com	{"used":"45M","total":"5.2G","percent":"0"}	                  	["test","testtt"]
+              // test@domain.com	domain.com	{}	                                          test	            [null]
+
     mailboxes:`SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name LIKE @name)`,
     mailbox:  `SELECT mailbox FROM accounts WHERE 1=1 AND configID = (SELECT id FROM configs WHERE plugin = 'mailserver' AND name LIKE @name) AND mailbox LIKE ?`,
     saltHash: `SELECT salt, hash FROM accounts WHERE mailbox = @mailbox`,
@@ -673,6 +772,9 @@ export const dbRun = (sql, params={}, ...anonParams) => {
     throw new Error("Error: sql argument must be a string: sql=",sql);
   }
   
+  // inserts returning a single id must call db.get or the id will never be returned
+  if (sql.includes(' RETURNING ')) return dbGet(sql, params, anonParams);
+
   let result, insertMany;
   try {
     
@@ -680,20 +782,22 @@ export const dbRun = (sql, params={}, ...anonParams) => {
     if (sql.match(/BEGIN TRANSACTION/i)) {
       debugLog(`DB.exec(${sql})`);
       result = DB.exec(sql);
-      debugLog(`DB.exec success`);
+      debugLog(`${color.HIG}${color.y}DB.exec multiple inserts loop detected`);
 
     // multiple inserts at once: DB.transaction https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
     } else if (Array.isArray(params) && params.length) {
       
+      // if there values to store as ?
       if (anonParams.length) {
-        debugLog(`DB.transaction("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
+        debugLog(`${color.HIG}${color.y}DB.transaction("${sql}").run(${JSON.stringify(params)}, ${anonParams})`);
         insertMany = DB.transaction((params) => {
-          for (const param of params) DB.prepare(sql).run(anonParams, param);
+          for (const param of params) DB.prepare(sql).run(param, anonParams);
         });
         result = insertMany(params);
         
+      // no values to store as ?, only {name:value} is passed
       } else {
-        debugLog(`DB.transaction("${sql}").run(${JSON.stringify(params)})`);
+        debugLog(`${color.HIG}${color.y}DB.transaction("${sql}").run(${JSON.stringify(params)})`);
         insertMany = DB.transaction((params) => {
           for (const param of params) {
             DB.prepare(sql).run(param);
@@ -706,11 +810,11 @@ export const dbRun = (sql, params={}, ...anonParams) => {
     // single statement: DB.prepare https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#runbindparameters---object
     } else {
       if (anonParams.length) {
-        debugLog(`DB.prepare("${sql}").run(${anonParams}, ${JSON.stringify(params)})`);
-        result = DB.prepare(sql).run(params,anonParams);
+        debugLog(`${color.HIG}${color.y}DB.prepare("${sql}").run(${JSON.stringify(params)}, ${anonParams})`);
+        result = DB.prepare(sql).run(params, anonParams);
         
       } else {
-        debugLog(`DB.prepare("${sql}").run(${JSON.stringify(params)})`);
+        debugLog(`${color.HIG}${color.y}DB.prepare("${sql}").run(${JSON.stringify(params)})`);
         result = DB.prepare(sql).run(params);
       }
       debugLog(`DB.prepare success`);
@@ -753,7 +857,7 @@ export const dbCount = (table, scope, schema) => {
     if (scope && sql[table]?.scope) params[sql[table].scope] = scope;
     if (schema)                     params.schema = schema;
 
-    debugLog(`DB.prepare("${sql[table].select.count}").get(${JSON.stringify(params)})`);
+    debugLog(`${color.y}DB.prepare("${sql[table].select.count}").get(${JSON.stringify(params)})`);
     result = DB.prepare(sql[table].select.count).get(params);
     debugLog(`success:`, result);
     
@@ -776,7 +880,11 @@ export const dbGet = (sql, params={}, ...anonParams) => {
   let result;
   try {
 
-    debugLog(`DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
+    if (sql.includes(' RETURNING ')) {
+      debugLog(`${color.HIG}${color.y}DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
+    } else {
+      debugLog(`${color.y}DB.prepare("${sql}").get(${JSON.stringify(params)}, ${JSON.stringify(anonParams)})`);
+    }
     result = DB.prepare(sql).get(params, anonParams);
       
     return {success: true, message: result};
@@ -800,11 +908,11 @@ export const dbAll = (sql, params={}, ...anonParams) => {
   let result;
   try {
     if (anonParams.length) {
-      debugLog(`DB.prepare("${sql}").all(${JSON.stringify(anonParams)}, ${JSON.stringify(params)})`);
+      debugLog(`${color.y}DB.prepare("${sql}").all(${JSON.stringify(anonParams)}, ${JSON.stringify(params)})`);
       result = DB.prepare(sql).all(params, anonParams);
       
     } else {
-      debugLog(`DB.prepare("${sql}").all(${JSON.stringify(params)})`);
+      debugLog(`${color.y}DB.prepare("${sql}").all(${JSON.stringify(params)})`);
       result = DB.prepare(sql).all(params);
     }
     // debugLog('ddebug result',result);
@@ -1098,7 +1206,6 @@ export const changePassword = async (table, id, password, scope) => {
 // Function to update a table in the db; id can very well be an array as well
 export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  // jsonDict = { column:value, .. }
   const anonymizedJsonDict = (jsonDict?.password) ? {...jsonDict, password: '********'} : jsonDict;
-  debugLog(`${table} id=${id} for scope=${scope}; encrypt=${encrypt}`, anonymizedJsonDict);
 
   let result, scopedValues, value2test, testResult;
   let messages = [];
@@ -1107,6 +1214,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
     if (!sql[table]) {
       throw new Error(`unknown table ${table}`);
     }
+    debugLog(`${table} ${sql[table].key}=${id} for scope=${scope}; encrypt=${encrypt}`, anonymizedJsonDict);
     
     if (!isNonEmptyDict(jsonDict)) {
       throw new Error('nothing to modify was passed');
@@ -1179,8 +1287,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
                 if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
                 result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
                 if (result.success) {
-                  messages.push(`Updated ${table} ${id} with ${key}=${value}`);
-                  successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                  messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
+                  successLog(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
                   success = true;
 
                 } else messages.push(result?.error);
@@ -1197,8 +1305,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
               result = dbRun(sql[table].update[key], scopedValues, id);
               if (result.success) {
-                messages.push(`Updated ${table} ${id} with ${key}=${value}`);
-                successLog(`Updated ${table} ${id} with ${key}=${value}`);
+                messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
+                successLog(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
                 success = true;
 
               } else messages.push(result?.error);
@@ -1211,8 +1319,8 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
             result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].key} = ?`, scopedValues, id);
             if (result.success) {
-              messages.push(`Updated ${table} ${id} with ${key}=${value}`);
-              successLog(`Updated ${table} ${id} with ${key}=${value}`);
+              messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
+              successLog(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
               success = true;
 
             } else messages.push(result?.error);
@@ -1242,8 +1350,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
 };
 
 
-export const deleteEntry = async (table, id, key, scope) => {
-  debugLog(`${table} ${key}=${id} for scope=${scope} and key=${key}`);
+export const deleteEntry = async (table, id, key, scope=null) => {
   // example: deleteEntry('accounts', mailbox, 'mailbox', containerName);
   // example: deleteEntry('aliases', source, 'bySource', containerName);
   // example: deleteEntry('logins', id);
@@ -1253,6 +1360,7 @@ export const deleteEntry = async (table, id, key, scope) => {
     
     // use default key if not passed
     key = (key) ? key : sql[table].key;
+    debugLog(`${table} ${key}=${id} for scope=${scope} and key=${key}`);
     
     // check if the sql is defined for the key to delete
     if (sql[table].delete[key]) {
@@ -1262,10 +1370,12 @@ export const deleteEntry = async (table, id, key, scope) => {
       let scopedValues = {scope:scope};    // always add scope, why care? it's failproof
       
       // check if delete should be tested
-      if (sql[table].delete[key][id] || sql[table].delete[key][undefined]) {
+      let hasTests = isNonEmptyDict(sql[table].delete[key]);
+      // sql[table].delete[key].some(value => [id, undefined].includes(value));
+      if (hasTests) {
         
         // fix the value2test as we may have tests for any values
-        let value2test = (sql[table].delete[key][id]) ? value : undefined;
+        let value2test = (isNonEmptyDict(sql[table].delete[key][id])) ? id : undefined;
         
         // there is a test for THAT value and now we check with id in mind
         testResult = dbGet(sql[table].delete[key][value2test].test, scopedValues, id);
@@ -1276,9 +1386,10 @@ export const deleteEntry = async (table, id, key, scope) => {
           
           // we pass the test
           result = dbRun(sql[table].delete[key][value2test].pass, scopedValues, id);
+          // { success: true, message: { changes: 4, lastInsertRowid: 0 } }
           if (result.success) {
-            successLog(`db id deleted: ${id}`);
-            return {success: true, message: `db id deleted: ${id}`};
+            successLog(`${table} ${key}=${id} has deleted ${result.message.changes} rows`);
+            return {success: true, message: `${table} ${key}=${id} has deleted ${result.message.changes} rows`};
             
           } else return result;
         
@@ -1291,9 +1402,10 @@ export const deleteEntry = async (table, id, key, scope) => {
       } else {
         // no test
         result = dbRun(sql[table].delete[key], scopedValues, id);
+        // { success: true, message: { changes: 4, lastInsertRowid: 0 } }
         if (result.success) {
-          successLog(`db id deleted: ${id}`);
-          return {success: true, message: `db id deleted: ${id}`};
+          successLog(`${table} ${key}=${id} has deleted ${result.message.changes} rows`);
+          return {success: true, message: `${table} ${key}=${id} has deleted ${result.message.changes} rows`};
           
         } else return result;
       }
@@ -1317,14 +1429,19 @@ export const deleteEntry = async (table, id, key, scope) => {
 };
 
 
-export const refreshTokens = async (credentials) => {
+export const resetTokens = async (id) => {
 
+  let result;
   try {
     
-    let result = dbRun(sql.logins.update.refreshTokens, credentials);
+    if (Number.isInteger(parseInt(id))) {
+      result = dbRun(sql.logins.update.resetToken, {id:id});
+    } else {
+      result = dbRun(sql.logins.update.resetTokens);
+    }
     if (result.success) {
-      successLog(`${color.m}tokens deleted for user: ${credentials ?? '*'}`);
-      return {success: true, message: `tokens deleted for user: ${credentials ?? '*'}`};
+      successLog(`${color.m}tokens deleted for user id=${id ?? '*'}`);
+      return {success: true, message: `tokens deleted for user id=${id ?? '*'}`};
       
     } else return result;
 

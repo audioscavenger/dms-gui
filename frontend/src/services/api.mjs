@@ -566,7 +566,7 @@ export const getCount = async (table, containerName) => {
   });
 };
 
-// TBD
+// TBD: probably works but atm we embedd roles from logins in the user object and it's secure since it's in the JWT payload
 export const getRoles = async credential => {
   if (!credential) return {success: false, error: 'credential is required'};
   

@@ -202,10 +202,11 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
   try {
     
     result = dbGet(sql.configs.select.id, {plugin:plugin, schema:schema, scope:scope}, containerName);
+    // config does not exist:
     if (!result.message?.id) {
       // config:   `INSERT INTO configs (config, plugin, schema, scope) VALUES (?, @plugin, @schema, @scope) RETURNING id`,
       result = dbGet(sql.configs.insert.config, {plugin:plugin, schema:schema, scope:scope}, containerName);
-      if (!result.success) return result;
+      if (!result.success) return result; // exit on error and save nothing
     }
 
     // scope all settings for that container

@@ -1,4 +1,5 @@
 import {
+  isNonEmptyDict,
   regexFindEmailStrict
 } from '../common.mjs';
 import {
@@ -18,16 +19,16 @@ import {
   dbGet,
   dbInit,
   dbUpgrade,
-  refreshTokens,
-  updateDB,
+  deleteEntry,
+  resetTokens,
+  updateDB
 } from './db.mjs';
 
 import {
   addLogin,
   deleteLogin,
   getLogins,
-  getRoles,
-  loginUser,
+  loginUser
 } from './logins.mjs';
 
 import {
@@ -1203,14 +1204,12 @@ async (req, res) => {
     const { credential } = req.params;
     if (!credential) return res.status(400).json({ error: 'credential is required' });
     
-    // Users can only act on their own mailboxes or those in their roles (unless admin)
-    let result;
-    if (req.user.isAdmin) {
-      result = await getRoles(credential);
-
-    } else {
-      // const roles = await getRoles(req.user.mailbox);
-      result = (credential == req.user.mailbox) ? await getRoles(credential) : {success:false, error: 'Permission denied'};
+    // Users can get its own roles unless isAdmin
+    let roles = {success:false, error: 'Permission denied'};
+    if (req.user.isAdmin || credential == req.user.mailbox) {
+      
+      // roles = await getRolesFromLogins(credential);   // since 1.5.67 we have the roles table
+      roles = await getRoles(credential);
     }
     return res.json(roles);
     
@@ -1401,14 +1400,32 @@ async (req, res) => {
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
     let result = {success: false, error: 'Permission denied'};
+    const { roles, ...jsonDict } = req.body;
     if (req.user.isAdmin) {
-      result = await updateDB('logins', id, req.body);    // example: { isActive: 0 }
+      if (isNonEmptyDict(jsonDict)) result = await updateDB('logins', id, jsonDict);    // example: { isActive: 0 }
+      
+      // now process roles
+      if (req.body?.roles.length) {
+        result = await deleteEntry('roles', id);    // we need to purge roles first
+        for (const role of req.body.roles) {
+          result = await updateDB('roles', id, {role:role});
+        }
+      }
 
     } else {
       // non admin users can only modify themselves
       if (id == req.user.id) {
-        result = await updateDB('logins', id, req.body);
-       }
+        result = await updateDB('logins', id, jsonDict);
+
+        // now process roles
+        if (req.body?.roles.length) {
+          result = await deleteEntry('roles', id);    // we need to purge roles first
+          for (const role of req.body.roles) {
+            result = await updateDB('roles', id, {role:role});
+          }
+        }
+
+      }
     }
     debugLog(`index PATCH /api/logins/${id}`, result);
 
@@ -1657,7 +1674,8 @@ app.post('/api/refresh', async (req, res) => {
 app.post('/api/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from database
-    updateDB('logins', req.user.id, {refreshToken:"null"}); // "null" string won't be stored, it's just that better-sqlite3 does not take objects
+    // updateDB('logins', req.user.id, {refreshToken:"null"}); // "null" string won't be stored, it's just that better-sqlite3 does not take objects
+    resetTokens(req.user.id);
 
     // Clear cookies
     res.clearCookie('accessToken', cookieOptionsAccess);
@@ -1948,7 +1966,7 @@ app.listen(env.PORT_BACKEND, async () => {
   // apply patches etc
   dbInit(env.DATABASE_RESET);     // reset db: 1.5.10 to 1.5.25; also debug mode since 1.5.28
   dbUpgrade();
-  await refreshTokens();      // delete all user's refreshToken as the secret has changed after a restart
+  await resetTokens();      // delete all user's refreshToken as the secret has changed after a restart
 
   if (env.AES_SECRET == 'changeme') {
     errorLog(`

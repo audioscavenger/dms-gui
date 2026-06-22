@@ -63,7 +63,7 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
 
   try {
     
-    // refresh only possible if containerName is passed
+    // refresh by pulling data from the mailserver is only possible if containerName is passed
     if (refresh && containerName) {
 
       // get schema
@@ -83,6 +83,7 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
 
         if (config?.schema == 'dms') {
           result = await pullAccountsFromDMS(containerName);
+
         } else {
           errorLog(`unknown schema: ${config?.schema}`, result);
           throw new Error(`unknown schema: ${config?.schema}`);
@@ -104,37 +105,9 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
           // now save/refresh ALL accounts in db since we cannot filter by mailbox, DMS always returns the full list. We just don't have a choice
           // fromDMS:  `REPLACE INTO accounts (mailbox, domain, storage, configID)     VALUES (@mailbox, @domain, @storage, (SELECT id FROM configs WHERE plugin = 'mailserver' AND name = ?))`,
           result = dbRun(sql.accounts.insert.fromDMS, accounts2save, containerName);
-          if (result.success) {
-            
-            // also create matching linked logins with extra fields, exclude isAdmin and isActive, in case it already exists
-            // let logins2create = result.message.map(account => { return {
-            //   mailbox:account.mailbox, 
-            //   username:account.mailbox, 
-            //   email:account.mailbox, 
-            //   isAccount:1, 
-            //   mailserver:containerName, 
-            //   roles:JSON.stringify([account.mailbox]), 
-            //   }; 
-            // });
-
-            // now save those linked logins in db / deprecated: let's use addLogin instead
-            // fromDMS:  `REPLACE INTO logins  (mailbox, username, email, isAccount, mailserver, roles) VALUES (@mailbox, @username, @email, @isAccount, @mailserver, @roles)`,
-            // result = dbRun(sql.logins.insert.fromDMS, logins2create);
-
-            for (const account of accounts) {
-
-              result = await getLogin(account.mailbox); // search if login exist by mailbox
-              if (!result.success) {
-
-                result = await addLogin(account.mailbox, account.mailbox, password, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
-                if (!result.success) {
-                  errorLog('addLogin:', result?.error);
-                }
-
-              } else debugLog(`login with mailbox=${account.mailbox} already exist`);
-            }
-            
-          } else errorLog('sql.accounts.insert.fromDMS:', result?.error);
+          if (!result.success) { // { success: true, message: undefined }
+            errorLog('sql.accounts.insert.fromDMS:', result?.error);
+          }
           
         } else errorLog('pullAccountsFromDMS:', result?.error);
 
@@ -150,32 +123,61 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
     //            AND c.plugin = 'mailserver' 
     //            AND c.name = ? 
     //            ORDER BY a.domain, a.mailbox`,
-    result = dbAll(sql.accounts.select.accounts, {}, containerName);
-    if (result.success) {
+    accounts = dbAll(sql.accounts.select.accounts, containerName);
+    if (accounts.success) {
       
+      // create linked logins and add refresh roles table
+      if (refresh && containerName) {
+        for (const account of accounts.message) {
+
+          result = await getLogin(account.mailbox); // search if login exist by mailbox
+          if (!result.success) {
+
+            result = await addLogin(account.mailbox, account.mailbox, password, account.mailbox, 0, 1, 1, containerName, [account.mailbox]);
+            if (!result.success) {
+              errorLog('addLogin:', result?.error);
+            }
+
+          } else {
+            debugLog(`login id=${result.message.id} with mailbox=${result.message.mailbox} already exist`);
+            
+            // make sure this is the mailbox and not the username
+            if (result.message.mailbox == account.mailbox) {
+              debugLog(`updating role ${account.mailbox} to login id=${result.message.id}`);
+              result = dbRun(sql.roles.insert.role, {loginID:result.message.id}, account.mailbox);
+            }
+
+          }
+        }
+        
+        // refresh accounts with managers included
+        accounts = dbAll(sql.accounts.select.accounts, containerName);
+      }
+            
       // reduce the list of accounts down to a shortlist when provided
-      if (roles.length) result.message = reduxArrayOfObjByValue(result.message, 'mailbox', roles);
+      if (roles.length) accounts.message = reduxArrayOfObjByValue(accounts.message, 'mailbox', roles);
 
       // we could read filtered accounts from accounts table
-      if (result.message.length) {
-        infoLog(`Found ${result.message.length} entries in accounts`);
+      if (accounts.message.length) {
+        infoLog(`Found ${accounts.message.length} entries in accounts`);
         
-        // now JSON.parse storage for the UI as it's stored stringified in the db
-        accounts = result.message.map(account => { return { 
+        // JSON.parse storage and managers for the UI as it's stored or returned stringified by better-sqlite3
+        accounts = accounts.message.map(account => { return { 
           ...account, 
-          storage: JSON.parse(account?.storage) 
+          storage:  JSON.parse(account?.storage), 
+          managers: JSON.parse(account?.managers).filter(Boolean), 
           }; 
         });
-        
-      } else warnLog(`db accounts seems empty:`, result.message);
+
+      } else warnLog(`db accounts seems empty:`, accounts.message);
 
       return {success: true, message: accounts};
       // [ { mailbox: 'a@b.com', domain:'b.com', storage: {} }, .. ]
 
     // unknown error
-    } else errorLog(result?.error);
+    } else errorLog(accounts?.error);
     
-    return result;
+    return accounts;
     
   } catch (error) {
     errorLog(error.message);

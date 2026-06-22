@@ -123,13 +123,18 @@ export const arrayOfStringToDict = (array=[], separator=',') => {
 };
 
 
+// transform this: { a:1, b:2, .. }
+// to this:        [ {name:"a",value:1}, {name:"b",value:2}, .. ]
 export const obj2ArrayOfObj = (obj={}, stringify=false, props=['name','value']) => {
   return (stringify) ? Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: String(obj[key])})) : Object.keys(obj).map(key => ({[props[0]]: key, [props[1]]: obj[key]}));
   
-  // transform this: { a:1, b:2, .. }
-  // to this:        [ {name:"a",value:1}, {name:"b",value:2}, .. ]
 };
 
+// transform this: [1, 2, ..]
+// to this:        [ {keyName:1}, {keyName:2}, .. ]
+export const array2ArrayOfObj = (arr, keyName) => {
+  return arr.map(item => ({ [keyName]: item }));
+};
 
 // reduxArrayOfObjByKey will reduce:
   // data = [
@@ -307,16 +312,15 @@ export const getAllValuesByKey = (array, keyName = 'name', keepUnique = false) =
 };
 
 
-// keep only the strings that exist in another array
+// returns a Set with only the items from an array/Set that exist in allowedArray/Set
 // myStrings = ['apple', 'banana', 'cherry', 'date']; allowed = ['banana', 'date', 'elderberry'];
-// keepMatchingStrings(myStrings, allowed) = ['banana', 'date']
-export const keepMatchingStrings = (sourceArray, allowedArray) => {
-  if (!Array.isArray(sourceArray) || !Array.isArray(allowedArray)) return [];
+// reduxSets(myStrings, allowed) = ['banana', 'date']
+export const reduxSets = (sourceSet, allowedSet) => {
+  if (!isSet(sourceSet)) sourceSet = new Set(sourceSet);
+  if (!isSet(allowedSet)) allowedSet = new Set(allowedSet);
 
-  // Creating a Set optimizes performance for the lookup
-  const allowedSet = new Set(allowedArray);
-
-  return sourceArray.filter(item => allowedSet.has(item));
+  // return sourceArray.filter(item => allowedSet.has(item));
+  return sourceSet.intersection(allowedSet);
 };
 
 
@@ -328,11 +332,11 @@ export const pluck = (array, keyValue='value', uniq=true, sorted=true) => {
   return (sorted) ? uniqValues.sort() : uniqValues;
 };
 
-// shortcut to get a set of uniq, unsorted values
-export const plucks = (array, keyValue='value') => {
+// shortcut to get a Set or array of uniq, unsorted values
+export const plucks = (array, keyValue='value', set=true) => {
   if (!Array.isArray(array)) return null;
   let values = array.map(item => item[keyValue]);
-  return new Set(values);
+  return (set) ? new Set(values) : [... new Set(values)];
 };
 
 
@@ -373,6 +377,10 @@ export const moveKeyToLast = (obj, keyToMove) => {
 // isNonEmptyDict returns true only obj is a non empty disctionary
 export const isNonEmptyDict = (obj) => 
   obj?.constructor === Object && Object.keys(obj).length > 0;
+
+
+export const isSet = (obj) =>
+  Object.prototype.toString.call(obj) === '[object Set]';
 
 
 // module.exports = {

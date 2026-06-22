@@ -131,6 +131,7 @@
     "domain": "Domain",
     "mailbox": "Mailbox",
     "mailboxRequired": "Mailbox is required",
+    "managers": "Managers",
     "existingAccounts": "Existing Accounts",
     "invalidMailbox": "Invalid mailbox format",
     "manageDNS": "Manage DNS",

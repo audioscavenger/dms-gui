@@ -4,7 +4,7 @@
 #   docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:1.5.25 .
 #   docker push audioscavenger/dms-gui --all-tags
 
-ARG DMSGUI_VERSION=1.5.66
+ARG DMSGUI_VERSION=1.5.67
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # -----------------------------------------------------
