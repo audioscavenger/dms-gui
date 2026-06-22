@@ -171,6 +171,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [x] 1.5.70 - upgraded all packages to latest
 * [x] 1.5.69 - bugfix: index: added 1mn delay before automated reboot or else the container reboots 60 times
 * [x] 1.5.69 - frontend: Translate helper takes a 3rd argument: {error:message}
 * [x] 1.5.69 - frontend: pages catch correctly forward API errors to the errorMessage: setErrorMessage and AlertMessage can take an object
@@ -926,7 +927,6 @@ octodns-sync --version
 <!--
 ## backend upgrade commands:
 docker exec -it dms-gui sh
-
 npm install -g npm-check-updates
 npm install -g npm
 
@@ -934,7 +934,7 @@ cd /app/backend
 npm version
 {
   'dms-gui-backend': '1.0.0',
-  npm: '11.6.0',
+  npm: '11.17.0',
   node: '24.9.0',
   acorn: '8.15.0',
   ada: '3.2.7',
@@ -965,14 +965,14 @@ npm version
 }
 
 npx npm-check-updates -u
- better-sqlite3        ^12.4.1  →         ^12.9.0
+ better-sqlite3        ^12.5.0  →        ^12.11.1
  cors                   ^2.8.5  →          ^2.8.6
- dockerode              ^4.0.9  →         ^4.0.10
+ dockerode              ^4.0.9  →          ^5.0.0
  dotenv                ^17.2.3  →         ^17.4.2
- express                ^5.1.0  →          ^5.2.1
  json-server     ^1.0.0-beta.3  →  ^1.0.0-beta.15
- jsonwebtoken           ^9.0.2  →          ^9.0.3
- prettier                3.6.2  →           3.8.2
+ node-cron              ^4.2.1  →          ^4.5.0
+ prettier                3.7.4  →           3.8.4
+ swagger-jsdoc          ^6.2.8  →          ^6.3.0
 
 npm install
 npm audit fix
@@ -1035,24 +1035,17 @@ npm version
 }
 
 npx npm-check-updates -u
-  @babel/core           ^7.29.0  →   ^7.29.7    [missing time]
-  @babel/preset-env     ^7.29.2  →   ^7.29.7    [missing time]
-  @babel/preset-react   ^7.28.5  →   ^7.29.7    [missing time]
-  @mui/material          ^9.0.0  →    ^9.1.0    [missing time]
-  axios                 ^1.15.0  →   ^1.17.0    [missing time]
-  html-webpack-plugin    ^5.6.6  →    ^5.6.7    [missing time]
-  i18next               ^26.0.4  →   ^26.3.1    [missing time]
-  prettier                3.8.2  →     3.8.3    [missing time]
-  react                 ^19.2.5  →   ^19.2.7    [missing time]
-  react-dom             ^19.2.5  →   ^19.2.7    [missing time]
-  react-i18next         ^17.0.3  →   ^17.0.8    [missing time]
-  react-router-dom      ^7.14.1  →   ^7.17.0    [missing time]
-  webpack              ^5.106.1  →  ^5.107.2    [missing time]
-  webpack-cli            ^7.0.2  →    ^7.0.3    [missing time]
-  webpack-dev-server     ^5.2.3  →    ^5.2.4    [missing time]
+ @babel/core          ^7.29.7  →   ^8.0.1    [missing time]
+ @babel/preset-env    ^7.29.7  →   ^8.0.2    [missing time]
+ @babel/preset-react  ^7.29.7  →   ^8.0.1    [missing time]
+ @mui/material         ^9.1.0  →   ^9.1.1    [missing time]
+ axios                ^1.17.0  →  ^1.18.1    [missing time]
+ prettier               3.8.3  →    3.8.4    [missing time]
+ react-router-dom     ^7.17.0  →  ^7.18.0    [missing time]
+ webpack-dev-server    ^5.2.4  →   ^5.2.5    [missing time]
 
 npm install
-# npm audit fix ## never again!
+npm audit fix
   found 0 vulnerabilities
 
 
