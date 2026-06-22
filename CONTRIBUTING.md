@@ -171,6 +171,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [x] 1.5.68 - update DEMO database
 * [x] 1.5.67 - bugfix: deleteEntry in sql
 * [x] 1.5.67 - common: added array2ArrayOfObj
 * [x] 1.5.67 - Accounts: added Autocomplete field just like for roles
@@ -189,7 +190,7 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [x] 1.5.66 - bugfix: standard users can see their mailboxes but storage usage is "N/A"; fixed: DataTable has better stringify/nullify selection
 * [x] 1.5.65 - time to release?
 * [x] 1.5.65 - bugfix: frontend: change password broke out of the blue: isNonEmptyDict(errors) with no errors is 0 == false which broke the form validations
-* [x] 1.5.65 - update demo database
+* [x] 1.5.65 - update DEMO database
 * [-] 1.5.65 - logins: shouldn't addLogin do the getLogin itself and take force=true to recreate it or smth? maybe. don't care enough.
 * [x] 1.5.64 - frontend: mailserver/containerName selection dropdown in the branding
 * [x] 1.5.64 - frontend: Content-Security-Policy warning was fixed in 1.5.63

@@ -1,17 +1,16 @@
 # ---> gitsync
 **/backup
-config/dms-gui/*
-git*.cmd
+*.cmd
 commit.*.txt
-README.cmd
 *.code-workspace
+config/dms-gui/*
 
 # Dependencies
 node_modules/
 
 # Environment variables
-!.dms-gui.env.example
-!.dms-gui-demo.sqlite3
+!config/dms-gui/.dms-gui.env.example
+!config/dms-gui/dms-gui-demo.sqlite3
 
 # Logs
 logs
