@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-// import { useTranslation } from 'react-i18next';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
-
+import { useTranslation } from 'react-i18next';
 import {
   Translate,
 } from './index.jsx';
@@ -10,7 +9,7 @@ import {
  * Reusable alert component using react-bootstrap
  * @param {Object} props Component props
  * @param {string} props.type Type of alert: 'success', 'danger', 'warning', 'info'
- * @param {string} props.message Message to display (can be a translation key)
+ * @param {string} props.message Message to display (can be a string translation key or an object)
  * @param {boolean} props.translate Whether to translate the message (defaults to true)
  * @param {function} props.onClose Optional close handler for dismissible alerts
  */
@@ -21,29 +20,37 @@ const AlertMessage = ({
   translate = true,
   ...rest
 }) => {
-  // const { t } = useTranslation();
-  if (!message) return null;
-  // 1. Create a state variable to control the visibility
+  const { t } = useTranslation();
+  // Create a state variable to control the visibility
   const [showAlert, setShowAlert] = useState(true);
+
+  if (!message) return null;
+
+  // Extract key and dynamic values if message is an object
+  const translationKey = typeof message === 'object' ? message.key : message;
+  const translationValues = typeof message === 'object' ? message.values : {};
+  const actualTranslatedString = t(translationKey); 
+  const keyHasPlaceholder = actualTranslatedString.includes('{{error}}') || actualTranslatedString.includes(translationValues?.error);
 
   return (
     <RBAlert
       variant={type}
       dismissible={!!onClose}               // Make dismissible if onClose is provided
-      show={showAlert}                      // 👈 Tells the alert when to render
-      onClose={() => setShowAlert(false)}   // 👈 Changes state to false on 'X'
+      show={showAlert}                      // Tells the alert when to render
+      onClose={() => setShowAlert(false)}   // Changes state to false on 'X'
       {...rest}
     >
       {/* Wrapper ensures i18n props do not bleed onto the Bootstrap Alert DOM node */}
       <span>
-        {Translate(message, translate)}
+        {Translate(translationKey, translate, translationValues)}
+        {/* If dynamic error values exist but the key odes not have {{error}}, safely append them separated by a space or colon */}
+        {!keyHasPlaceholder && translationValues?.error && ` : ${translationValues.error}`}
       </span>
     </RBAlert>
   );
 };
 
 export default AlertMessage;
-      // {translate ? t(message) : message}
 
 // using <Trans> inside a bootstrap alert causes this error:
 // React does not recognize the `i18nIsDynamicList` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `i18nisdynamiclist` instead. If you accidentally passed it from a parent component, remove it from the DOM element. Component Stack: 

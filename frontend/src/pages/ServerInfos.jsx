@@ -98,7 +98,8 @@ const ServerInfos = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchServerInfos'), error);
-      setErrorMessage('api.errors.fetchServerInfos');
+      // setErrorMessage('api.errors.fetchServerInfos');
+      setErrorMessage({key: 'api.errors.fetchServerInfos', values: { error: error.message }});
     }
   };
 
@@ -124,7 +125,8 @@ const ServerInfos = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchServerEnvs'), error);
-      setErrorMessage('api.errors.fetchServerEnvs');
+      // setErrorMessage('api.errors.fetchServerEnvs');
+      setErrorMessage({key: 'api.errors.fetchServerEnvs', values: { error: error.message }});
     }
   };
 

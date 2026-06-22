@@ -382,6 +382,7 @@ export const isNonEmptyDict = (obj) =>
 export const isSet = (obj) =>
   Object.prototype.toString.call(obj) === '[object Set]';
 
+export const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // module.exports = {
 //   funcName,

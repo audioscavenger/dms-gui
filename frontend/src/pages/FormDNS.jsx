@@ -156,7 +156,8 @@ function FormDomains() {
     } catch (error) {
       setSubmissionSettings('error');
       errorLog(t('api.errors.saveSettings'), error);
-      setErrorMessage('api.errors.saveSettings');
+      // setErrorMessage('api.errors.saveSettings');
+      setErrorMessage({key: 'api.errors.saveSettings', values: { error: error.message }});
     }
   };
 

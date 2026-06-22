@@ -112,7 +112,8 @@ export const Login = () => {
 
     } catch (error) {
       // errorLog(t('api.errors.fetchConfigs'), error);
-      setErrorMessage('api.errors.fetchConfigs');
+      // setErrorMessage('api.errors.fetchConfigs');
+      setErrorMessage({key: 'api.errors.fetchConfigs', values: { error: error.message }});
     }
   };
     
@@ -148,6 +149,7 @@ export const Login = () => {
     // react refuses to handle 401 login denied and will actually fall here
     } catch (error) {
       setErrorMessage('logins.denied');
+      debugLog('error:', error.message);
     }
   };
   

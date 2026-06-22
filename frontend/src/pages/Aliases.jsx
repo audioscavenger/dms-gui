@@ -91,6 +91,7 @@ const Aliases = () => {
       if (accountsData?.success) {
         debugLog('accountsData', accountsData);                 // [ { mailbox: 'a@a.com', domain:'a.com', storage: {} },{ mailbox: 'b@b.com', domain:'b.com', storage: {} }, .. ]
         setAccounts(accountsData.message);
+
       } else setErrorMessage(accountsData?.error);
       
       if (aliasesData?.success) {
@@ -108,7 +109,8 @@ const Aliases = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAliases'), error);
-      setErrorMessage('api.errors.fetchAliases');
+      // setErrorMessage('api.errors.fetchAliases');
+      setErrorMessage({key: 'api.errors.fetchAliases', values: { error: error.message }});
       
     } finally {
       setLoading(false);
@@ -202,7 +204,8 @@ const Aliases = () => {
       
     } catch (error) {
       errorLog(t('api.errors.addAlias'), error.message);
-      setErrorMessage('api.errors.addAlias', error.message);
+      // setErrorMessage('api.errors.addAlias', error.message);
+      setErrorMessage({key: 'api.errors.addAlias', values: { error: error.message }});
     }
   };
 
@@ -222,7 +225,8 @@ const Aliases = () => {
         
       } catch (error) {
         errorLog(t('api.errors.deleteAlias'), error.message);
-        setErrorMessage('api.errors.deleteAlias', error.message);
+        // setErrorMessage('api.errors.deleteAlias', error.message);
+        setErrorMessage({key: 'api.errors.deleteAlias', values: { error: error.message }});
       }
     }
   };

@@ -1,4 +1,5 @@
 import {
+  delay,
   isNonEmptyDict,
   regexFindEmailStrict
 } from '../common.mjs';
@@ -1405,7 +1406,7 @@ async (req, res) => {
       if (isNonEmptyDict(jsonDict)) result = await updateDB('logins', id, jsonDict);    // example: { isActive: 0 }
       
       // now process roles
-      if (req.body?.roles.length) {
+      if (req.body?.roles?.length) {
         result = await deleteEntry('roles', id);    // we need to purge roles first
         for (const role of req.body.roles) {
           result = await updateDB('roles', id, {role:role});
@@ -1418,7 +1419,7 @@ async (req, res) => {
         result = await updateDB('logins', id, jsonDict);
 
         // now process roles
-        if (req.body?.roles.length) {
+        if (req.body?.roles?.length) {
           result = await deleteEntry('roles', id);    // we need to purge roles first
           for (const role of req.body.roles) {
             result = await updateDB('roles', id, {role:role});
@@ -1427,7 +1428,6 @@ async (req, res) => {
 
       }
     }
-    debugLog(`index PATCH /api/logins/${id}`, result);
 
     // must refresh tokens as the token signature may have changed
     if (result.success && id == req.user.id) {
@@ -1959,6 +1959,7 @@ app.listen(env.PORT_BACKEND, async () => {
   debugLog('DMSGUI_CRON',env.DMSGUI_CRON)
   if (env.DMSGUI_CRON) {
     cron.schedule(env.DMSGUI_CRON, () => {
+        delay(60000); // wait until next minute or the container will reboot 60 times
         killContainer('dms-gui', 'dms-gui', 'dms-gui');    // no await
     });
   };

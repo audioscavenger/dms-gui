@@ -154,7 +154,8 @@ const Accounts = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
-      setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
+      // setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
+      setErrorMessage({key: 'api.errors.fetchAccounts', values: { error: error.message }});
     }
   };
 
@@ -171,7 +172,8 @@ const Accounts = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchServerEnvs'), error);
-      setErrorMessage(t('api.errors.fetchServerEnvs'), ": ", error);
+      // setErrorMessage(t('api.errors.fetchServerEnvs'), ": ", error);
+      setErrorMessage({key: 'api.errors.fetchServerEnvs', values: { error: error.message }});
     }
   };
 
@@ -247,7 +249,8 @@ const Accounts = () => {
       
     } catch (error) {
       errorLog(t('api.errors.addAccount'), error.message);
-      setErrorMessage('api.errors.addAccount', error.message);
+      // setErrorMessage('api.errors.addAccount', error.message);
+      setErrorMessage({key: 'api.errors.addAccount', values: { error: error.message }});
     }
   };
 
@@ -292,7 +295,8 @@ const Accounts = () => {
       }
     } catch (error) {
       errorLog(t('api.errors.deleteAccount'), error.message);
-      setErrorMessage('api.errors.deleteAccount', error.message);
+      // setErrorMessage('api.errors.deleteAccount', error.message);
+      setErrorMessage({key: 'api.errors.deleteAccount', values: { error: error.message }});
 
     } finally {
       handleCloseDeleteConfirmModal();
@@ -320,7 +324,8 @@ const Accounts = () => {
       
     } catch (error) {
       errorLog(t('api.errors.doveadm'), error.message);
-      setErrorMessage('api.errors.doveadm', error.message);
+      // setErrorMessage('api.errors.doveadm', error.message);
+      setErrorMessage({key: 'api.errors.doveadm', values: { error: error.message }});
     }
   };
 
@@ -406,7 +411,8 @@ const Accounts = () => {
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
-      setErrorMessage('api.errors.changePassword');
+      // setErrorMessage('api.errors.changePassword');
+      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
 
     } finally {
       if (result.success) setSuccessMessage(result.message);
@@ -476,9 +482,11 @@ const Accounts = () => {
       );
       setSuccessMessage('accounts.dnsUpdated');
       handleCloseDNSModal(); // Close the modal
+
     } catch (error) {
       errorLog(t('api.errors.updateDNS'), error);
-      setErrorMessage('api.errors.updateDNS');
+      // setErrorMessage('api.errors.updateDNS');
+      setErrorMessage({key: 'api.errors.updateDNS', values: { error: error.message }});
     }
   };
 

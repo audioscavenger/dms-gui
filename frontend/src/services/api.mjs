@@ -167,11 +167,16 @@ api.interceptors.response.use(
        || errorResponseCode == 'CODE_MISSING'
        || errorAxiosMessage.includes('canceled', 'aborted')
        ) {
-      return new Promise(() => {}); // Halts processing silently without error logs
+      debugLog(`1. errorCode=${errorCode} || errorResponseCode=${errorResponseCode} || errorAxiosMessage=${errorAxiosMessage}`);
+      return Promise.reject({
+        success: false,
+        message: errorResponseError || errorAxiosMessage 
+      });
     }
     
     // 2. If we are already heading to login, silence subsequent requests
     if (isRedirectingToLogin || isLogoutRequest) {
+      debugLog(`2. isRedirectingToLogin=${isRedirectingToLogin} || isLogoutRequest=${isLogoutRequest}`);
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
 
@@ -181,6 +186,7 @@ api.interceptors.response.use(
         isRedirectingToLogin = true;
         window.location.replace('/login');
       }
+      debugLog(`3. !errorResponse=${!errorResponse} httpStatus=${httpStatus} && isLogoutRequest=${isLogoutRequest}`);
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
     
@@ -226,6 +232,7 @@ api.interceptors.response.use(
         isLogoutRequest = true;
         window.location.href = '/login';
         // return Promise.reject(refreshError);
+        debugLog(`4. errorResponseCode=${errorResponseCode} isLogoutRequest=${isLogoutRequest} /login`);
         return new Promise(() => {}); // Return unresolved promise to halt execution silently
       }
     }
@@ -237,7 +244,6 @@ api.interceptors.response.use(
       'NO_REFRESH_TOKEN', 
       'INVALID_REFRESH_TOKEN', 
       'REFRESH_TOKEN_EXPIRED', 
-      'ERR_BAD_REQUEST'
       ]);
     if (fatalAuthCodes.has(errorResponseCode)) {
       isRedirectingToLogin = true; // Locks the gate so simultaneous requests are muted
@@ -247,6 +253,7 @@ api.interceptors.response.use(
       sessionStorage.clear();
       
       window.location.replace('/login');
+      debugLog(`5. errorResponseCode=${errorResponseCode} /login`);
       return new Promise(() => {}); // Return unresolved promise to halt execution silently
     }
 
@@ -263,11 +270,13 @@ api.interceptors.response.use(
     }
 
     // 7. Normalized Safe Return Payload: extract response data if exist
+      // 'ERR_BAD_REQUEST'  > usually INVALID_TOKEN
+      // 'ERR_BAD_RESPONSE' > idex 500 with data, usually
     if (errorResponse && errorResponseMessage) {
       debugLog('graceful fail');
       return Promise.reject({
         success: false,
-        message: errorResponseError || errorResponseCode || errorAxiosMessage 
+        message: errorResponseError || errorAxiosMessage 
       });
     }
     

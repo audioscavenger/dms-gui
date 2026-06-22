@@ -42,11 +42,17 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./config/dms-gui/:/app/config/
 
-      # If you want to develop locally... mount anything you want and reload container after adding npm stuff
-      # - ./backend/package.json:/app/backend/package.json
-      # - ./backend/package-lock.json:/app/backend/package-lock.json
+      # If you want to develop locally... mount the below with DEBUG=true and nodemon will reload your stuff immediately
+      - ./backend:/app/backend
+      - ./backend/package.json:/app/backend/package.json
+      - ./backend/package-lock.json:/app/backend/package-lock.json
+      ## The below does not work anymore, use nvm-sh to build a local nodeJS of the same version as the container:
       # - ./frontend.mjs/package.json:/app/frontend/package.json
       # - ./frontend.mjs/package-lock.json:/app/frontend/package-lock.json
+      ## frontend upgrade commands: from the OS; do that once
+      # curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+      # source ~/.bashrc
+      # nvm install 24.9.0
       
     # add your proxy network if you need:
     networks:

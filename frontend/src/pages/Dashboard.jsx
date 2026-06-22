@@ -148,8 +148,8 @@ const Dashboard = () => {
       
     } catch (error) {
       errorLog(t('api.errors.fetchServerStatus'), error);
-      // setErrorMessage('api.errors.fetchServerStatus');
-      setErrorMessage(statusData.message);
+      // setErrorMessage(statusData.message);
+      setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: statusData.message }});
       
     } finally {
       setLoading(false);
@@ -229,7 +229,8 @@ const Dashboard = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAliases'), error);
-      setErrorMessage('api.errors.fetchAliases');
+      // setErrorMessage('api.errors.fetchAliases');
+      setErrorMessage({key: 'api.errors.fetchAliases', values: { error: error.message }});
       
     } finally {
       handleRefreshCard("aliases", false);
@@ -272,7 +273,8 @@ const Dashboard = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
-      setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
+      // setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
+      setErrorMessage({key: 'api.errors.fetchAccounts', values: { error: error.message }});
       
     } finally {
       handleRefreshCard("accounts", false);
@@ -306,7 +308,8 @@ const Dashboard = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchLogins'), error);
-      setErrorMessage('api.errors.fetchLogins');
+      // setErrorMessage('api.errors.fetchLogins');
+      setErrorMessage({key: 'api.errors.fetchLogins', values: { error: error.message }});
       
     } finally {
       handleRefreshCard("logins", false);

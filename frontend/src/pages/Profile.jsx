@@ -202,7 +202,8 @@ const Profile = () => {
       
     } catch (error) {
       errorLog(error.message);
-      setErrorMessage('api.errors.updateLogin', error.message);
+      // setErrorMessage('api.errors.updateLogin', error.message);
+      setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
     }
   };
 
@@ -303,7 +304,8 @@ const Profile = () => {
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
-      setErrorMessage('api.errors.changePassword');
+      // setErrorMessage('api.errors.changePassword');
+      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
 
     } finally {
       if (result.success) setSuccessMessage(result.message);

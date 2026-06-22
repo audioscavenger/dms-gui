@@ -232,7 +232,8 @@ function FormContainerAdd() {
 
     } catch (error) {
       errorLog(t('api.errors.fetchConfigs'), error);
-      setErrorMessage('api.errors.fetchConfigs');
+      // setErrorMessage('api.errors.fetchConfigs');
+      setErrorMessage({key: 'api.errors.fetchConfigs', values: { error: error.message }});
     }
   };
 
@@ -265,7 +266,8 @@ function FormContainerAdd() {
 
       } catch (error) {
         errorLog(t('api.errors.fetchSettings'), error);
-        setErrorMessage('api.errors.fetchSettings');
+        // setErrorMessage('api.errors.fetchSettings');
+        setErrorMessage({key: 'api.errors.fetchSettings', values: { error: error.message }});
       }
       setLoading(false);
     }
@@ -298,7 +300,8 @@ function FormContainerAdd() {
 
       } catch (error) {
         errorLog(t('api.errors.ping'), error.message);
-        setErrorMessage('api.errors.ping', error.message);
+        // setErrorMessage('api.errors.ping', error.message);
+        setErrorMessage({key: 'api.errors.ping', values: { error: error.message }});
       }
     }
   };
@@ -328,7 +331,8 @@ function FormContainerAdd() {
         return result;
 
       } catch (error) {
-        setErrorMessage(t('api.errors.DMS_API_injectFailed') +": "+ result?.error);
+        // setErrorMessage(t('api.errors.DMS_API_injectFailed') +": "+ result?.error);
+        setErrorMessage({key: 'api.errors.DMS_API_injectFailed', values: { error: error.message }});
         return {success: false, error: error.message};
       }
     }
@@ -412,7 +416,8 @@ function FormContainerAdd() {
         } else setErrorMessage(result?.error);
 
       } catch (error) {
-        setErrorMessage(t('api.errors.fetchServerStatus') +": "+ error.message);
+        // setErrorMessage(t('api.errors.fetchServerStatus') +": "+ error.message);
+        setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: error.message }});
       }
     }
   };
@@ -585,7 +590,8 @@ function FormContainerAdd() {
     } catch (error) {
       setFormValuesSubmitted(false);
       errorLog(t('api.errors.saveSettings'), error);
-      setErrorMessage('api.errors.saveSettings');
+      // setErrorMessage('api.errors.saveSettings');
+      setErrorMessage({key: 'api.errors.saveSettings', values: { error: error.message }});
     }
   };
 
@@ -609,7 +615,8 @@ function FormContainerAdd() {
       
     } catch (error) {
       errorLog(error.message);
-      setErrorMessage('api.errors.updateLogin', error.message);
+      // setErrorMessage('api.errors.updateLogin', error.message);
+      setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
     }
   };
 

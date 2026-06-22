@@ -162,15 +162,20 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 
 * [ ] v1.6.0 - before releasing 1.6.0, it should be made clear how to modify the compose of dms/dms-gui, the env files, and in which order
 * [ ] 1.5.99 - update demo database
-* [ ] 1.5.99 - retested: create/delete alias for admin/standard/isAccount
-* [ ] 1.5.99 - retested: create/delete mailbox
-* [ ] 1.5.99 - retested: create/delete login
-* [ ] 1.5.99 - retested: create/delete mailserver
+* [ ] 1.5.99 - retested: create/delete/update alias for admin/standard/isAccount
+* [ ] 1.5.99 - retested: create/delete/update mailbox
+* [ ] 1.5.99 - retested: create/delete/update login
+* [ ] 1.5.99 - retested: create/delete/update mailserver
 
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and /accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [x] 1.5.69 - bugfix: index: added 1mn delay before automated reboot or else the container reboots 60 times
+* [x] 1.5.69 - frontend: Translate helper takes a 3rd argument: {error:message}
+* [x] 1.5.69 - frontend: pages catch correctly forward API errors to the errorMessage: setErrorMessage and AlertMessage can take an object
+* [x] 1.5.69 - bugfix: api correctly rejects with error message
+* [x] 1.5.69 - bugfix: index was looking for req.body?.roles.length and fails when roles is missing
 * [x] 1.5.68 - update DEMO database
 * [x] 1.5.67 - bugfix: deleteEntry in sql
 * [x] 1.5.67 - common: added array2ArrayOfObj

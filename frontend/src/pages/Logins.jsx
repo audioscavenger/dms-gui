@@ -202,7 +202,8 @@ const Logins = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchLogins'), error);
-      setErrorMessage('api.errors.fetchLogins');
+      // setErrorMessage('api.errors.fetchLogins');
+      setErrorMessage({key: 'api.errors.fetchLogins', values: { error: error.message }});
       
     } finally {
       setLoading(false);
@@ -242,7 +243,8 @@ const Logins = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
-      setErrorMessage('api.errors.fetchAccounts');
+      // setErrorMessage('api.errors.fetchAccounts');
+      setErrorMessage({key: 'api.errors.fetchAccounts', values: { error: error.message }});
       
     }
   };
@@ -273,7 +275,8 @@ const Logins = () => {
 
     } catch (error) {
       errorLog(t('api.errors.fetchLogins'), error);
-      setErrorMessage('api.errors.fetchLogins');
+      // setErrorMessage('api.errors.fetchLogins');
+      setErrorMessage({key: 'api.errors.fetchLogins', values: { error: error.message }});
       
     }
   };
@@ -449,7 +452,8 @@ const Logins = () => {
       
     } catch (error) {
       errorLog(t('api.errors.addLogin'), error.message);
-      setErrorMessage('api.errors.addLogin', error.message);
+      // setErrorMessage('api.errors.addLogin', error.message);
+      setErrorMessage({key: 'api.errors.addLogin', values: { error: error.message }});
     }
   };
 
@@ -556,7 +560,8 @@ const Logins = () => {
       }
     } catch (error) {
       errorLog(t('api.errors.deleteLogin'), error.message);
-      setErrorMessage('api.errors.deleteLogin');
+      // setErrorMessage('api.errors.deleteLogin');
+      setErrorMessage({key: 'api.errors.deleteLogin', values: { error: error.message }});
 
     } finally {
       handleCloseDeleteConfirmModal();
@@ -605,7 +610,8 @@ const Logins = () => {
       
     } catch (error) {
       errorLog(t('api.errors.updateLogin'), error.message);
-      setErrorMessage('api.errors.updateLogin', error.message);
+      // setErrorMessage('api.errors.updateLogin', error.message);
+      setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
     }
   };
 
@@ -653,7 +659,8 @@ const Logins = () => {
       
     } catch (error) {
         errorLog(t('api.errors.updateLogin'), error.message);
-        setErrorMessage('api.errors.updateLogin', error.message);
+        // setErrorMessage('api.errors.updateLogin', error.message);
+        setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
     }
   };
 
@@ -753,7 +760,8 @@ const Logins = () => {
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
-      setErrorMessage('api.errors.changePassword');
+      // setErrorMessage('api.errors.changePassword');
+      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
 
     } finally {
       if (result.success) setSuccessMessage(result.message);
