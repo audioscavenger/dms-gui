@@ -180,8 +180,8 @@ export const getAccounts = async (containerName=null, refresh=false, roles=[]) =
     return accounts;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -273,8 +273,8 @@ export const pullAccountsFromDMS = async (containerName=null) => {
     return { success: true, message: accounts };
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -328,8 +328,8 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -342,6 +342,7 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
 // Function to delete an mailbox account; shema is needed because of the remote command involved
 // no check if account exist in dms-gui db because it may simply be missing
 export const deleteAccount = async (schema='dms', containerName=null, mailbox=null, alsoDeleteLogin=true) => {
+  debugLog(schema, containerName, mailbox, alsoDeleteLogin);
   if (!mailbox) return {success: false, error: 'containerName is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
 
@@ -400,8 +401,8 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -442,8 +443,8 @@ export const updateAccount = async (schema='dms', containerName=null, mailbox=nu
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',

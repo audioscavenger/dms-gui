@@ -1,28 +1,28 @@
 import {
-  reduxArrayOfObjByValue,
-  regexEmailStrict,
-  regexMatchPostfix,
+    reduxArrayOfObjByValue,
+    regexEmailStrict,
+    regexMatchPostfix,
 } from '../common.mjs';
 import {
-  debugLog,
-  errorLog,
-  execCommand,
-  execDMS,
-  formatDMSError,
-  infoLog,
-  successLog,
-  warnLog,
+    debugLog,
+    errorLog,
+    execCommand,
+    execDMS,
+    formatDMSError,
+    infoLog,
+    successLog,
+    warnLog,
 } from './backend.mjs';
 import {
-  env
+    env
 } from './env.mjs';
 
 import {
-  dbAll,
-  dbRun,
-  deleteEntry,
-  getTargetDict,
-  sql
+    dbAll,
+    dbRun,
+    deleteEntry,
+    getTargetDict,
+    sql
 } from './db.mjs';
 import { getConfigs } from './settings.mjs';
 
@@ -145,8 +145,8 @@ export const pullAliasesFromDMS = async (containerName=null) => {
     return { success: true, message: aliases };
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -215,8 +215,8 @@ export const pullPostfixRegexFromDMS = async (containerName=null) => {
     return { success: true, message: regexes };
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -313,8 +313,8 @@ export const addAlias = async (containerName=null, source=null, destination=null
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -389,8 +389,8 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import crypto from 'node:crypto';
 
+// force load the dms-gui environment file
 dotenv.config({ path: '/app/config/.dms-gui.env' });
 export const env = {
   debug: ((process.env.DEBUG || 'false').toLowerCase() == 'true') ? true : false,
@@ -69,21 +70,27 @@ export const env = {
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '1h',
   REFRESH_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '7d',
 
-  // IV_LEN is the length of the unique Initialization Vector (IV) = random salt used for encryption and hashing
+  // IV_LEN is the length of the unique Initialization Vector (IV) = random salt generated during each reboot, used for encryption and hashing of passwords
+  // This uniq salt and hash will be saved in the database in lieu of cleartext passwords, and the only attack vector is to get a database dump.
   IV_LEN: Number(process.env.IV_LEN) || 16,
   // HASH_LEN is the length of the hashed keys for passwords
   HASH_LEN: Number(process.env.HASH_LEN) || 64,
-  // AES_SECRET = encrypted data secret key, that one is set in the environment as well but must never change or you won;t be able to read your encrypted data anymore
-  // generate it once and for all with node or openssl:
-  // // openssl rand -hex 32
-  // // node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  //// AES_SECRET = nternal database encryption data secret key, that one is set in the environment and must never change.
+  //// If you change it, you cannot decrypt anymore the data that is saved encrypted in your database.
+  //// Security is that it's on the host, and there is no way to access it unless a backdoor is discovered to exit docker containers.
+  //// Generate it once and for all with node OR openssl:
+  // openssl: // openssl rand -hex 32
+  // node:    // node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   AES_SECRET: process.env.AES_SECRET || 'changeme',
-  // encrypted data algorithm
+  // internal database encryption data algorithm for PII: user's tokens, api keys etc
   AES_ALGO: process.env.AES_ALGO || 'aes-256-cbc',
   // AES_HASH is the used to hash the secret key
   AES_HASH: process.env.AES_HASH || 'sha512',
   // Derive a 256-bit key from your secretKey
   AES_KEY: crypto.createHash(process.env.AES_HASH || 'sha512').update(process.env.AES_SECRET || 'changeme').digest('hex').substring(0, 32),
+
+  // user locktime against bruteforce
+  BASE_LOCKOUT_TIME: 1000,              // 1 second then square^2 each time, until correct password is entered
 
   // doveadm API port, possible to especially with dovecot 2.4, but not used and likely never will
   // DOVEADM_PORT: ((process.env.DOVEADM_PORT) ? process.env.DOVEADM_PORT : 8080),

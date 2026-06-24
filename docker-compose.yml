@@ -26,8 +26,8 @@ services:
     
     expose:
       - 80      # frontend via internal nginx
-      - 3001    # frontend: webpack and docs
-      - 3000    # backend
+      - 3001    # frontend: webpack-dev-server if you can get it to run inside the container... good luck
+      - 3000    # backend and docs
       
     env_file: ./config/dms-gui/.dms-gui.env
     environment:
@@ -42,17 +42,15 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./config/dms-gui/:/app/config/
 
-      # If you want to develop locally... mount the below with DEBUG=true and nodemon will reload your stuff immediately
-      - ./backend:/app/backend
-      - ./backend/package.json:/app/backend/package.json
-      - ./backend/package-lock.json:/app/backend/package-lock.json
+      # If you want to develop locally... mount the backend with DEBUG=true and nodemon will reload your stuff immediately
+      # - ./backend:/app/backend
       ## The below does not work anymore, use nvm-sh to build a local nodeJS of the same version as the container:
       # - ./frontend.mjs/package.json:/app/frontend/package.json
       # - ./frontend.mjs/package-lock.json:/app/frontend/package-lock.json
       ## frontend upgrade commands: from the OS; do that once
-      # curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
-      # source ~/.bashrc
-      # nvm install 24.9.0
+      #   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+      #   source ~/.bashrc
+      #   nvm install 24.9.0
       
     # add your proxy network if you need:
     networks:

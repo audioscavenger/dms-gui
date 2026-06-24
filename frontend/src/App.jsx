@@ -58,6 +58,7 @@ function App() {
     </AuthProvider>
   );
 }
+export default App;
 
 // function App() {
 //   return (
@@ -93,4 +94,3 @@ function App() {
 //   );
 // }
 
-export default App;

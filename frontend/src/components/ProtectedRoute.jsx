@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 export const ProtectedRoute = ({ 
   children,
   isAdmin = false,
-  ...rest // Pass any other props
+  // ...rest // Pass any other props // no, never
 }) => {
   // console.debug('ddebug ProtectedRoute children', children);
   // { "$$typeof": Symbol("react.transitional.element"), type: Dashboard(), key: "dashboard", props: {}, _owner: {…}, _store: {…}, … }
@@ -18,11 +18,13 @@ export const ProtectedRoute = ({
   // console.debug('ddebug ProtectedRoute user', user);
   
   // user is not authenticated, no access
-  if (!user) return <Navigate to="/login" {...rest} />;
+  // if (!user) return <Navigate to="/login" {...rest} />;
+  if (!user) return <Navigate to="/login" replace />;
   
   // Control admin access to admin pages
   if (isAdmin && !user.isAdmin) {
-    return <Navigate to="/profile" {...rest} />;
+    // return <Navigate to="/profile" {...rest} />;
+    return <Navigate to="/profile" replace />;
   }
   
   // console.debug('ddebug ProtectedRoute useAuth return children:', children);

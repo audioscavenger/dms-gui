@@ -1540,31 +1540,29 @@ app.post('/api/loginUser', async (req, res, next) => {
     if (!credential)  return res.status(400).json({ error: 'credential is missing' });
     if (!password)    return res.status(400).json({ error: 'password is missing' });
 
-    const user = await loginUser(credential, password);
+    const user = await loginUser(String(credential), String(password), !!test);
     if (env.isDEMO) user.isDEMO = true;
     if (env.debug) user.debug = true;
-    // debugLog('user', user);
+
+    debugLog('loginUser user=', user);
+    if (test == true && credential == 'admin' && password == 'changeme') {
+        return res.json({success: user.success, isDEMO:env.isDEMO, debug:env.debug});  // just return basics, not real login, it's to show various messages on the Login page
+    }
     
     if (user.success) {
-      if (env.isDEMO) user.message.isDEMO = true;
-      if (test) {
-        return res.json({success: true, isDEMO:env.isDEMO});  // just return true, not real login
+      // Generate tokens
+      const accessToken = generateAccessToken(user.message);
+      const refreshToken = generateRefreshToken(user.message);
 
-      } else {
-        // Generate tokens
-        const accessToken = generateAccessToken(user.message);
-        const refreshToken = generateRefreshToken(user.message);
+      // Store refresh token in database
+      updateDB('logins', user.message.id, {refreshToken:refreshToken});
 
-        // Store refresh token in database
-        updateDB('logins', user.message.id, {refreshToken:refreshToken});
+      // HTTP-Only Cookies (for Refresh Tokens):
+      res.cookie('accessToken', accessToken, cookieOptionsAccess);
+      res.cookie('refreshToken', refreshToken, cookieOptionsRefresh);
 
-        // HTTP-Only Cookies (for Refresh Tokens):
-        res.cookie('accessToken', accessToken, cookieOptionsAccess);
-        res.cookie('refreshToken', refreshToken, cookieOptionsRefresh);
-
-        // and we indeed send user's information with isAdmin, roles etc
-        return res.json(user);
-      }
+      // and we indeed send user's information with isAdmin, roles etc
+      return res.json(user);
 
     } else {
       // res.status(401).json(user);   // this 401 error cannot be hidden from the browser when /login does the default user/pass test
@@ -1608,8 +1606,10 @@ app.post('/api/refresh', async (req, res) => {
     const decoded = jwt.verify(refreshToken, env.JWT_SECRET_REFRESH);
 
     // Check if refresh token exists in database
-    const result = dbGet(sql.logins.select.refreshToken, decoded.id, {refreshToken:refreshToken});  // foth id and refreshToken must match in the db
+    const result = dbGet(sql.logins.select.refreshToken, {refreshToken:refreshToken}, decoded?.id);  // both id and refreshToken must match in the db
     const user = (result.success) ? result.message : null;
+      // // remove sensitive data // done by sql
+      // let { refreshToken, salt, hash, attempts, lockout_until, ... user } = result.message
 
     if (!user) {
       return res.status(403).json({ 
@@ -1619,7 +1619,7 @@ app.post('/api/refresh', async (req, res) => {
     }
 
     // Generate new access token
-    const accessToken = generateAccessToken({ id: user.id, username: user.username, mailbox: user.mailbox });
+    const accessToken = generateAccessToken(user);
 
     // Set new access token cookie
     res.cookie('accessToken', accessToken, cookieOptionsAccess);

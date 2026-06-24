@@ -6,6 +6,7 @@ import RBNavbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import {
   ButtonDropdown,
@@ -20,7 +21,7 @@ const Navbar = ({
   translate = true,
   ...rest
 }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const { user, logout } = useAuth();                                             // { id: 1, mailbox: "admin@dms-gui.com", email: "admin@dms-gui.com", username: "admin", isAdmin: 1, isActive: 1, isAccount: 0, roles: "[]" }
   const [isDEMO] = useLocalStorage("isDEMO", false);
   const [containerName, setContainerName] = useLocalStorage("containerName", ''); // "dms"
@@ -82,7 +83,7 @@ const Navbar = ({
               text={containerName}
               items={mailservers.map((mailserver, index) => ({
                 id: index,
-                title: `Mailserver: ${mailserver.value}`,
+                title: mailserver.value,
                 onClick: () => setContainerName(mailserver.value)
               }))}
             />
@@ -90,7 +91,7 @@ const Navbar = ({
         ) : (
           <RBNavbar.Brand as={Link} to="/">
             <i className="bi bi-envelope-fill me-2"></i>
-            {Translate(isDEMO ? 'app.titleDemo' : `Mailserver: ${containerName}`)}{' '}
+            {Translate( isDEMO ? 'navbar.titleDemo' : 'navbar.titleMailserver', true, {mailserver:containerName} )}{' '}
           </RBNavbar.Brand>
         )}
         {isDEMO && 
@@ -98,7 +99,7 @@ const Navbar = ({
             variant="primary"
             icon="download"
             text="navbar.downloadMe"
-            href="https://hub.docker.com/repository/docker/audioscavenger/dms-gui/general"
+            href={t('common.DMS_GUIrepo')}
             target="_blank"
             rel="noopener noreferrer"
           />
@@ -109,7 +110,7 @@ const Navbar = ({
 
             {isDEMO && (
               <Nav.Link>
-                {Translate('navbar.rebootIn')} {formatTime(timeLeft.minutes)} mn
+                {t('navbar.rebootIn')} {formatTime(timeLeft.minutes)} mn
               </Nav.Link>
             )}
 
@@ -125,11 +126,11 @@ const Navbar = ({
             }
             
             <Nav.Link
-              href="https://docker-mailserver.github.io/docker-mailserver/latest/"
+              href={t('common.dmsUrl')}
               target="_blank"
               rel="noopener noreferrer"
             >
-              {Translate('navbar.documentation')}
+              {t('navbar.documentation')}
             </Nav.Link>
             
             <div className="nav-item mx-2">

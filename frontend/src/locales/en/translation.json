@@ -1,11 +1,12 @@
 {
   "app": {
-    "titleDemo": "Docker-Mailserver GUI demo server",
     "title": "Docker-Mailserver GUI"
   },
   "navbar": {
     "downloadMe": "Download me!",
     "documentation": "DMS Wiki",
+    "titleDemo": "Docker-Mailserver GUI demo server",
+    "titleMailserver": "Mailserver: {{mailserver}}",
     "rebootIn": "Reboot in:"
   },
   "dashboard": {
@@ -108,8 +109,8 @@
     "usernameHelp": "Username to login on this portal: limited character set",
     "usernameInvalid": "username contains invalid characters",
     "usernameRequired": "username is required",
-    "welcome": "Welcome",
-    "welcomeDEMO": "Welcome on the dms-gui DEMO server",
+    "welcome": "Welcome to dms-gui",
+    "welcomeDEMO": "Welcome to the dms-gui DEMO server",
     "title": "Logins Page"
   },
   "accounts": {
@@ -187,7 +188,6 @@
     "cannotSaveSettings": "Unable to save settings. Please try again.",
     "cannotSaveLogins": "Unable to save logins. Please try again.",
     "isFirstRun": "WELCOME TO <a href=\"https://github.com/audioscavenger/dms-gui\">dms-gui</a>!<br />Please fill in the required fields: mailserver containerName, DMS_API_KEY, inject and test!",
-    "DMS": "Docker-Mailserver",
     "DMSHelp": "Select the current mailserver container to handle",
     "DMS_API_KEY": "DMS API KEY",
     "DMS_API_KEYgen": "Generate new DMS_API_KEY",
@@ -250,6 +250,12 @@
     "actions": "Actions",
     "container": "Container",
     "copy": "Clipboard Copy",
+    "DMS_GUIrepo": "https://hub.docker.com/repository/docker/audioscavenger/dms-gui/general",
+    "DMS_GUIurl": "https://github.com/audioscavenger/dms-gui",
+    "dmsName": "Docker-Mailserver",
+    "dmsUrl": "https://docker-mailserver.github.io/docker-mailserver/latest/",
+    "dmsLink": "<a href='https://docker-mailserver.github.io/docker-mailserver/latest/'>Docker-Mailserver</a>",
+    "dmsIcon": "/favicon-32x32.png",
     "for": "for {{what}}",
     "forceResync": "Force re-sync",
     "loading": "Loading...",

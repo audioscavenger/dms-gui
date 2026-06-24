@@ -39,6 +39,7 @@ import {
   AlertMessage,
   DashboardCard,
   Button,
+  LoadingSpinner,
   Translate,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -56,10 +57,10 @@ const Dashboard = () => {
   const [isLoading, setLoading] = useState(true);
   const [cardLoading, setCardLoading] = useState({});
 
-  const [aliases, setAliases] = useLocalStorage("aliases", []);
-  const [accounts, setAccounts] = useLocalStorage("accounts", []);
-  const [logins, setLogins] = useLocalStorage("logins", []);
-  const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
+  // const [aliases, setAliases] = useLocalStorage("aliases", []);
+  // const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  // const [logins, setLogins] = useLocalStorage("logins", []);
+  // const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
   
   const [status, setServerStatus] = useLocalStorage("status", {
     status: {
@@ -82,6 +83,8 @@ const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
+    // debugLog('ddebug mailservers.length',mailservers.length)
+    // debugLog('ddebug containerName',containerName)
     if (!mailservers.length) return;
     if (!containerName) return;
 
@@ -107,6 +110,7 @@ const Dashboard = () => {
 
 
   const refreshAll = async () => {
+    // debugLog('ddebug refreshAll')
     try {
       await fetchAccounts(true);
       await fetchLogins();
@@ -121,11 +125,14 @@ const Dashboard = () => {
 
 
   const fetchDashboard = async () => {
+    
+    // debugLog('ddebug fetchDashboard')
     try {
       setLoading(true);
 
       // const statusData = await getServerStatus('mailserver', getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName);
       const statusData = await getServerStatus('mailserver', containerName);
+      // debugLog('ddebug statusData',statusData)
       if (statusData?.success) {
 
         setErrorMessage(null);
@@ -134,6 +141,7 @@ const Dashboard = () => {
         // handle API errors
         if (new Set(['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown']).has(statusData.message.status.status)) {
           setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+
         } else {
 
           // force a global refresh if everything is empty; RISK: can a user start from a DMS server with zero accounts? that would execute every time
@@ -147,6 +155,7 @@ const Dashboard = () => {
       } else setErrorMessage(statusData?.error);
       
     } catch (error) {
+      // debugLog('ddebug error', error)
       errorLog(t('api.errors.fetchServerStatus'), error);
       // setErrorMessage(statusData.message);
       setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: statusData.message }});
@@ -187,7 +196,7 @@ const Dashboard = () => {
 
   const fetchAliases = async (refresh=false) => {
     refresh = !user.isAdmin ? false : refresh;
-    debugLog(`fetchAliases call getAliases(${refresh}) and getAccounts(${containerName}, ${refresh})`);
+    debugLog(`fetchAliases call getAliases(${refresh})`);
     
     try {
       handleRefreshCard("aliases");
@@ -239,7 +248,8 @@ const Dashboard = () => {
 
   const fetchAccounts = async (refresh=false) => {
     refresh = !user.isAdmin ? false : refresh;
-    
+    debugLog(`fetchAliases call fetchAccounts(${refresh})`);
+
     try {
       handleRefreshCard("accounts");
       setErrorMessage(null);
@@ -251,7 +261,7 @@ const Dashboard = () => {
       // ]);
       const accountsData = await getAccounts(containerName, refresh);
       if (accountsData?.success) {
-        debugLog('ddebug accountsData', accountsData);
+        debugLog('accountsData', accountsData);
         // setAccounts(accountsData.message);
         // bug: this never works for some reason
         setServerStatus(prev => ({
@@ -283,7 +293,8 @@ const Dashboard = () => {
 
 
   const fetchLogins = async () => {
-    
+    // debugLog('ddebug fetchLogins')
+
     try {
       handleRefreshCard("logins");
       const [loginsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields

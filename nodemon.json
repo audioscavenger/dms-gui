@@ -1,4 +1,4 @@
 {
 "ignore":["README.md", "node_modules/*"],
-"delay": 1000
+"delay": 3000
 }

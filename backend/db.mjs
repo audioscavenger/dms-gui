@@ -277,9 +277,13 @@ logins: {
     // loginByObj: `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND {key} = @{key}`,
     // logins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1`,
     // admins:     `SELECT id, username, email, isAdmin, isActive, isAccount, mailserver, roles, mailbox from logins WHERE 1=1 AND isAdmin = 1`,
-    login:      `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND (mailbox = @mailbox OR username = @username) GROUP BY l.id`,
-    loginById:  `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.id = @id GROUP BY l.id`,
-    loginByObj: `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.{key} = @{key} GROUP BY l.id`,
+    login:            `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND (mailbox = @mailbox OR username = @username) GROUP BY l.id`,
+    loginById:        `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.id = @id GROUP BY l.id`,
+    loginByObj:       `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.{key} = @{key} GROUP BY l.id`,
+    refreshToken:     `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.id = ? AND AND refreshToken = @refreshToken GROUP BY l.id`,
+    loginSalted:      `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, salt, hash, attempts, lockout_until, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND (mailbox = @mailbox OR username = @username) GROUP BY l.id`,
+    loginByIdSalted:  `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, salt, hash, attempts, lockout_until, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.id = @id GROUP BY l.id`,
+    loginByObjSalted: `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, salt, hash, attempts, lockout_until, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND l.{key} = @{key} GROUP BY l.id`,
     logins:     `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 GROUP BY l.id`,
     admins:     `SELECT l.id, username, email, isAdmin, isActive, isAccount, mailserver, mailbox, json_group_array(r.role) AS roles from logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND isAdmin = 1 GROUP BY l.id`,
     // roles:      `SELECT roles from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username)`,
@@ -287,8 +291,7 @@ logins: {
     // rolesByObj: `SELECT roles from logins WHERE 1=1 AND {key} = @{key}`,
     salt:       `SELECT salt from logins WHERE id = ?`,
     hash:       `SELECT hash from logins WHERE id = ?`,
-    saltHash:   `SELECT salt, hash FROM logins WHERE (mailbox = @mailbox OR username = @username)`,
-    refreshToken: `SELECT * FROM logins WHERE id = ? AND refreshToken = @refreshToken`,
+    saltHash:   `SELECT salt, hash FROM logins WHERE id = ?`,
   },
   
   insert: {
@@ -302,6 +305,7 @@ logins: {
     refreshToken: `UPDATE logins set refreshToken = @refreshToken WHERE id = ?`,
     resetToken: `UPDATE logins set refreshToken = NULL WHERE id = ?`,
     resetTokens: `UPDATE logins set refreshToken = NULL`,
+    resetAttempts: `UPDATE logins set attempts=@attempts, lockout_until=@lockout_until WHERE id = ?`,
     mailbox: {
       undefined: {
         desc:   "allow to change a login's mailbox only if isAdmin or not isAccount",
@@ -383,7 +387,9 @@ logins: {
           isActive  BIT DEFAULT 1,
           isAccount BIT DEFAULT 1,
           mailserver  TEXT,
-          refreshToken  TEXT
+          refreshToken  TEXT,
+          attempts  INTEGER DEFAULT 0,
+          lockout_until  INTEGER DEFAULT 0
           );
           INSERT OR IGNORE INTO logins (mailbox, username, email, salt, hash, isAdmin, isActive, isAccount) VALUES ('admin@dms-gui.com', 'admin', 'admin@dms-gui.com', 'fdebebcdcec4e534757a49473759355b', 'a975c7c1bf9783aac8b87e55ad01fdc4302254d234c9794cd4227f8c86aae7306bbeacf2412188f46ab6406d1563455246405ef0ee5861ffe2440fe03b271e18', 1, 1, 0);
           INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('logins', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
@@ -400,6 +406,13 @@ logins: {
       patches: [
         `ALTER TABLE logins RENAME COLUMN favorite TO mailserver`,
         `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('logins', '1.5.13', 1, ${env.isImmutable})`,
+      ],
+    },
+    { DB_VERSION: '1.5.71',
+      patches: [
+        `ALTER TABLE logins ADD attempts      INTEGER DEFAULT 0`,
+        `ALTER TABLE logins ADD lockout_until INTEGER DEFAULT 0`,
+        `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('logins', '1.5.71', 1, ${env.isImmutable})`,
       ],
     },
   ],
@@ -921,7 +934,7 @@ export const dbAll = (sql, params={}, ...anonParams) => {
 
   } catch (error) {
     errorLog(`${error?.code}: ${error.message}`);
-    errorLog(error.message);
+    errorLog(error.message || error);
     dbOpen();
     return {success: false, error: error.message, code: error?.code};
     // throw error;
@@ -1094,11 +1107,11 @@ export const dbUpgrade = () => {
 
 
 // Function to generate a new IV for each encryption
-export const generateIv = () => {
-  return crypto.randomBytes(env.IV_LEN); // 16 bytes for AES-256-CBC
+export const generateIv = (bits) => {
+  return crypto.randomBytes(bits || env.IV_LEN); // 16 bytes for AES-256-CBC
 };
 
-export const encrypt = data => {
+export const dbEncrypt = data => {
   const iv = generateIv();
   const cipher = crypto.createCipheriv(env.AES_ALGO, Buffer.from(key), iv);
   let encrypted = cipher.update(data, 'utf-8', 'hex');
@@ -1107,7 +1120,7 @@ export const encrypt = data => {
   return iv.toString('hex') + encrypted;
 };
 
-export const decrypt = encryptedData => {
+export const dbDecrypt = encryptedData => {
   const ivLength = env.IV_LEN * 2; // env.IV_LEN bytes * 2 for hex representation
   const iv = Buffer.from(encryptedData.slice(0, ivLength), 'hex');
   const ciphertext = encryptedData.slice(ivLength);
@@ -1120,7 +1133,6 @@ export const decrypt = encryptedData => {
 export const hashPassword = async (password='', salt='') => {
   return new Promise((resolve, reject) => {
     salt = (salt) ? salt: generateIv().toString('hex'); // Generate a random 16-byte salt
-    // debugLog(`ddebug env.HASH_LEN=${env.HASH_LEN} (${typeof env.HASH_LEN})`);
     crypto.scrypt(password, salt, env.HASH_LEN, (error, derivedKey) => { // env.HASH_LEN is the key length, 64 by default
       if (error) return reject(error);
       resolve({ salt, hash: derivedKey.toString('hex') }); // Store salt and hash as hex strings
@@ -1129,31 +1141,46 @@ export const hashPassword = async (password='', salt='') => {
 };
 
 
-// verifyPassword works the same wherever a table has a salted hash
-export const verifyPassword = async (credential=null, password='', table='logins') => {
-  debugLog(`for ${credential}`);
+// verifyPassword works the same wherever a table has a salted hash or 2 columns
+// hardened against timing attacks
+export const verifyPassword = async (password='', login) => {
+  debugLog(`for ${login.username}`);
   
+  let result = {success: false};
   try {
-    // const login = dbGet(sql[table].select.saltHash, credential, credential);  // this worked perfectly until we switched to ES6
-    const login = dbGet(sql[table].select.saltHash, {mailbox:credential, username:credential });
-    const saltHash = (login.success) ? login.message : false;
-    // console.log('saltHash',saltHash);
 
-    if (isNonEmptyDict(saltHash)) {
-      if (saltHash.salt && saltHash.hash) {
-        const { salt, hash } = await hashPassword(password ?? '', saltHash.salt);
-        // debugLog(`ddebug saltHash.salt = ${saltHash.salt} == ${salt} salt?`);
-        // debugLog(`ddebug password ${password} hash=${hash} == ${saltHash.hash} saltHash.hash?`);
-        return saltHash.hash === hash;
+    // timing attacks protection
+    if (password && login.salt && login.hash) {
+      // 1. Re-hash the user's input password using the stored salt
+      const { hash } = await hashPassword(password ?? '', login.salt);
+      // return login.hash === hash; // vulnerable to timing attacks
+
+      // 2. Convert both hexadecimal hashes into raw binary Buffers
+      const storedHashBuffer = Buffer.from(login.hash, 'hex');
+      const generatedHashBuffer = Buffer.from(hash, 'hex');
+
+      // 3. Ensure buffers are identical in size to prevent runtime crashes
+      if (storedHashBuffer.length !== generatedHashBuffer.length) {
+        return false;
       }
+
+      // 4. Secure constant-time comparison eliminates timing attacks
+      result.success = crypto.timingSafeEqual(storedHashBuffer, generatedHashBuffer);
+    
+    // 
+    } else {
+
+      // Short-circuit timing protection: unneeded if you have fail2ban in your frontend
+      // If user is not found, fake a hash operation so the server response 
+      // takes the exact same amount of time as a valid user login attempt.
+      await hashPassword(password ?? '', '00000000000000000000000000000000');
     }
-    return false;
+
+    return result;
 
   } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 
 };
@@ -1190,10 +1217,10 @@ export const changePassword = async (table, id, password, scope) => {
     } else return result;
     
   } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
+    // errorLog(error.message || error);
+    // throw new Error(error.message || error);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1284,7 +1311,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               if (sql[table].update[key][value2test].check(testResult.message)) {
                 
                 // we pass the test, apply update
-                if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
+                if (encrypt) scopedValues[key] = dbEncrypt(scopedValues[key]);
                 result = dbRun(sql[table].update[key][value2test].pass, scopedValues, id);
                 if (result.success) {
                   messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
@@ -1302,7 +1329,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
               
             // no test for any value of key, update the db with new value
             } else {
-              if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
+              if (encrypt) scopedValues[key] = dbEncrypt(scopedValues[key]);
               result = dbRun(sql[table].update[key], scopedValues, id);
               if (result.success) {
                 messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
@@ -1316,7 +1343,7 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             // errorLog(`sql[${table}].update is missing [${key}]`);
             // return { success: false, error: `sql[${table}].update is missing [${key}]`};
 
-            if (encrypt) scopedValues[key] = encrypt(scopedValues[key]);
+            if (encrypt) scopedValues[key] = dbEncrypt(scopedValues[key]);
             result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].key} = ?`, scopedValues, id);
             if (result.success) {
               messages.push(`Updated table ${table} ${sql[table].key}=${id} with ${key}=${value}`);
@@ -1337,10 +1364,10 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
     return success ? { success: true, message: messages.join ("; ") } : { success: false, error: messages.join ("; ") };
     
   } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
+    // errorLog(error.message || error);
+    // throw new Error(error.message || error);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1416,10 +1443,10 @@ export const deleteEntry = async (table, id, key, scope=null) => {
     }
 
   } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
+    // errorLog(error.message || error);
+    // throw new Error(error.message || error);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1435,7 +1462,8 @@ export const resetTokens = async (id) => {
   try {
     
     if (Number.isInteger(parseInt(id))) {
-      result = dbRun(sql.logins.update.resetToken, {id:id});
+      result = dbRun(sql.logins.update.resetToken, {}, id);
+
     } else {
       result = dbRun(sql.logins.update.resetTokens);
     }
@@ -1446,10 +1474,10 @@ export const resetTokens = async (id) => {
     } else return result;
 
   } catch (error) {
-    // errorLog(error.message);
-    // throw new Error(error.message);
-    errorLog(error);
-    throw new Error(error);
+    // errorLog(error.message || error);
+    // throw new Error(error.message || error);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1543,8 +1571,8 @@ export const getTargetDict = (plugin=null, containerName=null, settings=[]) => {
     throw new Error(result?.error);
 
   } catch (error) {
-    // errorLog(error.message);
-    errorLog(error);
+    // errorLog(error.message || error);
+    errorLog(error.message || error);
     dbOpen();
     return {success: false, error: error.message}
     // throw error;

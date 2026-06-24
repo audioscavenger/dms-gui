@@ -9,16 +9,16 @@ import net from 'node:net';
 // const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 import {
-  funcName,
-  reduxPropertiesOfObj,
-  regexColors,
-  regexPrintOnly
+    funcName,
+    reduxPropertiesOfObj,
+    regexColors,
+    regexPrintOnly
 } from '../common.mjs';
 import {
-  getTargetDict
+    getTargetDict
 } from './db.mjs';
 import {
-  env
+    env
 } from './env.mjs';
 
 
@@ -274,8 +274,8 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -591,8 +591,8 @@ export const postJsonToApi = async (apiUrl=null, jsonData={}, Authorization=null
     return responseData;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -623,8 +623,8 @@ export const getJsonFromApi = async (apiUrl=null, Authorization=null) => {
     return responseData;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -741,8 +741,8 @@ export const readJson = async (jsonFile=null) => {
     return json;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -759,11 +759,11 @@ export const writeJson = async (jsonFile=null, DBdict={}) => {
       
     } catch (error) {
       errorLog(`${jsonFile} write error:`, error.message);
-      throw new Error(error.message);
+      throw new Error(error.message || error);
     }
   } else {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
 };
 
@@ -779,9 +779,9 @@ export const writeFile = async (file=null, content='') => {
 
     
   } catch (error) {
-    errorLog(error.message);
+    errorLog(error.message || error);
     return {success: false, error: error.message};
-    // throw new Error(error.message);
+    // throw new Error(error.message || error);
   }
 };
 

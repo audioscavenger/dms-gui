@@ -614,7 +614,7 @@ function FormContainerAdd() {
       } // fails silently
       
     } catch (error) {
-      errorLog(error.message);
+      errorLog(error.message || error);
       // setErrorMessage('api.errors.updateLogin', error.message);
       setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
     }

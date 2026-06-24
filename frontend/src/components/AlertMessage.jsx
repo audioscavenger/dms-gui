@@ -30,7 +30,11 @@ const AlertMessage = ({
   const translationKey = typeof message === 'object' ? message.key : message;
   const translationValues = typeof message === 'object' ? message.values : {};
   const actualTranslatedString = t(translationKey); 
-  const keyHasPlaceholder = actualTranslatedString.includes('{{error}}') || actualTranslatedString.includes(translationValues?.error);
+  const keyHasPlaceholder = actualTranslatedString.includes('{{error}}');
+  // console.debug('ddebug translationKey',translationKey)
+  // console.debug('ddebug translationValues',translationValues)
+  // console.debug('ddebug actualTranslatedString',actualTranslatedString)
+  // console.debug('ddebug keyHasPlaceholder',keyHasPlaceholder)
 
   return (
     <RBAlert
@@ -43,7 +47,7 @@ const AlertMessage = ({
       {/* Wrapper ensures i18n props do not bleed onto the Bootstrap Alert DOM node */}
       <span>
         {Translate(translationKey, translate, translationValues)}
-        {/* If dynamic error values exist but the key odes not have {{error}}, safely append them separated by a space or colon */}
+        {/* If dynamic error values exist but the key codes don't have {{error}}, safely append them separated by a space or colon */}
         {!keyHasPlaceholder && translationValues?.error && ` : ${translationValues.error}`}
       </span>
     </RBAlert>

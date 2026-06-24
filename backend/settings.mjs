@@ -32,12 +32,12 @@ import {
 import {
   dbAll,
   dbCount,
+  dbDecrypt,
+  dbEncrypt,
   dbGet,
   dbRun,
-  decrypt,
-  encrypt,
   getTargetDict,
-  sql,
+  sql
 } from './db.mjs';
 
 // const path = require('node:path');
@@ -57,13 +57,13 @@ export const getSetting = async (plugin='mailserver', containerName=null, name=n
     // setting:  `SELECT         s.value FROM settings s LEFT JOIN configs c ON s.configID = c.id WHERE 1=1 AND configID = (select id FROM configs WHERE c.name = ? AND plugin = @plugin) AND isMutable = ${env.isMutable}   AND s.name = ?`,
     const result = dbGet(sql.configs.select.setting, {plugin:plugin}, containerName, name); // plugin:'mailserver', schema:'dms', scope:'dms-gui'
     if (result.success) {
-      return {success: true, message: (encrypted ? decrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
+      return {success: true, message: (encrypted ? dbDecrypt(result.message?.value) : result.message?.value)}; // success is true also when no result is returned
     }
     return result;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -96,7 +96,7 @@ export const getSettings = (plugin='mailserver', containerName=null, name=null, 
         // decryption where needed
         settings = result.message.map(setting => { return {
           ...setting,
-          value: (encrypted) ? decrypt(setting.value) : setting.value,
+          value: (encrypted) ? dbDecrypt(setting.value) : setting.value,
           }; 
         }); 
 
@@ -110,8 +110,8 @@ export const getSettings = (plugin='mailserver', containerName=null, name=null, 
     // [ { name: 'containerName', value: 'dms' }, .. ]
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -174,8 +174,8 @@ export const getConfigs = async (plugin='mailserver', roles=[], name=null) => {
     // [ { value: 'containerName' }, .. ]
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -212,7 +212,7 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
     // scope all settings for that container
     const jsonArrayOfObjectsScoped = jsonArrayOfObjects.map(setting => { return {
         ...setting,
-        value: (encrypted) ? encrypt(setting.value) : setting.value,
+        value: (encrypted) ? dbEncrypt(setting.value) : setting.value,
         plugin:plugin,
         schema:schema,
         scope:scope,
@@ -233,8 +233,8 @@ export const saveSettings = async (plugin='mailserver', schema=null, scope=null,
     return result;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -436,8 +436,8 @@ export const getServerStatus = async (plugin='mailserver', containerName=null, t
     return {success: true, message: status};
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to theindex API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -970,8 +970,8 @@ export const pullServerEnvs = async (targetDict={}) => {
     return obj2ArrayOfObj(envs, true);
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
   }
   
 };
@@ -1046,8 +1046,8 @@ export const getServerEnv = async (plugin='mailserver', containerName=null, name
     return {success: true, message: result.message?.value};
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1089,8 +1089,8 @@ export const getServerEnvs = async (plugin='mailserver', containerName=null, ref
       return result;
       
     } catch (error) {
-      errorLog(error.message);
-      throw new Error(error.message);
+      errorLog(error.message || error);
+      throw new Error(error.message || error);
       // TODO: we should return smth to the index API instead of throwing an error
       // return {
         // status: 'unknown',
@@ -1138,7 +1138,7 @@ export const saveServerEnvs = async (plugin='mailserver', schema=null, scope=nul
     return result;
 
   } catch (error) {
-    errorLog(error.message);
+    errorLog(error.message || error);
     return {success: false, error: error.message};
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
@@ -1187,8 +1187,8 @@ export const getDomain = async (containerName=null, name=null) => {
     return {success: true, message: domain};
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1221,8 +1221,8 @@ export const getDomains = async (containerName=null, name=null) => {
     return domains;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1296,8 +1296,8 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
     return result;
 
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -1325,7 +1325,7 @@ export const createAPIfiles = async (schema='dms') => {
     return {success: true, message: 'API files created'};
     
   } catch (error) {
-    errorLog(error.message);
+    errorLog(error.message || error);
     return {success: false, error: error.message};
   }
 };

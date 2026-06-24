@@ -1,4 +1,4 @@
-This project is a GUI for DMS email server, just like the admin container of Mailu.
+This project is a GUI for DMS email server, just like the admin container from Mailu. Poste.io has a similar portal.
 
 I work on this solo, until someone finds an interest in it.
 
@@ -33,11 +33,11 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 ## chores:
 
 * [ ] - frontend: maybe npm install react-router-dom@latest axios@latest one day?
-* [ ] - unify all frontend errors with {success:false, message, and unified error codes} **WIP**
+* [x] - unify all api errors with {success:false, message}, and handle extra string for AlertMessage **done**
 * [x] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
 * [x] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
-* [ ] - translation: there seems to be lots of messages unused throughout the project, clean them up
-* [ ] - chore: there gotta be a way to embedd transforms in fields we push to the DB, such as always stringify roles etc
+* [x] - translation: there seems to be lots of messages unused throughout the project, clean them up
+* [-] - chore: there gotta be a way to intercept and apply stringify for fields we push to the DB, such as roles etc; **nope**
 
 # TODO:
 
@@ -47,7 +47,7 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 
 ## backend
 * [-] - backend: implement uuid for all id columns: NO BENEFITS. I never go there, ids are uniq and I trust the SQL queries, why change that?
-* [ ] - implement roles table
+* [x] - implement roles table
 
 
 ## Design
@@ -167,10 +167,25 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete/update login
 * [ ] 1.5.99 - retested: create/delete/update mailserver
 
+* [ ] 1.5.99 - dms-gui global: we should offer site-wide profile like show actual login error, etc
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and /accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 * [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [x] 1.5.71 - logins: now uses lockoutCache Map() to stop spamming the database when a lockout_until is in place, and is reloaded after container reboot
+* [x] 1.5.71 - Login: show the actual login error
+* [x] 1.5.71 - frontend: t() can resolve html now, is Translate() needed anymore?
+* [x] 1.5.71 - db: renamed encrypt/decrypt to dbEncrypt/dbDecrypt
+* [x] 1.5.71 - backend: every errorLog(error.message || error)
+* [x] 1.5.71 - frontend: every errorLog(error.message || error)
+* [x] 1.5.71 - bugfix: Accounts: deleteAccount takes 4 parameters and it was missing selectedAccount.mailbox
+* [x] 1.5.71 - db: loginHandler handles doveadm login
+* [x] 1.5.71 - db: verifyPassword is called by loginHandler
+* [x] 1.5.71 - db: verifyPassword is hardened against timing attacks
+* [x] 1.5.71 - db: logins has 2 extra columns: attempts and lockout_until
+* [x] 1.5.71 - added link to dms url on the login
+* [x] 1.5.71 - added iconExtra and extraTtitle to Cards, right side before the refresh and collapse buttons
+* [-] 1.5.71 - move hash and salts to another table?
 * [x] 1.5.70 - upgraded all packages to latest
 * [x] 1.5.69 - bugfix: index: added 1mn delay before automated reboot or else the container reboots 60 times
 * [x] 1.5.69 - frontend: Translate helper takes a 3rd argument: {error:message}

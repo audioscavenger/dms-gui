@@ -96,7 +96,7 @@ const Settings = () => {
             variant="outline-primary"
             icon="github"
             text="settings.githubLink"
-            href="https://github.com/audioscavenger/dms-gui"
+            href={t('common.DMS_GUIurl')}
             target="_blank"
             rel="noopener noreferrer"
           />

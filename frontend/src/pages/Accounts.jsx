@@ -285,7 +285,8 @@ const Accounts = () => {
     setSuccessMessage(null);
 
     try {
-      const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, !!selectedAccount?.alsoDeleteLogin);
+      const result = await deleteAccount(getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), containerName, selectedAccount.mailbox, !!selectedAccount?.alsoDeleteLogin);
+      // debugLog('ddebug deleteAccount result', result)
       if (result.success) {
         setAccounts(reduxArrayOfObjByValue(accounts, 'mailbox', selectedAccount.mailbox, true));
         setSuccessMessage('accounts.accountDeleted');

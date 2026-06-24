@@ -16,6 +16,9 @@ import {
   successLog,
   warnLog
 } from './backend.mjs';
+import {
+  env
+} from './env.mjs';
 
 import {
   dbAll,
@@ -27,6 +30,11 @@ import {
   verifyPassword
 } from './db.mjs';
 
+// Global high-speed in-memory cache for locked out users, avoids spamming the database each time during a lockout
+// since users can login with username or mailbox, we need 2 keys for each
+// Key: username (string), Value: lockout_until (timestamp integer)
+// Key: mailbox (string), Value: lockout_until (timestamp integer)
+const lockoutCache = new Map();
 
 // mailserver used to be containerName, now we want configID
 // addLogin will not create a mailbox by itself, while addAccount will create a login for it
@@ -54,8 +62,8 @@ export const addLogin = async (mailbox, username, password='', email='', isAdmin
     return result;
 
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -70,20 +78,20 @@ export const addLogin = async (mailbox, username, password='', email='', isAdmin
 //  string: mailbox or username
 //  number: id
 //  object: {key: value} with key=any column in that table
-export const getLogin = async (credential) => {
+export const getLogin = async (credential, withSalts=false) => {
   
   let login = {success:false, error: 'invalid credential: neither number/username/email/object'};
   try {
     
     // we expect either an object like {id:id}|{mailbox:mailbox}|{username:username}
     if (Number.isInteger(parseInt(credential))) {
-      login = dbGet(sql.logins.select.loginById, {[sql.logins.key]: credential});
+      login = dbGet(sql.logins.select[withSalts ? 'loginByIdSalted' : 'loginById'], {[sql.logins.key]: credential});
 
     } else if (typeof credential == "string" && (regexEmailStrict.test(credential) || regexUsername.test(credential))) {
-      login = dbGet(sql.logins.select.login, {mailbox: credential, username: credential});
+      login = dbGet(sql.logins.select[withSalts ? 'loginSalted' : 'login'], {mailbox: credential, username: credential});
 
     } else if (isNonEmptyDict(credential) == 1) {
-      login = dbGet(sql.logins.select.loginByObj.replace("{key}", Object.keys(credential)[0]), credential);
+      login = dbGet(sql.logins.select[withSalts ? 'loginByObjSalted' : 'loginByObj'].replace("{key}", Object.keys(credential)[0]), credential);
     }
     if (login.success) {
       
@@ -102,8 +110,8 @@ export const getLogin = async (credential) => {
     return login;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -113,80 +121,160 @@ export const getLogin = async (credential) => {
 };
 
 
+// loginHandler handles a counter and lockout times, verifies password against local db or dms/doveadm
+export const loginHandler = async (password, login, test) => {
+  const now = Date.now();
+
+  // Perform the actual password verification
+  let result;
+  if (login.isAccount) {
+    // TODO: get a way to have schema=dms as a global variable somewhere?
+    result = await doveadm('dms', login.mailserver, 'loginUser', login.mailbox, {mailbox: login.mailbox, password: password});
+    if (!result?.returncode) result.success = true;
+
+  } else {
+    result = await verifyPassword(password, login);
+  }
+
+  debugLog('ddebug', test, login.username, password)
+  if (result.success) {
+    // Clear the counter on a successful login
+    result = dbRun(sql.logins.update.resetAttempts, {attempts: 0, lockout_until: 0}, login.id);
+    lockoutCache.delete(login.username);
+    lockoutCache.delete(login.mailbox);
+
+  // do not increment failures for the test login when it's the test; you can spam refresh but actual login is never returned anyways
+  } else if (!test) {
+    // Increment failures and exponentially scale the lockout time
+    const currentAttempts = login.attempts +1;
+    
+    let lockout_until = 0;
+    // Exponential backoff: square the time window for every failed attempt
+    const penaltyMultiplier = Math.pow(2, currentAttempts);
+    lockout_until = now + (env.BASE_LOCKOUT_TIME * penaltyMultiplier);
+
+    lockoutCache.set(login.username, lockout_until);
+    lockoutCache.set(login.mailbox, lockout_until);
+    result = dbRun(sql.logins.update.resetAttempts, {attempts: currentAttempts, lockout_until: lockout_until}, login.id);
+    if (result.success) result.success = false;
+  }
+
+  return result;
+};
+
+
 // loginUser will not throw an error an attacker can potentially exploit, neither will the index throw a 401 or 403
-export const loginUser = async (credential=null, password='') => {
-  
-  let login, isValid, results, message;
+export const loginUser = async (credential=null, password='', test=false) => {
+  const now = Date.now();
+
+  let login = {success: false};
+  let result, results, message;
+  let lockoutCacheFound = false;
   try {
-    login = await getLogin(credential);
 
-    if (login?.success) {
-      if (login.message.isActive) {
-        if (login.message.isAccount) {
-          if (login.message.mailserver) {
-            if (login.message.mailbox) {
-              // const targetDict = getTargetDict('mailserver', login.message.mailserver);
-              // targetDict.timeout = 5;
-              // let command = `doveadm auth test ${login.message.mailbox} '${password}'`;
-              // results = await execCommand(command, targetDict);
-
-              // doveadm(schema='dms', containerName=null, command=null, mailbox=null, jsonDict={})   // jsonDict = {mailbox:"mail@x.y", password:"password"}
-              // TODO: transfer the schema dms/Poste etc somehow or get a way to retrieve it; we are fare far way for that anyways
-              results = await doveadm('dms', login.message.mailserver, 'loginUser', login.message.mailbox, {mailbox: login.message.mailbox, password: password});
-
-              if (!results?.returncode) {
-                successLog(`${credential} logged in successfully`);
-                
-              } else {
-                message = `${credential} password invalid`;
-                warnLog(message);
-                login.message = message;
-                login.success = false;
-                login.returncode = results?.returncode;
-              }
-
-            } else {
-              message = `${credential} does not have a mailbox`;
-              errorLog(message);
-              login.success = false;
-              login.message = message;
-            }
-          } else {
-            message = `${credential} does not have a mailserver assigned yet`;
-            errorLog(message);
-            login.success = false;
-            login.message = message;
-          }
-          
-        } else {
-          isValid = await verifyPassword(credential, password, 'logins');
-          if (isValid) {
-            successLog(`User ${credential} logged in successfully`);
-            
-          } else {
-            message = `User ${credential} password invalid`;
-            warnLog(message);
-            login.message = message;
-            login.success = false;
-          }
-        }
-      } else {
-        message = `User ${credential} is inactive`;
+    // debugLog('ddebug lockoutCache', lockoutCache);
+    if (lockoutCache.has(credential)) {
+      const memoryLockoutUntil = lockoutCache.get(credential);
+      if (memoryLockoutUntil > now) {
+        const secondsLeft = Math.ceil((memoryLockoutUntil - now) / 1000);
+        message = `Too many failed attempts. Try again in ${secondsLeft} seconds.`;
         warnLog(message);
         login.message = message;
         login.success = false;
+        lockoutCacheFound = true;
+
       }
-    } else {
-      message = `${credential} does not exist`;
-      warnLog(message);
-      login.message = message;
+
     }
 
+    if (!lockoutCacheFound) {
+      // login not in lockoutCache or memoryLockoutUntil expired
+      login = await getLogin(credential, true); // request a login loaded with salt, hash, attempts and lockout_until
+      // debugLog('ddebug 1 getLogin login', login);
+      if (login.success) {
+        if (login.message.lockout_until <= now) {
+          if (login.message.isActive) {
+            if (login.message.isAccount) {
+              if (login.message.mailserver) {
+                if (login.message.mailbox) {
+
+                  result = await loginHandler(password, login.message);
+                  // debugLog('ddebug mailbox loginHandler result', result)
+                  if (result.success) {
+                    successLog(`User ${credential} logged in successfully`);
+                    
+                  } else {
+                    message = result?.error || `User ${credential} password invalid`;
+                    warnLog(message);
+                    login.message = message;
+                    login.success = false;
+                    login.returncode = results?.returncode;   // index doesn't do anything with that yet
+                  }
+
+                } else {
+                  message = `${credential} does not have a mailbox`;
+                  errorLog(message);
+                  login.message = message;
+                  login.success = false;
+                }
+
+              } else {
+                message = `${credential} does not have a mailserver assigned yet`;
+                errorLog(message);
+                login.message = message;
+                login.success = false;
+              }
+              
+            } else {
+              // result = await verifyPassword(password, login.message);
+              result = await loginHandler(password, login.message, test);
+              // debugLog('ddebug 2 getLogin result', result);
+              if (result.success) {
+                successLog(`User ${credential} logged in successfully`);
+                
+              } else {
+                message = (test && login.message.username == 'admin' && password == 'changeme') ? `Login page refresh with ${credential}/${password}` : result?.error || `User ${credential} password invalid`;
+                warnLog(message);
+                login.message = message;
+                login.success = false;
+                // debugLog('ddebug 2 getLogin login', login);
+              }
+            }
+          } else {
+            message = `User ${credential} is inactive`;
+            errorLog(message);
+            login.message = message;
+            login.success = false;
+          }
+        } else {
+          // with lockoutCache we should never reach this branch
+          lockoutCache.set(login.message.username, login.message.lockout_until);
+          lockoutCache.set(login.message.mailbox, login.message.lockout_until);
+          const secondsLeft = Math.ceil((login.message.lockout_until - now) / 1000);
+          message = `Too many failed attempts. Try again in ${secondsLeft} seconds.`;
+          warnLog(message);
+          login.message = message;
+          login.success = false;
+        }
+      } else {
+        message = `${credential} does not exist`;
+        errorLog(message);
+        login.message = message;
+        login.success = false;
+      }
+    }
+
+    // remove sensitive data
+    if (login.success) {
+      const {salt, hash, attempts, lockout_until, ... cleanLogin} = login.message;
+      login.message = cleanLogin;
+    }
+    // debugLog('ddebug 4 getLogin login', login);
     return login;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // throw new Error(backendError);
     
     // TODO: we should return smth to the index API instead of throwing an error
@@ -247,8 +335,8 @@ export const deleteLogin = async (id, alsoDeleteMailbox=false, schema='dms') => 
     return result;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -326,8 +414,8 @@ export const getLogins = async (credentials=null) => {
     // {success: true, message: [ {mailbox: mailbox, username: username, email: email, isActive:1, ..}, ..] }
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -394,8 +482,8 @@ export const getRolesFromConfigs = async (credential=null) => {
     return roles;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -436,8 +524,8 @@ export const getRolesFromLogins = async (credential=null) => {
     return roles;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',
@@ -477,8 +565,8 @@ export const getRoles = async (credential) => {
     return roles;
     
   } catch (error) {
-    errorLog(error.message);
-    throw new Error(error.message);
+    errorLog(error.message || error);
+    throw new Error(error.message || error);
     // TODO: we should return smth to the index API instead of throwing an error
     // return {
       // status: 'unknown',

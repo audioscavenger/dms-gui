@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
-  // const login = async (username, to="/") => {
   const login = async (passedUser, to="/") => {
     
     debugLog('useAuth passedUser', passedUser);

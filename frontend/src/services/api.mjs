@@ -299,7 +299,7 @@ const cacheWrap = async (apiCallFunc) => {
     
     // Only log if it's a real client/server bug, NOT a container reboot
     if (httpStatus !== 502 && httpStatus !== 503 && httpStatus !== 504 && error.code !== 'ERR_NETWORK') {
-      errorLog(error.message);
+      errorLog(error.message || error);
     }
     throw error;
   }
@@ -309,7 +309,7 @@ const cacheWrap = async (apiCallFunc) => {
 // Server status API // not too fond of passing settings directly from the GUI
 export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
-  debugLog('api getServerStatus settings:', settings);
+  // debugLog('ddebug api getServerStatus settings:', settings);
 
   const params = {};
   if (test !== undefined) params.test = test;

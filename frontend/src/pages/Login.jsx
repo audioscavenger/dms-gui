@@ -79,16 +79,18 @@ export const Login = () => {
     const result = await loginUser('admin', 'changeme', true);
     // debugLog('ddebug isFirstRun result', result);
     
-    // if we can login with the default user, display first run welcome message
-    if (result.success) {
+    // DEMO mode is always happy
+    if (result?.isDEMO || isDEMO) {
+      setIsDEMO(true);
       setFirstRun(true);
+      setSuccessMessage('logins.isDEMO');
 
-      if (result?.isDEMO || isDEMO) {
-        setIsDEMO(true);
-        setSuccessMessage('logins.isDEMO');
+    } else {
+      setIsDEMO(false);
 
-      } else {
-        setIsDEMO(false);
+      // if we can login with the default user, display first run welcome message
+      if (result.success) {
+        setFirstRun(true);
         setSuccessMessage('logins.isFirstRun');
       }
     }
@@ -124,7 +126,6 @@ export const Login = () => {
       // Here you would usually send a request to your backend to authenticate the user
       // For the sake of this example, we're using a mock authentication
       const result = await loginUser(credential, password);
-      console.debug('ddebug loginUser result=', result.message);
       // without JWT: {"mailbox":"eric@domain.com","username":"eric","email":"","isAdmin":0,"isActive":1,"isAccount":0,"roles":["eric@domain.com"]}
       // with    JWT: { accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx" }
       
@@ -136,14 +137,16 @@ export const Login = () => {
         if (firstRun) {
           // no default mailserver? /settings
           //    default mailserver but default password? /profile
-           (!result.message.mailserver) ? await login(result.message, "/settings") : await login(result.message, "/profile");
-         } else {
+          (!result.message.mailserver) ? await login(result.message, "/settings") : await login(result.message, "/profile");
+
+        } else {
           await login(result.message);
-         }
+        }
 
       // this will never happen with a 401 login denied unless the backend returns 200, which it won't. HTTP error codes exist for a reason and we will use them.
       } else {
-        setErrorMessage('logins.denied');
+        setErrorMessage(result.message || 'logins.denied');
+        // setErrorMessage('logins.denied');
       }
 
     // react refuses to handle 401 login denied and will actually fall here
@@ -160,7 +163,17 @@ export const Login = () => {
     <Row className="align-items-center justify-content-center vh-100">
       <Col md={6}>{' '}
 
-        <Card title={isDEMO ? 'logins.welcomeDEMO' : 'logins.welcome'} icon="person-lock" collapsible={false}>{' '}
+        <Card 
+          title={isDEMO ? 'logins.welcomeDEMO' : 'logins.welcome'} 
+          icon="person-lock" 
+          collapsible={false}
+          iconExtra={isDEMO ? 'common.dmsIcon' : 'common.dmsIcon'} 
+          titleExtra={
+            <a href={t('common.dmsUrl')} target="_blank">
+              {t('common.dmsName')}
+            </a>
+          } 
+          >{' '}
           <AlertMessage type="success" message={successMessage} />
 
           <form onSubmit={handleLogin}>
