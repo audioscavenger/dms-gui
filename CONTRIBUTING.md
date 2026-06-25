@@ -167,11 +167,13 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - retested: create/delete/update login
 * [ ] 1.5.99 - retested: create/delete/update mailserver
 
+* [ ] 1.5.99 - frontend: replace some AlertMessage with Toasts where it makes sense
+* [ ] 1.5.99 - logins: expand the lockoutCache to a broader Map as a logins table duplicate, to hold the tokens as well?
 * [ ] 1.5.99 - dms-gui global: we should offer site-wide profile like show actual login error, etc
-* [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and /accounts and create updateLogin and updateAccount modules
+* [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
-* [ ] 1.5.99 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 
+* [x] 1.5.72 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [x] 1.5.71 - logins: now uses lockoutCache Map() to stop spamming the database when a lockout_until is in place, and is reloaded after container reboot
 * [x] 1.5.71 - Login: show the actual login error
 * [x] 1.5.71 - frontend: t() can resolve html now, is Translate() needed anymore?

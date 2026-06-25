@@ -72,7 +72,7 @@ const Settings = () => {
   // https://icons.getbootstrap.com/
   const settingTabs = [
     { id: 1, title: "settings.titleContainerAdd", icon: "house-add",  content: FormContainerAdd(),  },
-    { id: 2, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.for', {what:containerName}) },
+    { id: 2, title: "settings.titleServerInfos",  icon: "house-fill", content: ServerInfos(),       titleExtra:t('common.forWhat', {what:containerName}) },
     { id: 3, title: "settings.titleContainers",   icon: "houses-fill",content: <></>,                  },
   ];
 

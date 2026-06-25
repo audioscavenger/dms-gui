@@ -41,6 +41,7 @@ import {
   AlertMessage,
   Button,
   FormField,
+  Toast,
   Card,
 } from '../components/index.jsx';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -208,16 +209,25 @@ export const Login = () => {
           </form>
 
           <a href="#" className="float-end">{t("logins.forgotPassword")}</a>
-
-          <br />
-          <AlertMessage type="danger" message={errorMessage} />
           
         </Card>
         
       </Col>
     </Row>
+
+    {errorMessage && (
+      <Toast 
+        type="danger" 
+        message={errorMessage} 
+        position="bottom-right"
+        onClose={() => setErrorMessage(null)} // Clears the state when closed or when it fades out
+      />
+    )}
     </>
   );
 };
 
 export default Login;
+
+          // <br />
+          // <AlertMessage type="danger" message={errorMessage} />
