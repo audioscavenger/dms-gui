@@ -5,6 +5,7 @@
   "scripts": {
     "start": "webpack serve --mode development --open --devtool eval-source-map",
     "build": "webpack --mode development --devtool eval-source-map",
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write \"src/**/*.{js,jsx,css,json}\" \"public/index.html\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\" \"public/index.html\""

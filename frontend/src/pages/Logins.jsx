@@ -41,7 +41,7 @@ import {
   SelectField,
   LoadingSpinner,
   Translate,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -144,11 +144,6 @@ const Logins = () => {
     );
   }, [logins, accountOptions]);
 
-
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAll();
-  }, [containerName]);
 
   const formatLoginsForTable = async (data, currentEditedData) => {
     debugLog('formatLoginsForTable currentEditedData:', currentEditedData)
@@ -778,6 +773,13 @@ const Logins = () => {
     }
     return className + highlight;
   };
+
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAll();
+  }, [containerName]);
+
 
 
   if (isLoading || !user?.isAdmin) {

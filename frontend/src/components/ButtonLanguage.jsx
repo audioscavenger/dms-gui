@@ -4,16 +4,18 @@ import Dropdown from 'react-bootstrap/Dropdown'; // Import react-bootstrap Dropd
 
 const ButtonLanguage = () => {
   const { t, i18n } = useTranslation();
-  const [currentLang, setCurrentLang] = useState(i18n.language);
 
-  useEffect(() => {
-    setCurrentLang(i18n.language);
-  }, [i18n.language]);
+  // const [currentLang, setCurrentLang] = useState(i18n.language);
+  // useEffect(() => {
+  //   setCurrentLang(i18n.language);
+  // }, [i18n.language]);
+  const currentLang = i18n.language || 'en';
 
   const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng).then(() => {
-      setCurrentLang(lng);
-    });
+    i18n.changeLanguage(lng)
+      // .then(() => {
+      // setCurrentLang(lng);
+      // });
   };
 
   return (

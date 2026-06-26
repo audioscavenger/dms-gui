@@ -33,8 +33,9 @@ import {
   Card,
   FormField,
   LoadingSpinner,
+  Toast,
   SelectField,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -58,6 +59,7 @@ function FormContainerAdd() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [warningMessage, setWarningMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
   
   const [pingResult, setPingResult] = useState(false);        // enables API gen, and all 3 buttons
   const [APIInjected, setAPIInjected] = useState(false);      // also enables the Test API button
@@ -94,83 +96,6 @@ function FormContainerAdd() {
   // const [dnsProviders, setDnsProviders] = useState([
   //   {value: 'cloudflare', label: 'Cloudflare'},
   // ]);
-
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAll();
-    if (firstRun) setSuccessMessage('settings.isFirstRun');
-  }, []);
-
-  useEffect(() => {
-    fetchContainerSettings(containerName);  // [ {name:name, value: value}, ..]
-  }, [containerName]);
-
-
-  useEffect(() => {
-    if (formValuesSubmitted) {
-      // pull mailservers to refresh the select field list and branding selector and maybe show the API reminder
-      debugLog('FormContainerAdd call fetchMailservers()');
-      fetchMailservers();
-
-      // switch to this new container to trigger fetchContainerSettings and confirm all was saved properly
-      // UNLESS containerName is already set, indeed
-      // containerName shall always be set, even if user doesn't want it as a favorite
-      if (!containerName) {
-        // this will trigger a form refresh with this container's data 
-        debugLog('FormContainerAdd call setContainerName:', getValueFromArrayOfObj(formValues, 'containerName'));
-        setContainerName(getValueFromArrayOfObj(formValues, 'containerName'));
-
-      // containerName was already set, do nothing
-      // } else {
-        // fetchContainerSettings(getValueFromArrayOfObj(formValues, 'containerName'));
-      }
-
-      if (makeFavoriteRef.current.checked) {
-        debugLog('FormContainerAdd call handleLoginSave:', getValueFromArrayOfObj(formValues, 'containerName'));
-        handleLoginSave(getValueFromArrayOfObj(formValues, 'containerName'));
-      }
-
-      // Normally you should not be here if APIInjected is false as the button is disabled
-      if (APIInjected) {
-
-        debugLog('FormContainerAdd APIValidated:', APIValidated);
-        // API installed and valid, success!
-        if (APIValidated) {
-
-          setSuccessMessage(t('settings.DMS_API_KEYSaved', {
-            DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
-          }));
-
-          // pull all data since API is working
-          // this causes a problem the first time as the containerName is still unset or in queue. Also those fetches shall be done in sequence not in parallel
-          // try {
-          //   setLoading(true);
-          //   fetchServerEnvs(true);
-          //   fetchAccounts(true);
-          //   fetchAliases(true);
-
-          // } finally {
-          //   setLoading(false);
-          // }
-          debugLog(`Success! navigate to /dashboard`);
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 2000);
-
-        } else {
-          // reminder to setup DMS compose after a submit
-          debugLog(`FormContainerAdd 5 fetchMailservers failed: show setup reminder`);
-          setSuccessMessage(t('settings.DMS_API_KEYinit', {
-            containerName:getValueFromArrayOfObj(formValues, 'containerName'),
-            DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
-            DMS_API_PORT:getValueFromArrayOfObj(formValues, 'DMS_API_PORT'),
-          }));
-        }
-      }
-
-    }
-  }, [formValuesSubmitted]);
-
 
   // const initFormValues = () => {
   //   setFormValues([
@@ -291,7 +216,11 @@ function FormContainerAdd() {
           if (result.message.status.status === 'missing' && showMessages) setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
           if (result.message.status.status === 'stopped' && showMessages) setWarningMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
           if (result.message.status.status === 'alive') {
-            if (showMessages) setSuccessMessage(t('dashboard.status.alive'));
+            // if (showMessages) setSuccessMessage(t('dashboard.status.alive'));
+            setToastMessage({
+              type: 'success',
+              message: t('dashboard.status.alive'),
+            });
             setPingResult(true);
           }
 
@@ -319,7 +248,11 @@ function FormContainerAdd() {
         
         if (result.success) {
           setAPIInjected(true);
-          if (showMessages) setSuccessMessage(t('settings.DMS_API_injectSuccess'));
+          // if (showMessages) setSuccessMessage(t('settings.DMS_API_injectSuccess'));
+          if (showMessages) setToastMessage({
+            type: 'success',
+            message: t('settings.DMS_API_injectSuccess'),
+          });
 
         } else {
           if (showMessages) {
@@ -353,7 +286,9 @@ function FormContainerAdd() {
         // const result = await getServerStatus('mailserver', getValueFromArrayOfObj(formValues, 'containerName'), 'execDMS', formValues);
         
         // initAPI will call getServerStatus by itself internally instead of passing formValue directly to the getServerStatus api, only admins can do that now
+        debugLog('initAPI:', 'mailserver', getValueFromArrayOfObj(formValues, 'schema'), getValueFromArrayOfObj(formValues, 'containerName'), 'test', formValues)
         const result = await initAPI('mailserver', getValueFromArrayOfObj(formValues, 'schema'), getValueFromArrayOfObj(formValues, 'containerName'), 'test', formValues);
+        debugLog('initAPI result:', result)
 
         debugLog('FormContainerAdd getServerStatus:', result);
           // { success: true,
@@ -642,16 +577,89 @@ function FormContainerAdd() {
   };
 
 
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAll();
+    if (firstRun) setSuccessMessage('settings.isFirstRun');
+  }, []);
+
+  useEffect(() => {
+    fetchContainerSettings(containerName);  // [ {name:name, value: value}, ..]
+  }, [containerName]);
+
+
+  useEffect(() => {
+    if (formValuesSubmitted) {
+      // pull mailservers to refresh the select field list and branding selector and maybe show the API reminder
+      debugLog('FormContainerAdd call fetchMailservers()');
+      fetchMailservers();
+
+      // switch to this new container to trigger fetchContainerSettings and confirm all was saved properly
+      // UNLESS containerName is already set, indeed
+      // containerName shall always be set, even if user doesn't want it as a favorite
+      if (!containerName) {
+        // this will trigger a form refresh with this container's data 
+        debugLog('FormContainerAdd call setContainerName:', getValueFromArrayOfObj(formValues, 'containerName'));
+        setContainerName(getValueFromArrayOfObj(formValues, 'containerName'));
+
+      // containerName was already set, do nothing
+      // } else {
+        // fetchContainerSettings(getValueFromArrayOfObj(formValues, 'containerName'));
+      }
+
+      if (makeFavoriteRef.current.checked) {
+        debugLog('FormContainerAdd call handleLoginSave:', getValueFromArrayOfObj(formValues, 'containerName'));
+        handleLoginSave(getValueFromArrayOfObj(formValues, 'containerName'));
+      }
+
+      // Normally you should not be here if APIInjected is false as the button is disabled
+      if (APIInjected) {
+
+        debugLog('FormContainerAdd APIValidated:', APIValidated);
+        // API installed and valid, success!
+        if (APIValidated) {
+
+          setSuccessMessage(t('settings.DMS_API_KEYSaved', {
+            DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
+          }));
+
+          // pull all data since API is working
+          // this causes a problem the first time as the containerName is still unset or in queue. Also those fetches shall be done in sequence not in parallel
+          // try {
+          //   setLoading(true);
+          //   fetchServerEnvs(true);
+          //   fetchAccounts(true);
+          //   fetchAliases(true);
+
+          // } finally {
+          //   setLoading(false);
+          // }
+          debugLog(`Success! navigate to /dashboard`);
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 2000);
+
+        } else {
+          // reminder to setup DMS compose after a submit
+          debugLog(`FormContainerAdd 5 fetchMailservers failed: show setup reminder`);
+          setSuccessMessage(t('settings.DMS_API_KEYinit', {
+            containerName:getValueFromArrayOfObj(formValues, 'containerName'),
+            DMS_API_KEY:getValueFromArrayOfObj(formValues, 'DMS_API_KEY'),
+            DMS_API_PORT:getValueFromArrayOfObj(formValues, 'DMS_API_PORT'),
+          }));
+        }
+      }
+
+    }
+  }, [formValuesSubmitted]);
+
+
   if (isLoading || !user.isAdmin) {
     return <LoadingSpinner />;
   } else debugLog('formValues:', formValues);
   
   return (
     <>
-      <AlertMessage type="danger" message={errorMessage} />
-      <AlertMessage type="warning" message={warningMessage} />
-      <AlertMessage type="success" message={successMessage} />
-      
       <Row className="align-items-center justify-content-center">
         <Col md={6}>{' '}
           <Card title="settings.containerNameSwitch" icon="house-heart-fill">{' '}
@@ -838,6 +846,19 @@ function FormContainerAdd() {
         </form>
       </Row>
 
+      <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="warning" message={warningMessage} />
+      <AlertMessage type="success" message={successMessage} />
+      
+      {toastMessage && (
+        <Toast 
+          type={toastMessage?.type}
+          message={toastMessage?.message} 
+          position={toastMessage?.position || "bottom-right"}
+          onClose={() => setToastMessage(null)} // Clears the state when closed or when it fades out
+          delay={toastMessage?.delay || 9000} // Clears the state when closed or when it fades out
+        />
+      )}
     </>
   );
 

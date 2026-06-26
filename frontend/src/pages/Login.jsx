@@ -43,7 +43,7 @@ import {
   FormField,
   Toast,
   Card,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -65,11 +65,6 @@ export const Login = () => {
   // const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
   
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    isFirstRun();
-  }, []);
-
   // redirect to /settings if no users in db
   const isFirstRun = async () => {
 
@@ -158,7 +153,12 @@ export const Login = () => {
   };
   
   
-      // <h2 className="mb-4">{t('login.title')}</h2>
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    isFirstRun();
+  }, []);
+
+
   return (
     <>
     <Row className="align-items-center justify-content-center vh-100">
@@ -175,7 +175,7 @@ export const Login = () => {
             </a>
           } 
           >{' '}
-          <AlertMessage type="success" message={successMessage} />
+          <AlertMessage type="success" message={successMessage} onClose={false} />
 
           <form onSubmit={handleLogin}>
 

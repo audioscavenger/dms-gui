@@ -5,11 +5,12 @@ import {
   errorLog
 } from '../../frontend.mjs';
 
-// Fallback to '/api' if environment variable is not available
-const API_URL =
-  (typeof process !== 'undefined' &&
-    process.env.API_URL) ||
-  '/api';
+// Fallback to '/api' if environment variable is not available // fix: this will never happen as api runs in the client's browser
+// const API_URL =
+//   (typeof process !== 'undefined' &&
+//     process.env.API_URL) ||
+//   '/api';
+const API_URL = '/api';
 
     // 'Authorization': 'Bearer YOUR_AUTH_TOKEN',
 const api = axios.create({

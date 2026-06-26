@@ -20,16 +20,15 @@ const LeftSidebar = () => {
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName", '');
   
-  const [showMailMenus, setShowMailMenus] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   // const [isDropdownActive, setDropdownActive] = useState("false");  // we don't use it yet
-  
-    useEffect(() => {
-      debugLog('LeftSidebar user:', user);
-      debugLog('LeftSidebar containerName:', containerName);
-      if (containerName) setShowMailMenus(true);
-    }, [containerName]);
-  
+
+  // const [showMailMenus, setShowMailMenus] = useState(false);
+  // useEffect(() => {
+  //   if (containerName) setShowMailMenus(true);
+  // }, [containerName]);
+  // This calculates instantly on every render without an effect loop // eslint fix
+  const showMailMenus = Boolean(containerName);
   
   // Style function to apply styles directly based on isActive, a reserved word for bootstrap active links
   // const getNavLinkStyle = ({ isActive }) => ({

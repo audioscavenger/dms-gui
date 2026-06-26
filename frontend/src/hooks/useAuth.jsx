@@ -9,6 +9,7 @@ import {
   logoutUser,
 } from '../services/api.mjs';
 import { debugLog } from '../../frontend.mjs';
+import { getValueFromArrayOfObj } from '../../../common.mjs';
 
 export const AuthProvider = ({ children }) => {
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }) => {
       mailservers,
       isDEMO,
     }),
-    [user, containerName, mailservers, isDEMO]
+    [user, containerName, mailservers, isDEMO, login]
   );
   return (
     <AuthContext.Provider value={value}>

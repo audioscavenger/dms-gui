@@ -29,7 +29,7 @@ import {
   Button,
   Card,
   Translate
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // https://www.google.com/search?client=firefox-b-1-d&q=react+page+with+two+independent+form++onSubmit+&sei=U53haML6LsfYkPIP9ofv2AM

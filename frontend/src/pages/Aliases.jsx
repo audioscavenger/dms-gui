@@ -31,7 +31,7 @@ import {
   LoadingSpinner,
   SelectField,
   Translate,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -67,11 +67,7 @@ const Aliases = () => {
   useEffect(() => {
     // This will now only re-run if parentObject actually changes
   }, [parentObject]);
-   */
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAliases(false);
-  }, [mailservers, containerName]);
+  */
 
   const fetchAliases = async (refresh=false) => {
     refresh = !user.isAdmin ? false : refresh;
@@ -256,6 +252,12 @@ const Aliases = () => {
     value: account.mailbox,
     label: account.mailbox,
   }));
+
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAliases(false);
+  }, [mailservers, containerName]);
 
 
   // if (isLoading && !aliases && !aliases.length) {

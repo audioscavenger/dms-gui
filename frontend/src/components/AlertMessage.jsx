@@ -37,7 +37,7 @@ const AlertMessage = ({
   // console.debug('ddebug keyHasPlaceholder',keyHasPlaceholder)
 
   return (
-    <RBAlert
+    <RBAlert 
       variant={type}
       dismissible={!!onClose}               // Make dismissible if onClose is provided
       show={showAlert}                      // Tells the alert when to render

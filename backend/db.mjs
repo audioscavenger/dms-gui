@@ -942,9 +942,9 @@ export const dbAll = (sql, params={}, ...anonParams) => {
 };
 
 // dbInit is not async, hell no
-export const dbInit = (reset=false) => {
+export const dbInit = (DATABASE_RESET=false) => {
 
-  if (reset) {
+  if (DATABASE_RESET) {
     infoLog(`${color.HIG}${color.REV}start ${color.r} RESET DATABASE`);
     exec(`rm -f ${env.DATABASE}`);
   } else {

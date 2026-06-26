@@ -1167,6 +1167,7 @@ export const getNodeInfos = async () => {
 
 
   if (env.NGINX_VERSION) nodeInfos.push({ name: 'NGINX_VERSION', value: env.NGINX_VERSION });
+  if (env.REACT_VERSION) nodeInfos.push({ name: 'REACT_VERSION', value: env.REACT_VERSION });
   if (env.ENV_MODE == 'development') {
     nodeInfos.push({ name: 'PORT_FRONTEND', value: env.PORT_FRONTEND });
     nodeInfos.push({ name: 'FRONTEND_PROXY_URL', value: env.FRONTEND_PROXY_URL });
@@ -1251,7 +1252,7 @@ export const getDomains = async (containerName=null, name=null) => {
 // if    action == 'gen',  generate and return it
 // if    action == 'inject', inject API files to DMS config folder
 export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, action=null, formValues={}) => {
-  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, action:${action}, formValues:, formValues)`);
+  debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, action:${action}, formValues:`, formValues);
   if (!action)              return {success: false, error: 'initAPI: action is required'};
   if (!containerName)       return {success: false, error: 'initAPI: containerName is required'};
   if (!schema)              return {success: false, error: 'initAPI: schema is required'};

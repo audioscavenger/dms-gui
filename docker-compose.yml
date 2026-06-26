@@ -12,9 +12,10 @@ services:
       # options:
         # tag: dms
 
-    build:                                              # comment me for production
-      context: .                                        # comment me for production
-      args:                                             # any ARG in Dockerfile must be there too; cannot use environment variables here either
+    build:                                              # comment me for official image
+      context: .                                        # comment me for official image
+      # build: any ARG in Dockerfile must be there too; cannot use environment variables here
+      args:
         - ENV_MODE=production
         - UPSTREAM_NGINX=try_files $$uri $$uri/ /index.html;
       #   - ENV_MODE=development                          # comment me for production
@@ -32,10 +33,10 @@ services:
     env_file: ./config/dms-gui/.dms-gui.env
     environment:
       - TZ=${TZ:-UTC}
-      # - isDEMO=true                                   # DEMO mode
-      # - DATABASE_RESET=true                           # to reset the database each time; used for DEMO
+      - isDEMO=${isDEMO:-false}                         # DEMO mode
+      - DATABASE_RESET=${DATABASE_RESET:-false}         # to reset the database each time; used for DEMO
+      - DEBUG=${DEBUG:-true}                            # enable debugging
       # - ENV_MODE=development                          # comment me for production
-      - DEBUG=true                                    # enable debugging
 
     volumes:
       - /etc/timezone:/etc/timezone:ro

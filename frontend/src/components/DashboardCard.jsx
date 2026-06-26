@@ -26,6 +26,7 @@ import {
  */
 const DashboardCard = ({
   title,
+  titleRefresh,
   icon,
   value,
   isLoading= true,

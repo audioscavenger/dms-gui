@@ -41,7 +41,7 @@ import {
   Button,
   LoadingSpinner,
   Translate,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -81,32 +81,6 @@ const Dashboard = () => {
   
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-
-  useEffect(() => {
-    // debugLog('ddebug mailservers.length',mailservers.length)
-    // debugLog('ddebug containerName',containerName)
-    if (!mailservers.length) return;
-    if (!containerName) return;
-
-    fetchDashboard();
-
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchDashboard, 30000);
-
-    return () => clearInterval(interval);
-  }, [containerName]);
-
-  useEffect(() => {
-    if (isLoading) {
-      handleRefreshCard("logins");
-      handleRefreshCard("accounts");
-      handleRefreshCard("aliases");
-    } else {
-      handleRefreshCard("logins", false);
-      handleRefreshCard("accounts", false);
-      handleRefreshCard("aliases", false);
-    }
-  }, [isLoading]);
 
 
   const refreshAll = async () => {
@@ -157,8 +131,7 @@ const Dashboard = () => {
     } catch (error) {
       // debugLog('ddebug error', error)
       errorLog(t('api.errors.fetchServerStatus'), error);
-      // setErrorMessage(statusData.message);
-      setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: statusData.message }});
+      setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: error.message }});
       
     } finally {
       setLoading(false);
@@ -335,6 +308,34 @@ const Dashboard = () => {
       [cardId]: status 
     }));
   };
+
+
+  useEffect(() => {
+    // debugLog('ddebug mailservers.length',mailservers.length)
+    // debugLog('ddebug containerName',containerName)
+    if (!mailservers.length) return;
+    if (!containerName) return;
+
+    fetchDashboard();
+
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchDashboard, 30000);
+
+    return () => clearInterval(interval);
+  }, [containerName]);
+
+  useEffect(() => {
+    if (isLoading) {
+      handleRefreshCard("logins");
+      handleRefreshCard("accounts");
+      handleRefreshCard("aliases");
+    } else {
+      handleRefreshCard("logins", false);
+      handleRefreshCard("accounts", false);
+      handleRefreshCard("aliases", false);
+    }
+  }, [isLoading]);
+
 
   if (!user) {
     return <LoadingSpinner />;

@@ -1852,7 +1852,9 @@ async (req, res) => {
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const { action, dms_api_key_param } = req.body;
     
+    debugLog('initAPI received:', plugin, schema, containerName, action, dms_api_key_param);
     const result = await initAPI(plugin, schema, containerName, action, dms_api_key_param);
+    debugLog('initAPI result:', result);
     return res.json(result);
     
   } catch (error) {

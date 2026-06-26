@@ -28,19 +28,7 @@ const Navbar = ({
   const [mailservers] = useLocalStorage("mailservers", []);                       // [{ value: "dms", plugin: "mailserver", schema: "dms", scope: "dms-gui"}, ..]
 
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState({});
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000 * 60); // Refresh every minute
-
-    // Initial calculation
-    setTimeLeft(calculateTimeLeft());
-    return () => clearInterval(timer); // Cleanup on unmount
-  }, []);
-
-  
   const formatTime = (time) => String(time).padStart(2, '0');
   const calculateTimeLeft = () => {
     const now = new Date();
@@ -59,19 +47,29 @@ const Navbar = ({
     }
     return remainingTime;
   };
-
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
 
   const handleLogout = () => {
     logout();
   };
-
 
   const profileItems = [
     { id: 1, title: "logins.profileLink", icon: "person-bounding-box",  onClick: () => navigate("/profile") },
     { id: 2, title: "logins.logout",      icon: "box-arrow-right",      onClick: () => handleLogout() },
   ];
 
-              // size="sm"
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000 * 60); // Refresh every minute
+
+    // Initial calculation
+    // setTimeLeft(calculateTimeLeft());  // eslint fix
+    return () => clearInterval(timer);    // Cleanup on unmount
+  }, []);
+
+  
   return (
     <RBNavbar bg="dark" variant="dark" expand="lg">
       <Container fluid>

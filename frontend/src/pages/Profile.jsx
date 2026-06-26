@@ -37,7 +37,7 @@ import {
   LoadingSpinner,
   Translate,
   SelectField,
-} from '../components/index.jsx';
+} from '../components';
 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
@@ -49,7 +49,7 @@ const Profile = () => {
 
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
-  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
+  const [firstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
 
   // Common states -------------------------------------------------
   const [isLoading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ const Profile = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   
   // State for new login inputs ----------------------------------
-  const [loginFormData, setloginFormData] = useState(user);
+  const [loginFormData, setloginFormData] = useState(() => user);
   // errors must not be initialized as there are no errors for a valid user Profile
   const [formErrors, setformErrors] = useState({});
   const [submitDisabled, setSubmitDisabled] = useState(true);
@@ -72,20 +72,7 @@ const Profile = () => {
     confirmPassword: '',
   });
   const [passwordFormErrors, setPasswordFormErrors] = useState({});
-
   
-  
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    debugLog('user', user);
-    setLoading(true);
-    // if (!mailservers.length) fetchMailservers();
-    setloginFormData(user);
-    if (firstRun) setSuccessMessage('password.isFirstRun');
-    setLoading(false);
-    debugLog('loginFormData',loginFormData);
-  }, [user]);
-
   // const fetchProfile = async () => {
     
   //   try {
@@ -103,6 +90,9 @@ const Profile = () => {
   //     setErrorMessage('api.errors.fetchProfile');
   //   }
   // };
+
+  // Calculate the success message directly on render instead of an effect state
+  (firstRun) ? setSuccessMessage('password.isFirstRun') : setSuccessMessage(null);
 
 
   const handleInputChange = (e) => {
@@ -325,11 +315,22 @@ const Profile = () => {
   };
 
 
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    debugLog('user', user);
+    // setLoading(true);  // eslint fix
+    // if (!mailservers.length) fetchMailservers();
+    // setloginFormData(user);  // eslint fix
+    // if (firstRun) setSuccessMessage('password.isFirstRun');  // eslint fix
+    // setLoading(false);  // eslint fix
+    debugLog('loginFormData',loginFormData);
+  }, [user]);
+
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
-
-
 
   // BUG: passing defaultActiveKey to Accordion as string does not activate said key, while setting it up as "1" in Accordion also does not
   // icons: https://icons.getbootstrap.com/

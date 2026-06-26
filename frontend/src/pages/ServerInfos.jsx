@@ -37,7 +37,7 @@ import {
   AlertMessage,
   DataTable,
   LoadingSpinner,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -54,12 +54,6 @@ const ServerInfos = () => {
   
   const [infos, setInfos] = useState([]);
   const [envs, setServerEnvs] = useState([]);
-
-
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAll(false);
-  }, [mailservers]);
 
 
   const fetchAll = async (refresh=false) => {
@@ -136,6 +130,12 @@ const ServerInfos = () => {
     { key: 'name', label: 'settings.name' },
     { key: 'value', label: 'settings.value' },
   ];
+
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAll(false);
+  }, [mailservers]);
 
 
   // if (isLoading && !infos && !settings || !user.isAdmin) {

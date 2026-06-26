@@ -44,6 +44,7 @@ import {
   getServerEnvs,
   addAccount,
   deleteAccount,
+  updateDNS,
   updateAccount,
   doveadm,
 } from '../services/api.mjs';
@@ -56,7 +57,7 @@ import {
   FormField,
   LoadingSpinner,
   Translate,
-} from '../components/index.jsx';
+} from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -108,11 +109,6 @@ const Accounts = () => {
   const [dnsFormData, setDNSFormData] = useState({});
   const [dnsFormErrors, setDNSFormErrors] = useState({});
 
-
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAll();
-  }, [mailservers, containerName]);
 
   const fetchAll = async (refresh=false) => {
 
@@ -490,6 +486,11 @@ const Accounts = () => {
       setErrorMessage({key: 'api.errors.updateDNS', values: { error: error.message }});
     }
   };
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAll();
+  }, [mailservers, containerName]);
 
 
   if (isLoading) {

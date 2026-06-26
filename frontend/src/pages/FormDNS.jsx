@@ -1,26 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
 import {
   isNonEmptyDict,
+  getValueFromArrayOfObj,
   mergeArrayOfObj,
 } from '../../../common.mjs';
 
 import {
   getSettings,
+  saveSettings,
   getDomains,
 } from '../services/api';
 
-// import { 
-//   AlertMessage,
-//   Button,
-//   FormField,
-//   LoadingSpinner,
-// } from '../components';
+import { 
+  AlertMessage,
+  Button,
+  FormField,
+  LoadingSpinner,
+} from '../components';
 
 
 function FormDomains() {
@@ -33,12 +34,7 @@ function FormDomains() {
   
   const [formErrors, setFormErrors] = useState({});
   const [settings, setSettings] = useState([]);
-
-
-  // https://www.w3schools.com/react/react_useeffect.asp
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  const [domains, setDomains] = useState([]);
 
 
   const fetchAll = async () => {
@@ -160,6 +156,12 @@ function FormDomains() {
       setErrorMessage({key: 'api.errors.saveSettings', values: { error: error.message }});
     }
   };
+
+
+  // https://www.w3schools.com/react/react_useeffect.asp
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
 
   // if (isLoading && !settings && !Object.keys(settings).length) {

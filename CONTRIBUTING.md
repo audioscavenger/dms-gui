@@ -124,8 +124,9 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 - [wiki](https://github.com/audioscavenger/dms-gui)
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
-alias buildup='docker-compose down --volumes; docker-compose up --build --force-recreate'
-alias buildup='docker-compose down --volumes; docker-compose build --no-cache; docker-compose up --force-recreate'   # if you need to redetect changes and purge all caches
+alias buildup='docker-compose down --volumes; docker-compose up --build --force-recreate'            # normal rebuild
+docker-compose down --volumes; docker-compose build --no-cache; docker-compose up --force-recreate   # if you need to redetect changes and purge all caches
+docker-compose down --volumes; DATABASE_RESET=true  docker-compose up --build --force-recreate       # reset database
 run --rm --entrypoint ls audioscavenger/dms-gui:latest -la /app
 <!--
 drwxr-xr-x    1 root     root          4096 Apr 19 17:01 .
@@ -139,11 +140,6 @@ drwxr-xr-x    1 root     root          4096 Apr 19 16:35 frontend
 -->
 
 docker login -u audioscavenger
-<!-- we don't need to delete local releases anymore are they can only be pushed directly without cache, in multiarch -->
-<!-- docker container prune -f && docker image prune -f && docker image rm audioscavenger/dms-gui:v1.5.4 -->
-<!-- docker buildx build --no-cache -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) .
-docker push audioscavenger/dms-gui --all-tags -->
-
 <!-- https://medium.com/@life-is-short-so-enjoy-it/docker-how-to-build-and-push-multi-arch-docker-images-to-docker-hub-64dea4931df9 -->
 docker buildx create          --name multiarch --node multiarch --platform linux/arm64/v8 --driver=docker-container ssh://root@oracle01:22
 docker buildx create --append --name multiarch --node multiarch --platform linux/amd64          --driver=docker-container --bootstrap
@@ -155,7 +151,7 @@ default         docker
  \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
 docker container prune -f && docker image prune -f && docker builder prune -a -f
 docker system df
-docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
+docker buildx build --no-cache --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
 
 ## history:
@@ -173,6 +169,12 @@ docker buildx build --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 
+* [ ] 1.5.73 - frontend: added globals and ESLint found cascading renders, unnecessary states, missing refs etc.
+* [x] 1.5.73 - frontend: added ESLint and got 116 problems (116 errors, 0 warnings): all fixed
+* [x] 1.5.73 - frontend: npm install --save-dev globals eslint eslint-plugin-react eslint-plugin-import eslint-plugin-react-hooks
+* [x] 1.5.73 - package: upgraded all packages
+* [x] 1.5.73 - Dockerfile: upgraded to 24.18.0-alpine3.24
+* [x] 1.5.73 - bugfix: docker-compose.yml did not take environment variables
 * [x] 1.5.72 - frontend: implement toasts, I am sick of those alerts that displace the UI elements
 * [x] 1.5.71 - logins: now uses lockoutCache Map() to stop spamming the database when a lockout_until is in place, and is reloaded after container reboot
 * [x] 1.5.71 - Login: show the actual login error
@@ -949,37 +951,6 @@ npm install -g npm
 
 cd /app/backend
 npm version
-{
-  'dms-gui-backend': '1.0.0',
-  npm: '11.17.0',
-  node: '24.9.0',
-  acorn: '8.15.0',
-  ada: '3.2.7',
-  amaro: '1.1.2',
-  ares: '1.34.5',
-  brotli: '1.1.0',
-  cjs_module_lexer: '2.1.0',
-  cldr: '47.0',
-  icu: '77.1',
-  llhttp: '9.3.0',
-  modules: '137',
-  napi: '10',
-  nbytes: '0.1.1',
-  ncrypto: '0.0.1',
-  nghttp2: '1.66.0',
-  openssl: '3.5.3',
-  simdjson: '3.13.0',
-  simdutf: '6.4.0',
-  sqlite: '3.50.4',
-  tz: '2025b',
-  undici: '7.16.0',
-  unicode: '16.0',
-  uv: '1.51.0',
-  uvwasi: '0.0.23',
-  v8: '13.6.233.10-node.27',
-  zlib: '1.3.1-470d3a2',
-  zstd: '1.5.7'
-}
 
 npx npm-check-updates -u
  better-sqlite3        ^12.5.0  →        ^12.11.1
@@ -992,7 +963,7 @@ npx npm-check-updates -u
  swagger-jsdoc          ^6.2.8  →          ^6.3.0
 
 npm install
-npm audit fix
+npm approve-scripts --allow-scripts-pending
   found 0 vulnerabilities
   npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
   npm warn allow-scripts   @scarf/scarf@1.4.0 (install: (install scripts present))
@@ -1002,16 +973,17 @@ npm audit fix
   npm warn allow-scripts
   npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
 npm approve-scripts --all
+npm audit fix
 
 
 ## frontend upgrade commands: from the OS; do that once
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 source ~/.bashrc
-nvm install 24.9.0
+nvm install 24.18.0
 
 ## make sure your local node is the same as the VM: do that each time
 source ~/.bashrc
-nvm use 24.9.0
+nvm use 24.18.0
 node -v
 
 npm install -g npm-check-updates

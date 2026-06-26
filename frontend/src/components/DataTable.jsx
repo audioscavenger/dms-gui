@@ -183,7 +183,8 @@ const DataTable = ({
     
     // debugLog(`sanitizedData after  sortColumn=${sortColumn}`, sanitizedData);
     return sanitizedData;
-  }, [data, sortColumn, sortOrders, columnFilters]);
+  // }, [data, sortColumn, sortOrders, columnFilters]);
+  }, [data, sortColumn, sortOrders, columnFilters, columns, objects2blank, objects2stringify, sortFunction]); // eslint fix
 
   // import ChangeHighlight from 'react-change-highlight';
   // <ChangeHighlight>
@@ -203,7 +204,7 @@ const DataTable = ({
   // Method: Using useRef and useEffect
     // This is the standard approach for tracking previous values in React functional components. 
     // useRef creates a mutable object whose .current property persists across re-renders without causing a re-render when it changes.
-  const previousData = usePrevious(data);
+  // const previousData = usePrevious(data);
 
 
   if (isLoading && !data.length) {

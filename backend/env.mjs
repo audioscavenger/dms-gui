@@ -16,6 +16,7 @@ export const env = {
   FRONTEND_PROXY_URL: process.env.FRONTEND_PROXY_URL || 'http://localhost:3001',
   BACKEND_PROXY_URL: process.env.BACKEND_PROXY_URL || 'http://localhost:3000',
   NGINX_VERSION: process.env.NGINX_VERSION || null,
+  REACT_VERSION: process.env.REACT_VERSION || null,   // pulled by start.sh
 
   API_URL  : process.env.API_URL || '/api',               // security: cors
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
