@@ -8,8 +8,8 @@
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "mock": "json-server --watch /app/backend/db.json --port 3001",
-    "format": "prettier --write \"**/*.{js,json}\"",
-    "format:check": "prettier --check \"**/*.{js,json}\""
+    "format": "prettier --write \"**/*.{js,mjs,json}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,cjs,json}\""
   },
   "keywords": [
     "docker",

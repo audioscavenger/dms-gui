@@ -3,7 +3,8 @@
 # JWT secrets for tokens, without openssl; otherwise that would be openssl rand -hex 32
 export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-export REACT_VERSION=$(node -p "require('/app/frontend/package.json').dependencies.react" | cut -c2-)
+# export REACT_VERSION=$(node -p "require('/app/backend/package.frontend.json').dependencies.react" | cut -c2-)   # we can't get this file for some reason
+export REACT_VERSION=$(cat /app/REACT_VERSION.txt)
 
 # use demo database
 if [ "$isDEMO" = "true" ]; then

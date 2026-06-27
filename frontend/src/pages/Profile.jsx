@@ -41,14 +41,16 @@ import {
 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 
 const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
   const { t } = useTranslation();
+  const triggerToast = useToast();
   const { user, login } = useAuth();
 
   const [containerName] = useLocalStorage("containerName", '');
-  const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
+  const [mailservers] = useLocalStorage("mailservers", []);
   const [firstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
 
   // Common states -------------------------------------------------
@@ -92,8 +94,7 @@ const Profile = () => {
   // };
 
   // Calculate the success message directly on render instead of an effect state
-  (firstRun) ? setSuccessMessage('password.isFirstRun') : setSuccessMessage(null);
-
+  // (firstRun) ? setSuccessMessage('password.isFirstRun') : setSuccessMessage(null);  // Uncaught Error: Too many re-renders. React limits the number of renders to prevent an infinite loop.
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -161,6 +162,7 @@ const Profile = () => {
   const handleLoginSave = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
+    setWarningMessage(null);
     setSuccessMessage(null);
 
     // no need anymore since validateLoginForm is done after each change
@@ -186,14 +188,27 @@ const Profile = () => {
       );
       if (result.success) {
         login(loginFormData); // reset new values for that user in frontend state
-        setSuccessMessage(t('logins.saved', {username:user.mailbox}));
+        // setSuccessMessage(t('logins.saved', {username:user.mailbox}));
+        triggerToast({
+          type: 'success',
+          message: t('logins.saved', {username:user.mailbox}),
+        });
         
-      } else setErrorMessage(result?.error);
+      // } else setErrorMessage(result?.error);
+      } else triggerToast({
+        type: 'error',
+        message: result?.error,
+      });
+
       
     } catch (error) {
       errorLog(error.message || error);
       // setErrorMessage('api.errors.updateLogin', error.message);
-      setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.updateLogin', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.updateLogin', values: { error: error.message }},
+      });
     }
   };
 
@@ -258,6 +273,7 @@ const Profile = () => {
   const handleSubmitPasswordChange = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
+    setWarningMessage(null);
     setSuccessMessage(null);
 
     if (!validatePasswordForm()) {
@@ -286,19 +302,37 @@ const Profile = () => {
         }
         if (result.success) {
           result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedLogin.mailbox});
+
         } else {
-          setErrorMessage(result?.error);
+          // setErrorMessage(result?.error);
+          triggerToast({
+            type: 'error',
+            message: result?.error,
+          });
         }
 
-      } else setErrorMessage(result?.error);
+      // } else setErrorMessage(result?.error);
+      } else triggerToast({
+        type: 'error',
+        message: result?.error,
+      });
+
       
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
       // setErrorMessage('api.errors.changePassword');
-      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.changePassword', values: { error: error.message }},
+      });
 
     } finally {
-      if (result.success) setSuccessMessage(result.message);
+      // if (result.success) setSuccessMessage(result.message);
+      if (result.success) triggerToast({
+          type: 'success',
+          message: result.message,
+        });
       handleClosePasswordModal(); // Close the modal
     }
 
@@ -320,10 +354,10 @@ const Profile = () => {
   useEffect(() => {
     debugLog('user', user);
     // setLoading(true);  // eslint fix
-    // if (!mailservers.length) fetchMailservers();
     // setloginFormData(user);  // eslint fix
-    // if (firstRun) setSuccessMessage('password.isFirstRun');  // eslint fix
-    // setLoading(false);  // eslint fix
+    // if (firstRun) setSuccessMessage('password.isFirstRun');  // eslint fix is a lie
+    if (firstRun) setSuccessMessage('password.isFirstRun');
+    setLoading(false);  // eslint fix is a lie
     debugLog('loginFormData',loginFormData);
   }, [user]);
 

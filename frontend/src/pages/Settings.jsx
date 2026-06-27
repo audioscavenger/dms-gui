@@ -84,7 +84,10 @@ const Settings = () => {
       <Accordion tabs={settingTabs}>
       </Accordion>
 
-      <Card title="settings.aboutTitle">
+      <Card 
+        title="settings.aboutTitle"
+        icon="question-circle"
+        >
         <Card.Text>
           {' '}
           {Translate('settings.aboutDescription')}

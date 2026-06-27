@@ -139,6 +139,7 @@
     "newAccount": "Add New Account",
     "noAccounts": "No mailbox found. Add your first account or force a refresh.",
     "forceResync": "Force re-sync",
+    "forceResyncInProgress": "Force re-sync in progress!",
     "index": "FTS re-index",
     "mailboxStatus": "Get mailbox status",
     "doveadmExecuted": "doveadm executed",
@@ -174,7 +175,6 @@
     "title": "Aliases Management"
   },
   "settings": {
-    "about": "About Docker-Mailserver GUI",
     "aboutDescription": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutText": "Docker-Mailserver GUI is a graphical interface for managing your Docker-Mailserver. The application allows easy management of email accounts, aliases, and monitoring server status.",
     "aboutTitle": "About Docker-Mailserver GUI",
@@ -256,7 +256,7 @@
     "dmsUrl": "https://docker-mailserver.github.io/docker-mailserver/latest/",
     "dmsLink": "<a href='https://docker-mailserver.github.io/docker-mailserver/latest/'>Docker-Mailserver</a>",
     "dmsIcon": "/favicon-32x32.png",
-    "for": "for {{what}}",
+    "forWhat": "for {{what}}",
     "forceResync": "Force re-sync",
     "justNow": "Just now",
     "loading": "Loading...",

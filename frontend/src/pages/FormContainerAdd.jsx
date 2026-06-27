@@ -33,19 +33,20 @@ import {
   Card,
   FormField,
   LoadingSpinner,
-  Toast,
   SelectField,
 } from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 
 function FormContainerAdd() {
   const { t } = useTranslation();
+  const triggerToast = useToast();
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [containerName, setContainerName] = useLocalStorage("containerName", '');
   const [mailservers, setMailservers] = useLocalStorage("mailservers", []);
-  const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
+  const [firstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
   // const [containerName, setContainerName] = useState(useLocalStorage("containerName", ''););   // best of both worlds, deprecated
   // const [mailservers, setMailservers] = useState(useLocalStorage("mailservers", []));                // best of both worlds, deprecated
   
@@ -59,7 +60,7 @@ function FormContainerAdd() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [warningMessage, setWarningMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
+  // const [toastMessage, triggerToast] = useState(null);
   
   const [pingResult, setPingResult] = useState(false);        // enables API gen, and all 3 buttons
   const [APIInjected, setAPIInjected] = useState(false);      // also enables the Test API button
@@ -210,14 +211,25 @@ function FormContainerAdd() {
       try {
         
         const result = await getServerStatus('mailserver', container, 'ping');
-
         if (result.success) {
-          if (result.message.status.status === 'unknown' && showMessages) setErrorMessage(t('dashboard.status.unknown') +": "+ result.message.status.error);
-          if (result.message.status.status === 'missing' && showMessages) setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
-          if (result.message.status.status === 'stopped' && showMessages) setWarningMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
+          // if (result.message.status.status === 'unknown' && showMessages) setErrorMessage(t('dashboard.status.unknown') +": "+ result.message.status.error);
+          // if (result.message.status.status === 'missing' && showMessages) setErrorMessage(t('dashboard.status.missing') +": "+ result.message.status.error);
+          // if (result.message.status.status === 'stopped' && showMessages) setWarningMessage(t('dashboard.status.stopped') +": "+ result.message.status.error);
+          if (result.message.status.status === 'unknown' && showMessages) triggerToast({
+              type: 'error',
+              message: t('dashboard.status.unknown') +": "+ result.message.status.error,
+            });
+          if (result.message.status.status === 'missing' && showMessages) triggerToast({
+              type: 'error',
+              message: t('dashboard.status.missing') +": "+ result.message.status.error,
+            });
+          if (result.message.status.status === 'stopped' && showMessages) triggerToast({
+              type: 'warning',
+              message: t('dashboard.status.stopped') +": "+ result.message.status.error,
+            });
           if (result.message.status.status === 'alive') {
             // if (showMessages) setSuccessMessage(t('dashboard.status.alive'));
-            setToastMessage({
+            triggerToast({
               type: 'success',
               message: t('dashboard.status.alive'),
             });
@@ -230,7 +242,11 @@ function FormContainerAdd() {
       } catch (error) {
         errorLog(t('api.errors.ping'), error.message);
         // setErrorMessage('api.errors.ping', error.message);
-        setErrorMessage({key: 'api.errors.ping', values: { error: error.message }});
+        // setErrorMessage({key: 'api.errors.ping', values: { error: error.message }});
+        triggerToast({
+              type: 'error',
+              message: {key: 'api.errors.ping', values: { error: error.message }},
+            });
       }
     }
   };
@@ -243,25 +259,27 @@ function FormContainerAdd() {
       try {
         
         // saveSettings saves the DMS_API_KEY but initAPI+inject also since we need it in the local db to perform the handleAPITest
-        debugLog('FormContainerAdd inject API files to containerName=', container);
+        debugLog('handleInjectAPI files to containerName=', container);
         const result = await initAPI('mailserver', getValueFromArrayOfObj(formValues, 'schema'), container, 'inject', getValueFromArrayOfObj(formValues, 'schema'));
-        
+
         if (result.success) {
           setAPIInjected(true);
           // if (showMessages) setSuccessMessage(t('settings.DMS_API_injectSuccess'));
-          if (showMessages) setToastMessage({
+          if (showMessages) triggerToast({
             type: 'success',
             message: t('settings.DMS_API_injectSuccess'),
           });
 
         } else {
-          if (showMessages) {
-            setErrorMessage(t('settings.DMS_API_injectFailed') +": "+ result?.error);
-            setWarningMessage(t('settings.DMS_API_injectFailedHelp'));
-          }
+          setErrorMessage(t('settings.DMS_API_injectFailed') +": "+ result?.error);
+          // setWarningMessage(t('settings.DMS_API_injectFailedHelp'));
+          triggerToast({
+            type: 'warning',
+            message: t('settings.DMS_API_injectFailedHelp'),
+          });
         }
 
-        return result;
+        // return result;
 
       } catch (error) {
         // setErrorMessage(t('api.errors.DMS_API_injectFailed') +": "+ result?.error);
@@ -288,9 +306,9 @@ function FormContainerAdd() {
         // initAPI will call getServerStatus by itself internally instead of passing formValue directly to the getServerStatus api, only admins can do that now
         debugLog('initAPI:', 'mailserver', getValueFromArrayOfObj(formValues, 'schema'), getValueFromArrayOfObj(formValues, 'containerName'), 'test', formValues)
         const result = await initAPI('mailserver', getValueFromArrayOfObj(formValues, 'schema'), getValueFromArrayOfObj(formValues, 'containerName'), 'test', formValues);
-        debugLog('initAPI result:', result)
+        // debugLog('ddebug initAPI result:', result)
 
-        debugLog('FormContainerAdd getServerStatus:', result);
+          // { success: false, message: "Injection refused when dms_api_key_param is missing" }
           // { success: true,
           //   message: {
           //     db: { logins: 0, accounts: 0, aliases: 0, … }
@@ -580,11 +598,11 @@ function FormContainerAdd() {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
-    if (firstRun) setSuccessMessage('settings.isFirstRun');
-  }, []);
-
-  useEffect(() => {
-    fetchContainerSettings(containerName);  // [ {name:name, value: value}, ..]
+    if (firstRun) triggerToast({
+      type: 'success',
+      message: 'settings.isFirstRun',
+      delay: 0
+      });
   }, [containerName]);
 
 
@@ -656,7 +674,7 @@ function FormContainerAdd() {
 
   if (isLoading || !user.isAdmin) {
     return <LoadingSpinner />;
-  } else debugLog('formValues:', formValues);
+  }
   
   return (
     <>
@@ -850,15 +868,6 @@ function FormContainerAdd() {
       <AlertMessage type="warning" message={warningMessage} />
       <AlertMessage type="success" message={successMessage} />
       
-      {toastMessage && (
-        <Toast 
-          type={toastMessage?.type}
-          message={toastMessage?.message} 
-          position={toastMessage?.position || "bottom-right"}
-          onClose={() => setToastMessage(null)} // Clears the state when closed or when it fades out
-          delay={toastMessage?.delay || 9000} // Clears the state when closed or when it fades out
-        />
-      )}
     </>
   );
 
@@ -866,3 +875,12 @@ function FormContainerAdd() {
 
 export default FormContainerAdd;
 
+      // {toastMessage && (
+      //   <Toast 
+      //     type={toastMessage?.type}
+      //     message={toastMessage?.message} 
+      //     position={toastMessage?.position || "bottom-right"}
+      //     onClose={() => triggerToast(null)} // Clears the state when closed or when it fades out
+      //     delay={toastMessage?.delay || 9000} // Clears the state when closed or when it fades out
+      //   />
+      // )}

@@ -41,23 +41,23 @@ import {
   AlertMessage,
   Button,
   FormField,
-  Toast,
   Card,
 } from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
-
+import { useToast } from '../hooks/useToast';
 
 // function Login() {
 export const Login = () => {
   const { t } = useTranslation();
+  const triggerToast = useToast();
 
   const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
   const [firstRun, setFirstRun] = useLocalStorage("firstRun", false); // this is obviously used in Login, Profile and Settings
   const [isDEMO, setIsDEMO] = useLocalStorage("isDEMO", false);
   
-  const [errorMessage, setErrorMessage] = useState(null);
+  // const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   const { user, login, logout } = useAuth();
@@ -111,7 +111,11 @@ export const Login = () => {
     } catch (error) {
       // errorLog(t('api.errors.fetchConfigs'), error);
       // setErrorMessage('api.errors.fetchConfigs');
-      setErrorMessage({key: 'api.errors.fetchConfigs', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.fetchConfigs', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.fetchConfigs', values: { error: error.message }},
+      });
     }
   };
     
@@ -141,14 +145,25 @@ export const Login = () => {
 
       // this will never happen with a 401 login denied unless the backend returns 200, which it won't. HTTP error codes exist for a reason and we will use them.
       } else {
-        setErrorMessage(result.message || 'logins.denied');
         // setErrorMessage('logins.denied');
+        // setErrorMessage(result.message || 'logins.denied');
+        triggerToast({
+          type: 'error',
+          title: 'logins.denied',
+          message: result.error || result.message,
+        });
+
       }
 
     // react refuses to handle 401 login denied and will actually fall here
     } catch (error) {
-      setErrorMessage('logins.denied');
       debugLog('error:', error.message);
+      // setErrorMessage('logins.denied');
+      triggerToast({
+        type: 'error',
+        title: 'logins.denied',
+        message: error.message,
+      });
     }
   };
   
@@ -170,7 +185,7 @@ export const Login = () => {
           collapsible={false}
           iconExtra={isDEMO ? 'common.dmsIcon' : 'common.dmsIcon'} 
           titleExtra={
-            <a href={t('common.dmsUrl')} target="_blank">
+            <a href={t('common.dmsUrl')} target="_blank" rel="noopener noreferrer">
               {t('common.dmsName')}
             </a>
           } 
@@ -215,14 +230,6 @@ export const Login = () => {
       </Col>
     </Row>
 
-    {errorMessage && (
-      <Toast 
-        type="danger" 
-        message={errorMessage} 
-        position="bottom-right"
-        onClose={() => setErrorMessage(null)} // Clears the state when closed or when it fades out
-      />
-    )}
     </>
   );
 };
@@ -231,3 +238,12 @@ export default Login;
 
           // <br />
           // <AlertMessage type="danger" message={errorMessage} />
+
+    // {errorMessage && (
+    //   <Toast 
+    //     type="danger" 
+    //     message={errorMessage} 
+    //     position="bottom-right"
+    //     onClose={() => setErrorMessage(null)} // Clears the state when closed or when it fades out
+    //   />
+    // )}

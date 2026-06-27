@@ -44,12 +44,15 @@ import {
 } from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 
 import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 const Dashboard = () => {
   const { t } = useTranslation();
+  const triggerToast = useToast();
+
   const { user, logout } = useAuth();
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
@@ -57,11 +60,6 @@ const Dashboard = () => {
   const [isLoading, setLoading] = useState(true);
   const [cardLoading, setCardLoading] = useState({});
 
-  // const [aliases, setAliases] = useLocalStorage("aliases", []);
-  // const [accounts, setAccounts] = useLocalStorage("accounts", []);
-  // const [logins, setLogins] = useLocalStorage("logins", []);
-  // const [DOVECOT_FTS, setDOVECOT_FTS] = useState(0);
-  
   const [status, setServerStatus] = useLocalStorage("status", {
     status: {
       status: 'loading',
@@ -79,9 +77,18 @@ const Dashboard = () => {
     },
   });
   
+  const [warningMessage, setWarningMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  // const [toastMessage, setToastMessage] = useState(null);
 
+    // triggerToast({
+    //   type: 'success',
+    //   title: 'payment.successTitle', // Will be parsed by your useTranslation()
+    //   message: 'Your order went through cleanly.',
+    //   position: 'top-right',
+    //   delay: 5000
+    // });
 
   const refreshAll = async () => {
     // debugLog('ddebug refreshAll')
@@ -91,9 +98,13 @@ const Dashboard = () => {
       await fetchAliases(true);
 
     } finally {
-      setSuccessMessage(t('dashboard.isFirstRun', {
-        containerName:containerName,
-      }));
+      // setSuccessMessage(t('dashboard.isFirstRun', {
+      //   containerName:containerName,
+      // }));
+      // setToastMessage({key: 'dashboard.isFirstRun', values: { containerName: containerName }});
+      triggerToast({
+        message: {key: 'dashboard.isFirstRun', values: { containerName: containerName }},
+      });
     }
   };
 
@@ -114,7 +125,11 @@ const Dashboard = () => {
         
         // handle API errors
         if (new Set(['api_gen', 'api_miss', 'api_match', 'api_unset', 'api_error', 'port_closed', 'port_timeout', 'port_unknown', 'unknown']).has(statusData.message.status.status)) {
-          setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+          // setErrorMessage(`dashboard.errors.${statusData.message.status.status}`);
+          triggerToast({
+            type: 'error',
+            message: `dashboard.errors.${statusData.message.status.status}`,
+          });
 
         } else {
 
@@ -126,12 +141,22 @@ const Dashboard = () => {
           return statusData.message;
         }
         
-      } else setErrorMessage(statusData?.error);
+      // } else setErrorMessage(statusData?.error);
+      } else triggerToast({
+            type: 'error',
+            message: statusData?.error,
+          });
+
+
       
     } catch (error) {
       // debugLog('ddebug error', error)
       errorLog(t('api.errors.fetchServerStatus'), error);
-      setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.fetchServerStatus', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.fetchServerStatus', values: { error: error.message }},
+      });
       
     } finally {
       setLoading(false);
@@ -174,6 +199,7 @@ const Dashboard = () => {
     try {
       handleRefreshCard("aliases");
       setErrorMessage(null);
+      setWarningMessage(null);
       setSuccessMessage(null);
       
       // const [aliasesData, accountsData] = await Promise.all([
@@ -206,13 +232,21 @@ const Dashboard = () => {
           }
         }));
         
-      } else setErrorMessage(aliasesData?.error);
+      // } else setErrorMessage(aliasesData?.error);
+      } else triggerToast({
+            type: 'error',
+            message: aliasesData?.error || 'api.errors.aliasesData',
+          });
       
 
     } catch (error) {
       errorLog(t('api.errors.fetchAliases'), error);
       // setErrorMessage('api.errors.fetchAliases');
-      setErrorMessage({key: 'api.errors.fetchAliases', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.fetchAliases', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.fetchAliases', values: { error: error.message }},
+      });
       
     } finally {
       handleRefreshCard("aliases", false);
@@ -226,6 +260,7 @@ const Dashboard = () => {
     try {
       handleRefreshCard("accounts");
       setErrorMessage(null);
+      setWarningMessage(null);
       setSuccessMessage(null);
       
       // const [accountsData, DOVECOT_FTSdata] = await Promise.all([
@@ -252,12 +287,20 @@ const Dashboard = () => {
           
         // } else setErrorMessage(DOVECOT_FTSdata?.error);
         
-      } else setErrorMessage(accountsData?.error);
+      // } else setErrorMessage(accountsData?.error);
+      } else triggerToast({
+        type: 'error',
+        message: accountsData?.error || 'api.errors.accountsData',
+      });
 
     } catch (error) {
       errorLog(t('api.errors.fetchAccounts'), error);
       // setErrorMessage(t('api.errors.fetchAccounts'), ": ", error);
-      setErrorMessage({key: 'api.errors.fetchAccounts', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.fetchAccounts', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.fetchAccounts', values: { error: error.message }},
+      });
       
     } finally {
       handleRefreshCard("accounts", false);
@@ -270,6 +313,10 @@ const Dashboard = () => {
 
     try {
       handleRefreshCard("logins");
+      setErrorMessage(null);
+      setWarningMessage(null);
+      setSuccessMessage(null);
+
       const [loginsData] = await Promise.all([    // loginsData better have a uniq readOnly id field we can use, as we may modify each other fields
         getLogins(),
       ]);
@@ -288,12 +335,20 @@ const Dashboard = () => {
           }
         }));
 
-      } else setErrorMessage(loginsData?.error);
+      // } else setErrorMessage(loginsData?.error);
+      } else triggerToast({
+        type: 'error',
+        message: loginsData?.error || 'api.errors.fetchLogins',
+      });
 
     } catch (error) {
       errorLog(t('api.errors.fetchLogins'), error);
       // setErrorMessage('api.errors.fetchLogins');
-      setErrorMessage({key: 'api.errors.fetchLogins', values: { error: error.message }});
+      // setErrorMessage({key: 'api.errors.fetchLogins', values: { error: error.message }});
+      triggerToast({
+        type: 'error',
+        message: {key: 'api.errors.fetchLogins', values: { error: error.message }},
+      });
       
     } finally {
       handleRefreshCard("logins", false);
@@ -341,8 +396,12 @@ const Dashboard = () => {
     return <LoadingSpinner />;
   }
 
+      // <Button onClick={() => addToast(`Test Notification ${toasts.length + 1}`)}>
+      //   Trigger Toast
+      // </Button>
+
   return (
-    <div>
+    <>
       <div className="float-end position-sticky z-1">
         <Button
           variant="warning"
@@ -356,6 +415,7 @@ const Dashboard = () => {
 
       <h2 className="mb-4">{Translate('dashboard.title')} {t('common.forWhat', {what:containerName})}</h2>
       <AlertMessage type="danger" message={errorMessage} />
+      <AlertMessage type="warning" message={warningMessage} />
       <AlertMessage type="success" message={successMessage} />
 
       <Row>
@@ -461,8 +521,19 @@ const Dashboard = () => {
       </Row>
       }
       {/* Close second Row */}
-    </div>
+
+    </>
   );
 };
 
 export default Dashboard;
+
+      // {toastMessage && (
+      //   <Toast 
+      //     type={toastMessage?.type}
+      //     message={toastMessage?.message} 
+      //     position={toastMessage?.position || "bottom-right"}
+      //     onClose={() => setToastMessage(null)} // Clears the state when closed or when it fades out
+      //     delay={toastMessage?.delay || 9000} // Clears the state when closed or when it fades out
+      //   />
+      // )}

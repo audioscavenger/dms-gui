@@ -490,7 +490,9 @@ const Accounts = () => {
   // https://www.w3schools.com/react/react_useeffect.asp
   useEffect(() => {
     fetchAll();
-  }, [mailservers, containerName]);
+  // }, [mailservers, containerName]);
+  // }, [mailservers, containerName, fetchAll]);   // eslint fix 2
+  }, [mailservers, containerName]);   // eslint fix 2 lied to me
 
 
   if (isLoading) {

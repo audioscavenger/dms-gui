@@ -1,4 +1,4 @@
-// Export all components for easier imports
+// Export all components for easier DIRECT DEFAULT IMPORT
 export { default as Accordion } from './Accordion';
 export { default as AlertMessage } from './AlertMessage';
 export { default as Button } from './Button';
@@ -14,4 +14,4 @@ export { default as Navbar } from './Navbar';
 export { default as SelectField } from './SelectField';
 export { default as Translate } from './Translate';
 export { default as Toast } from './Toast';
-
+export { default as ToastProvider } from './ToastProvider';

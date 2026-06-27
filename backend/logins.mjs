@@ -51,11 +51,11 @@ export const addLogin = async (mailbox, username, password='', email='', isAdmin
     // since 1.5.67 we have the roles table
     result = dbRun(sql.logins.insert.login, { mailbox:mailbox, username:username, email:email, salt:salt, hash:hash, isAdmin:isAdmin, isAccount:isAccount, isActive:isActive, mailserver:mailserver });
     if (result.success) {
-      successLog(`Saved login ${username}:${mailbox}`);
+      successLog(`Saved login ${username}:${mailbox} with id=${result.message.id}`);
 
       // add role for that mailbox to that login
       // sql.logins.insert.login has RETURNING, therefore, dbRun will call dbGet and return message = {id:value}
-      result = dbRun(sql.roles.insert.role, {loginID:result.message.id}, roles);
+      result = dbRun(sql.roles.insert.role, {loginID:result.message.id}, ...roles);
       if (result.success) successLog(`Saved roles for ${username}:${mailbox}: ${roles}`);
       
     }
@@ -204,7 +204,7 @@ export const loginUser = async (credential=null, password='', test=false) => {
                     successLog(`User ${credential} logged in successfully`);
                     
                   } else {
-                    message = result?.error || `User ${credential} password invalid`;
+                    message = result?.error || `User ${credential} password is invalid`;
                     warnLog(message);
                     login.message = message;
                     login.success = false;

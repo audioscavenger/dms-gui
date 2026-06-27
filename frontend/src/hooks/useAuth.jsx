@@ -68,7 +68,9 @@ export const AuthProvider = ({ children }) => {
       mailservers,
       isDEMO,
     }),
-    [user, containerName, mailservers, isDEMO, login]
+    // [user, containerName, mailservers, isDEMO]
+    // [user, containerName, mailservers, isDEMO, login]   // eslint fix   warning  The 'login' function makes the dependencies of useMemo Hook (at line 71) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'login' in its own useCallback() Hook  react-hooks/exhaustive-deps
+    [user, containerName, mailservers, isDEMO]   // eslint fix 2  warning  React Hook useMemo has a missing dependency: 'login'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
   );
   return (
     <AuthContext.Provider value={value}>

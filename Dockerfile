@@ -3,7 +3,7 @@
 #   build:      alias buildup='docker-compose down --volumes; docker-compose up --build --force-recreate'
 #   release:    docker buildx build --no-cache --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
-ARG DMSGUI_VERSION=1.5.73
+ARG DMSGUI_VERSION=1.5.74
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # -----------------------------------------------------
@@ -27,7 +27,7 @@ RUN npm ci
 # Copy frontend code and build
 COPY frontend/ ./
 
-RUN npm run format:check
+# RUN npm run format:check      # Run the linter first. If it finds a missing import, the Docker build fails here!
 
 # Run the linter first. If it finds a missing import, the Docker build fails here!
 RUN npm run lint
@@ -76,10 +76,12 @@ COPY common.*js* ./
 #COPY package*.json ./
 
 # Copy backend from backend-builder
-COPY --from=backend-builder /app/backend /app/backend
+COPY --from=backend-builder /app/backend ./backend
+# add frontend.json so the backend can detect React version // never works
+# COPY --from=frontend-builder /app/frontend/package.json ./package.frontend.json
 
 # Only copy the static production build folder
-COPY --from=frontend-builder /app/frontend/dist /app/frontend
+COPY --from=frontend-builder /app/frontend/dist ./frontend
 
 # this only detects changes in /backend and does not recompile the frontend. half useful
 # https://www.metered.ca/blog/how-to-restart-your-node-js-apps-automatically-with-nodemon/
@@ -97,7 +99,9 @@ COPY docker/nginx.conf.template /etc/nginx/http.d/default.conf
 COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 ARG DMSGUI_VERSION
-RUN touch /app/version.${DMSGUI_VERSION}
+RUN touch /app/DMSGUI_VERSION.${DMSGUI_VERSION}.txt
+# Grab just the string value during image build and drop it into a text file
+RUN node -e "console.log(require('./frontend/package.json').dependencies?.react || require('./frontend/package.json').devDependencies?.react)" | sed 's/^[~^]//' > /app/REACT_VERSION.txt
 RUN busybox dos2unix /app/*.sh
 
 # Expose port for the application

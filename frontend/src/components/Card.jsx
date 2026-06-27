@@ -50,7 +50,7 @@ const Card = ({
   
   // https://stackoverflow.com/questions/18672452/left-align-and-right-align-within-div-in-bootstrap
   // "d-flex justify-content-between" works only for exactly 2 div as children, not span
-  const titleClassName  = (showRefresher || collapsible) ? "mb-0 d-flex justify-content-between" : "mb-0";
+  // const titleClassName  = (showRefresher || collapsible) ? "mb-0 d-flex justify-content-between" : "mb-0";  // seems useless now
 
   const [open, setOpen] = useState(startOpen);
   return (

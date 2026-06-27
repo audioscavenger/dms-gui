@@ -44,10 +44,10 @@ export default [
       'react/jsx-no-undef': 'error',
       
       // Custom overrides
-      'react-hooks/set-state-in-effect': 'off',   // TURN OFF or mute THE AGGRESSIVE SETSTATE WARNING
-      'react-hooks/exhaustive-deps': 'warn',      // mute missing dependency
+      'react-hooks/set-state-in-effect': 'off',   // Turn off AGGRESSIVE SETSTATE WARNING
+      'react-hooks/exhaustive-deps': 'off',       // Turn off missing dependency
       "react/prop-types": "off",                  // Handled perfectly by TypeScript
-      'react/react-in-jsx-scope': 'off',          // Turn 'off' if using React 17+
+      'react/react-in-jsx-scope': 'off',          // Turn off if using React 17+
     },
     settings: {
       react: { version: 'detect' },

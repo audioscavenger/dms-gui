@@ -1237,7 +1237,7 @@ export const getDomains = async (containerName=null, name=null) => {
 
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]     dbRun DB.transaction success
 // dms-gui  | [3:36:59 AM ✔️  [SUCCESS] saveSettings Saved 7 settings for containerName=dms
-// dms-gui  | [3:36:59 AM 🔎 [DEBUG]     initAPI (plugin:mailserver, schema:dms, containerName:dms, dms_api_key_param:d6657c97-2f43-40c6-8104-3e3d43478f41)
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]     initAPI (plugin:mailserver, schema:dms, containerName:dms, dms_api_key_param:d6657c97-xxxx-xxxx-xxxx-xxxxxxxxx)
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]     initAPI Injecting API scripts to dms...
 // dms-gui  | [3:36:59 AM ✔️  [SUCCESS]         writeFile /app/config/rest-api.py
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]         createAPIfiles created file.path: /app/config/rest-api.py
@@ -1245,13 +1245,22 @@ export const getDomains = async (containerName=null, name=null) => {
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]         createAPIfiles created file.path: /app/config/rest-api.conf
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]         getSetting mailserver dms null false
 // dms-gui  | [3:36:59 AM 🔎 [DEBUG]       initAPI success: false, dms_api_key_db: undefined
-// dms-gui  | [3:36:59 AM 🔎 [DEBUG]       initAPI dms_api_key_new=param d6657c97-2f43-40c6-8104-3e3d43478f41
+// dms-gui  | [3:36:59 AM 🔎 [DEBUG]       initAPI dms_api_key_new=param d6657c97-xxxx-xxxx-xxxx-xxxxxxxxx
 
 
 // Creates API script and conf file for DMS
 // if    action == 'gen',  generate and return it
 // if    action == 'inject', inject API files to DMS config folder
-export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, action=null, formValues={}) => {
+// formValues = [
+//   { name: 'schema', value: 'dms' },
+//   { name: 'protocol', value: 'http' },
+//   { name: 'DMS_API_PORT', value: '8888' },
+//   { name: 'timeout', value: '4' },
+//   { name: 'setupPath', value: '/usr/local/bin/setup' },
+//   { name: 'containerName', value: 'dms' },
+//   { name: 'DMS_API_KEY', value: 'd6657c97-xxxx-xxxx-xxxx-xxxxxxxxx' }
+// ]
+  export const initAPI = async (plugin='mailserver', schema='dms', containerName=null, action=null, formValues=[]) => {
   debugLog(`(plugin:${plugin}, schema:${schema}, containerName:${containerName}, action:${action}, formValues:`, formValues);
   if (!action)              return {success: false, error: 'initAPI: action is required'};
   if (!containerName)       return {success: false, error: 'initAPI: containerName is required'};
@@ -1282,7 +1291,7 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
       break;
 
     case 'test':
-      if (isNonEmptyDict(formValues)) {
+      if (formValues.length) {
         debugLog(`Injecting API scripts to ${containerName}...`);
         result = await createAPIfiles(schema);
         if (!result.success) return result;
@@ -1290,7 +1299,7 @@ export const initAPI = async (plugin='mailserver', schema='dms', containerName=n
         result = getServerStatus('mailserver', containerName, 'execDMS', formValues);
 
       } else {
-        result = {success: false, message: 'Injection refused when dms_api_key_param is missing'};
+        result = {success: false, error: 'Injection refused when dms_api_key_param is missing'};
       }
     }
 

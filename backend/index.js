@@ -644,6 +644,7 @@ async (req, res) => {
       // const roles = await getRoles(req.user.mailbox);
       result = (req.user.roles.includes(mailbox)) ? await doveadm(schema, containerName, command, mailbox, req.body) : {success: false, error: 'Permission denied'};
     }
+    debugLog('ddebug doveadm result', result);
     return res.json(result);
     
   } catch (error) {

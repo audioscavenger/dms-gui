@@ -9,16 +9,16 @@ import net from 'node:net';
 // const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 import {
-    funcName,
-    reduxPropertiesOfObj,
-    regexColors,
-    regexPrintOnly
+  funcName,
+  reduxPropertiesOfObj,
+  regexColors,
+  regexPrintOnly
 } from '../common.mjs';
 import {
-    getTargetDict
+  getTargetDict
 } from './db.mjs';
 import {
-    env
+  env
 } from './env.mjs';
 
 
@@ -266,7 +266,7 @@ export const doveadm = async (schema='dms', containerName=null, command=null, ma
     const results = await execCommand(formattedCommand, targetDict);
     if (!results?.returncode) {
       successLog(formattedPass, results.stdout);
-      return { success: true, message: results.stdout };
+      return { success: true, message: results?.stdout || formattedPass};
       
     } else {
       errorLog(results.stderr);
@@ -1021,7 +1021,7 @@ export const doveadmAPIforTesting = async (containerName=null, command=null, mai
   // [["doveadmResponse",[],"dms-gui"]]
   
 // test DMS API:
-// curl -H "Authorization: dms-d6657c97-2f43-40c6-8104-3e3d43478f41" -H "Content-Type: application/json" -d '{"command":"ls -l"}' http://dms:8888
+// curl -H "Authorization: d6657c97-xxxx-xxxx-xxxx-xxxxxxxxx" -H "Content-Type: application/json" -d '{"command":"ls -l"}' http://dms:8888
   
 
 // https://doc.dovecot.org/main/core/admin/doveadm.html#example-session

@@ -3,15 +3,12 @@
 // https://react-bootstrap.netlify.app/docs/components/table/
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, Form } from 'react-bootstrap';
-// import { useTranslation } from 'react-i18next';
-
 import {
   isNonEmptyDict,
 } from '../../../common.mjs';
 import {
   debugLog,
 } from '../../frontend.mjs';
-
 import {
   LoadingSpinner,
   AlertMessage,
@@ -184,7 +181,20 @@ const DataTable = ({
     // debugLog(`sanitizedData after  sortColumn=${sortColumn}`, sanitizedData);
     return sanitizedData;
   // }, [data, sortColumn, sortOrders, columnFilters]);
-  }, [data, sortColumn, sortOrders, columnFilters, columns, objects2blank, objects2stringify, sortFunction]); // eslint fix
+
+  // }, [data, sortColumn, sortOrders, columnFilters, columns, objects2blank, objects2stringify, sortFunction]); // eslint fix
+
+  // warning  React Hook useMemo has an unnecessary dependency: 'sortOrders'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  // }, [data, sortColumn, columnFilters, columns, objects2blank, objects2stringify, sortFunction]); // eslint fix 2
+
+  // 7.878   59:9  warning  The 'objects2stringify' object construction makes the dependencies of useMemo Hook (at line 187) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'objects2stringify' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  // 7.878   60:9  warning  The 'objects2blank' object construction makes the dependencies of useMemo Hook (at line 187) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'objects2blank' in its own useMemo() Hook          react-hooks/exhaustive-deps
+  // 7.878   62:9  warning  The 'sortFunction' function makes the dependencies of useMemo Hook (at line 187) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'sortFunction' in its own useCallback() Hook                       react-hooks/exhaustive-deps
+  }, [data, sortColumn, columnFilters, columns]); // eslint fix 3
+
+
+
+
 
   // import ChangeHighlight from 'react-change-highlight';
   // <ChangeHighlight>

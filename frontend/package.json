@@ -7,8 +7,8 @@
     "build": "webpack --mode development --devtool eval-source-map",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write \"src/**/*.{js,jsx,css,json}\" \"public/index.html\"",
-    "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\" \"public/index.html\""
+    "format": "prettier --write \"src/**/*.{js,mjs,jsx,css,json}\" \"public/index.html\"",
+    "format:check": "prettier --check \"src/**/*.{js,mjs,jsx,cjs,css,json}\" \"public/index.html\""
   },
   "keywords": [
     "docker",
@@ -22,11 +22,11 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/material": "^9.1.1",
+    "@mui/material": "^9.1.2",
     "axios": "^1.18.1",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "i18next": "^26.3.1",
+    "i18next": "^26.3.2",
     "i18next-browser-languagedetector": "^8.2.1",
     "jwt-decode": "^4.0.0",
     "react": "^19.2.7",
@@ -42,6 +42,11 @@
     "@babel/preset-react": "^8.0.1",
     "babel-loader": "^10.1.1",
     "css-loader": "^7.1.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
     "html-webpack-plugin": "^5.6.7",
     "prettier": "3.8.4",
     "style-loader": "^4.0.0",

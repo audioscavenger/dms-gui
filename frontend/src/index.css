@@ -173,3 +173,32 @@ button:disabled:not(.btn-feedback),
   opacity: 0.25 !important;
 }
 /* -------------------- misc -------------------- */
+
+/* -------------------- Toasts in viewport, probably not needed -------------------- */
+/* Prevents horizontal page stretching entirely */
+.app-viewport-wrapper {
+  max-width: 100vw;
+  overflow-x: hidden; 
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Forces the content area to fill remaining space without overflowing */
+.app-content-container {
+  flex: 1;
+  height: calc(100vh - 56px); /* Adjust 56px to match your actual Navbar height */
+  overflow: hidden;
+}
+
+/* Ensures the main content acts as the strict alignment boundary for absolute elements */
+.main-content {
+  height: 100%;
+  overflow-y: auto;   /* Lets the page scroll normally inside its column */
+  overflow-x: hidden; /* Stops horizontal popup bleed */
+  position: relative; /* Forces absolute popups to measure from THIS box, not the whole screen */
+
+.toast-body {
+  color: var(--bs-toast-header-color);  /* lighter than text-dark, does not apply to white or light text  */
+}
+}/* -------------------- Toasts -------------------- */

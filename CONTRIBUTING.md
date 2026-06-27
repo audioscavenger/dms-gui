@@ -149,7 +149,7 @@ multiarch*      docker-container
  \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
 default         docker
  \_ default      \_ default                  running   v0.25.2    linux/amd64 (+3), linux/386 -->
-docker container prune -f && docker image prune -f && docker builder prune -a -f
+alias dpurge='docker container prune -f && docker image prune -f && docker builder prune -a -f'
 docker system df
 docker buildx build --no-cache --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
@@ -168,8 +168,24 @@ docker buildx build --no-cache --builder=multiarch --platform linux/amd64,linux/
 * [ ] 1.5.99 - dms-gui global: we should offer site-wide profile like show actual login error, etc
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.5.99 - logins: loginUser: export all the various password errors to translation
+* [ ] 1.5.99 - frontend: still plenty of unnecessary/missing dependency; I had to Turn off missing dependency
 
-* [ ] 1.5.73 - frontend: added globals and ESLint found cascading renders, unnecessary states, missing refs etc.
+* [x] 1.5.74 - bugfix: Translate won't display <undefined> when no key is passed
+* [x] 1.5.74 - bugfix: none of the Accordion titles resolve their {{values}}
+* [x] 1.5.74 - bugfix: accounts: will return formattedPass when results?.stdout is false or undefined
+* [x] 1.5.74 - bugfix: Toasts popup at the bottom of the container, not the bottom of the visible window
+* [x] 1.5.74 - bugfix: Accounts: AccountData circular loading
+* [x] 1.5.74 - frontend: Bitwarden causes NotFoundError: Node.insertBefore: Child to insert before is not a child of this node; can be ignored
+* [x] 1.5.74 - frontend: Toasts are now in ToastProvider, loaded as a hook Context and inside a ToastContainer so they can be stacked
+* [x] 1.5.74 - Profile: use Toasts
+* [x] 1.5.74 - Dashboard: use Toasts
+* [x] 1.5.74 - Login: use Toasts
+* [x] 1.5.74 - Login: move welcome message to setAlertMessageTop
+* [x] 1.5.74 - bugifx: settings initAPI failure did not always return an error
+* [x] 1.5.74 - frontend: Error: Cannot find module '/app/frontend/package.json', file is missing: fixed in Dockerfile copy to /app/backend/package.frontend.json
+* [x] 1.5.74 - frontend: ESlint Turn off missing dependency and AGGRESSIVE SETSTATE WARNING
+* [x] 1.5.73 - frontend: added globals and ESLint found cascading renders, unnecessary states, missing refs etc. fixed half
 * [x] 1.5.73 - frontend: added ESLint and got 116 problems (116 errors, 0 warnings): all fixed
 * [x] 1.5.73 - frontend: npm install --save-dev globals eslint eslint-plugin-react eslint-plugin-import eslint-plugin-react-hooks
 * [x] 1.5.73 - package: upgraded all packages

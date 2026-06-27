@@ -786,7 +786,7 @@ export const dbRun = (sql, params={}, ...anonParams) => {
   }
   
   // inserts returning a single id must call db.get or the id will never be returned
-  if (sql.includes(' RETURNING ')) return dbGet(sql, params, anonParams);
+  if (sql.includes(' RETURNING ')) return dbGet(sql, params, ...anonParams);
 
   let result, insertMany;
   try {
