@@ -293,7 +293,7 @@ app.set('query parser', function (str) {
 // Routes ------------------------------------------------------------------------------------------
 // @swagger descriptions based off https://swagger.io/docs/specification/v3_0/describing-parameters/
 
-// post('/api/status/:plugin/:schema/:containerName', 
+// get('/api/status/:plugin/:containerName', 
 // get('/api/infos', 
 // get('/api/envs/:plugin/:schema/:containerName', 
 // get('/api/accounts/:schema/:containerName', 
@@ -323,7 +323,7 @@ app.set('query parser', function (str) {
 /**
  * @swagger
  * /api/status/{plugin}/{containerName}:
- *   post:
+ *   get:
  *     summary: Get server status
  *     description: Retrieve the status of the docker-mailserver
  *     parameters:
@@ -355,7 +355,7 @@ app.set('query parser', function (str) {
  *       500:
  *         description: Unable to connect to docker-mailserver
  */
-app.post('/api/status/:plugin/:containerName', 
+app.get('/api/status/:plugin/:containerName', 
   authenticateToken, 
   requireActive, 
 async (req, res) => {
@@ -365,7 +365,7 @@ async (req, res) => {
     const test = ('test' in req.query) ? req.query.test : null;
     // const { settings } = req.body;
 
-    // const status = await getServerStatus(plugin, containerName, test, settings); // I think one one api like initAPI should be allowed to pass settings directly from the GUI
+    // const status = await getServerStatus(plugin, containerName, test, settings); // I think only one api like initAPI should be allowed to pass settings directly from the GUI
     const status = await getServerStatus(plugin, containerName, test);
     return res.json(status);
 
@@ -694,7 +694,8 @@ app.delete('/api/accounts/:schema/:containerName/:mailbox',
   requireAdmin, 
 async (req, res) => {
   try {
-    const { schema, containerName, mailbox, alsoDeleteLogin } = req.params;
+    const { schema, containerName, mailbox } = req.params;
+    const { alsoDeleteLogin } = req.body;
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
     const result = await deleteAccount(schema, containerName, mailbox, alsoDeleteLogin);
@@ -1038,7 +1039,7 @@ app.get('/api/settings/:plugin/:containerName{/:scope}',
   requireActive, 
 async (req, res) => {
   try {
-    const { plugin, containerName } = req.params;
+    const { plugin, containerName, scope } = req.params;
     if (!containerName) return res.status(400).json({ error: 'containerName is required' });
     const name = ('name' in req.query) ? req.query.name : null;
     const encrypted = ('encrypted' in req.query) ? req.query.encrypted : false;

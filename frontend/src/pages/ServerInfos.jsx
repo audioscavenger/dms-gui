@@ -41,12 +41,14 @@ import {
 } from '../components';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 
 
 // EXPORTED FUNCTIONS OPTION 1: Name the inner function "ServerInfos"
 const ServerInfos = forwardRef(function ServerInfos(props, ref) {
 // const ServerInfos = forwardRef((props, ref) => {
   const { t } = useTranslation();
+  const triggerToast = useToast();
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
   const { user } = useAuth();

@@ -237,7 +237,11 @@ docker buildx build \
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
 
-* [ ] v1.6.6 - delete login does not seem to delete the mailbox
+* [ ] 1.6.7 - delete login does not seem to delete the mailbox
+* [x] 1.6.6 - audit and fix api calls: getSettings never extracted scope from the path
+* [x] 1.6.6 - audit and fix api calls: getDomains was using an invalid path, it should be /api/domains
+* [x] 1.6.6 - audit and fix api calls: deleteAccount alsoDeleteLogin is passed in body, not path
+* [x] 1.6.6 - audit and fix api calls: getServerStatus was post instead of get
 * [x] v1.6.5 - release
 * [x] 1.6.4 - bugfix: db: DEMO would not reset database from the sample
 * [x] 1.6.3 - Aliases: setAccountOptions is done by fetchAliases once we get accountsData

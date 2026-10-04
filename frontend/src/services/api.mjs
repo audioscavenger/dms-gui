@@ -308,7 +308,8 @@ const cacheWrap = async (apiCallFunc) => {
 
 
 // Server status API // not too fond of passing settings directly from the GUI
-export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
+// export const getServerStatus = async (plugin, containerName, test=undefined, settings=[]) => {
+export const getServerStatus = async (plugin, containerName, test=undefined) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   // debugLog('ddebug api getServerStatus settings:', settings);
 
@@ -316,7 +317,8 @@ export const getServerStatus = async (plugin, containerName, test=undefined, set
   if (test !== undefined) params.test = test;
   
   return await cacheWrap(async () => {
-    const response = await api.post(`/status/${plugin}/${containerName}`, {settings:settings}, {params});
+    // const response = await api.get(`/status/${plugin}/${containerName}`, {settings:settings}, {params});
+    const response = await api.get(`/status/${plugin}/${containerName}`, {params});
     return response.data;
   });
 };
@@ -558,11 +560,11 @@ export const deleteAlias = async (containerName=null, source, destination) => {
   });
 };
 
-export const getDomains = async (containerName=null, name) => {
+export const getDomains = async (containerName=null, domain) => {
   if (!containerName) return {success: false, error: 'containerName is required'};
   
   return await cacheWrap(async () => {
-    const response = await api.get(`/getDomains/${containerName}/${name}`);
+    const response = await api.get(`/domains/${containerName}/${domain}`);
     return response.data;
   });
 };
