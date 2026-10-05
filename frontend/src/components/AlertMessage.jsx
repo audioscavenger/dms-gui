@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
 import { useTranslation } from 'react-i18next';
-import {
-  Translate,
-} from './index.jsx';
+import Translate from './Translate';
 
 /**
  * Reusable alert component using react-bootstrap

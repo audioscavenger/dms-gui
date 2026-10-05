@@ -1,16 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';               // needed to post Toasts at the bottom of the viewport, not the container
-// import { ToastContainer } from 'react-bootstrap';
 import ToastContainer from 'react-bootstrap/ToastContainer';
-// import {
-//   Toast,
-// } from './index.jsx';
-// import { Toast } from './Toast';
 import Toast from './Toast';                        // DIRECT DEFAULT IMPORT
 import { ToastContext } from './ToastContext';      // DIRECT NAMED IMPORT
-
-// Create the Context
-// const ToastContext = createContext();            // ToastContext
 
 // Create the Provider component
 function ToastProvider({ children }) {

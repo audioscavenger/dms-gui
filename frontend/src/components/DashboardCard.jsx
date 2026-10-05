@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next';
 import RBCard from 'react-bootstrap/Card'; // Import react-bootstrap Card
 import RBBadge from 'react-bootstrap/Badge'; // Import react-bootstrap Badge
 import { useNavigate } from 'react-router-dom';
-import {
-  LoadingSpinner,
-  Translate,
-  Button,
-} from './index.jsx';
+import Button from './Button';
+import LoadingSpinner from './LoadingSpinner';
+import Translate from './Translate';
 
 /**
  * Dashboard card component using react-bootstrap

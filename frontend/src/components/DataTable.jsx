@@ -9,11 +9,9 @@ import {
 import {
   debugLog,
 } from '../../frontend.mjs';
-import {
-  LoadingSpinner,
-  AlertMessage,
-  Translate,
-} from './index.jsx';
+import AlertMessage from './AlertMessage';
+import LoadingSpinner from './LoadingSpinner';
+import Translate from './Translate';
 
 /**
  * Reusable data table component using react-bootstrap

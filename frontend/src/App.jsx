@@ -1,10 +1,8 @@
 import React from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom';
-import {
-  Navbar,
-  ToastProvider,
-  LeftSidebar,
- } from './components';
+import Navbar from './components/Navbar';
+import ToastProvider from './components/ToastProvider';
+import LeftSidebar from './components/LeftSidebar';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
 import Aliases from './pages/Aliases';
@@ -14,9 +12,6 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 
 import Container from 'react-bootstrap/Container'; // Import Container
-import Row from 'react-bootstrap/Row'; // Import Row
-import Col from 'react-bootstrap/Col'; // Import Col
-
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './hooks/useAuth';   // must include any elements that will interact with auth
 
@@ -66,76 +61,3 @@ function App() {
   );
 }
 export default App;
-
-// const ProtectedLayout = () => {
-//   return (
-//     <div>
-//       <Navbar />
-//       <Container fluid>
-//         <Row>
-//           <Col md={2} className="p-0 sidebar-col">
-//             <LeftSidebar />
-//           </Col>
-//           <Col md={10} className="main-content">
-//             {/* Outlet acts as a portal that swaps your sub-pages in dynamically */}
-//             <Outlet /> 
-//           </Col>
-//         </Row>
-//       </Container>
-//     </div>
-//   );
-// };
-
-// function App() {
-//   return (
-//     <AuthProvider>
-//     <div>
-//       <Navbar />
-//       <Container fluid>
-//         <Row>
-          
-//           <Col md={2} className="p-0 sidebar-col">{' '}
-//             <LeftSidebar />
-//           </Col>
-          
-//           <Col md={10} className="main-content">{' '}
-//               <Routes>
-//                 <Route path="/"           element={<ProtectedRoute>        <Dashboard key="dashboard" /></ProtectedRoute>} />
-//                 <Route path="/login"      element={                        <Login          />} />
-//                 <Route path="/dashboard"  element={<ProtectedRoute        ><Dashboard key="dashboard" /></ProtectedRoute>} />
-//                 <Route path="/logins"     element={<ProtectedRoute isAdmin><Logins    key="logins"    /></ProtectedRoute>} />
-//                 <Route path="/accounts"   element={<ProtectedRoute        ><Accounts  key="accounts"  /></ProtectedRoute>} />
-//                 <Route path="/aliases"    element={<ProtectedRoute        ><Aliases   key="aliases"   /></ProtectedRoute>} />
-//                 <Route path="/settings"   element={<ProtectedRoute isAdmin><Settings  key="settings"  /></ProtectedRoute>} />
-//                 <Route path="/profile"    element={<ProtectedRoute        ><Profile   key="profile"   /></ProtectedRoute>} />
-//               </Routes>
-//           </Col>{' '}
-          
-//         </Row>{' '}
-        
-//       </Container>{' '}
-      
-//     </div>
-//     </AuthProvider>
-//   );
-// }
-
-// const ProtectedLayout = () => {
-//   return (
-//     <div className="app-viewport-wrapper">
-//       <Navbar />
-//       {/* Container fluid holds two side-by-side sections */}
-//       <Container fluid className="app-content-container">
-//         <Row className="h-100 align-items-stretch">
-//           <Col md={2} className="p-0 sidebar-col position-sticky top-0 align-self-start">
-//             <LeftSidebar />
-//           </Col>
-//           <Col md={10} className="main-content">
-//             {/* Outlet acts as a portal that swaps your sub-pages in dynamically */}
-//             <Outlet /> 
-//           </Col>
-//         </Row>
-//       </Container>
-//     </div>
-//   );
-// };

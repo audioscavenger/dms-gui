@@ -32,16 +32,14 @@ import {
   updateAccount,
 } from '../services/api.mjs';
 
-import {
-  AlertMessage,
-  Accordion,
-  Button,
-  DataTable,
-  FormField,
-  SelectField,
-  LoadingSpinner,
-  Translate,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Accordion from '../components/Accordion';
+import Button from '../components/Button';
+import DataTable from '../components/DataTable';
+import FormField from '../components/FormField';
+import SelectField from '../components/SelectField';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Translate from '../components/Translate';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';

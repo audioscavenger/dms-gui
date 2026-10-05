@@ -16,12 +16,10 @@ import {
   getDomains,
 } from '../services/api';
 
-import { 
-  AlertMessage,
-  Button,
-  FormField,
-  LoadingSpinner,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Button from '../components/Button';
+import FormField from '../components/FormField';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 
 function FormDomains() {

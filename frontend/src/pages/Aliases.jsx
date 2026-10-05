@@ -22,16 +22,14 @@ import {
   deleteAlias,
 } from '../services/api.mjs';
 
-import {
-  AlertMessage,
-  Button,
-  Card,
-  DataTable,
-  FormField,
-  LoadingSpinner,
-  SelectField,
-  Translate,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import DataTable from '../components/DataTable';
+import FormField from '../components/FormField';
+import LoadingSpinner from '../components/LoadingSpinner';
+import SelectField from '../components/SelectField';
+import Translate from '../components/Translate';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';

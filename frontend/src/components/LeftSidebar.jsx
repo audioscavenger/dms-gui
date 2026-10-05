@@ -5,11 +5,8 @@ import { Nav } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import {
-  Button,
-  Translate,
-} from './index.jsx';
-// import { debugLog } from '../../frontend.mjs';
+import Button from './Button';
+import Translate from './Translate';
 
 // https://getbootstrap.com/docs/5.0/examples/sidebars/
 // https://stackoverflow.com/questions/60482018/make-a-sidebar-from-react-bootstrap

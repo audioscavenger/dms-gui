@@ -3,10 +3,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RBAccordion from 'react-bootstrap/Accordion';
 
-import {
-  Button,
-  Translate,
-} from './index.jsx';
+import Button from './Button';
+import Translate from './Translate';
 
 // const tabs = [
   // { id: 1, title: "Tab 1", icon: "person-plus-fill",   content: "Content of Tab 1" },
@@ -104,50 +102,3 @@ Accordion.Body = RBAccordion.Body;
 // Add others as needed
 
 export default Accordion;
-
-//   return (
-//     <>
-//     <RBAccordion className={className} defaultActiveKey={defaultActiveKey} {...rest}>
-//       {tabs.map(tab => (
-//         <RBAccordion.Item key={tab.id} eventKey={tab.id}>
-//           <RBAccordion.Header >
-//             {/* 1. Wrap the title text elements in a growing flex child block */}
-//             <div className="d-flex align-items-center flex-grow-1 min-w-0">
-//               {(tab.icon) && <i className={`me-2 bi bi-${tab.icon}`}></i>} 
-//               <span className="text-truncate">
-//                 {Translate(tab.title, translate)} {Translate(tab.titleExtra, translate)}
-//               </span>
-//             </div>
-
-//             {/* 2. Inject the refresh button securely on the right side of the header wrapper */}
-//             {('onClickRefresh' in tab && typeof tab.onClickRefresh === "function") && (
-//               <div 
-//                 className="accordion-header-actions-wrapper"
-//                 onClick={(e) => {
-//                   e.stopPropagation(); // STOPS the click from bubbling up to the header toggle action
-//                   e.preventDefault();  // PREVENTS the panel from collapsing
-//                 }}
-//               >
-//                 <Button
-//                   variant="warning"
-//                   size="sm"
-//                   icon="arrow-repeat"
-//                   title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
-//                   onClick={(e) => {
-//                     e.stopPropagation(); // Safety backup stop
-//                     e.preventDefault();  // Safety backup prevent
-//                     tab.onClickRefresh(e);   
-//                   }}
-//                 />
-//               </div>
-//             )}
-//           </RBAccordion.Header>
-//           <RBAccordion.Body className={bodyClassName}>
-//             {tab.content}
-//           </RBAccordion.Body>
-//         </RBAccordion.Item>
-//       ))}
-//     </RBAccordion>
-//     </>
-//   );
-// };

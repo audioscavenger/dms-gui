@@ -5,11 +5,9 @@ import RBCard from 'react-bootstrap/Card';
 import Collapse from 'react-bootstrap/Collapse';
 // https://react-bootstrap.netlify.app/docs/components/placeholder/
 // import Placeholder from 'react-bootstrap/Placeholder';   // TODO: Our cards are more like containers, let's create another Card component when Placeholder are needed
-import {
-  Button,
-  LoadingSpinner,
-  Translate,
-} from './index.jsx';
+import Button from './Button';
+import LoadingSpinner from './LoadingSpinner';
+import Translate from './Translate';
 
 /**
  * Reusable card component using react-bootstrap, exposing sub-components like Card.Text
@@ -142,52 +140,3 @@ Card.Img = RBCard.Img;
 // Add others as needed
 
 export default Card;
-
-            // <RBCard.Title as="h5" className={titleClassName}>
-            // <div>
-            //   {(icon) && <i className={`me-2 bi bi-${icon}`}></i>}
-            //   {Translate(title, translate)}
-            //   {isLoading && <span><LoadingSpinner isInline="true" size="sm"/></span>}
-            // </div>
-            // {(iconExtra || titleExtra) && (
-            //   <div>
-            //     {iconExtra && ( 
-            //       <img 
-            //         src={t(iconExtra)} 
-            //         alt="Card Icon" 
-            //         style={{ width: '32px', height: '32px', marginBottom: '10px' }} 
-            //       />
-            //     )}
-            //     {titleExtra && Translate(titleExtra, translate)}
-            //   </div>
-            // )}
-            // {(showRefresher || collapsible) && (
-            //   <div>
-            //   {showRefresher && (
-            //     <Button
-            //       variant="warning"
-            //       size="sm"
-            //       icon="arrow-repeat"
-            //       title={(overrideTitleRefresh) ? titleRefresh : t('common.refresh')}
-            //       className="me-2"
-            //       onClick={(e) => {
-            //         e.stopPropagation(); // Stops the click from bubbling up to the card
-            //         e.preventDefault();  // Prevents the card link from opening
-            //         onClickRefresh(e);   // Calls your actual refresh function
-            //       }}
-            //     />
-            //   )}
-            //   {collapsible && (
-            //     <Button
-            //       variant="secondary"
-            //       size="sm"
-            //       icon="arrows-collapse"
-            //       title="common.collapse"
-            //       onClick={() => setOpen(!open)}
-            //       aria-controls="collapsible"
-            //       aria-expanded={open}
-            //     />
-            //   )}
-            //   </div>
-            // )}
-            // </RBCard.Title>

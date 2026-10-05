@@ -1,9 +1,7 @@
 import React from 'react';
 // import { useTranslation } from 'react-i18next';
 import RBSpinner from 'react-bootstrap/Spinner'; // Import react-bootstrap Spinner
-import {
-  Translate,
-} from './index.jsx';
+import Translate from './Translate';
 
 /**
  * Reusable loading spinner component using react-bootstrap

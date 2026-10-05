@@ -27,17 +27,14 @@ import {
 import {
   updateAccount,
   updateLogin,
-  getConfigs,
 } from '../services/api.mjs';
 
-import {
-  AlertMessage,
-  Button,
-  FormField,
-  LoadingSpinner,
-  Translate,
-  SelectField,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Button from '../components/Button';
+import FormField from '../components/FormField';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Translate from '../components/Translate';
+import SelectField from '../components/SelectField';
 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';

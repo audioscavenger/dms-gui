@@ -27,14 +27,12 @@ import {
   initAPI,
 } from '../services/api.mjs';
 
-import { 
-  AlertMessage,
-  Button,
-  Card,
-  FormField,
-  LoadingSpinner,
-  SelectField,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import FormField from '../components/FormField';
+import LoadingSpinner from '../components/LoadingSpinner';
+import SelectField from '../components/SelectField';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';

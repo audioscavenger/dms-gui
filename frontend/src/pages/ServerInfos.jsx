@@ -6,39 +6,17 @@ import {
   debugLog,
   errorLog,
 } from '../../frontend.mjs';
-import {
-//   regexColors,
-//   regexPrintOnly,
-//   regexFindEmailStrict,
-//   regexEmailStrict,
-//   regexMatchPostfix,
-//   regexUsername,
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-  getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
-} from '../../../common.mjs';
+// import {
+//   getValueFromArrayOfObj,
+// } from '../../../common.mjs';
 import {
   getNodeInfos,
   getServerEnvs,
 } from '../services/api.mjs';
 
-import { 
-  Button,
-  AlertMessage,
-  DataTable,
-  LoadingSpinner,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import DataTable from '../components/DataTable';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
@@ -187,15 +165,3 @@ const ServerInfos = forwardRef(function ServerInfos(props, ref) {
 // EXPORTED FUNCTION OPTION 2: satisfy ESLint and make debugging easier
 // ServerInfos.displayName = 'ServerInfos';
 export default ServerInfos;
-
-      // no need for that anymore
-      // <div className="refresh-floater float-end">
-      //   <Button
-      //     variant="warning"
-      //     size="sm"
-      //     icon="arrow-repeat"
-      //     title={t('common.refresh')}
-      //     onClick={() => fetchAll(true)}
-      //   />
-      // </div>
-

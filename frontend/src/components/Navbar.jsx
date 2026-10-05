@@ -8,12 +8,10 @@ import Container from 'react-bootstrap/Container';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import {
-  ButtonDropdown,
-  ButtonLanguage,
-  Button,
-  Translate,
-} from './index.jsx';
+import ButtonDropdown from './ButtonDropdown';
+import ButtonLanguage from './ButtonLanguage';
+import Button from './Button';
+import Translate from './Translate';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 

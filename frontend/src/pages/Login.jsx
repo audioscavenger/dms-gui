@@ -9,40 +9,15 @@ import Col from 'react-bootstrap/Col'; // Import Col
 import {
   debugLog,
 } from '../../frontend.mjs';
-// import {
-//   regexColors,
-//   regexPrintOnly,
-//   regexFindEmailStrict,
-//   regexEmailStrict,
-//   regexMatchPostfix,
-//   regexUsername,
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
-// } from '../../../common.mjs';
-
 import {
   getConfigs,
   loginUser,
 } from '../services/api.mjs';
 
-import { 
-  AlertMessage,
-  Button,
-  FormField,
-  Card,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import Button from '../components/Button';
+import FormField from '../components/FormField';
+import Card from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';

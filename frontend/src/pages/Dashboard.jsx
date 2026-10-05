@@ -35,13 +35,11 @@ import {
   killContainer,
 } from '../services/api.mjs';
 
-import {
-  AlertMessage,
-  DashboardCard,
-  Button,
-  LoadingSpinner,
-  Translate,
-} from '../components';
+import AlertMessage from '../components/AlertMessage';
+import DashboardCard from '../components/DashboardCard';
+import Button from '../components/Button';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Translate from '../components/Translate';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';

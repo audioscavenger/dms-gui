@@ -1,9 +1,7 @@
 import React from 'react';
 import RBToast from 'react-bootstrap/Toast';
 import { useTranslation } from 'react-i18next';
-import {
-  Translate,
-} from './index.jsx';
+import Translate from './Translate';
 
 /**
  * Reusable floating toast notification replacing the inline layout-breaking Alert

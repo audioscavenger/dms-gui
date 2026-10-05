@@ -236,8 +236,15 @@ docker buildx build \
 * [ ] 1.5.99 - dms-gui global: we should offer site-wide profile like show actual login error, etc
 * [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
 * [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
+* [ ] 1.6.99 - delete login does not seem to delete the mailbox
 
-* [ ] 1.6.7 - delete login does not seem to delete the mailbox
+* [ ] 1.6.8 - must pull domeadm version and handle sets of commands per version
+* [ ] 1.6.8 - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4
+
+
+* [x] 1.6.7 - bug: dms latest use dovecot4 and doveadm commands must be all rechecked
+* [x] 1.6.7 - moving away from barrel files is a massive technical trend. No one told me. okay, removed barrels.
+* [x] 1.6.7 - About() is now a component
 * [x] 1.6.6 - audit and fix api calls: getSettings never extracted scope from the path
 * [x] 1.6.6 - audit and fix api calls: getDomains was using an invalid path, it should be /api/domains
 * [x] 1.6.6 - audit and fix api calls: deleteAccount alsoDeleteLogin is passed in body, not path

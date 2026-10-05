@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import InputGroup from 'react-bootstrap/InputGroup';
-import {
-  Translate,
-} from './index.jsx';
+import Translate from './Translate';
 
 /**
  * Reusable form field component using react-bootstrap
