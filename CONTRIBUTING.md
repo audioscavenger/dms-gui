@@ -243,8 +243,9 @@ docker buildx build \
 
 
 * [x] 1.6.7 - bug: dms latest use dovecot4 and doveadm commands must be all rechecked
-* [x] 1.6.7 - moving away from barrel files is a massive technical trend. No one told me. okay, removed barrels.
-* [x] 1.6.7 - About() is now a component
+* [x] 1.6.7 - frontend: debug variable must always be set
+* [x] 1.6.7 - frontend: moving away from barrel files is a massive technical trend. No one told me. okay, removed barrels.
+* [x] 1.6.7 - frontend: About() is now a component
 * [x] 1.6.6 - audit and fix api calls: getSettings never extracted scope from the path
 * [x] 1.6.6 - audit and fix api calls: getDomains was using an invalid path, it should be /api/domains
 * [x] 1.6.6 - audit and fix api calls: deleteAccount alsoDeleteLogin is passed in body, not path
