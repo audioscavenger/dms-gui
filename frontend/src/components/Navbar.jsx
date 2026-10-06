@@ -30,7 +30,8 @@ const Navbar = ({
   const formatTime = (time) => String(time).padStart(2, '0');
   const calculateTimeLeft = () => {
     const now = new Date();
-    const nextHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 6, 7, 0); // Next full hour:6m:7s
+    // Next full hour (top of the next hour)
+    const nextHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
     const difference = nextHour.getTime() - now.getTime();
 
     let remainingTime = {};
@@ -60,7 +61,7 @@ const Navbar = ({
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 1000 * 60); // Refresh every minute
+    }, 1000); // Refresh every second so the minute actually changes
 
     // Initial calculation
     // setTimeLeft(calculateTimeLeft());  // eslint fix

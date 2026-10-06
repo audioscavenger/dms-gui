@@ -13,16 +13,15 @@ import Dropdown from 'react-bootstrap/Dropdown'; // Import react-bootstrap Dropd
  * @param {number} props.items.id
  * @param {string} props.items.title
  * @param {string} props.items.icon
+ * @param {function} props.items.onClick Handler fired when the item is clicked
  * @param {boolean} props.disabled Whether the button is disabled
  * @param {string} props.className Additional CSS classes
  */
 const ButtonDropdown = ({
   variant = 'primary',
-  items,
+  items = [],
   id,
   text,
-  target,
-  rel,
   icon,
   size,
   disabled = false,
@@ -36,8 +35,6 @@ const ButtonDropdown = ({
       <Dropdown.Toggle
         variant={variant}
         id={id}
-        target={target}
-        rel={rel}
         size={size}
         className={className}
         disabled={!!disabled}
@@ -50,8 +47,8 @@ const ButtonDropdown = ({
       </Dropdown.Toggle>
 
       <Dropdown.Menu>
-      
-        {items.map((item) => (
+
+        {(items || []).map((item) => (
           <Dropdown.Item
             key={item.id}
             onClick={item?.onClick}
@@ -62,7 +59,7 @@ const ButtonDropdown = ({
             {t(item.title)}
           </Dropdown.Item>
         ))}
-        
+
       </Dropdown.Menu>
     </Dropdown>
   );

@@ -15,6 +15,7 @@ import Form from 'react-bootstrap/Form'; // Import react-bootstrap Form componen
  * @param {string} [props.error] Error message (translation key)
  * @param {string} [props.helpText] Help text (translation key)
  * @param {boolean} [props.required] Whether the field is required
+ * @param {boolean} [props.translate=true] Translate the label/placeholder/error/helpText keys. Set to false to render them as raw strings.
  */
 const SelectField = ({
   id,
@@ -31,11 +32,13 @@ const SelectField = ({
   ...rest // Pass any other props down to Form.Select
 }) => {
   const { t } = useTranslation();
+  // Respect the `translate` flag: translate i18next keys, or show the raw string.
+  const tr = (key) => (translate ? t(key) : key);
 
   return (
     <Form.Group className="mb-3" controlId={id}>
       <Form.Label>
-        {t(label)}
+        {tr(label)}
         {required && <span className="text-danger ms-1">*</span>}
       </Form.Label>
       <Form.Select
@@ -50,7 +53,7 @@ const SelectField = ({
           <option value="" disabled={!!required}>
             {' '}
             {/* Disable placeholder if required */}
-            {t(placeholder)}
+            {tr(placeholder)}
           </option>
         )}
         {options.map((option) => (
@@ -60,9 +63,9 @@ const SelectField = ({
         ))}
       </Form.Select>
       {error && (
-        <Form.Control.Feedback type="invalid">{t(error)}</Form.Control.Feedback>
+        <Form.Control.Feedback type="invalid">{tr(error)}</Form.Control.Feedback>
       )}
-      {helpText && <Form.Text muted>{t(helpText)}</Form.Text>}
+      {helpText && <Form.Text muted>{tr(helpText)}</Form.Text>}
     </Form.Group>
   );
 };

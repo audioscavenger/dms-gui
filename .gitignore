@@ -20,6 +20,7 @@ logs
 dist
 build
 coverage
+*.fixed.jsx
 
 # OS generated files
 .DS_Store
