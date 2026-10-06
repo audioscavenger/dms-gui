@@ -4,16 +4,16 @@ import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
-  debugLog,
-  errorLog,
-} from '../../frontend.mjs';
-import {
   isNonEmptyDict,
   regexEmailRegex,
   regexEmailStrict,
   regexFindEmailStrict,
   plucks,
 } from '../../../common.mjs';
+import {
+  debugLog,
+  errorLog,
+} from '../frontend.mjs';
 
 import {
   getAccounts,

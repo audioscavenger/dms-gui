@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import {
   debugLog,
   errorLog,
-} from '../../frontend.mjs';
-import {
+} from '../frontend.mjs';
+// import {
 //   regexColors,
 //   regexPrintOnly,
 //   regexFindEmailStrict,
@@ -20,13 +20,13 @@ import {
 //   reduxArrayOfObjByValue,
 //   reduxPropertiesOfObj,
 //   mergeArrayOfObj,
-  getValueFromArrayOfObj,
+  // getValueFromArrayOfObj,
 //   getValuesFromArrayOfObj,
 //   pluck,
 //   byteSize2HumanSize,
 //   humanSize2ByteSize,
 //   moveKeyToLast,
-} from '../../../common.mjs';
+// } from '../../../common.mjs';
 import {
   getAccounts,
   getAliases,

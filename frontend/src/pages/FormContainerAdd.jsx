@@ -5,10 +5,9 @@ import Row from 'react-bootstrap/Row'; // Import Row
 import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
-  debug,
   debugLog,
   errorLog,
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 import {
   getValueFromArrayOfObj, 
   isNonEmptyDict,

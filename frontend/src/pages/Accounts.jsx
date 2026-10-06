@@ -14,7 +14,7 @@ import {
 import {
   debugLog,
   errorLog,
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 import {
 //   regexColors,
 //   regexPrintOnly,

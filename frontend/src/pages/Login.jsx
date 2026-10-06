@@ -8,7 +8,7 @@ import Col from 'react-bootstrap/Col'; // Import Col
 
 import {
   debugLog,
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 import {
   getConfigs,
   loginUser,

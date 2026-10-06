@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   debugLog,
   errorLog,
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 // import {
 //   getValueFromArrayOfObj,
 // } from '../../../common.mjs';

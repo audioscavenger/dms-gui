@@ -8,7 +8,7 @@ const AuthContext = createContext();
 import {
   logoutUser,
 } from '../services/api.mjs';
-import { debugLog } from '../../frontend.mjs';
+import { debugLog } from '../frontend.mjs';
 import { getValueFromArrayOfObj } from '../../../common.mjs';
 
 export const AuthProvider = ({ children }) => {

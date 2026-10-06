@@ -32,7 +32,7 @@ const Toast = ({
   if (!message) return null;
   if (!title) title = (type == 'danger') ? 'common.error' : `common.${type}`;
   type = (type == 'error') ? 'danger' : type;
-  const shouldAutohide = delay !== 0; // BUG: that does not work at all
+  const shouldAutohide = delay !== 0 && delay != null;
 
   // Unified close action handling internal state + external callbacks
   // const handleClose = () => {
@@ -99,3 +99,7 @@ const Toast = ({
 };
 
 export default Toast;
+
+
+
+

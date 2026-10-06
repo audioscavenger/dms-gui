@@ -16,7 +16,7 @@ import TextField from '@mui/material/TextField';
 import {
   debugLog,
   errorLog,
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 import {
   getValueFromArrayOfObj,
   regexUsername,

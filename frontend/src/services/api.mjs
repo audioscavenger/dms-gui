@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   debugLog,
   errorLog
-} from '../../frontend.mjs';
+} from '../frontend.mjs';
 
 // Fallback to '/api' if environment variable is not available // fix: this will never happen as api runs in the client's browser
 // const API_URL =
