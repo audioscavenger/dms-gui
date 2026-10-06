@@ -242,7 +242,7 @@ docker buildx build \
 * [ ] 1.6.8 - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4
 
 
-* [ ] 1.6.10 - qwen3.8 bugfix: DataTable
+* [x] 1.6.10 - qwen3.8 bugfix: AlertMessage, Translate
 * [x] 1.6.9 - qwen3.8 bugfix: DataTable
 * [x] v1.6.8 - release before massive code review with qwen3.8 local agent
 * [x] 1.6.7 - bug: dms latest use dovecot4 and doveadm commands must be all rechecked

@@ -14,7 +14,7 @@ function Translate(key, shouldTranslate=true, values = {}, ...rest) {
     return null;
   }
 
-  const i18nHtmlComponents = { strong: <strong />, i: <i />, b: <b />, a: <a />, pre: <pre />, br: <br />, };   // html tags authorized in translation.js
+  const i18nHtmlComponents = { strong: <strong />, i: <i />, b: <b />, a: <a href="" />, pre: <pre />, br: <br />, };   // html tags authorized in translation.js
   // console.debug('ddebug Translate key=',key)
   return (shouldTranslate) ? <Trans i18nKey={key} components={i18nHtmlComponents} values={values} {...rest} /> : key;
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import RBAlert from 'react-bootstrap/Alert'; // Import react-bootstrap Alert
-import { useTranslation } from 'react-i18next';
 import Translate from './Translate';
 
 /**
@@ -14,11 +13,10 @@ import Translate from './Translate';
 const AlertMessage = ({
   type = 'info',
   message,
-  onClose = true,
+  onClose = undefined,
   translate = true,
   ...rest
 }) => {
-  const { t } = useTranslation();
   // Create a state variable to control the visibility
   const [showAlert, setShowAlert] = useState(true);
 
@@ -27,26 +25,35 @@ const AlertMessage = ({
   // Extract key and dynamic values if message is an object
   const translationKey = typeof message === 'object' ? message.key : message;
   const translationValues = typeof message === 'object' ? message.values : {};
-  const actualTranslatedString = t(translationKey); 
-  const keyHasPlaceholder = actualTranslatedString.includes('{{error}}');
+  // const actualTranslatedString = t(translationKey); 
+  // const keyHasPlaceholder = actualTranslatedString.includes('{{error}}');
   // console.debug('ddebug translationKey',translationKey)
   // console.debug('ddebug translationValues',translationValues)
   // console.debug('ddebug actualTranslatedString',actualTranslatedString)
   // console.debug('ddebug keyHasPlaceholder',keyHasPlaceholder)
 
+  // Only dismissible when an onClose handler is actually provided.
+  // If a handler is given, call it on close in addition to hiding the alert.
+  const handleClose = () => {
+    setShowAlert(false);
+    if (typeof onClose === 'function') {
+      onClose();
+    }
+  };
+
   return (
     <RBAlert 
       variant={type}
-      dismissible={!!onClose}               // Make dismissible if onClose is provided
-      show={showAlert}                      // Tells the alert when to render
-      onClose={() => setShowAlert(false)}   // Changes state to false on 'X'
+      dismissible={typeof onClose === 'function'}   // Dismissible only if a close handler was provided
+      show={showAlert}                              // Tells the alert when to render
+      onClose={handleClose}                          // Hide the alert and invoke the caller's handler, if any
       {...rest}
     >
       {/* Wrapper ensures i18n props do not bleed onto the Bootstrap Alert DOM node */}
       <span>
         {Translate(translationKey, translate, translationValues)}
         {/* If dynamic error values exist but the key codes don't have {{error}}, safely append them separated by a space or colon */}
-        {!keyHasPlaceholder && translationValues?.error && ` : ${translationValues.error}`}
+        {/* !keyHasPlaceholder && translationValues?.error && ` : ${translationValues.error}` */}
       </span>
     </RBAlert>
   );
