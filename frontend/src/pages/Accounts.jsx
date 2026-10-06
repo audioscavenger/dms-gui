@@ -67,7 +67,8 @@ const Accounts = () => {
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
 
-  const [accounts, setAccounts] = useState("accounts", []);
+  // const [accounts, setAccounts] = useState("accounts", []);
+  const [accounts, setAccounts] = useState([]);   // qwen3.8 FIX: typo
   // [
     // { domain: "aaa.com", mailbox: "eric@aaa.com", username: "eric@aaa.com", storage: { used: "565M", total: "5.2G", percent: "10" } }
     // { domain: "bbb.com", mailbox: "admin@bbb.com", username: "admin@bbb.com", storage: { used: "0M", total: "5.2G", percent: "0" } }
@@ -260,12 +261,17 @@ const Accounts = () => {
     if (type === 'checkbox') {
       inputValue = checked ? 1 : 0; // Directly assigns 1 or 0
       
-      let updatedSelectedAccount = {
-        ...selectedAccount,
+      // let updatedSelectedAccount = {
+      //   ...selectedAccount,
+      //   [name]: inputValue
+      // };
+      // setSelectedAccount(updatedSelectedAccount);
+      // qwen3.8 FIX: 
+      setSelectedAccount((prev) => ({
+        ...prev,
         [name]: inputValue
-      };
-      setSelectedAccount(updatedSelectedAccount);
-    
+      }));
+
     } // ignore anything else
   };
 
@@ -436,7 +442,7 @@ const Accounts = () => {
     setSelectedAccount(null);
   };
 
-  // Handle input changes for password change form
+  // Handle input changes for DNS change form
   const handleDNSInputChange = (e) => {
     const { name, value, type } = e.target;
     setDNSFormData({
@@ -491,7 +497,8 @@ const Accounts = () => {
     fetchAll();
   // }, [mailservers, containerName]);
   // }, [mailservers, containerName, fetchAll]);   // eslint fix 2
-  }, [mailservers, containerName]);   // eslint fix 2 lied to me
+  // }, [mailservers, containerName]);   // eslint fix 2 lied to me
+  }, [mailservers, containerName, user]);   // qwen3.8 FIX: If the auth state changes (e.g., user logs in/out, role upgrade) without mailservers or containerName changing, the effect won't re-run and the fetch logic will use a stale user.
 
 
   if (isLoading) {
