@@ -223,7 +223,7 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
         [],
       );
       if (result.success) {
-        setNewLoginFormData(newLoginformDataINIT);
+        reset();   // Local Agent FIX: full reset clears errors + re-disables submit (was only setNewLoginFormData)
         refetch(); // Refresh the logins list
 
       }
