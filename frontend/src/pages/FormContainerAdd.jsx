@@ -540,11 +540,11 @@ function FormContainerAdd() {
   };
 
 
-  const handleLoginSave = (containerName) => {
+  const handleLoginSave = async (containerName) => { // Local Agent FIX: made async
 
     try {
       debugLog(`FormContainerAdd handleLoginSave mailservers:`, mailservers); // mailservers should be set at this point
-      const result = updateLogin(
+      const result = await updateLogin( // Local Agent FIX: added await
         user.id,
         {mailserver:containerName},
       );
@@ -616,9 +616,13 @@ function FormContainerAdd() {
         // fetchContainerSettings(getValueFromArrayOfObj(formValues, 'containerName'));
       }
 
-      if (makeFavoriteRef.current.checked) {
+      if (makeFavoriteRef.current && makeFavoriteRef.current.checked) { // Local Agent FIX: added null guard
         debugLog('FormContainerAdd call handleLoginSave:', getValueFromArrayOfObj(formValues, 'containerName'));
-        handleLoginSave(getValueFromArrayOfObj(formValues, 'containerName'));
+        handleLoginSave(getValueFromArrayOfObj(formValues, 'containerName')) // Local Agent FIX: handle async call
+          .catch(err => {
+            errorLog(err.message || err);
+            setErrorMessage({key: 'api.errors.updateLogin', values: { error: err.message }});
+          });
       }
 
       // Normally you should not be here if APIInjected is false as the button is disabled

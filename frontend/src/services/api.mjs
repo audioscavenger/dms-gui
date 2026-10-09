@@ -436,7 +436,7 @@ export const loginUser = async (credential, password, test = false) => {
   
   // Axios Interceptor does that for every calls now, but this stays here for posterity
   return await cacheWrap(async () => {
-    // try is needed ty catch the Axios 401 from popping out in the console when /login tries the default user/pass
+    // try is needed to catch the Axios 401 from popping out in the console when /login tries the default user/pass
     try {
       const response = await api.post(`/loginUser`, { credential, password, test });
       return response.data;

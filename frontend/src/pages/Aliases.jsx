@@ -40,9 +40,9 @@ const Aliases = () => {
   const { user } = useAuth();
   const [containerName] = useLocalStorage("containerName", '');
   const [mailservers] = useLocalStorage("mailservers", []);
-  const [aliases, setAliases] = useState("aliases", []);
-  const [accounts, setAccounts] = useState("accounts", []);
-  const [accountOptions, setAccountOptions] = useState({});
+  const [aliases, setAliases] = useState([]); // Local Agent FIX: useState ignores 2nd arg; initial state was string "aliase
+  const [accounts, setAccounts] = useState([]); // Local Agent FIX: useState ignores 2nd arg; initial state was string "accounts"
+  const [accountOptions, setAccountOptions] = useState([]); // Local Agent FIX: was {} but SelectField expects an array
 
   const [isLoading, setLoading] = useState(true);
   const [isSource, setIsSource] = useState({valid:true, alias:true});
@@ -173,8 +173,8 @@ const Aliases = () => {
 
     if (!formData.destination.trim()) {
       errors.destination = 'aliases.destinationRequired';
-      // setErrorMessage(errors.source);
-      triggerToast({type: 'error', message: errors.source});
+            // setErrorMessage(errors.source);
+            triggerToast({type: 'error', message: errors.destination}); // Local Agent FIX: was errors.source
     }
 
     // Also test if source domain exist in domains when it's a mailbox match

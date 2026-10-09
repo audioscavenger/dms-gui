@@ -253,7 +253,8 @@ const Dashboard = () => {
 
   const fetchAccounts = async (refresh=false) => {
     refresh = !user.isAdmin ? false : refresh;
-    debugLog(`fetchAliases call fetchAccounts(${refresh})`);
+    // Local Agent FIX: was 'fetchAliases call fetchAccounts(...)', wrong function name in log
+    debugLog(`fetchAccounts call getAccounts(${refresh})`);
 
     try {
       handleRefreshCard("accounts");
@@ -375,7 +376,8 @@ const Dashboard = () => {
     const interval = setInterval(fetchDashboard, 30000);
 
     return () => clearInterval(interval);
-  }, [containerName]);
+    // Local Agent FIX: added mailservers to deps – effect bails out when empty, so it must re-run once populated
+  }, [containerName, mailservers]);
 
   useEffect(() => {
     if (isLoading) {

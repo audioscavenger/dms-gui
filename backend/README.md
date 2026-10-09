@@ -67,22 +67,26 @@ It's a very small size and classic React structure. Most has been factored but s
 
 ```
 dms-gui/
-├── common.js                   # Shared functions
-├── backend/                    # Backend API
-│   ├── env.js                  # Environment variables
+├── common.js                   # Shared functions for backend and frontend
+├── backend/                    # Backend app
+│   ├── accounts.mjs            # Mailbox accounts management
+│   ├── aliases.mjs             # Aliases management
 │   ├── backend.js              # backend functions
-│   ├── index.js                # /api server
 │   ├── db.js                   # better-sqlite3 database functions
-│   └── *.js                    # One module per menu item
+│   ├── env.js                  # Environment variables
+│   ├── index.js                # listeners in index.js
+│   ├── logins.js               # logins management
+│   ├── settings.js             # backend and dms config management
+│   └── topParser.js            # functions to parse Linux `top` command
 ├── frontend/                   # Frontend React app
-│   ├── public                  # favicon and index template
-│   ├── frontend.js             # frontend functions
-│   └── src                     # Frontend sources build in step 1 & 2
-│       ├── components          # Classic React factored components
-│       ├── hooks               # Authentication hooks for Login page
-│       ├── locales             # Language packs for i18n
-│       ├── pages               # the left menu items
-│       └── services            # The frontend API calls to the backend API
+│   ├── public/                 # favicon and index template
+│   └── src/                    # frontend sources with routes in App.jsx
+│       ├── frontend.js         # frontend functions
+│       ├── components/         # React Components
+│       ├── hooks/              # hooks: Authentication, local storage and toasts
+│       ├── locales/            # Language packs for i18n
+│       ├── pages/              # pages
+│       └── services/           # frontend API routes
 ├── docker/                     # Docker configuration files
 │   ├── nginx.conf              # Nginx configuration
 │   └── start.sh                # Container startup script

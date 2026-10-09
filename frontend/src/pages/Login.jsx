@@ -47,23 +47,32 @@ export const Login = () => {
     if (user) logout();
 
     setFirstRun(false);
-    const result = await loginUser('admin', 'changeme', true);
-    // debugLog('ddebug isFirstRun result', result);
-    
-    // DEMO mode is always happy
-    if (result?.isDEMO || isDEMO) {
-      setIsDEMO(true);
-      setFirstRun(true);
-      setSuccessMessage('logins.isDEMO');
+    try {
+      const result = await loginUser('admin', 'changeme', true);
+      // debugLog('ddebug isFirstRun result', result);
 
-    } else {
-      setIsDEMO(false);
+      // DEMO mode is always happy
+      if (result?.isDEMO || isDEMO) {
+        setIsDEMO(true);
+        setFirstRun(true);
+        setSuccessMessage('logins.isDEMO');
+
+      } else {
+        setIsDEMO(false);
 
       // if we can login with the default user, display first run welcome message
-      if (result.success) {
-        setFirstRun(true);
-        setSuccessMessage('logins.isFirstRun');
+        if (result.success) {
+          setFirstRun(true);
+          setSuccessMessage('logins.isFirstRun');
+        }
       }
+    } catch (error) {
+      // Local Agent FIX: handle network/500 errors from loginUser so useEffect doesn't produce unhandled rejection
+      debugLog('isFirstRun error:', error.message);
+      triggerToast({
+        type: 'error',
+        message: error.message,
+      });
     }
   };
 
