@@ -10,7 +10,7 @@ import Translate from '../components/Translate';
 import LoginsTable from '../components/logins/LoginsTable';
 import NewLoginForm from '../components/logins/NewLoginForm';
 import DeleteConfirmModal from '../components/logins/DeleteConfirmModal';
-import PasswordChangeModal from '../components/logins/PasswordChangeModal';
+import PasswordChangeModal from '../components/PasswordChangeModal'; // Local Agent FIX: moved from components/logins/ to components/ (shared)
 
 // Local extracted hooks
 import useLoginsData from '../hooks/useLoginsData';

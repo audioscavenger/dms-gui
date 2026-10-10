@@ -708,7 +708,7 @@ async (req, res) => {
   }
 });
 
-// Endpoint for updating a mailbox account; only password in local db is covered atm
+// Endpoint for updating a mailbox account; also updates their dms-gui login password if isAccount=1
 /**
  * @swagger
  * /api/accounts/{schema}/{containerName}/{mailbox}:

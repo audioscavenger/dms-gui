@@ -242,6 +242,19 @@ docker buildx build \
 * [ ] 1.6.8 - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4
 
 
+* [ ] 1.6.18 - design: no new API for changePAssword: fix is entirely inside changePassword and the SQL layer
+* [ ] 1.6.18 - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
+* [ ] 1.6.18 - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
+* [ ] 1.6.18 - bug: latent bug in changePassword: return success when calling sql.logins.update.password with id=mailbox instead of integer, fails silently; fixed by usePasswordChange that calls updateLogin on top
+* [x] 1.6.17 - retest change password from Logins / Accounts/ Profile: all works
+* [x] 1.6.17 - qwen3.8 design: Accounts and Profile now change login password as well, as intended (+guard against login-less mailboxes).
+* [x] 1.6.17 - qwen3.8 design: Accounts and getAccounts now pull user.id again (pretty sure it did in the past)
+* [x] 1.6.17 - qwen3.8 design: 3 pages now all use the same hook + component: Logins, Profile, Accounts
+* [x] 1.6.17 - qwen3.8 design: Profile now uses usePasswordChange hook + shared PasswordChangeModal component; removed useRef, Modal, updateAccount, getValueFromArrayOfObj
+* [x] 1.6.17 - qwen3.8 design: added AlertMessage info for non-account/non-admin (was Profile-only)
+* [x] 1.6.17 - qwen3.8 design: components/logins/PasswordChangeModal.jsx moved to components/
+* [x] 1.6.17 - qwen3.8 refactor: Profile: password change modal merged with the one from Logins
+* [x] 1.6.17 - qwen3.8 design: Logins: changing user mailbox password must be in sync with local password
 * [x] 1.6.16 - qwen3.8 bugfix: Logins
 * [x] 1.6.15 - qwen3.8 refactor: Logins -> hooks + components/logins/
 * [x] 1.6.14 - qwen3.8 bugfix: Aliases, Dashboard, FormContainerAdd, Login, Logins

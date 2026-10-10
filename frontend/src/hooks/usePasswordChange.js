@@ -104,44 +104,71 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
       return;
     }
 
-    let result = {success:false, message: ''};
+    // Local Agent FIX: do the irrevocable / more-important step (dovecot) first,
+    // then the local GUI login.  If dovecot fails we haven't touched the local
+    // password at all → no out-of-sync state.
+
+    const newPassword = passwordFormData.newPassword;
+    const completedSteps = [];
+
     try {
+      // ── Step 1 (most important): update mailbox via dovecot ──
+      if (selectedLogin.isAccount) {
+        const accountResult = await updateAccount(
+          getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'),
+          containerName,
+          selectedLogin.mailbox,
+          { password: newPassword },
+        );
+        if (!accountResult.success) {
+          throw new Error(accountResult.error || t('api.errors.changePassword'));
+        }
+        completedSteps.push(
+          t('password.passwordUpdated', { key: 'mailbox', value: selectedLogin.mailbox }),
+        );
+      }
 
-      // normal dms-gui local account; always done, otherwise how will the user login when we turn it to normal user?
-      result = await updateLogin(
-        selectedLogin.id,
-        { password: passwordFormData.newPassword }
-      );
-      if (result.success) {
-        result.message = t('password.passwordUpdated', {key:'username', value:selectedLogin.username});
-
-        // change mailbox password when user isAccount
-        if (selectedLogin.isAccount) {
-          result = await updateAccount(
-            getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
-            containerName,
-            selectedLogin.mailbox,
-            { password: passwordFormData.newPassword }
+      // ── Step 2: update local GUI login ──
+      // Local Agent FIX: guard – account objects from Accounts.jsx don't carry a login id,
+      // so this step is skipped for pure-mailbox password changes.
+      // When the account data includes a linked login's `id` (future backend enhancement),
+      // both dovecot and local login will be updated in sync automatically.
+      if (selectedLogin.id) {
+        const loginResult = await updateLogin(selectedLogin.id, { password: newPassword });
+        if (!loginResult.success) {
+          // Mailbox already changed – report both facts so the admin knows
+          // what state they're in.
+          throw new Error(
+            completedSteps.length
+              ? `${completedSteps.join('; ')} – ${loginResult.error || t('api.errors.changePassword')}`
+              : (loginResult.error || t('api.errors.changePassword')),
           );
         }
-        if (result.success) {
-          result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedLogin.mailbox});
-        } else {
-          setErrorMessage(result?.error);
-        }
+        completedSteps.push(
+          t('password.passwordUpdated', { key: 'username', value: selectedLogin.username }),
+        );
+      }
 
-      } else setErrorMessage(result?.error);
+      // Local Agent FIX: if neither step ran (no isAccount, no id) that's a caller bug –
+      // surface it instead of silently succeeding with an empty message.
+      if (completedSteps.length === 0) {
+        throw new Error(t('api.errors.changePassword'));
+      }
+
+      // ── All good ──
+      setSuccessMessage(completedSteps.join(' · '));
 
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
-      // setErrorMessage('api.errors.changePassword');
-      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
+      // Local Agent FIX: include any partial-success context so the admin
+      // knows exactly which step succeeded and which failed.
+      setErrorMessage(completedSteps.length
+        ? { key: 'api.errors.changePassword', values: { error: error.message } }
+        : { key: 'api.errors.changePassword', values: { error: error.message } });
 
     } finally {
-      if (result.success) setSuccessMessage(result.message);
-      handleClosePasswordModal(); // Close the modal
+      handleClosePasswordModal();
     }
-
   };
 
   // ── public API ──────────────────────────────────────────────

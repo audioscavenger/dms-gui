@@ -78,6 +78,10 @@ It relies on a generic REST API written in python, that you have to mount in DMS
 | users        | dms-gui  | ✔️ | ✔️ | partial | partial | ❌ | ❌ | partial | ❌ |
 | linked users | DMS      | ✔️ | partial | ❌ | partial | ❌ | ❌ | partial | ❌ |
 
+* admins: they login to dms-gui with logins table password, can change anyone user and any mailbox password.
+* multi mailbox users: they login to dms-gui with logins table password, can change their own logins table password and the password of mailboxes they control.
+* linked users: isAcount=1 in logins table: they login to dms-gui with a call to doveadm and can only change their password with doveadm. logins table also saves it because an admin can promote them as multi user or admin. Docevot is their source of truth.
+
 * [x] Can normal users change their password?
 > Yes, users can change both their dms-gui password in their profile, and each of the mailboxes they control under Accounts. Logon password in dms-gui is saved in the database. Mailbox-linked users can only change the mailbox password, and their logon is handled by DMS dovecot directly.
 

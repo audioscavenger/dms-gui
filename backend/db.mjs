@@ -451,7 +451,7 @@ accounts: {
     //            ORDER BY a.domain, a.mailbox`,
 
     // since 1.5.67 with table roles:
-    accounts: `SELECT a.mailbox, a.domain, a.storage, l.username, json_group_array(m.username) AS managers
+    accounts: `SELECT a.mailbox, a.domain, a.storage, l.id AS loginId, l.username, json_group_array(m.username) AS managers
                FROM accounts a 
                LEFT JOIN configs c ON c.id = a.configID 
                LEFT JOIN logins l ON l.mailbox = a.mailbox 

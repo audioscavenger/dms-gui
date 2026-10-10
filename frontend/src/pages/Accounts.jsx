@@ -44,7 +44,7 @@ import {
   addAccount,
   deleteAccount,
   updateDNS,
-  updateAccount,
+//   updateAccount,  // Local Agent FIX: moved to usePasswordChange hook
   doveadm,
 } from '../services/api.mjs';
 
@@ -55,9 +55,12 @@ import DataTable from '../components/DataTable';
 import FormField from '../components/FormField';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Translate from '../components/Translate';
+import PasswordChangeModal from '../components/PasswordChangeModal'; // Local Agent FIX: shared component (was inline)
+
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
+import usePasswordChange from '../hooks/usePasswordChange'; // Local Agent FIX: shared hook (was copy-pasted state+handlers)
 
 const Accounts = () => {
   const sortKeysInObject = ['percent'];
@@ -94,14 +97,8 @@ const Accounts = () => {
   const [newAccountFormErrors, setNewAccountFormErrors] = useState({});
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
-  // State for password change modal -------------------------------
-  const passwordFormRef = useRef(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordFormData, setPasswordFormData] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passwordFormErrors, setPasswordFormErrors] = useState({});
+  // Local Agent FIX: password change extracted to usePasswordChange hook (was ~100 lines of copy-pasted state+handlers)
+  const passwordChange = usePasswordChange({ containerName, mailservers, user });
 
   // State for DNS change modal ------------------------------------
   const dnsFormRef = useRef(null);
@@ -333,105 +330,16 @@ const Accounts = () => {
 
 
 
-  // Open password change modal for an account
-  const handleChangePassword = (account) => {
-    setSelectedAccount(account);
-    
-    setPasswordFormData({
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setShowPasswordModal(true);
-  };
+  // Local Agent FIX: removed ~100 lines of copy-pasted password change state+handlers
+  // (handleChangePassword, handleClosePasswordModal, handlePasswordInputChange,
+  //  validatePasswordForm, handleSubmitPasswordChange) – all now in usePasswordChange hook
 
-  // Close password change modal
-  const handleClosePasswordModal = () => {
-    setPasswordFormErrors({});
-    setShowPasswordModal(false);
-    setSelectedAccount(null);
-  };
 
-  // Handle input changes for password change form
-  const handlePasswordInputChange = (e) => {
-    const { name, value, type } = e.target;
-    
-    setPasswordFormData({
-      ...passwordFormData,
-      [name]: type === 'number' ? Number(value) : value,
-    });
-
-    // Clear the error for this field while typing
-    if (passwordFormErrors[name]) {
-      setPasswordFormErrors({
-        ...passwordFormErrors,
-        [name]: null,
-      });
-    }
-  };
-
-  // Validate password change form
-  const validatePasswordForm = () => {
-    const errors = {};
-
-    if (!passwordFormData.newPassword) {
-      errors.newPassword = 'password.passwordRequired';
-    } else if (!user.isAdmin && passwordFormData.newPassword.length < 8) {
-      errors.newPassword = 'password.passwordLength';
-    }
-
-    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-      errors.confirmPassword = 'password.passwordsNotMatch';
-    }
-
-    setPasswordFormErrors(errors);
-    return !isNonEmptyDict(errors);
-  };
-
-  // Submit password change
-  const handleSubmitPasswordChange = async (e) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    if (!validatePasswordForm()) {
-      return;
-    }
-
-    let result = {success:false, message:''};
-    try {
-
-      result = await updateAccount(
-        getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
-        containerName,
-        selectedAccount.mailbox,
-        { password: passwordFormData.newPassword }
-      );
-      if (result.success) {
-        result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedAccount.mailbox});
-        
-      } else setErrorMessage(result?.error);
-      
-    } catch (error) {
-      errorLog(t('api.errors.changePassword'), error);
-      // setErrorMessage('api.errors.changePassword');
-      setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
-
-    } finally {
-      if (result.success) setSuccessMessage(result.message);
-      handleClosePasswordModal(); // Close the modal
-    }
-
-  };
-  
-  
   
   // Open DNS change modal for an account
   const handleChangeDNS = (account) => {
     setSelectedAccount(account);
-    setPasswordFormData({
-      newPassword: '',
-      confirmPassword: '',
-    });
+    // Local Agent FIX: removed setPasswordFormData() – copy-paste artifact from password change; DNS has its own form state
     setDNSFormErrors({});
     setShowDNSModal(true);
   };
@@ -478,9 +386,10 @@ const Accounts = () => {
     }
 
     try {
+      // Local Agent FIX: was passwordFormData.newPassword (copy-paste from password change); use DNS form state
       await updateDNS(
         selectedAccount.domain,
-        passwordFormData.newPassword
+        dnsFormData
       );
       setSuccessMessage('accounts.dnsUpdated');
       handleCloseDNSModal(); // Close the modal
@@ -601,7 +510,7 @@ const Accounts = () => {
             size="sm"
             icon="key"
             title={t('password.changePassword')}
-            onClick={() => handleChangePassword(account)}
+            onClick={() => passwordChange.handleChangePassword({ ...account, isAccount: true, id: account.loginId })} // Local Agent FIX: id=loginId from SQL (l.id) so the hook also syncs the local login password
             className="me-2"
           />
           {user.isAdmin == 1 &&
@@ -762,56 +671,23 @@ const Accounts = () => {
       
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="success" message={successMessage} />
+      {/* Local Agent FIX: password change messages from the shared hook */}
+      <AlertMessage type="danger" message={passwordChange.errorMessage} />
+      <AlertMessage type="success" message={passwordChange.successMessage} />
       
       <Accordion tabs={accountTabs}>
       </Accordion>
 
-      {/* Password Change Modal */}
-      <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {/* selectedAccount is null by default, must use ? */}
-            {Translate('password.changePassword')}: {selectedAccount?.mailbox}{' '}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <form onSubmit={handleSubmitPasswordChange} ref={passwordFormRef}>
-            <FormField
-              type="password"
-              id="newPassword"
-              name="newPassword"
-              label="password.newPassword"
-              value={passwordFormData.newPassword}
-              onChange={handlePasswordInputChange}
-              error={passwordFormErrors.newPassword}
-              required
-            />
-
-            <FormField
-              type="password"
-              id="confirmPasswordModal"
-              name="confirmPassword"
-              label="password.confirmPassword"
-              value={passwordFormData.confirmPassword}
-              onChange={handlePasswordInputChange}
-              error={passwordFormErrors.confirmPassword}
-              required
-            />
-          </form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={handleClosePasswordModal}
-            text="common.cancel"
-          />
-          <Button
-            variant="primary"
-            onClick={handleSubmitPasswordChange}
-            text="password.changePassword"
-          />
-        </Modal.Footer>
-      </Modal>
+      {/* Local Agent FIX: replaced inline <Modal> with shared PasswordChangeModal component */}
+      <PasswordChangeModal
+        show={passwordChange.showPasswordModal}
+        selectedLogin={passwordChange.selectedLogin}
+        formData={passwordChange.passwordFormData}
+        errors={passwordChange.passwordFormErrors}
+        onInputChange={passwordChange.handlePasswordInputChange}
+        onSubmit={passwordChange.handleSubmitPasswordChange}
+        onClose={passwordChange.handleClosePasswordModal}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal show={showDeleteConfirmModal} onHide={handleCloseDeleteConfirmModal}>

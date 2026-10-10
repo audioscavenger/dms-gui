@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Local Agent FIX: removed useRef (no longer needed)
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal'; // Import Modal
+// Local Agent FIX: removed import Modal from 'react-bootstrap/Modal' – now in shared PasswordChangeModal
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
 // import Chip from '@mui/material/Chip';
@@ -18,16 +18,14 @@ import {
   errorLog,
 } from '../frontend.mjs';
 import {
-  getValueFromArrayOfObj,
   regexUsername,
   isNonEmptyDict,
   regexEmailStrict,
-} from '../../../common.mjs';
+} from '../../../common.mjs'; // Local Agent FIX: removed getValueFromArrayOfObj (only used in password change, now in hook)
 
 import {
-  updateAccount,
   updateLogin,
-} from '../services/api.mjs';
+} from '../services/api.mjs'; // Local Agent FIX: removed updateAccount (only used in password change, now in hook)
 
 import AlertMessage from '../components/AlertMessage';
 import Button from '../components/Button';
@@ -35,10 +33,12 @@ import FormField from '../components/FormField';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Translate from '../components/Translate';
 import SelectField from '../components/SelectField';
+import PasswordChangeModal from '../components/PasswordChangeModal'; // Local Agent FIX: shared component (was inline)
 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
+import usePasswordChange from '../hooks/usePasswordChange'; // Local Agent FIX: extracted hook (was copy-pasted state+handlers)
 
 const Profile = () => {
   // const sortKeysInObject = ['mailbox', 'username'];   // not needed as they are not objects, just rendered FormControl
@@ -62,18 +62,11 @@ const Profile = () => {
   const [formErrors, setformErrors] = useState({});
   const [submitDisabled, setSubmitDisabled] = useState(true);
 
-  // State for password change modal -------------------------------
-  const [selectedLogin, setSelectedLogin] = useState(null);
-  const passwordFormRef = useRef(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordFormData, setPasswordFormData] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passwordFormErrors, setPasswordFormErrors] = useState({});
-  
+  // Local Agent FIX: password change extracted to usePasswordChange hook (was ~100 lines of copy-pasted state+handlers)
+  const passwordChange = usePasswordChange({ containerName, mailservers, user });
+
   // const fetchProfile = async () => {
-    
+  
   //   try {
   //     setErrorMessage(null);
   //     setSuccessMessage(null);
@@ -196,7 +189,7 @@ const Profile = () => {
         type: 'error',
         message: result?.error,
       });
-
+      
       
     } catch (error) {
       errorLog(error.message || error);
@@ -210,130 +203,9 @@ const Profile = () => {
   };
 
 
-  // Open password change modal
-  const handleChangePassword = () => {
-    setSelectedLogin(user);
-    
-    setPasswordFormData({
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setPasswordFormErrors({});
-    setShowPasswordModal(true);
-  };
-
-  // Close password change modal
-  const handleClosePasswordModal = () => {
-    setPasswordFormErrors({});
-    setShowPasswordModal(false);
-    setSelectedLogin(null);
-  };
-
-  // Handle input changes for password change form
-  const handlePasswordInputChange = (e) => {
-    const { name, value, type } = e.target;
-    
-    setPasswordFormData({
-      ...passwordFormData,
-      [name]: type === 'number' ? Number(value) : value,
-    });
-
-    // Clear the error for this field while typing
-    if (passwordFormErrors[name]) {
-      setPasswordFormErrors({
-        ...passwordFormErrors,
-        [name]: null,
-      });
-    }
-  };
-
-  // Validate password change form
-  const validatePasswordForm = () => {
-    const errors = {};
-
-    if (!passwordFormData.newPassword) {
-      errors.newPassword = 'password.passwordRequired';
-
-    } else if (!user.isAdmin && passwordFormData.newPassword.length < 8 && !user.isAdmin) {
-      errors.newPassword = 'password.passwordLength';
-    }
-
-    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-      errors.confirmPassword = 'logins.passwordsNotMatch';
-    }
-
-    setPasswordFormErrors(errors);
-    return !isNonEmptyDict(errors);
-  };
-
-  // Submit password change
-  const handleSubmitPasswordChange = async (e) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setWarningMessage(null);
-    setSuccessMessage(null);
-
-    if (!validatePasswordForm()) {
-      return;
-    }
-
-    let result = {success:false, message:''};
-    try {
-
-      // normal dms-gui local account; always done, otherwise how will the user login when we turn it to normal user?
-      result = await updateLogin(
-        selectedLogin.id,
-        { password: passwordFormData.newPassword }
-      );
-      if (result.success) {
-        result.message = t('password.passwordUpdated', {key:'username', value:selectedLogin.username});
-
-        // change mailbox password when user isAccount
-        if (selectedLogin.isAccount) {
-          result = await updateAccount(
-            getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'), 
-            containerName,
-            selectedLogin.mailbox,
-            { password: passwordFormData.newPassword }
-          );
-        }
-        if (result.success) {
-          result.message = t('password.passwordUpdated', {key:'mailbox', value:selectedLogin.mailbox});
-
-        } else {
-          // setErrorMessage(result?.error);
-          triggerToast({
-            type: 'error',
-            message: result?.error,
-          });
-        }
-
-      // } else setErrorMessage(result?.error);
-      } else triggerToast({
-        type: 'error',
-        message: result?.error,
-      });
-
-      
-    } catch (error) {
-      errorLog(t('api.errors.changePassword'), error);
-      // setErrorMessage('api.errors.changePassword');
-      // setErrorMessage({key: 'api.errors.changePassword', values: { error: error.message }});
-      triggerToast({
-        type: 'error',
-        message: {key: 'api.errors.changePassword', values: { error: error.message }},
-      });
-
-    } finally {
-      // if (result.success) setSuccessMessage(result.message);
-      if (result.success) triggerToast({
-          type: 'success',
-          message: result.message,
-        });
-      handleClosePasswordModal(); // Close the modal
-    }
-
-  };
+  // Local Agent FIX: removed ~100 lines of copy-pasted password change state+handlers
+  // (handleChangePassword, handleClosePasswordModal, handlePasswordInputChange,
+  //  validatePasswordForm, handleSubmitPasswordChange) – all now in usePasswordChange hook
 
 
   // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same
@@ -372,6 +244,9 @@ const Profile = () => {
       <AlertMessage type="danger" message={errorMessage} />
       <AlertMessage type="warning" message={warningMessage} />
       <AlertMessage type="success" message={successMessage} />
+      {/* Local Agent FIX: password change messages from the shared hook */}
+      <AlertMessage type="danger" message={passwordChange.errorMessage} />
+      <AlertMessage type="success" message={passwordChange.successMessage} />
       
       <Form onSubmit={handleLoginSave} className="form-wrapper">
         <FormField
@@ -522,61 +397,21 @@ const Profile = () => {
           variant="primary"
           icon="key"
           text={t('password.changePassword')}
-          onClick={() => handleChangePassword()}
+          onClick={() => passwordChange.handleChangePassword(user)} // Local Agent FIX: calls shared hook with user as the login
           className="me-2"
         />
       </Form>
 
-      {/* Password Change Modal using react-bootstrap */}
-      <Modal show={showPasswordModal} onHide={handleClosePasswordModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {Translate('password.changePassword')}: {selectedLogin?.username} / {selectedLogin?.mailbox}{' '}
-            {/* Use optional chaining */}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {!selectedLogin?.isAdmin && !selectedLogin?.isAccount && <AlertMessage type="info" message={t('password.notMailbox')} />}
-          {selectedLogin && ( // Ensure selectedLogin exists before rendering form
-            <form onSubmit={handleSubmitPasswordChange} ref={passwordFormRef}>
-              <FormField
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                label="password.newPassword"
-                value={passwordFormData.newPassword}
-                onChange={handlePasswordInputChange}
-                error={passwordFormErrors.newPassword}
-                required
-              />
-
-              <FormField
-                type="password"
-                id="confirmPasswordModal"
-                name="confirmPassword"
-                label="password.confirmPassword"
-                value={passwordFormData.confirmPassword}
-                onChange={handlePasswordInputChange}
-                error={passwordFormErrors.confirmPassword}
-                required
-              />
-            </form>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          {/* Use refactored Button component */}
-          <Button
-            variant="secondary"
-            onClick={handleClosePasswordModal}
-            text="common.cancel"
-          />
-          <Button
-            variant="primary"
-            onClick={handleSubmitPasswordChange}
-            text="password.changePassword"
-          />
-        </Modal.Footer>
-      </Modal>
+      {/* Local Agent FIX: replaced inline <Modal> with shared PasswordChangeModal component */}
+      <PasswordChangeModal
+        show={passwordChange.showPasswordModal}
+        selectedLogin={passwordChange.selectedLogin}
+        formData={passwordChange.passwordFormData}
+        errors={passwordChange.passwordFormErrors}
+        onInputChange={passwordChange.handlePasswordInputChange}
+        onSubmit={passwordChange.handleSubmitPasswordChange}
+        onClose={passwordChange.handleClosePasswordModal}
+      />
 
     </div>
   );
