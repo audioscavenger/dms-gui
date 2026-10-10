@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // Local Agent FIX: removed useRef (no longer needed)
 import { useTranslation } from 'react-i18next';
 import Form from 'react-bootstrap/Form';
-// Local Agent FIX: removed import Modal from 'react-bootstrap/Modal' – now in shared PasswordChangeModal
+// Local Agent FIX: removed import Modal from 'react-bootstrap/Modal' - now in shared PasswordChangeModal
 
 // https://mui.com/material-ui/react-autocomplete/#multiple-values
 // import Chip from '@mui/material/Chip';
@@ -205,7 +205,7 @@ const Profile = () => {
 
   // Local Agent FIX: removed ~100 lines of copy-pasted password change state+handlers
   // (handleChangePassword, handleClosePasswordModal, handlePasswordInputChange,
-  //  validatePasswordForm, handleSubmitPasswordChange) – all now in usePasswordChange hook
+  //  validatePasswordForm, handleSubmitPasswordChange) - all now in usePasswordChange hook
 
 
   // highlight options by shades of yellow if they aequal to login's mailbox or at least the domains are the same

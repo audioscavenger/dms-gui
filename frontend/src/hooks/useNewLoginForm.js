@@ -18,10 +18,10 @@ import {
  * Handles all state + logic for the "New Login" form.
  *
  * @param {object}   opts
- * @param {Array}    opts.accountOptions  – full account list from useLoginsData
- * @param {Array}    opts.logins         – current logins (to filter used mailboxes)
- * @param {string}   opts.containerName  – current mailserver container
- * @param {function} opts.refetch        – callback to refresh all data after a successful add
+ * @param {Array}    opts.accountOptions  - full account list from useLoginsData
+ * @param {Array}    opts.logins         - current logins (to filter used mailboxes)
+ * @param {string}   opts.containerName  - current mailserver container
+ * @param {function} opts.refetch        - callback to refresh all data after a successful add
  */
 export default function useNewLoginForm({ accountOptions, logins, containerName, refetch }) {
   const { t } = useTranslation();

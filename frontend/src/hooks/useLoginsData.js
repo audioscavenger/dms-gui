@@ -22,8 +22,8 @@ import {
  *       delete-confirm modal, and all table actions.
  *
  * @param {object}  opts
- * @param {string}  opts.containerName  – current mailserver container
- * @param {object}  opts.user          – authenticated user from useAuth()
+ * @param {string}  opts.containerName  - current mailserver container
+ * @param {object}  opts.user          - authenticated user from useAuth()
  */
 export default function useLoginsData({ containerName, user }) {
   const { t } = useTranslation();

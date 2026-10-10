@@ -1,10 +1,18 @@
-This project is a GUI for DMS email server, just like the admin container from Mailu. Poste.io has a similar portal.
+This project is a web GUI for DMS (Docker Mailserver), just like the admin container from Mailu or Poste.io.
 
-I work on this solo, until someone finds an interest in it.
+I work on this solo, with the halp of a local coder agent since version 1.6.8. You are welcome to test and participate.
 
-This GUI relies on a simple python API to execute `system` and `setup` commands inside the DMS container. This architecture is modular enough, allowing to add other gui-less mail server projects in the future.
+This GUI relies on a simple python API to execute `doveadm` and `setup` commands inside the DMS container. This architecture is flexible enough, allowing to add other gui-less mail server projects in the future.
 
-# Primary goals:
+# build urls:
+- [dms-gui](https://github.com/audioscavenger/dms-gui)
+- [wiki](https://github.com/audioscavenger/dms-gui)
+- [hub.docker](https://hub.docker.com/repositories/audioscavenger)
+
+
+# Plan
+
+## Primary Goals
 
 1. [x] kick start the project: **done**, thanks to dunajdev and Claude
 2. [x] refactor, fix all the bugs, document and define scope: **done**
@@ -12,71 +20,102 @@ This GUI relies on a simple python API to execute `system` and `setup` commands 
 4. [x] add rebuild/refresh xapian index buttons in Accounts page: **done**
 5. [x] add a login page with JWT+session cookies **done**
 6. [x] add a Profile page and ability to change mailbox passwords  **done**
-7. [ ] add Domains+DNS+DKIM entries page
-8. [ ] add Backup/Import menu entries and code
-9. [ ] add DNS push/update entries with (dnscontrol)[https://github.com/StackExchange/dnscontrol]
+7. [x] pause: audit and fix all bugs, and make design decisions we can stick to
+8. [ ] add Domains+DNS+DKIM entries page
+9. [ ] add Backup/Import menu entries and code
+10. [ ] add DNS push/update entries with (dnscontrol)[https://github.com/StackExchange/dnscontrol]
 
-# Extra goals:
+## Secondary Goals
 
 10. [ ] add fail2ban management
 11. [ ] add Rspamd link
-12. [ ] add hack statistics
+12. [ ] add hack attemtps statistics and remediation tools
 
 
-## BUGS:
+# TODO
 
-* [ ] - frontend/LeftSidebar: LeftSidebar collapse button is too large
-* [ ] - frontend/LeftSidebar: LeftSidebar is only as high as the window on first load, when you scroll down it's blank
-* [-] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
-* [ ] - frontend/Settings: Node.insertBefore: Child to insert before is not a child of this node happens sometimes
+## BUGS
 
-## chores:
+* [ ] - frontend/Settings: monor bug: console sometimes spits `Node.insertBefore: Child to insert before is not a child of this node`
 
+## chores
+
+### Global chores
 * [ ] - frontend: maybe npm install react-router-dom@latest axios@latest one day?
 * [x] - unify all api errors with {success:false, message}, and handle extra string for AlertMessage **done**
 * [x] - make a decision on how to update localStorage(user) when user's details are changed, do we log them out?
 * [x] - chore/backend: test that we are indeed rejected when cookie is deleted, as I suspect /logout does not delete it
 * [x] - translation: there seems to be lots of messages unused throughout the project, clean them up
 * [-] - chore: there gotta be a way to intercept and apply stringify for fields we push to the DB, such as roles etc; **nope**
-
-# TODO:
+* [ ]  - Documentation: Makes a clear producure on how to modify the compose of dms/dms-gui, the env files, and in which order
+* [ ]  - frontend: still plenty of unnecessary/missing dependency reported by eslint; I had to Turn off missing dependency
 
 The **done** list versions is in reverse order, as you want to see the most recents firt.
 
 The TODO list rank is in order, as you naturally read from top to bottom and therefore, the most difficult ones are at the top.
 
-## backend
-* [-] - backend: implement uuid for all id columns: NO BENEFITS. I never go there, ids are uniq and I trust the SQL queries, why change that?
-* [x] - implement roles table
+### backend chores
+* [ ]  - backend: should all the messages stay here in plain english or should we mode them to i18next translation? i18next is frontend, not sure how to do that.
+* [ ]  - backend: implement uuid for all id columns: I see NO BENEFITS. I never go there, ids are always uniq and I trust the SQL queries, why change that?
+* [ ]  - implement roles table: **done** but now we need to actually use it
+* [ ]  - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4; some doveadm commands to update
+* [ ]  - dovecot 4 upgrade: must pull/detect domeadm version and report it in getServerEnvs
+* [ ]  - dovecot 4 upgrade: must pull/detect domeadm version and handle sets of commands per version
+
+### frontend chores
 
 
-## Design
+## Design chores
 
 ### NavBar:
-* [ ] - save user's lang in logins table?
+* [ ]  - save user's lang in logins table?
 
 ### LeftMenu:
-* [ ] - refactor LeftSidebar to be collapsible and extend main container
-* [ ] - add entry to rspamd page when RSPAMD=1 just like Mailu
-* [ ] - add entry to snappymail when said variable is detected
-* [ ] - add entry to Backups page
-* [ ] - add entry to Imports page
+* [ ]  - refactor LeftSidebar to be collapsible and extend main container
+* [ ]  - add entry to rspamd page when RSPAMD=1 just like Mailu
+* [ ]  - add entry to snappymail when said variable is detected
+* [ ]  - add entry to Backups page
+* [ ]  - add entry to Imports page
 
 ### Profile:
 
 ### Dashboard:
-* [ ] - Display statistics like https://poste.io/
-* [ ] - add statistics about hacking attempts
-* [ ] - add statistics and actions for fail2ban, it's a bitch to handle with command line
+* [ ]  - Display statistics like https://poste.io/
+* [ ]  - add statistics about hacking attempts
+* [ ]  - add statistics and actions for fail2ban, it's a bitch to handle with command line
 
-### Domains:
+### Logins:
+* [ ]  - implement grid checkbox actions
+* [ ]  - should we prevent usernames made of digits only?
+* [ ]  - logins: loginUser: export all the various password errors to translation
+* [ ]  - logins: expand the lockoutCache to a broader Map as a logins table duplicate, to hold the tokens as well? maybe?
+
+### Accounts:
+* [ ]  - implement grid checkbox actions
+* [ ]  - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
+* [ ]  - switch FTS/quota/etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
+* [ ]  - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
+* [-]  - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup? name is execDMS and no not yet
+* [-]  - 2. update all execDMS calls in accounts/aliases - maybe one day when we implement Poste, to avoid duping all functions?
+* [ ]  - Add delete my account in Profile
+* [ ]  - 1. Implement queued commands?
+* [ ]  - 2. add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table?
+* [ ]  - 3. add a delay before issuing the mailbox delete command, that the user can cancel at the frontend?
+
+### Aliases:
+
+
+### Settings:
+* [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
+
+### Domains Management:
 * [ ] - implement grid checkbox actions
 * [ ] - start with a DataTable page of domains and see where we go
 * [ ] - add dkim modules and exec calls
 * [ ] - add DNS entries mechanics
 * [ ] - (dnscontrol)[https://github.com/StackExchange/dnscontrol] will do the work, but I need to factor the processes and store the various DNS credentials securely
 
-  Domains page be like:
+Domains page be like:
   * domain name
   * number of accounts and aliases ?
   * A status and modal button
@@ -89,163 +128,36 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
   * SpamHaus/am I blacklisted sort of status
   * DNS modal button: display 1 domain entries as table with push/pull all or individual entries
 
-### Logins:
-* [ ] - implement grid checkbox actions
-* [ ] - should we prevent usernames made of digits only?
-
-### Accounts:
-* [ ] - implement grid checkbox actions
-* [x] - do we keep auto create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
-* [x] - 1. always create logins for each detected account, but let admins disable them as they attach roles to some users
-* [x] - 2. each account must have either a linked login, or a login with that role must exist: NO, they can live without a login
-* [ ] - 3. each account should show when they are unmanaged or login-less
-* [ ] - 4. how easy is it to detect if an account without linked login is in a role for another login?
-* [ ] - backend: update emailValidChars based off what dms actually accepts: pretty sure "~" is not accepted
-* [ ] - switch FTS/quota/etc detection from reading files to `dovecot -n reports` or `doveconf -P` command instead?
-* [ ] - add folders resubscribe option somehow, which is needed after import anyways. That means mailbox folder management, yike
-* [-] - 1. implement most commands from dms setup.sh in a similar way we do with doveadm(), naming it dmsSetup? name is execDMS and no not yet
-* [-] - 2. update all execDMS calls in accounts/aliases - maybe one day when we implement Poste, to avoid duping all functions?
-* [ ] - Add delete my account in Profile
-* [ ] - 1. Implement queued commands?
-* [ ] - 2. add a delay before issuing the mailbox delete command, show it greyed out with countdown in the table?
-* [ ] - 3. add a delay before issuing the mailbox delete command, that the user can cancel at the frontend?
-
-### Settings:
-* [ ] - we should definitely conduct a first-time global scan after a mailserver entry is added
-
-### Backups:
+### Mailbox Backups:
 * [ ] - start working on mailbox backups
 
-### Imports:
+### Mailbox Imports:
 * [ ] - start working on mailbox imports, with 2 mbox formats: /domain/user like DMS vs /user@domain like Mailu
 
-## build:
-- [dms-gui](https://github.com/audioscavenger/dms-gui)
-- [wiki](https://github.com/audioscavenger/dms-gui)
-- [hub.docker](https://hub.docker.com/repositories/audioscavenger)
+### Unit tests by me
 
-### Aliases
-export BUILDKIT_COLORS="run=cyan:error=light-red:cancel=light-cyan:warning=yellow" 
-
-- purge
-alias dpurge='docker buildx prune --builder multiarch --all -f; docker container prune -f && docker image prune -f && docker builder prune -a -f'
-alias npurge='rm -rf /docker/dms/dms-gui/backend/node_modules /docker/dms/dms-gui/frontend/node_modules'
-
-- DEBUG rebuild
-alias buildup='ENV_MODE=development docker-compose build && ENV_MODE=development DEBUG=true docker-compose up --force-recreate'
-alias buildupp='docker-compose build && docker-compose up --force-recreate'
-
-- DEBUG rebuild + DATABASE_RESET
-alias buildupr='ENV_MODE=development docker-compose build && ENV_MODE=development DEBUG=true DATABASE_RESET=true docker-compose up --force-recreate'
-
-- DEBUG rebuild + DATABASE_RESET + NOCACHE
-ENV_MODE=development docker-compose build --no-cache && ENV_MODE=development DEBUG=true DATABASE_RESET=true docker-compose up --force-recreate
-
-- check inside the container without really running it
-docker-compose run --rm --entrypoint ls audioscavenger/dms-gui:latest -la /app
-<!--
-drwxr-xr-x    1 root     root          4096 Apr 19 17:01 .
-drwxr-xr-x    1 root     root          4096 Apr 19 17:01 ..
-drwxr-xr-x    1 root     root          4096 Apr 19 16:31 backend
--rw-rw-r--    1 root     root         10262 Apr 14 18:36 common.mjs
-drwxr-xr-x    1 root     root          4096 Apr 19 16:35 frontend
--rw-rw-r--    1 root     root            62 Apr 14 18:36 nodemon.json
--rwxrwxr-x    1 root     root           939 Apr 14 18:36 start.sh
--rw-r--r--    1 root     root             0 Apr 19 17:01 version.1.5.25
--->
-
-docker login -u audioscavenger
-<!-- https://medium.com/@life-is-short-so-enjoy-it/docker-how-to-build-and-push-multi-arch-docker-images-to-docker-hub-64dea4931df9 -->
-docker buildx ls
-    NAME/NODE       DRIVER/ENDPOINT              STATUS    BUILDKIT   PLATFORMS
-    default*        docker
-    \_ default      \_ default                  running   v0.30.0    linux/amd64 (+3), linux/386 
-
-docker buildx stop multiarch
-docker buildx rm multiarch
-docker buildx create  --name multiarch          --driver=docker-container --node multiarch --platform linux/arm64 ssh://root@oracle01:22
-docker buildx create  --name multiarch --append --driver=docker-container --node multiarch --platform linux/amd64 --bootstrap
-docker buildx ls
-    NAME/NODE       DRIVER/ENDPOINT              STATUS    BUILDKIT   PLATFORMS
-    multiarch       docker-container
-    \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
+* [ ]  - update demo database
+* [ ]  - retest: create/delete/update alias for admin/standard/isAccount
+* [ ]  - retest: create/delete/update mailbox
+* [ ]  - retest: create/delete/update login
+* [ ]  - retest: create/delete/update mailserver
+* [ ]  - retest: change password for mailbox/login from Profile, Accounts, Logins with all 3 user types: admin, multi, linked
 
 
-// recreate remote buildx on local with 2 separate nodes because of better-sqlite3 latest:
-docker buildx stop multiarch
-docker buildx rm multiarch
-docker buildx create --name multiarch \
-  --node local_host \
-  --driver docker-container \
-  --driver-opt image=moby/buildkit:v0.30.0 \
-  --platform linux/amd64 \
-  --bootstrap \
-  --use
-docker buildx create --name multiarch \
-  --append \
-  --node oracle_arm \
-  --driver docker-container \
-  --driver-opt image=moby/buildkit:v0.30.0 \
-  --platform linux/arm64 \
-  --bootstrap \
-  ssh://root@oracle01:22
-docker buildx ls
-NAME/NODE        DRIVER/ENDPOINT                   STATUS    BUILDKIT   PLATFORMS
-    multiarch*       docker-container
-    \_ local_host    \_ unix:///var/run/docker.sock   running   v0.30.0    linux/amd64* (+3), linux/386
-    \_ oracle_arm    \_ ssh://root@oracle01:22        running   v0.30.0    linux/arm64*, linux/arm (+2)
+# Change History:
 
-### 1. Build and Load Locally (AMD)
-docker system df
-dpurge
-docker buildx build --no-cache \
-  --builder=multiarch \
-  --platform linux/amd64 \
-  -t audioscavenger/dms-gui:latest \
-  -f Dockerfile --load .
+## Impending changes
 
-### 2. Build and Push Remotely (ARM)
-docker buildx build --no-cache \
-  --builder=multiarch \
-  --platform linux/arm64 \
-  -t audioscavenger/dms-gui:latest \
-  -f Dockerfile \
-  --output type=docker,context=ssh://root@oracle01:22 .
+* [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
+* [ ]  - design: no new API for changePAssword: fix is entirely inside changePassword and the SQL layer
+* [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
+* [ ]  - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
 
-### 3. Push to Docker Hub When Ready
-docker buildx build \
-  --builder=multiarch \
-  --platform linux/amd64,linux/arm64 \
-  -t audioscavenger/dms-gui:latest \
-  -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) \
-  -f Dockerfile --push .
+## Commited changes
 
-
-## history:
-
-* [ ] v1.6.0 - before releasing 1.6.0, it should be made clear how to modify the compose of dms/dms-gui, the env files, and in which order
-* [ ] 1.5.99 - update demo database
-* [ ] 1.5.99 - retested: create/delete/update alias for admin/standard/isAccount
-* [ ] 1.5.99 - retested: create/delete/update mailbox
-* [ ] 1.5.99 - retested: create/delete/update login
-* [ ] 1.5.99 - retested: create/delete/update mailserver
-
-* [ ] 1.5.99 - frontend: still plenty of unnecessary/missing dependency; I had to Turn off missing dependency
-* [ ] 1.5.99 - logins: loginUser: export all the various password errors to translation
-* [ ] 1.5.99 - logins: expand the lockoutCache to a broader Map as a logins table duplicate, to hold the tokens as well?
-* [ ] 1.5.99 - dms-gui global: we should offer site-wide profile like show actual login error, etc
-* [ ] 1.5.99 - index: we should remove updateDB from PATCH/logins and PATCH/accounts and create updateLogin and updateAccount modules
-* [ ] 1.5.99 - saveServerEnvs and changePassword do not use scope and schema anymore, why?
-* [ ] 1.6.99 - delete login does not seem to delete the mailbox
-
-* [ ] 1.6.8 - must pull domeadm version and handle sets of commands per version
-* [ ] 1.6.8 - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4
-
-
-* [ ] 1.6.18 - design: no new API for changePAssword: fix is entirely inside changePassword and the SQL layer
-* [ ] 1.6.18 - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
-* [ ] 1.6.18 - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
-* [ ] 1.6.18 - bug: latent bug in changePassword: return success when calling sql.logins.update.password with id=mailbox instead of integer, fails silently; fixed by usePasswordChange that calls updateLogin on top
+* [x] 1.6.18 - Updated Documentation and TODO list
+* [x] 1.6.18 - cleanup all the em dashes and shit from all files
+* [x] 1.6.17 - qwen3.8: bug: latent bug in changePassword: return success when calling sql.logins.update.password with id=mailbox instead of integer, fails silently; workaround by usePasswordChange that calls updateLogin on top
 * [x] 1.6.17 - retest change password from Logins / Accounts/ Profile: all works
 * [x] 1.6.17 - qwen3.8 design: Accounts and Profile now change login password as well, as intended (+guard against login-less mailboxes).
 * [x] 1.6.17 - qwen3.8 design: Accounts and getAccounts now pull user.id again (pretty sure it did in the past)
@@ -263,6 +175,9 @@ docker buildx build \
 * [x] 1.6.11 - qwen3.8 bugfix: Button
 * [x] 1.6.10 - qwen3.8 bugfix: AlertMessage, Translate
 * [x] 1.6.9 - qwen3.8 bugfix: DataTable
+
+## Released changes
+
 * [x] v1.6.8 - release before massive code review with qwen3.8 local agent
 * [x] 1.6.7 - bug: dms latest use dovecot4 and doveadm commands must be all rechecked
 * [x] 1.6.7 - frontend: debug variable must always be set
@@ -273,6 +188,10 @@ docker buildx build \
 * [x] 1.6.6 - audit and fix api calls: deleteAccount alsoDeleteLogin is passed in body, not path
 * [x] 1.6.6 - audit and fix api calls: getServerStatus was post instead of get
 * [x] v1.6.5 - release
+* [x] 1.6.4 - do we keep auto-create logins for each account? YES but then we should stop using REPLACE, and use INSERT OR IGNORE because of existing ones
+* [x] 1.6.4 - 1. always create logins for each detected account, but let admins disable them as they attach roles to some users
+* [x] 1.6.4 - 2. each account must have either a linked login, or a login with that role must exist: NO, they can live without a login, we are flexible
+* [x] 1.6.4 - 3. each account should show when they are unmanaged or login-less: managers columns was added in Accounts
 * [x] 1.6.4 - bugfix: db: DEMO would not reset database from the sample
 * [x] 1.6.3 - Aliases: setAccountOptions is done by fetchAliases once we get accountsData
 * [x] 1.6.3 - backend: index displays critical variables on start
@@ -1023,15 +942,112 @@ docker buildx build \
 * [-] - frontend/Dashboard: where do we display Health/StartedAt etc? - don't care and don't use docker.sock anymore
 * [x] - backend: pull aliases can only be done by an admin currently, that's by design.
 * [-] - accounts: calls execDMS() with commands from dmsSetup{} in the same way as doveadm() uses domeadm{}? NOT YET because it hides what accounts/aliases etc will do; when we add execPoste() then we can revisit
+* [-] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
 
 
-## Misc
+<!--
+
+## build command: ignore this section
+export BUILDKIT_COLORS="run=cyan:error=light-red:cancel=light-cyan:warning=yellow" 
+
+- purge
+alias dpurge='docker buildx prune --builder multiarch --all -f; docker container prune -f && docker image prune -f && docker builder prune -a -f'
+alias npurge='rm -rf /docker/dms/dms-gui/backend/node_modules /docker/dms/dms-gui/frontend/node_modules'
+
+- DEBUG rebuild
+alias buildup='ENV_MODE=development docker-compose build && ENV_MODE=development DEBUG=true docker-compose up --force-recreate'
+alias buildupp='docker-compose build && docker-compose up --force-recreate'
+
+- DEBUG rebuild + DATABASE_RESET
+alias buildupr='ENV_MODE=development docker-compose build && ENV_MODE=development DEBUG=true DATABASE_RESET=true docker-compose up --force-recreate'
+
+- DEBUG rebuild + DATABASE_RESET + NOCACHE
+ENV_MODE=development docker-compose build --no-cache && ENV_MODE=development DEBUG=true DATABASE_RESET=true docker-compose up --force-recreate
+
+- check inside the container without really running it
+docker-compose run --rm --entrypoint ls audioscavenger/dms-gui:latest -la /app
+  drwxr-xr-x    1 root     root          4096 Apr 19 17:01 .
+  drwxr-xr-x    1 root     root          4096 Apr 19 17:01 ..
+  drwxr-xr-x    1 root     root          4096 Apr 19 16:31 backend
+  -rw-rw-r--    1 root     root         10262 Apr 14 18:36 common.mjs
+  drwxr-xr-x    1 root     root          4096 Apr 19 16:35 frontend
+  -rw-rw-r--    1 root     root            62 Apr 14 18:36 nodemon.json
+  -rwxrwxr-x    1 root     root           939 Apr 14 18:36 start.sh
+  -rw-r--r--    1 root     root             0 Apr 19 17:01 version.1.5.25
+
+docker login -u audioscavenger
+https://medium.com/@life-is-short-so-enjoy-it/docker-how-to-build-and-push-multi-arch-docker-images-to-docker-hub-64dea4931df9
+docker buildx ls
+    NAME/NODE       DRIVER/ENDPOINT              STATUS    BUILDKIT   PLATFORMS
+    default*        docker
+    \_ default      \_ default                  running   v0.30.0    linux/amd64 (+3), linux/386 
+
+docker buildx stop multiarch
+docker buildx rm multiarch
+docker buildx create  --name multiarch          --driver=docker-container --node multiarch --platform linux/arm64 ssh://root@oracle01:22
+docker buildx create  --name multiarch --append --driver=docker-container --node multiarch --platform linux/amd64 --bootstrap
+docker buildx ls
+    NAME/NODE       DRIVER/ENDPOINT              STATUS    BUILDKIT   PLATFORMS
+    multiarch       docker-container
+    \_ multiarch    \_ ssh://root@oracle01:22   running   v0.25.1    linux/amd64*, linux/arm64, linux/arm (+2)
+
+
+// recreate remote buildx on local with 2 separate nodes because of better-sqlite3 latest:
+docker buildx stop multiarch
+docker buildx rm multiarch
+docker buildx create --name multiarch \
+  --node local_host \
+  --driver docker-container \
+  --driver-opt image=moby/buildkit:v0.30.0 \
+  --platform linux/amd64 \
+  --bootstrap \
+  --use
+docker buildx create --name multiarch \
+  --append \
+  --node oracle_arm \
+  --driver docker-container \
+  --driver-opt image=moby/buildkit:v0.30.0 \
+  --platform linux/arm64 \
+  --bootstrap \
+  ssh://root@oracle01:22
+docker buildx ls
+NAME/NODE        DRIVER/ENDPOINT                   STATUS    BUILDKIT   PLATFORMS
+    multiarch*       docker-container
+    \_ local_host    \_ unix:///var/run/docker.sock   running   v0.30.0    linux/amd64* (+3), linux/386
+    \_ oracle_arm    \_ ssh://root@oracle01:22        running   v0.30.0    linux/arm64*, linux/arm (+2)
+
+### 1. Build and Load Locally (AMD)
+docker system df
+dpurge
+docker buildx build --no-cache \
+  --builder=multiarch \
+  --platform linux/amd64 \
+  -t audioscavenger/dms-gui:latest \
+  -f Dockerfile --load .
+
+### 2. Build and Push Remotely (ARM)
+docker buildx build --no-cache \
+  --builder=multiarch \
+  --platform linux/arm64 \
+  -t audioscavenger/dms-gui:latest \
+  -f Dockerfile \
+  --output type=docker,context=ssh://root@oracle01:22 .
+
+### 3. Push to Docker Hub When Ready
+docker buildx build \
+  --builder=multiarch \
+  --platform linux/amd64,linux/arm64 \
+  -t audioscavenger/dms-gui:latest \
+  -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) \
+  -f Dockerfile --push .
+
+
+## Misc: ignore this section
 
 * Cannot start `better-sqlite3` with `node:slim` backend base image. Therefore, base all images on 24-alpine.
   * Error was: `Error loading shared library ld-linux-x86-64.so.2: No such file or directory (needed by /app/backend/node_modules/better-sqlite3/build/Release/better_sqlite3.node)`
   * and that was fixed by adding `RUN apk add libc6-compat` to Dockerfile but now this new error: `Error relocating /app/backend/node_modules/better-sqlite3/build/Release/better_sqlite3.node: fcntl64: symbol not found`
 
-<!--
 search for base image with nodejs+py3:
 | image | size | comment |
 | ------------------------------------------- | ----- | ----------------------------------------- |

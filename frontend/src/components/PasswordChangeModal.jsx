@@ -25,7 +25,7 @@ const PasswordChangeModal = ({
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* Local Agent FIX: moved here from Profile.jsx – shared by both pages */}
+        {/* Local Agent FIX: moved here from Profile.jsx - shared by both pages */}
         {selectedLogin && !selectedLogin.isAdmin && !selectedLogin.isAccount && (
           <AlertMessage type="info" message={Translate('password.notMailbox')} />
         )}

@@ -332,14 +332,14 @@ const Accounts = () => {
 
   // Local Agent FIX: removed ~100 lines of copy-pasted password change state+handlers
   // (handleChangePassword, handleClosePasswordModal, handlePasswordInputChange,
-  //  validatePasswordForm, handleSubmitPasswordChange) – all now in usePasswordChange hook
+  //  validatePasswordForm, handleSubmitPasswordChange) - all now in usePasswordChange hook
 
 
   
   // Open DNS change modal for an account
   const handleChangeDNS = (account) => {
     setSelectedAccount(account);
-    // Local Agent FIX: removed setPasswordFormData() – copy-paste artifact from password change; DNS has its own form state
+    // Local Agent FIX: removed setPasswordFormData() - copy-paste artifact from password change; DNS has its own form state
     setDNSFormErrors({});
     setShowDNSModal(true);
   };

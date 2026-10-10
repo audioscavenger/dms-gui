@@ -376,7 +376,7 @@ const Dashboard = () => {
     const interval = setInterval(fetchDashboard, 30000);
 
     return () => clearInterval(interval);
-    // Local Agent FIX: added mailservers to deps – effect bails out when empty, so it must re-run once populated
+    // Local Agent FIX: added mailservers to deps - effect bails out when empty, so it must re-run once populated
   }, [containerName, mailservers]);
 
   useEffect(() => {

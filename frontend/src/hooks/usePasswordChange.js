@@ -17,9 +17,9 @@ import {
  * Handles all state + logic for the "Change Password" modal.
  *
  * @param {object} opts
- * @param {string} opts.containerName – current mailserver container
- * @param {Array}  opts.mailservers   – mailserver list from localStorage
- * @param {object} opts.user          – authenticated user from useAuth()
+ * @param {string} opts.containerName - current mailserver container
+ * @param {Array}  opts.mailservers   - mailserver list from localStorage
+ * @param {object} opts.user          - authenticated user from useAuth()
  */
 export default function usePasswordChange({ containerName, mailservers, user }) {
   const { t } = useTranslation();
@@ -129,18 +129,18 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
       }
 
       // ── Step 2: update local GUI login ──
-      // Local Agent FIX: guard – account objects from Accounts.jsx don't carry a login id,
+      // Local Agent FIX: guard - account objects from Accounts.jsx don't carry a login id,
       // so this step is skipped for pure-mailbox password changes.
       // When the account data includes a linked login's `id` (future backend enhancement),
       // both dovecot and local login will be updated in sync automatically.
       if (selectedLogin.id) {
         const loginResult = await updateLogin(selectedLogin.id, { password: newPassword });
         if (!loginResult.success) {
-          // Mailbox already changed – report both facts so the admin knows
+          // Mailbox already changed - report both facts so the admin knows
           // what state they're in.
           throw new Error(
             completedSteps.length
-              ? `${completedSteps.join('; ')} – ${loginResult.error || t('api.errors.changePassword')}`
+              ? `${completedSteps.join('; ')} - ${loginResult.error || t('api.errors.changePassword')}`
               : (loginResult.error || t('api.errors.changePassword')),
           );
         }
@@ -149,7 +149,7 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
         );
       }
 
-      // Local Agent FIX: if neither step ran (no isAccount, no id) that's a caller bug –
+      // Local Agent FIX: if neither step ran (no isAccount, no id) that's a caller bug -
       // surface it instead of silently succeeding with an empty message.
       if (completedSteps.length === 0) {
         throw new Error(t('api.errors.changePassword'));

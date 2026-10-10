@@ -18,8 +18,8 @@ const resolveButtonType = (explicit, formContext) => {
  * @param {string} [props.type] Button type: 'button' | 'submit' | 'reset'. Defaults to 'submit' when rendered inside a <form> and 'button' otherwise (mirrors native <button> behavior). Ignored when `href` is set.
  * @param {string} [props.variant='primary'] Button variant: 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'link', 'outline-primary', etc.
  * @param {function} [props.onClick] Click handler. Ignored when `href` is set (use native link behavior).
- * @param {string} [props.text] Button text — a translation key.
- * @param {string} [props.title] Tooltip/title — a translation key.
+ * @param {string} [props.text] Button text - a translation key.
+ * @param {string} [props.title] Tooltip/title - a translation key.
  * @param {string} [props.icon] Bootstrap icon name (without the 'bi-' prefix), e.g. 'github'.
  * @param {string} [props.size] Button size: 'sm' | 'lg'.
  * @param {boolean} [props.disabled=false] Whether the button is disabled.
