@@ -3,14 +3,14 @@
 #   build:      alias buildup='BUILDKIT_COLORS="run=cyan:error=light-red:cancel=light-cyan:warning=yellow" docker-compose build && docker-compose up --force-recreate'            # normal rebuild
 #   release:    docker buildx build --no-cache --builder=multiarch --platform linux/amd64,linux/arm64/v8 -t audioscavenger/dms-gui:latest -t audioscavenger/dms-gui:$(grep "^ARG DMSGUI_VERSION=v" Dockerfile | cut -d= -f2) -f Dockerfile --push .
 
-ARG DMSGUI_VERSION=1.6.18
+ARG DMSGUI_VERSION=1.6.19
 ARG DMSGUI_DESCRIPTION="A graphical user interface for managing all aspects of DMS including: email accounts, aliases, xapian indexes, and DNS entries."
 
 # -----------------------------------------------------
 # Stage 1: Build frontend https://hub.docker.com/_/node/tags - get the exact version here
 # https://dev.to/ptuladhar3/avoid-using-bloated-nodejs-docker-image-in-production-3doc
 # FROM node:slim AS frontend-builder
-FROM node:24.18.0-alpine3.24 AS frontend-builder
+FROM node:24.21.0-alpine3.24 AS frontend-builder
 # -----------------------------------------------------
 
 WORKDIR /app/frontend
@@ -39,7 +39,7 @@ RUN npm run ${ENV_MODE}
 # -----------------------------------------------------
 # Stage 2: Build backend
 # FROM node:slim AS backend-builder
-FROM node:24.18.0-alpine3.24 AS backend-builder
+FROM node:24.21.0-alpine3.24 AS backend-builder
 # -----------------------------------------------------
 
 WORKDIR /app/backend
@@ -69,7 +69,7 @@ RUN npm ci --omit=dev
 
 # -----------------------------------------------------
 # Stage 3: Final image with Nginx and Node.js
-FROM node:24.18.0-alpine3.24
+FROM node:24.21.0-alpine3.24
 # -----------------------------------------------------
 
 # alpine Install Nginx and Docker client - what is docker-cli for?

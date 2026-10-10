@@ -1,7 +1,5 @@
 This project is a web GUI for DMS (Docker Mailserver), just like the admin container from Mailu or Poste.io.
 
-I work on this solo, with the halp of a local coder agent since version 1.6.8. You are welcome to test and participate.
-
 This GUI relies on a simple python API to execute `doveadm` and `setup` commands inside the DMS container. This architecture is flexible enough, allowing to add other gui-less mail server projects in the future.
 
 # build urls:
@@ -9,6 +7,13 @@ This GUI relies on a simple python API to execute `doveadm` and `setup` commands
 - [wiki](https://github.com/audioscavenger/dms-gui)
 - [hub.docker](https://hub.docker.com/repositories/audioscavenger)
 
+# Disclaimer
+
+I worked on this solo for almost 2 years, with the help of Internet search and that helped me learn React. Most of the code is not AI slop, it's mine and can be improved. 
+
+Since October 2026, I started using Qwen3.8 as a local Agent, and I review 100% of the code myself. No automated commits or garbage slop.
+
+Hence, the presence of AGENTS.md and I don't want to hear any criticism. I have a life and only 24h in a day. This project is now too big for a solo dev and part-time coding on the weekends.
 
 # Plan
 
@@ -59,8 +64,8 @@ The TODO list rank is in order, as you naturally read from top to bottom and the
 * [ ]  - backend: implement uuid for all id columns: I see NO BENEFITS. I never go there, ids are always uniq and I trust the SQL queries, why change that?
 * [ ]  - implement roles table: **done** but now we need to actually use it
 * [ ]  - pullDoveConf execCommand failed with error: doveconf.mail_plugins.split is not a function or its return value is not iterable: cause by dms latest: now using dovecot 4; some doveadm commands to update
-* [ ]  - dovecot 4 upgrade: must pull/detect domeadm version and report it in getServerEnvs
-* [ ]  - dovecot 4 upgrade: must pull/detect domeadm version and handle sets of commands per version
+* [ ]  - dovecot 4 upgrade: getServerEnvs already pulls DOVECOT_VERSION=2.4.1-4; must implement versionned set of domeadm commands in backend.mjs
+* [ ]  - refactor needs for backend.mjs: create doveadm or tools.mjs, etc
 
 ### frontend chores
 
@@ -149,12 +154,15 @@ Domains page be like:
 ## Impending changes
 
 * [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
-* [ ]  - design: no new API for changePAssword: fix is entirely inside changePassword and the SQL layer
+* [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
 * [ ]  - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
 
 ## Commited changes
 
+* [x] 1.6.19 - added AGENTS.md and I don't want to hear any criticism. I have a life and only 24h in a day, this project is now too big for a weekend part-time dev party.
+* [x] 1.6.19 - Removed the original prettifier garbage in the root package.json
+* [x] 1.6.19 - Upgraded to node:24.21.0-alpine3.24, keeping eslint @9 because as usual, everything breaks in Node with major versions. Webpack is another animal.
 * [x] 1.6.18 - Updated Documentation and TODO list
 * [x] 1.6.18 - cleanup all the em dashes and shit from all files
 * [x] 1.6.17 - qwen3.8: bug: latent bug in changePassword: return success when calling sql.logins.update.password with id=mailbox instead of integer, fails silently; workaround by usePasswordChange that calls updateLogin on top
@@ -945,6 +953,23 @@ Domains page be like:
 * [-] - frontend/DataTable usePrevious to highlight data change on reload/change does not work anymore since we filter+sort data - I don't care
 
 
+## Build recommendations and Caveats
+
+Here is what I have been doing for the past 2 years:
+
+1. don't care about package.json in the root
+2. don't care about package.json in backend/: it's mounted via docker and after a successful build, I remote in the container and upgrade from there. Then I pull the new files back into local repo
+3. enable nvm on the cloud server (same node version as in container), move to frontend/, upgrade package.json deps, fix broken deps as needed. Then I pull the new files back into local repo. I cannot upgrade from inside the container for some reason.
+
+To test the app, I simply build it with docker compose `docker-compose up --build` and the 3-stages Dockerfile tests everything, including eslint on the frontend part.
+I never transfer the node_modules folders between Windows and Linux. Binaries are incompatibles.
+
+Let me repeat: Only lockfiles travel, never node_modules. The container always recompiles native modules from source.
+
+Sounds dumb to you? that's the only way I got it to work around a real constraint: better-sqlite3 native compilation only works correctly inside the container's alpine toolchain.
+
+
+
 <!--
 
 ## build command: ignore this section
@@ -1144,14 +1169,14 @@ npm approve-scripts --all
 npm audit fix
 
 
-## frontend upgrade commands: from the OS; do that once
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+## frontend upgrade commands: from the OS; do that once https://github.com/nvm-sh/nvm/
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 source ~/.bashrc
-nvm install 24.18.0
+nvm install 24.21.0
 
 ## make sure your local node is the same as the VM: do that each time
 source ~/.bashrc
-nvm use 24.18.0
+nvm use 24.21.0
 node -v
 
 npm install -g npm-check-updates
