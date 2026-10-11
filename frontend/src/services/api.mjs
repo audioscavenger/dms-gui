@@ -178,7 +178,8 @@ api.interceptors.response.use(
     // 2. If we are already heading to login, silence subsequent requests
     if (isRedirectingToLogin || isLogoutRequest) {
       debugLog(`2. isRedirectingToLogin=${isRedirectingToLogin} || isLogoutRequest=${isLogoutRequest}`);
-      return new Promise(() => {}); // Return unresolved promise to halt execution silently
+      // Local Agent FIX: reject so awaiting callers catch instead of hanging on an unresolved promise
+      return Promise.reject({ success: false, message: 'Session expired' }); // Return unresolved promise to halt execution silently
     }
 
     // 3. Handle complete server crashes (502, 503, 504) or network failures without backend response
@@ -188,7 +189,8 @@ api.interceptors.response.use(
         window.location.replace('/login');
       }
       debugLog(`3. !errorResponse=${!errorResponse} httpStatus=${httpStatus} && isLogoutRequest=${isLogoutRequest}`);
-      return new Promise(() => {}); // Return unresolved promise to halt execution silently
+      // Local Agent FIX: reject so awaiting callers catch instead of hanging on an unresolved promise
+      return Promise.reject({ success: false, message: 'Server unreachable' }); // Return unresolved promise to halt execution silently
     }
     
     // 4. Handle standard Token Expiration (Attempt Token Refresh Loop)
@@ -234,7 +236,8 @@ api.interceptors.response.use(
         window.location.href = '/login';
         // return Promise.reject(refreshError);
         debugLog(`4. errorResponseCode=${errorResponseCode} isLogoutRequest=${isLogoutRequest} /login`);
-        return new Promise(() => {}); // Return unresolved promise to halt execution silently
+        // Local Agent FIX: reject so awaiting callers catch instead of hanging on an unresolved promise
+        return Promise.reject({ success: false, message: 'Session expired' }); // Return unresolved promise to halt execution silently
       }
     }
 
@@ -255,7 +258,8 @@ api.interceptors.response.use(
       
       window.location.replace('/login');
       debugLog(`5. errorResponseCode=${errorResponseCode} /login`);
-      return new Promise(() => {}); // Return unresolved promise to halt execution silently
+      // Local Agent FIX: reject so awaiting callers catch instead of hanging on an unresolved promise
+      return Promise.reject({ success: false, message: 'Session expired' }); // Return unresolved promise to halt execution silently
     }
 
     // Step 6: Handle Non-Fatal Known Application Error Codes

@@ -1343,11 +1343,14 @@ export const createAPIfiles = async (schema='dms') => {
 
 export const killContainer = async (plugin='dms-gui', schema='dms-gui', containerName='dms-gui', errorcode=0) => {
   if (env.isDEMO && containerName == 'dms-gui') {
-    childProcess.exec(`cp -f ${env.DATABASE_SAMPLE} ${env.DATABASE_SAMPLE_LIVE}`, (error, stdout, stderr) => {
-      if (error) {
-        errorLog(`exec error: ${error}`);
-        return;
-      }
+    // Local Agent FIX: await the cp so the DB reset finishes before the container restarts
+    await new Promise((resolve) => {
+      childProcess.exec(`cp -f ${env.DATABASE_SAMPLE} ${env.DATABASE_SAMPLE_LIVE}`, (error, stdout, stderr) => {
+        if (error) {
+          errorLog(`exec error: ${error}`);
+        }
+        resolve();
+      });
     });
     successLog(`--------------------------- RESET ${containerName} DATABASE ---------------------------`);
   }
@@ -1356,11 +1359,14 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
   warnLog(`--------------------------- REBOOT ${containerName} NOW ---------------------------`);
   if (!env.isDEMO) {
     if (containerName == 'dms-gui') {
-      childProcess.exec(command[plugin][schema].kill, (error, stdout, stderr) => {
-        if (error) {
-          errorLog(`exec error: ${error}`);
-          return;
-        }
+      // Local Agent FIX: await the kill so it completes before returning success
+      await new Promise((resolve) => {
+        childProcess.exec(command[plugin][schema].kill, (error, stdout, stderr) => {
+          if (error) {
+            errorLog(`exec error: ${error}`);
+          }
+          resolve();
+        });
       });
       return {success: true, message: "reboot initiated"};
 

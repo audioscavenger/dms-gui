@@ -1985,9 +1985,10 @@ app.listen(env.PORT_BACKEND, async () => {
   // https://github.com/ncb000gt/node-cron    // internal crontan
   if (env.DMSGUI_CRON) {
     infoLog('DMSGUI_CRON',env.DMSGUI_CRON)
-    cron.schedule(env.DMSGUI_CRON, () => {
+    cron.schedule(env.DMSGUI_CRON, async () => {
         delay(60000); // wait until next minute or the container will reboot 60 times
-        killContainer('dms-gui', 'dms-gui', 'dms-gui');    // no await
+        // Local Agent FIX: await the kill so the reset completes before scheduling continues
+        await killContainer('dms-gui', 'dms-gui', 'dms-gui');
     });
   };
 

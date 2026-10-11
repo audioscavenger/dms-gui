@@ -153,7 +153,6 @@ Domains page be like:
 
 ## Impending changes
 
-* [x] 1.6.20 - Local Agent FIX: parsePostfixRegexFromDMS: changed [\S]+ to [\S]* in regexMatchPostfix so regex-alias sources ending in @ parse, and fixed ReferenceError on undefined line in warnLog (common.mjs, aliases.mjs)
 * [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
@@ -161,6 +160,9 @@ Domains page be like:
 
 ## Commited changes
 
+* [x] 1.6.21 - Local Agent FIX: reject instead of returning hung promise in api error interceptor so awaiting callers catch (api.mjs)
+* [x] 1.6.21 - Local Agent FIX: await childProcess.exec in killContainer (settings.mjs) and its call sites (index.js) so the reset/kill completes before the container restarts
+* [x] 1.6.20 - Local Agent FIX: parsePostfixRegexFromDMS: changed [\S]+ to [\S]* in regexMatchPostfix so regex-alias sources ending in @ parse, and fixed ReferenceError on undefined line in warnLog (common.mjs, aliases.mjs)
 * [x] 1.6.20 - Local Agent FIX: return 401 on failed login + per-IP rate limiter on /api/loginUser (index.js)
 * [x] 1.6.20 - Local Agent FIX: shell injection: validate destination in deleteAlias regex branch before shell command (aliases.mjs)
 * [x] 1.6.19 - Local Agent FIX: shell injection: validate mailbox / password / alias inputs before DMS shell commands, and use a random temp file to stop the /tmp symlink race (accounts.mjs, aliases.mjs, common.mjs)
