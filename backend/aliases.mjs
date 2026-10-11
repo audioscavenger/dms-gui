@@ -2,7 +2,10 @@ import {
     reduxArrayOfObjByValue,
     regexEmailStrict,
     regexMatchPostfix,
+    regexShellUnsafe,
 } from '../common.mjs';
+// Local Agent FIX: random temp filename to prevent /tmp symlink race in deleteAlias regex branch
+import crypto from 'node:crypto';
 import {
     debugLog,
     errorLog,
@@ -265,6 +268,8 @@ export const addAlias = async (containerName=null, source=null, destination=null
 
     if (source.match(regexEmailStrict)) {
       debugLog(`Adding new alias: ${source} -> ${destination}`);
+      // Local Agent FIX: validate destination (unquoted in shell command) to prevent shell injection
+      if (!destination.match(regexEmailStrict)) return {success: false, error: 'destination is not a valid address'};
     
       results = await execDMS(`alias add ${source} ${destination}`, targetDict);
       if (!results?.returncode) {
@@ -284,6 +289,9 @@ export const addAlias = async (containerName=null, source=null, destination=null
       
     // this is a regex
     } else {
+      // Local Agent FIX: validate regex source (shell-quoted) and destination (unquoted) to prevent shell injection
+      if (regexShellUnsafe.test(source)) return {success: false, error: 'regex source contains invalid characters'};
+      if (!destination.match(regexEmailStrict)) return {success: false, error: 'destination is not a valid address'};
       let command = `echo '${source} ${destination}' >>${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
       debugLog(`Adding new regex: ${source} -> ${destination}`);
       
@@ -336,6 +344,8 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
     // this is normal email format
     if (source.match(regexEmailStrict)) {
       debugLog(`Deleting alias: ${source} -> ${destination}`);
+      // Local Agent FIX: validate destination (source already validated by the branch condition) to prevent shell injection
+      if (!destination.match(regexEmailStrict)) return {success: false, error: 'destination is not a valid address'};
       
       results = await execDMS(`alias del ${source} ${destination}`, targetDict);
       debugLog(`------------------------------- Alias deleted results:`, results);
@@ -356,10 +366,13 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
     
     // this is regex, must stringify
     } else {
+      // Local Agent FIX: reject single-quote/control chars in the regex source (prevents shell break-out) and use a random temp filename (fixes /tmp symlink race)
+      if (regexShellUnsafe.test(source)) return {success: false, error: 'regex source contains invalid characters'};
       source = JSON.stringify(source);
       debugLog(`Deleting alias regex: ${source}`);
-      
-      let command = `grep -Fv '${source} ${destination}' ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >/tmp/postfix-regexp.cf && mv /tmp/postfix-regexp.cf ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
+
+      const tmpFile = `/tmp/postfix-regexp.cf.${crypto.randomUUID()}`;
+      let command = `grep -Fv '${source} ${destination}' ${env.DMS_CONFIG_PATH}/postfix-regexp.cf >${tmpFile} && mv ${tmpFile} ${env.DMS_CONFIG_PATH}/postfix-regexp.cf`;
       results = await execCommand(command, targetDict);
       debugLog(`------------------------------- Alias regex deleted results:`, results);
       if (!results?.returncode) {

@@ -160,6 +160,8 @@ Domains page be like:
 
 ## Commited changes
 
+* [x] 1.6.19 - Local Agent FIX: shell injection: validate mailbox / password / alias inputs before DMS shell commands, and use a random temp file to stop the /tmp symlink race (accounts.mjs, aliases.mjs, common.mjs)
+* [x] 1.6.19 - Local Agent FIX:bug: fixed broken SQL in logins select.refreshToken query that always threw a syntax error and broke /api/refresh (db.mjs)
 * [x] 1.6.19 - added AGENTS.md and I don't want to hear any criticism. I have a life and only 24h in a day, this project is now too big for a weekend part-time dev party.
 * [x] 1.6.19 - Removed the original prettifier garbage in the root package.json
 * [x] 1.6.19 - Upgraded to node:24.21.0-alpine3.24, keeping eslint @9 because as usual, everything breaks in Node with major versions. Webpack is another animal.
@@ -1137,98 +1139,48 @@ octodns-sync --version
 -->
 
 <!--
-## backend upgrade commands:
-docker exec -it dms-gui sh
-npm install -g npm-check-updates
-npm install -g npm
-
-cd /app/backend
-npm version
-
-npx npm-check-updates -u
- better-sqlite3        ^12.5.0  →        ^12.11.1
- cors                   ^2.8.5  →          ^2.8.6
- dockerode              ^4.0.9  →          ^5.0.0
- dotenv                ^17.2.3  →         ^17.4.2
- json-server     ^1.0.0-beta.3  →  ^1.0.0-beta.15
- node-cron              ^4.2.1  →          ^4.5.0
- prettier                3.7.4  →           3.8.4
- swagger-jsdoc          ^6.2.8  →          ^6.3.0
-
-npm install
-npm approve-scripts --allow-scripts-pending
-  found 0 vulnerabilities
-  npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
-  npm warn allow-scripts   @scarf/scarf@1.4.0 (install: (install scripts present))
-  npm warn allow-scripts   better-sqlite3@12.10.0 (install: node-gyp rebuild)
-  npm warn allow-scripts   ssh2@1.17.0 (install: (install scripts present))
-  npm warn allow-scripts   protobufjs@7.6.2 (postinstall: node scripts/postinstall)
-  npm warn allow-scripts
-  npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
-npm approve-scripts --all
-npm audit fix
-
-
-## frontend upgrade commands: from the OS; do that once https://github.com/nvm-sh/nvm/
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
-source ~/.bashrc
-nvm install 24.21.0
-
-## make sure your local node is the same as the VM: do that each time
-source ~/.bashrc
-nvm use 24.21.0
-node -v
-
-npm install -g npm-check-updates
-npm install -g npm
-
-cd /docker/dms/dms-gui/frontend
-npm version
-{
-  'dms-gui-frontend': '1.0.0',
-  npm: '11.16.0',
-  node: '24.9.0',
-  acorn: '8.15.0',
-  ada: '3.2.7',
-  amaro: '1.1.2',
-  ares: '1.34.5',
-  brotli: '1.1.0',
-  cjs_module_lexer: '2.1.0',
-  cldr: '47.0',
-  icu: '77.1',
-  llhttp: '9.3.0',
-  modules: '137',
-  napi: '10',
-  nbytes: '0.1.1',
-  ncrypto: '0.0.1',
-  nghttp2: '1.66.0',
-  openssl: '3.5.3',
-  simdjson: '3.13.0',
-  simdutf: '6.4.0',
-  sqlite: '3.50.4',
-  tz: '2025b',
-  undici: '7.16.0',
-  unicode: '16.0',
-  uv: '1.51.0',
-  uvwasi: '0.0.23',
-  v8: '13.6.233.10-node.27',
-  zlib: '1.3.1-470d3a2',
-  zstd: '1.5.7'
-}
-
-npx npm-check-updates -u
- @babel/core          ^7.29.7  →   ^8.0.1    [missing time]
- @babel/preset-env    ^7.29.7  →   ^8.0.2    [missing time]
- @babel/preset-react  ^7.29.7  →   ^8.0.1    [missing time]
- @mui/material         ^9.1.0  →   ^9.1.1    [missing time]
- axios                ^1.17.0  →  ^1.18.1    [missing time]
- prettier               3.8.3  →    3.8.4    [missing time]
- react-router-dom     ^7.17.0  →  ^7.18.0    [missing time]
- webpack-dev-server    ^5.2.4  →   ^5.2.5    [missing time]
-
+:: ----------------------------------------------------
+:: 1. frontend - safe to do fully locally (all JS deps)
+cd frontend
 npm install
 npm audit fix
-  found 0 vulnerabilities
+npm install
+ncu               :: check upgrades
+ncu -u -x eslint  :: pull upgrades except eslint, it often breaks
+
+:: if you see that with ncu -u:
+::    Major   Potentially breaking API changes
+::     eslint              ^9.39.4  →  ^10.12.0
+::     webpack-dev-server   ^5.2.5  →    ^6.0.0
+:: 
+:: then revert back to eslint @9 with npm (ncu cannot downgrade):
+:: npm install eslint@9 --save-dev
+:: type package.json | findstr eslint
+
+npm install      :: regen lockfile
+npm run lin t    :: verify
+npm run production  :: verify build
+
+:: --------------------------------------------------------------------
+:: 2. backend - lockfile work only (do NOT keep the local node_modules)
+cd ..\backend
+ncu -u          :: updates package.json ; you re-resolve the lockfile in Docker
+npm install     :: Re-sync the lockfile
+npm audit fix
+npm install
+:: test a key modules since eslint is absent:
+node -e "import('./db.mjs').then(m=>console.log('db.mjs loads OK')).catch(e=>{console.error(e);process.exit(1)})"
+
+:: ---------------------------------------------------
+:: 3. root - husky/lint-staged are abendonned. they prettify and commit to github. dangerous.
+u
+
+
+REM points to work on: total size seems out of hands:
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (1.11 MiB)
+      bundle.js
 
 
 ## finally, purge all caches and rebuild

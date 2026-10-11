@@ -5,26 +5,29 @@ commit.*.txt
 *.code-workspace
 config/dms-gui/*
 
-# Dependencies
-node_modules/
-
 # Environment variables
+.continue/
+AGENTS.md
 !config/dms-gui/.dms-gui.env.example
 !config/dms-gui/dms-gui-demo.sqlite3
 
-# Logs
+# stuff
 logs
 *.log
+*.zip
+*.7z
 
 # Build outputs
-dist
+dist/
+node_modules/
 build
 coverage
 *.fixed.jsx
 
-# OS generated files
+# generated files
+AUDIT*
+.agents/
 .DS_Store
 Thumbs.db
 *.url
 *.lnk
-.continue/

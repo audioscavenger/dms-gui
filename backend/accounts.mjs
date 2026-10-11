@@ -22,6 +22,8 @@
 // } from '../common.mjs'
 import {
   reduxArrayOfObjByValue,
+  regexEmailStrict,
+  regexShellUnsafe,
 } from '../common.mjs';
 import {
   deleteAlias,
@@ -283,6 +285,9 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
   if (!password) return {success: false, error: 'password is null'};
   if (!mailbox) return {success: false, error: 'mailbox is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
+  // Local Agent FIX: validate mailbox and password to prevent shell injection
+  if (!mailbox.match(regexEmailStrict)) return {success: false, error: 'mailbox is not a valid email address'};
+  if (regexShellUnsafe.test(password)) return {success: false, error: 'password contains invalid characters'};
   let result, results;
 
   try {
@@ -343,6 +348,8 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
   debugLog(schema, containerName, mailbox, alsoDeleteLogin);
   if (!mailbox) return {success: false, error: 'containerName is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
+  // Local Agent FIX: validate mailbox to prevent shell injection
+  if (!mailbox.match(regexEmailStrict)) return {success: false, error: 'mailbox is not a valid email address'};
 
   let result, results;
   try {
@@ -420,6 +427,9 @@ export const updateAccount = async (schema='dms', containerName=null, mailbox=nu
   if (!password) return {success: false, error: 'password is null'};
   if (!mailbox) return {success: false, error: 'containerName is null'};
   if (!containerName) return {success: false, error: 'containerName is null'};
+  // Local Agent FIX: validate mailbox and password to prevent shell injection
+  if (!mailbox.match(regexEmailStrict)) return {success: false, error: 'mailbox is not a valid email address'};
+  if (regexShellUnsafe.test(password)) return {success: false, error: 'password contains invalid characters'};
 
   let results;
   try {

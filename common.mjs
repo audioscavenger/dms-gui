@@ -13,6 +13,8 @@ export const regexEmailRegex = /^\/[\S]+@[\S]+\/$/;                             
 export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+\.[\w]+)/;    // example: /^postmaster.*@.*.*/ admin@example.com
 // export const regexUsername = /^[^\s]+$/;
 export const regexUsername = /^(?=^.{1,36}$)[\w\.\-_]+$/;
+// Local Agent FIX: chars that break out of a single-quoted shell string (single quote) plus control chars; used to prevent shell injection in DMS commands
+export const regexShellUnsafe = /['\x00-\x1f\x7f]/;
 
 // import {
 //   regexColors,
