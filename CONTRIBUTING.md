@@ -153,6 +153,7 @@ Domains page be like:
 
 ## Impending changes
 
+* [x] 1.6.20 - Local Agent FIX: parsePostfixRegexFromDMS: changed [\S]+ to [\S]* in regexMatchPostfix so regex-alias sources ending in @ parse, and fixed ReferenceError on undefined line in warnLog (common.mjs, aliases.mjs)
 * [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
@@ -160,6 +161,8 @@ Domains page be like:
 
 ## Commited changes
 
+* [x] 1.6.20 - Local Agent FIX: return 401 on failed login + per-IP rate limiter on /api/loginUser (index.js)
+* [x] 1.6.20 - Local Agent FIX: shell injection: validate destination in deleteAlias regex branch before shell command (aliases.mjs)
 * [x] 1.6.19 - Local Agent FIX: shell injection: validate mailbox / password / alias inputs before DMS shell commands, and use a random temp file to stop the /tmp symlink race (accounts.mjs, aliases.mjs, common.mjs)
 * [x] 1.6.19 - Local Agent FIX:bug: fixed broken SQL in logins select.refreshToken query that always threw a syntax error and broke /api/refresh (db.mjs)
 * [x] 1.6.19 - added AGENTS.md and I don't want to hear any criticism. I have a life and only 24h in a day, this project is now too big for a weekend part-time dev party.

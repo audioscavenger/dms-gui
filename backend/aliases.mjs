@@ -248,7 +248,7 @@ export const parsePostfixRegexFromDMS = async (stdout='') => {
         destination,
       });
     } else {
-      warnLog(`Failed to parse regex line: ${line}`);
+      warnLog(`Failed to parse regex line: ${lines[i]}`);
     }
   }
   return regexes;
@@ -368,6 +368,8 @@ export const deleteAlias = async (containerName=null, source=null, destination=n
     } else {
       // Local Agent FIX: reject single-quote/control chars in the regex source (prevents shell break-out) and use a random temp filename (fixes /tmp symlink race)
       if (regexShellUnsafe.test(source)) return {success: false, error: 'regex source contains invalid characters'};
+      // Local Agent FIX: validate destination (single-quoted in shell command) to prevent shell injection
+      if (!destination.match(regexEmailStrict)) return {success: false, error: 'destination is not a valid address'};
       source = JSON.stringify(source);
       debugLog(`Deleting alias regex: ${source}`);
 

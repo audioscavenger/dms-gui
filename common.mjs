@@ -4,41 +4,17 @@ export const regexColors = /\x1b\[[0-9;]*[mGKHF]/g;
 export const regexPrintOnly = /[^\S]/;
 
 export const regexFindEmailStrict = /^(?=^.{1,254}$)([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)$/;     // example: x@y.z
-export const regexFindEmailRegex = /^\/([\S]+@[\S]+)\/$/;                                   // example: /abuse@*/
+export const regexFindEmailRegex = /^\/([\S]*@[\S]*)\/$/;                                   // example: /abuse@*/
 export const regexExtractEmail = /\b(?=[^\s]{3,254}\b)([\w\.\-_]+)@([\w\.\-_]+\.[\w]+)/g;   // extract email matches out of long paragraphs
 // export const regexEmailStrict = /^[\w\.\-_]+@[\w\.\-_]+\.[\w]+$/;
 export const regexEmailStrict = /^(?=^.{1,254}$)([\w\.\-_]+@[\w\.\-_]+\.[\w]+)$/;           // example: x@y.z
-export const regexEmailRegex = /^\/[\S]+@[\S]+\/$/;                                         // example: /abuse@*/
+export const regexEmailRegex = /^\/[\S]*@[\S]*\/$/;                                         // example: /abuse@*/
 
-export const regexMatchPostfix = /(\/[\S]+@[\S]+\/)[\s]+([\w\.\-_]+@[\w\.\-_]+\.[\w]+)/;    // example: /^postmaster.*@.*.*/ admin@example.com
+export const regexMatchPostfix = /(\/[\S]*@[\S]*\/)[\s]+([\w\.\-_]+@[\w\.\-_]+\.[\w]+)/;    // example: /^postmaster.*@.*.*/ admin@example.com
 // export const regexUsername = /^[^\s]+$/;
 export const regexUsername = /^(?=^.{1,36}$)[\w\.\-_]+$/;
 // Local Agent FIX: chars that break out of a single-quoted shell string (single quote) plus control chars; used to prevent shell injection in DMS commands
 export const regexShellUnsafe = /['\x00-\x1f\x7f]/;
-
-// import {
-//   regexColors,
-//   regexPrintOnly,
-//   regexFindEmailStrict,
-//   regexEmailStrict,
-//   regexMatchPostfix,
-//   regexUsername,
-//   funcName,
-//   fixStringType,
-//   arrayOfStringToDict,
-//   obj2ArrayOfObj,
-//   reduxArrayOfObjByKey,
-//   reduxArrayOfObjByValue,
-//   reduxPropertiesOfObj,
-//   mergeArrayOfObj,
-//   getValueFromArrayOfObj,
-//   getValuesFromArrayOfObj,
-//   pluck,
-//   byteSize2HumanSize,
-//   humanSize2ByteSize,
-//   moveKeyToLast,
-// } from '../common.mjs'
-
 
 export const funcName = (parent=4, onlyParent=false) => {
   const error = new Error();
@@ -87,8 +63,13 @@ export const fixStringType = string => {
 
 
 export const jsonFixTrailingCommas = (jsonString, returnJson=false) => {
-  var jsonObj;
-  eval('jsonObj = ' + jsonString);
+  // (jsonObj is declared below via JSON.parse)
+  // Strip trailing commas (a comma followed by a closing brace/bracket, with any
+  // whitespace/newlines in between) so the string becomes strict JSON, then parse
+  // it safely. Using JSON.parse instead of eval() removes the code-injection
+  // risk that came from evaluating the (attacker-influenceable) input data.
+  const cleaned = String(jsonString).replace(/,(\s*[}\]])/g, '$1');
+  const jsonObj = JSON.parse(cleaned);
   if (returnJson) return jsonObj;
   else return JSON.stringify(jsonObj);
 };

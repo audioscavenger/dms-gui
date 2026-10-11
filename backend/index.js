@@ -1536,7 +1536,26 @@ async (req, res) => {
  *       500:
  *         description: Unable to validate credentials
  */
-app.post('/api/loginUser', async (req, res, next) => {
+// Local Agent FIX: per-IP rate limiter (15-min window, 10 reqs) to prevent brute-force credential guessing.
+// Same in-memory Map pattern as lockoutCache in logins.mjs; req.ip is authoritative because `app.set('trust proxy', true)` is set above.
+const loginRateLimitWindowMs = 15 * 60 * 1000;
+const loginRateLimitMax = 10;
+const loginRateLimitBuckets = new Map();   // ip -> { count, resetAt }
+const apiRateLimiter = (max = loginRateLimitMax) => (req, res, next) => {
+  const ip = req.ip || (req.socket && req.socket.remoteAddress) || 'unknown';
+  const now = Date.now();
+  let bucket = loginRateLimitBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    loginRateLimitBuckets.set(ip, { count: 1, resetAt: now + loginRateLimitWindowMs });
+    return next();
+  }
+  bucket.count += 1;
+  if (bucket.count > max) {
+    return res.status(429).json({ error: 'Too many requests', code: 'RATE_LIMITED', retryAfterSeconds: Math.ceil((bucket.resetAt - now) / 1000) });
+  }
+  return next();
+};
+app.post('/api/loginUser', apiRateLimiter(), async (req, res, next) => {
   try {
     const { credential, password, test } = req.body;
     if (!credential)  return res.status(400).json({ error: 'credential is missing' });
@@ -1567,8 +1586,9 @@ app.post('/api/loginUser', async (req, res, next) => {
       return res.json(user);
 
     } else {
-      // res.status(401).json(user);   // this 401 error cannot be hidden from the browser when /login does the default user/pass test
-      return res.json(user);
+      // Local Agent FIX: return 401 on failed login (was 200) so the Axios error interceptor and per-IP rate limiting behave consistently.
+      // The `test` admin/changeme branch above still returns 200, so the Login page's default-credential check is unaffected.
+      return res.status(401).json(user);
     }
 
   } catch (error) {
