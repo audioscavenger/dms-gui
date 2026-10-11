@@ -153,6 +153,9 @@ Domains page be like:
 
 ## Impending changes
 
+* [x] 1.6.22 - Local Agent FIX: persist JWT_SECRET/JWT_SECRET_REFRESH in /app/config/.jwt-secrets so restarts no longer invalidate all sessions (docker/start.sh)
+* [x] 1.6.22 - Local Agent FIX: rotate JWT secrets in start.sh when /app/config/.jwt-secrets is older than 7 days (delete file so a fresh pair is generated, sessions invalidated)
+* [x] 1.6.22 - Local Agent FIX: whitelist table/key before SQL interpolation and parameterise sqlite_master name lookup (db.mjs)
 * [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts

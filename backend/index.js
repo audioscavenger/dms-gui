@@ -265,7 +265,8 @@ const requireActive = (req, res, next) => {
   next();
 };
 
-
+// By default, Express's JSON parser (app.use(express.json())) caps the maximum size of any incoming text payload at 100 KB (exactly 102,400 bytes)
+// app.use(express.json({ limit: '50mb' }));
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
 
@@ -372,7 +373,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/status: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -399,7 +401,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/infos: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -461,7 +464,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/envs: ${error.message}`);
     // res.status(500).json({ error: 'Unable to connect to docker-mailserver' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -515,7 +519,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve accounts' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -582,7 +587,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create account' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -650,7 +656,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`PUT /api/doveadm: ${error.message}`);
     // res.status(500).json({ error: 'Unable to execute doveadm' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -704,7 +711,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete account' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -783,7 +791,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index PATCH /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update Account' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -837,7 +846,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve aliases' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -924,7 +934,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/aliases: ${error.message}`);
     // res.status(500).json({ error: 'Unable to create alias' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -991,7 +1002,8 @@ async (req, res) => {
     
   } catch (error) {
     errorLog(`DELETE /api/aliases: ${error.message}`);
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1050,7 +1062,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`GET /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve settings' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1096,7 +1109,8 @@ async (req, res) => {
     
   } catch (error) {
     errorLog(`GET /api/configs: ${error.message}`);
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1174,7 +1188,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index POST /api/settings: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save settings' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1219,7 +1234,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index GET /api/roles: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve roles' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1261,7 +1277,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index POST /api/getLogins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve logins' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1337,7 +1354,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index PUT /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to save Login' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1453,7 +1471,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index PATCH /api/logins: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update login' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1498,7 +1517,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index /api/login: ${error.message}`);
     // res.status(500).json({ error: 'Unable to delete login' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1593,7 +1613,8 @@ app.post('/api/loginUser', apiRateLimiter(), async (req, res, next) => {
 
   } catch (error) {
     errorLog(`index POST /api/loginUser: ${error.message}`);
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1762,7 +1783,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index GET /api/domains/${domain}/${containerName}: ${error.message}`);
     // res.status(500).json({ error: 'Unable to retrieve domains' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1815,7 +1837,8 @@ async (req, res) => {
   } catch (error) {
     errorLog(`index GET /api/getCount: ${error.message}`);
     // res.status(500).json({ error: 'Unable to count table' });
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1881,7 +1904,8 @@ async (req, res) => {
     
   } catch (error) {
     errorLog(`index /api/accounts: ${error.message}`);
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 
@@ -1933,7 +1957,8 @@ async (req, res) => {
     
   } catch (error) {
     errorLog(`index /api/killContainer: ${error.message}`);
-    return res.status(500).json({ error: error.message });
+    // Local Agent FIX: AUDIT_FINDINGS #8 - do not leak error.message in production; dev mode keeps detail (errorLog already logs full message).
+    return res.status(500).json({ error: (env.ENV_MODE === 'development') ? error.message : 'Internal server error' });
   }
 });
 

@@ -962,7 +962,8 @@ export const dbInit = (DATABASE_RESET=false) => {
     if (actions.init) {
 
       try {
-        result = dbGet(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
+        // Local Agent FIX: parameterise table name instead of string interpolation (AUDIT #9)
+        result = dbGet(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, {}, table);
         if (!result.success || !result.message) {
           result = dbRun(actions.init);
           // result example:
@@ -1346,6 +1347,10 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
             // errorLog(`sql[${table}].update is missing [${key}]`);
             // return { success: false, error: `sql[${table}].update is missing [${key}]`};
 
+            // Local Agent FIX: whitelist table and key before SQL interpolation (AUDIT #9)
+            if (!sql[table] || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || !Object.keys(sql[table].update).includes(key)) {
+              throw new Error(`refusing to interpolate unverified table.key ${table}.${key}`);
+            }
             if (encrypt) scopedValues[key] = dbEncrypt(scopedValues[key]);
             result = dbRun(`UPDATE ${table} set ${key} = @${key} WHERE 1=1 AND ${sql[table].key} = ?`, scopedValues, id);
             if (result.success) {

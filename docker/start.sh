@@ -1,8 +1,38 @@
 #!/bin/sh
 
-# JWT secrets for tokens, without openssl; otherwise that would be openssl rand -hex 32
-export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-export JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+# Local Agent FIX: persist JWT secrets across restarts (AUDIT #10) - generate once, then reuse
+# previously a fresh secret was minted on every container start, invalidating every session
+# the file lives on the same mounted config volume as the sqlite database, so it survives restarts
+JWT_SECRET_FILE=/app/config/.jwt-secrets
+write_jwt_secrets() {
+  echo "export JWT_SECRET=$JWT_SECRET" > "$JWT_SECRET_FILE"
+  echo "export JWT_SECRET_REFRESH=$JWT_SECRET_REFRESH" >> "$JWT_SECRET_FILE"
+}
+
+export JWT_SECRET
+export JWT_SECRET_REFRESH
+# Local Agent FIX: periodically rotate the secret - if the persisted file is 7+ days old, remove it so a fresh pair is generated
+if [ -f "$JWT_SECRET_FILE" ]; then
+  MTIME=$(stat -c %Y "$JWT_SECRET_FILE" 2>/dev/null || echo 0)
+  NOW=$(date +%s)
+  AGE=$((NOW - MTIME))
+  if [ "$AGE" -gt $((7 * 24 * 60 * 60)) ]; then
+    echo "JWT secret is older than 7 days, rotating (all sessions will be invalidated)"
+    rm -f "$JWT_SECRET_FILE"
+    # Local Agent FIX: warn that all existing sessions are now invalid (refresh tokens in DB no longer match the new signature)
+    echo "WARNING: all existing sessions have been invalidated by JWT secret rotation; users must log in again" >&2
+  fi
+fi
+
+# Local Agent FIX: if the persisted file is missing or corrupted, generate a fresh pair and persist it
+if [ ! -s "$JWT_SECRET_FILE" ]; then
+  JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+  JWT_SECRET_REFRESH=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+  write_jwt_secrets
+else
+  . "$JWT_SECRET_FILE"
+fi
+
 # export REACT_VERSION=$(node -p "require('/app/backend/package.frontend.json').dependencies.react" | cut -c2-)   # we can't get this file for some reason
 export REACT_VERSION=$(cat /app/REACT_VERSION.txt)
 
