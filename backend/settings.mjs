@@ -1378,8 +1378,9 @@ export const killContainer = async (plugin='dms-gui', schema='dms-gui', containe
         if (plucks(result.message, 'value').has(containerName) && command[plugin][schema]?.kill) {
 
           const targetDict = getTargetDict(plugin, containerName);
-          results = await execCommand(command[plugin][schema].kill, targetDict);
-          if (results?.returncode) return {success: false, error: results.stderr, returncode: results?.returncode};
+          // Local Agent FIX: use the declared `result` variable instead of an undeclared `results` (ReferenceError in strict ESM)
+          result = await execCommand(command[plugin][schema].kill, targetDict);
+          if (result?.returncode) return {success: false, error: result.stderr, returncode: result?.returncode};
 
         } else return {success: false, error: `kill command missing for ${plugin} schema=${schema}`};
       }

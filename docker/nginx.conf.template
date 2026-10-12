@@ -3,6 +3,11 @@ server {
   root /app/frontend;
   index index.html;
 
+  # Local Agent FIX: add basic security headers to every response
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "DENY" always;
+  add_header X-XSS-Protection "1; mode=block" always;
+
   # Enable gzip compression
   gzip on;
   gzip_types text/plain text/css application/javascript application/json;

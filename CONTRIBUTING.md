@@ -153,17 +153,20 @@ Domains page be like:
 
 ## Impending changes
 
-* [x] 1.6.22 - Local Agent FIX: persist JWT_SECRET/JWT_SECRET_REFRESH in /app/config/.jwt-secrets so restarts no longer invalidate all sessions (docker/start.sh)
-* [x] 1.6.22 - Local Agent FIX: rotate JWT secrets in start.sh when /app/config/.jwt-secrets is older than 7 days (delete file so a fresh pair is generated, sessions invalidated)
-* [x] 1.6.22 - Local Agent FIX: whitelist table/key before SQL interpolation and parameterise sqlite_master name lookup (db.mjs)
-* [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
 * [ ]  - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
 
 ## Commited changes
 
+* [x] 1.6.24 - Local Agent FIX: use declared 'result' variable instead of undeclared 'results' in killContainer reboot path (settings.mjs)
+* [x] 1.6.24 - Local Agent FIX: remove unconditional console.log debug leak in getValuesFromArrayOfObj (common.mjs)
+* [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
+* [x] 1.6.24 - Local Agent FIX: add X-Content-Type-Options / X-Frame-Options / X-XSS-Protection security headers to all nginx responses (docker/nginx.conf.template)
 * [x] 1.6.23 - Local Agent FIX: request-aware CORS - allow same-origin (matches Host) or explicit ALLOWED_ORIGINS, reject look-alike domains instead of blind reflection (index.js, env.mjs)
+* [x] 1.6.22 - Local Agent FIX: whitelist table/key before SQL interpolation and parameterise sqlite_master name lookup (db.mjs)
+* [x] 1.6.22 - Local Agent FIX: persist JWT_SECRET/JWT_SECRET_REFRESH in /app/config/.jwt-secrets so restarts no longer invalidate all sessions (docker/start.sh)
+* [x] 1.6.22 - Local Agent FIX: rotate JWT secrets in start.sh when /app/config/.jwt-secrets is older than 7 days (delete file so a fresh pair is generated, sessions invalidated)
 * [x] 1.6.21 - Local Agent FIX: reject instead of returning hung promise in api error interceptor so awaiting callers catch (api.mjs)
 * [x] 1.6.21 - Local Agent FIX: await childProcess.exec in killContainer (settings.mjs) and its call sites (index.js) so the reset/kill completes before the container restarts
 * [x] 1.6.20 - Local Agent FIX: parsePostfixRegexFromDMS: changed [\S]+ to [\S]* in regexMatchPostfix so regex-alias sources ending in @ parse, and fixed ReferenceError on undefined line in warnLog (common.mjs, aliases.mjs)

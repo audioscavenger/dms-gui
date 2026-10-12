@@ -125,6 +125,15 @@ debugLog('env.BACKEND_PROXY_URL',env.BACKEND_PROXY_URL)
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 //   allowedHeaders: ['Content-Type', 'Authorization', Accept-Language'] X-Requested-With
 // };
+
+/*
+Local Agent FIX: allowedOrigins: For most test scenarios it will just work, because:
+
+Same-origin (nginx serving both UI and API on one host) → Origin matches Host → allowed.
+curl / mobile / non-browser (no Origin) → allowed.
+Explicit cross-host frontend → set ALLOWED_ORIGINS for that one host.
+*/
+
 const allowedOrigins = env.ALLOWED_ORIGINS.filter(Boolean);
 // Local Agent FIX: request-aware CORS. Allow the origin only when it is a true same-origin
 // (matches the request Host, e.g. same nginx vhost), an explicit ALLOWED_ORIGINS entry,

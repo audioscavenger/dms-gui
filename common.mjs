@@ -269,7 +269,7 @@ export const getValuesFromArrayOfObj = (array, propValues, keyName = 'name', key
   
   // Ensure propValues is always an array for comparison
   const searchValues = Array.isArray(propValues) ? propValues : [propValues];
-  console.log("Evaluating Array:", JSON.stringify(array));
+  // console.log("Evaluating Array:", JSON.stringify(array));
 
   // return array
     // .filter(item => searchValues.includes(item[keyName]))
