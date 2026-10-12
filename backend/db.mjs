@@ -59,11 +59,13 @@ export const sqlMatch = {
 export const sql = {
 
 // https://patorjk.com/software/taag/#p=display&f=ANSI+Regular&t=ROLES&x=none&v=4&h=4&w=80&we=false
-// ███████ ███████ ████████ ████████ ██ ███    ██  ██████  ███████ 
-// ██      ██         ██       ██    ██ ████   ██ ██       ██      
-// ███████ █████      ██       ██    ██ ██ ██  ██ ██   ███ ███████ 
-//      ██ ██         ██       ██    ██ ██  ██ ██ ██    ██      ██ 
-// ███████ ███████    ██       ██    ██ ██   ████  ██████  ███████ 
+/*
+███████ ███████ ████████ ████████ ██ ███    ██  ██████  ███████ 
+██      ██         ██       ██    ██ ████   ██ ██       ██      
+███████ █████      ██       ██    ██ ██ ██  ██ ██   ███ ███████ 
+     ██ ██         ██       ██    ██ ██  ██ ██ ██    ██      ██ 
+███████ ███████    ██       ██    ██ ██   ████  ██████  ███████ 
+*/
 settings: {
 
   key:  'name',
@@ -118,11 +120,13 @@ settings: {
   ],
 },
 
-// ██████   ██████  ██      ███████ ███████ 
-// ██   ██ ██    ██ ██      ██      ██      
-// ██████  ██    ██ ██      █████   ███████ 
-// ██   ██ ██    ██ ██      ██           ██ 
-// ██   ██  ██████  ███████ ███████ ███████ 
+/*
+██████   ██████  ██      ███████ ███████ 
+██   ██ ██    ██ ██      ██      ██      
+██████  ██    ██ ██      █████   ███████ 
+██   ██ ██    ██ ██      ██           ██ 
+██   ██  ██████  ███████ ███████ ███████ 
+*/
 roles: {
 
   key:  'loginID',
@@ -165,11 +169,13 @@ roles: {
   
 },
 
-//  ██████  ██████  ███    ██ ███████ ██  ██████  ███████
-// ██      ██    ██ ████   ██ ██      ██ ██       ██     
-// ██      ██    ██ ██ ██  ██ █████   ██ ██   ███ ███████
-// ██      ██    ██ ██  ██ ██ ██      ██ ██    ██      ██
-//  ██████  ██████  ██   ████ ██      ██  ██████  ███████
+/*
+ ██████  ██████  ███    ██ ███████ ██  ██████  ███████
+██      ██    ██ ████   ██ ██      ██ ██       ██     
+██      ██    ██ ██ ██  ██ █████   ██ ██   ███ ███████
+██      ██    ██ ██  ██ ██ ██      ██ ██    ██      ██
+ ██████  ██████  ██   ████ ██      ██  ██████  ███████
+*/
 configs: {
 
   key:  'name',
@@ -246,12 +252,13 @@ configs: {
   
 },
 
-
-// ██       ██████   ██████  ██ ███    ██ ███████ 
-// ██      ██    ██ ██       ██ ████   ██ ██      
-// ██      ██    ██ ██   ███ ██ ██ ██  ██ ███████ 
-// ██      ██    ██ ██    ██ ██ ██  ██ ██      ██ 
-// ███████  ██████   ██████  ██ ██   ████ ███████ 
+/*
+██       ██████   ██████  ██ ███    ██ ███████ 
+██      ██    ██ ██       ██ ████   ██ ██      
+██      ██    ██ ██   ███ ██ ██ ██  ██ ███████ 
+██      ██    ██ ██    ██ ██ ██  ██ ██      ██ 
+███████  ██████   ██████  ██ ██   ████ ███████ 
+*/
 logins: {
 
   desc:   "password in the the list of keys even tho it's not a column",
@@ -419,12 +426,13 @@ logins: {
   ],
 },
 
-
-//  █████   ██████  ██████  ██████  ██    ██ ███    ██ ████████ ███████ 
-// ██   ██ ██      ██      ██    ██ ██    ██ ████   ██    ██    ██      
-// ███████ ██      ██      ██    ██ ██    ██ ██ ██  ██    ██    ███████ 
-// ██   ██ ██      ██      ██    ██ ██    ██ ██  ██ ██    ██         ██ 
-// ██   ██  ██████  ██████  ██████   ██████  ██   ████    ██    ███████ 
+/*
+ █████   ██████  ██████  ██████  ██    ██ ███    ██ ████████ ███████ 
+██   ██ ██      ██      ██    ██ ██    ██ ████   ██    ██    ██      
+███████ ██      ██      ██    ██ ██    ██ ██ ██  ██    ██    ███████ 
+██   ██ ██      ██      ██    ██ ██    ██ ██  ██ ██    ██         ██ 
+██   ██  ██████  ██████  ██████   ██████  ██   ████    ██    ███████ 
+*/
 accounts: {
       
   desc:   "password is in the the list of keys even tho it's not a column; scope = containerName; schema = type of container: dms, poste, etc",
@@ -494,8 +502,6 @@ accounts: {
           id        INTEGER PRIMARY KEY AUTOINCREMENT,
           mailbox   TEXT NOT NULL UNIQUE,
           domain    TEXT,
-          salt      TEXT,
-          hash      TEXT,
           storage   TEXT DEFAULT '{}',
           configID  INTEGER NOT NULL
           );
@@ -503,20 +509,23 @@ accounts: {
           COMMIT;`,
   
   patch: [
-    // { DB_VERSION: '1.1.3',
-    //   patches: [
-    //     `ALTER TABLE accounts ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.1.3', 1, ${env.isImmutable})`,
-    //   ],
-    // },
+    { DB_VERSION: '1.6.25',
+      patches: [
+        `ALTER TABLE accounts DROP COLUMN salt;`,
+        `ALTER TABLE accounts DROP COLUMN hash;`,
+        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.6.25', 1, ${env.isImmutable})`,
+      ],
+    },
   ],
 },
 
-//  █████  ██      ██  █████  ███████ ███████ ███████ 
-// ██   ██ ██      ██ ██   ██ ██      ██      ██      
-// ███████ ██      ██ ███████ ███████ █████   ███████ 
-// ██   ██ ██      ██ ██   ██      ██ ██           ██ 
-// ██   ██ ███████ ██ ██   ██ ███████ ███████ ███████ 
+/*
+ █████  ██      ██  █████  ███████ ███████ ███████ 
+██   ██ ██      ██ ██   ██ ██      ██      ██      
+███████ ██      ██ ███████ ███████ █████   ███████ 
+██   ██ ██      ██ ██   ██      ██ ██           ██ 
+██   ██ ███████ ██ ██   ██ ███████ ███████ ███████ 
+*/
 aliases: {
       
   key:     'source',
@@ -562,11 +571,13 @@ aliases: {
   
 },
 
-// ██████   ██████  ███    ███  █████  ██ ███    ██ ███████ 
-// ██   ██ ██    ██ ████  ████ ██   ██ ██ ████   ██ ██      
-// ██   ██ ██    ██ ██ ████ ██ ███████ ██ ██ ██  ██ ███████ 
-// ██   ██ ██    ██ ██  ██  ██ ██   ██ ██ ██  ██ ██      ██ 
-// ██████   ██████  ██      ██ ██   ██ ██ ██   ████ ███████ 
+/*
+██████   ██████  ███    ███  █████  ██ ███    ██ ███████ 
+██   ██ ██    ██ ████  ████ ██   ██ ██ ████   ██ ██      
+██   ██ ██    ██ ██ ████ ██ ███████ ██ ██ ██  ██ ███████ 
+██   ██ ██    ██ ██  ██  ██ ██   ██ ██ ██  ██ ██      ██ 
+██████   ██████  ██      ██ ██   ██ ██ ██   ████ ███████ 
+*/
 domains: {
       
   key:     'domain',
@@ -633,11 +644,13 @@ domains: {
   ],
 },
 
-// ██████  ███    ██ ███████ 
-// ██   ██ ████   ██ ██      
-// ██   ██ ██ ██  ██ ███████ 
-// ██   ██ ██  ██ ██      ██ 
-// ██████  ██   ████ ███████ 
+/*
+██████  ███    ██ ███████ 
+██   ██ ████   ██ ██      
+██   ██ ██ ██  ██ ███████ 
+██   ██ ██  ██ ██      ██ 
+██████  ██   ████ ███████ 
+*/
 dns: {
       
   desc:   'dns entries, with SRV priority/weight/port being use also for TLSA usage/selector/type, MX, CERT type/tag/algo, and DNSKEY flag/protocol/algo',
@@ -1213,7 +1226,7 @@ export const changePassword = async (table, id, password, scope) => {
       
     // update password in local database
     debugLog(`Updating password for account id=${id} in table=${table} for scope=${scope}...`);
-    result = dbRun(sql.logins.update.password, { salt:salt, hash:hash, scope:scope }, id);  // doesn't hurt to add scope even when unused
+    result = dbRun(sql[table].update.password, { salt:salt, hash:hash, scope:scope }, id);  // doesn't hurt to add scope even when unused
     if (result.success) {
       successLog(`Password updated for account id=${id} in table=${table} for scope=${scope}`);
       return { success: true, message: `Password updated for account id=${id} in table=${table} for scope=${scope}` };
@@ -1282,7 +1295,13 @@ export const updateDB = async (table, id, jsonDict, scope, encrypt=false) => {  
         // for accounts: id=accounts.mailbox
         // for logins: id=logins.key
         if (key == 'password') {
-          return changePassword(table, id, value, scope);
+          if (table == 'logins') {
+            return changePassword(table, id, value, scope);
+
+          } else {
+            errorLog(`password change is only allowed for logins table`);
+            messages.push(`password change is only allowed for logins table`);
+          }
           
         // other sqlite3 valid types and we can test specific scenarios
         } else {

@@ -159,6 +159,9 @@ Domains page be like:
 
 ## Commited changes
 
+* [x] 1.6.25 - designed a new TASKS_password-flow.md
+* [x] 1.6.25 - changePassword: allowed only for logins table
+* [x] 1.6.25 - db.mjs: drop salt and hash from accounts table
 * [x] 1.6.24 - Local Agent FIX: use declared 'result' variable instead of undeclared 'results' in killContainer reboot path (settings.mjs)
 * [x] 1.6.24 - Local Agent FIX: remove unconditional console.log debug leak in getValuesFromArrayOfObj (common.mjs)
 * [ ]  - delete a login did not delete the mailbox in 1.6.5, retest that it works now
