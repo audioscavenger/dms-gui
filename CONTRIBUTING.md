@@ -163,6 +163,7 @@ Domains page be like:
 
 ## Commited changes
 
+* [x] 1.6.23 - Local Agent FIX: request-aware CORS - allow same-origin (matches Host) or explicit ALLOWED_ORIGINS, reject look-alike domains instead of blind reflection (index.js, env.mjs)
 * [x] 1.6.21 - Local Agent FIX: reject instead of returning hung promise in api error interceptor so awaiting callers catch (api.mjs)
 * [x] 1.6.21 - Local Agent FIX: await childProcess.exec in killContainer (settings.mjs) and its call sites (index.js) so the reset/kill completes before the container restarts
 * [x] 1.6.20 - Local Agent FIX: parsePostfixRegexFromDMS: changed [\S]+ to [\S]* in regexMatchPostfix so regex-alias sources ending in @ parse, and fixed ReferenceError on undefined line in warnLog (common.mjs, aliases.mjs)

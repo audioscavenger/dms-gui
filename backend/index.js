@@ -125,12 +125,37 @@ debugLog('env.BACKEND_PROXY_URL',env.BACKEND_PROXY_URL)
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 //   allowedHeaders: ['Content-Type', 'Authorization', Accept-Language'] X-Requested-With
 // };
-const corsOptions = {
-  origin: true,       // reflect the request origin, as defined by req.header('Origin')
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+const allowedOrigins = env.ALLOWED_ORIGINS.filter(Boolean);
+// Local Agent FIX: request-aware CORS. Allow the origin only when it is a true same-origin
+// (matches the request Host, e.g. same nginx vhost), an explicit ALLOWED_ORIGINS entry,
+// or absent (no-origin / same-site). Rejects look-alike domains instead of blind reflection.
+function requestAllowedOrigin(req) {
+  const origin = req.header('Origin');
+  if (!origin) return true;                                   // no Origin header (same-origin / non-browser)
+  if (allowedOrigins.indexOf(origin) !== -1) return true;     // explicit whitelist
+  const host = req.header('Host');                             // true same-origin deploy behind its own vhost
+  if (host && (origin === 'http://' + host || origin === 'https://' + host)) return true;
+  return false;
+}
+const CORS_HEADERS = {
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept-Language'
 };
+function corsMiddleware(req, res, next) {
+  if (!requestAllowedOrigin(req)) {
+    return res.status(403).json({ error: 'Origin not allowed by CORS' });
+  }
+  const origin = req.header('Origin');
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  Object.entries(CORS_HEADERS).forEach(([k, v]) => res.setHeader(k, v));
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+  } else {
+    next();
+  }
+}
 
 // ============================================
 // HOW SECURITY WORKS HERE
@@ -170,7 +195,7 @@ const cookieOptionsRefresh = {
 };
 
 app.use(cookieParser());
-app.use(cors(corsOptions));
+app.use(corsMiddleware);
 
 // Generate token
 const generateToken = (userPayload, secret, expriry) => {
@@ -270,7 +295,7 @@ const requireActive = (req, res, next) => {
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(oasDefinition));
 
-app.options('/*splat', cors()) // include pre-flight across-the-board before other routes
+app.options('/*splat', corsMiddleware) // include pre-flight across-the-board before other routes
 
 // Parser
 // https://www.codemzy.com/blog/parse-booleans-express-query-params

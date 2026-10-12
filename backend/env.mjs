@@ -19,6 +19,8 @@ export const env = {
   REACT_VERSION: process.env.REACT_VERSION || null,   // pulled by start.sh
 
   API_URL  : process.env.API_URL || '/api',               // security: cors
+  // Local Agent FIX: explicit CORS origin whitelist (comma separated) to replace the reflective origin
+  ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean),
   DMSGUI_CONFIG_PATH  : process.env.DMSGUI_CONFIG_PATH || '/app/config',
   // DEMO will activate a mock database and disable all refresh options
   isDEMO : ((process.env.isDEMO || 'false').toLowerCase() == 'true') ? true : false,
