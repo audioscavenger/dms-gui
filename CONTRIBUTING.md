@@ -153,13 +153,13 @@ Domains page be like:
 
 ## Impending changes
 
-* [ ]  - updateAccount still updates login password whether that login only manage one mailbox or not, it should not do that
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
 * [ ]  - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
 
 ## Commited changes
 
+* [x] 1.6.27 - Local Agent FIX: updateAccount no longer touches the logins table; mailbox (doveadm) and app login (logins) passwords are kept separate by design (backend/accounts.mjs, frontend/src/hooks/usePasswordChange.js, locales en/pl)
 * [x] 1.6.26 - Local Agent FIX: password flow single source of truth (logins table); mailbox password synced when changed via Accounts page (backend/index.js, backend/accounts.mjs, backend/logins.mjs, frontend/src/hooks/usePasswordChange.js, frontend/src/pages/Accounts.jsx, Profile.jsx, NewLoginForm.jsx, useNewLoginForm.js, services/api.mjs, PasswordChangeModal.jsx, DeleteConfirmModal.jsx, locales); isAccount retired from UI; delete-mailbox cascade role-aware
 * [x] 1.6.26 - Local Agent FIX: T1 updateAccount is the single mailbox-password path, syncing the doveadm mailbox + linked login hash (backend/accounts.mjs)
 * [x] 1.6.26 - Local Agent FIX: T2 PATCH /api/accounts password routes to updateAccount; non-password keys fall to updateDB (backend/index.js)

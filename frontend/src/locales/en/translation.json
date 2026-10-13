@@ -295,7 +295,6 @@
       "addAlias": "Error adding alias: {{error}}",
       "addLogin": "Error saving login: {{error}}",
       "changePassword": "Error updating password: {{error}}",
-      "changePasswordPartial": "Partial success: {{error}}",
       "deleteAccount": "Error deleting account: {{error}}",
       "deleteAlias": "Error deleting alias: {{error}}",
       "deleteLogin": "Error deleting login: {{error}}",

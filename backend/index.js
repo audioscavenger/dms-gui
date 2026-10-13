@@ -48,7 +48,7 @@ import {
   addAccount,
   deleteAccount,
   getAccounts,
-  // Local Agent FIX: T2 - updateAccount is the single mailbox-password path (D3)
+  // Local Agent FIX: T2 - updateAccount is the single mailbox-password path (D3); mailbox password lives only in doveadm, never in the logins table
   updateAccount,
 } from './accounts.mjs';
 
@@ -752,7 +752,7 @@ async (req, res) => {
   }
 });
 
-// Local Agent FIX: T20 - docstring fix: updateAccount updates the doveadm mailbox password; if a login exists for that mailbox, it also updates that login's hash to keep the dms-gui UI password in sync
+// Local Agent FIX: T20 - docstring fix: updateAccount updates only the doveadm mailbox password; it never writes to the logins table (mailbox and app login passwords are separate by design)
 /**
  * @swagger
  * /api/accounts/{schema}/{containerName}/{mailbox}:
@@ -809,7 +809,7 @@ async (req, res) => {
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
-    // Local Agent FIX: T2 - the PATCH /api/accounts endpoint routes a password change to updateAccount (D3); it keeps the doveadm mailbox and any linked login hash in sync. Non-password keys, if any, fall through to the generic updateDB path.
+    // Local Agent FIX: T2 - the PATCH /api/accounts endpoint routes a password change to updateAccount (D3); it updates ONLY the doveadm mailbox password and never the logins table (mailbox and app login are separate passwords by design). Non-password keys, if any, fall through to the generic updateDB path.
     // Regardless of if we are updating logins only or accounts (+logins), there are 3 distinct scenarios:
     const { password, ...rest } = req.body;
     if (password) {

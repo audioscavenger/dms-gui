@@ -111,7 +111,6 @@
       "addAccount": "Błąd podczas dodawania konta",
       "deleteAccount": "Błąd podczas usuwania konta",
       "updatePassword": "Błąd podczas aktualizacji hasła",
-      "changePasswordPartial": "Częściowy sukces: {{error}}",
       "fetchAliases": "Błąd podczas pobierania aliasów",
       "addAlias": "Błąd podczas dodawania aliasu",
       "deleteAlias": "Błąd podczas usuwania aliasu"

@@ -453,23 +453,9 @@ export const updateAccount = async (schema='dms', containerName=null, mailbox=nu
 
     if (!results?.returncode) {
       successLog(`Password updated for ${mailbox}`);
-            // Local Agent FIX: updateAccount is the single mailbox-password path (D2).
-      // After a successful doveadm update, keep any associated login's salt/hash
-      // in sync so the dms-gui app login still verifies against the logins table.
-      // doveadm is the critical step; a local login sync failure is partial success.
-      let login = await getLogin(mailbox);
-      if (login.success && login.message) {
-        const { salt, hash } = await hashPassword(password);
-        let dbResult = dbRun(sql.logins.update.password, { salt: salt, hash: hash, scope: containerName }, login.message.id);
-        if (dbResult.success) {
-          return { success: true, message: `Password updated for ${mailbox} (mailbox + login)` };
-        } else {
-          let dbError = dbResult.error || 'local login update failed';
-          warnLog(`doveadm OK but login hash sync failed for ${mailbox}: ${dbError}`);
-          // partial success: the mailbox (doveadm) was updated, the local login was not
-          return { success: true, message: `Mailbox password updated for ${mailbox}; local login update failed`, error: dbError };
-        }
-      }
+      // Local Agent FIX: updateAccount is the single mailbox-password path; it deliberately does NOT touch the logins table.
+      // Doveadm mailbox passwords are NOT stored in the logins table: they live their own life in DMS, separately from any app login.
+      // A user whose only role is this mailbox may have a different mailbox password (doveadm) from their dms-gui app password (logins).
       return { success: true, message: `Password updated for ${mailbox}` };
       
     } else {

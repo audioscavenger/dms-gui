@@ -109,7 +109,7 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
     try {
       // Local Agent FIX: T4 - one API call per caller. The Accounts page passes a
       // mailbox record (has `mailbox` + `domain`, no login `id`) -> updateAccount,
-      // which keeps the doveadm mailbox and any linked login hash in sync (D2).
+      // which updates ONLY the doveadm mailbox password (mailboxes and logins keep separate passwords by design).
       // Profile and Logins pass a login record (has `id`) -> updateLogin.
       let result;
       if (selectedLogin.mailbox && selectedLogin.domain) {
@@ -123,13 +123,8 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
         result = await updateLogin(selectedLogin.id, { password: newPassword });
       }
 
-      // Local Agent FIX: T4/D5 - surface both alerts on the partial-success case
-      // (mailbox updated, local login update failed) which returns success AND error.
       if (result.success) {
         setSuccessMessage(result.message || t('password.passwordUpdated', { key: 'username', value: selectedLogin.username }));
-        if (result.error) {
-          setErrorMessage({ key: 'api.errors.changePasswordPartial', values: { error: result.error } });
-        }
       } else {
         errorLog(t('api.errors.changePassword'), result);
         setErrorMessage({ key: 'api.errors.changePassword', values: { error: result.error } });
