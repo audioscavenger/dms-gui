@@ -510,7 +510,8 @@ const Accounts = () => {
             size="sm"
             icon="key"
             title={t('password.changePassword')}
-            onClick={() => passwordChange.handleChangePassword({ ...account, isAccount: true, id: account.loginId })} // Local Agent FIX: id=loginId from SQL (l.id) so the hook also syncs the local login password
+            // Local Agent FIX: T5 - pass the account row directly; the hook routes it to updateAccount (mailbox+domain), which syncs the linked login hash server-side.
+            onClick={() => passwordChange.handleChangePassword(account)}
             className="me-2"
           />
           {user.isAdmin == 1 &&

@@ -23,7 +23,8 @@ const DeleteConfirmModal = ({
         {selectedLogin && ( // Ensure selectedLogin exists before rendering form
           <>
             <p>{Translate('logins.confirmDeleteBody')}</p>
-            {!!selectedLogin?.isAccount && selectedLogin?.mailbox && ( // Ensure selectedLogin has a mailbox and isAccount
+            {/* Local Agent FIX: T12 - "also delete mailbox" is no longer gated on isAccount; show it for any login that has a mailbox. */}
+            {selectedLogin?.mailbox && ( // Ensure selectedLogin has a mailbox
               <FormField
                 type="checkbox"
                 id="alsoDeleteMailbox"

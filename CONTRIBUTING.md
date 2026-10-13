@@ -153,12 +153,28 @@ Domains page be like:
 
 ## Impending changes
 
+* [ ]  - updateAccount still updates login password whether that login only manage one mailbox or not, it should not do that
 * [ ]  - design: no new API for changePassword: fix is entirely inside changePassword and the SQL layer
 * [ ]  - design: Single source of truth for the password hash = logins table; drop salt and hash from accounts
 * [ ]  - bug: changePassword calls sql.logins.update.password instead of sql[table].update.password and I don't remeber why I chose to do that
 
 ## Commited changes
 
+* [x] 1.6.26 - Local Agent FIX: password flow single source of truth (logins table); mailbox password synced when changed via Accounts page (backend/index.js, backend/accounts.mjs, backend/logins.mjs, frontend/src/hooks/usePasswordChange.js, frontend/src/pages/Accounts.jsx, Profile.jsx, NewLoginForm.jsx, useNewLoginForm.js, services/api.mjs, PasswordChangeModal.jsx, DeleteConfirmModal.jsx, locales); isAccount retired from UI; delete-mailbox cascade role-aware
+* [x] 1.6.26 - Local Agent FIX: T1 updateAccount is the single mailbox-password path, syncing the doveadm mailbox + linked login hash (backend/accounts.mjs)
+* [x] 1.6.26 - Local Agent FIX: T2 PATCH /api/accounts password routes to updateAccount; non-password keys fall to updateDB (backend/index.js)
+* [x] 1.6.26 - Local Agent FIX: T3 loginUser always verifies against local salt/hash, retires the isAccount/doveadm branch (backend/logins.mjs)
+* [x] 1.6.26 - Local Agent FIX: T4 usePasswordChange makes one call per caller and surfaces partial-success errors (frontend/src/hooks/usePasswordChange.js)
+* [x] 1.6.26 - Local Agent FIX: T5 Accounts row passed directly to the hook, dropping isAccount/id injection (frontend/src/pages/Accounts.jsx)
+* [x] 1.6.26 - Local Agent FIX: T6 verified the password-change row already passes the full login object, no code change (frontend/src/components/logins/LoginsTable.jsx)
+* [x] 1.6.26 - Local Agent FIX: T7 Profile drops the isAccount checkbox, mailbox field always renders (frontend/src/pages/Profile.jsx)
+* [x] 1.6.26 - Local Agent FIX: T8 NewLoginForm drops the isAccount-driven mailbox SelectField + roles gating (frontend/src/components/logins/NewLoginForm.jsx)
+* [x] 1.6.26 - Local Agent FIX: T9 useNewLoginForm removes isAccount + filteredAccountOptions; Logins drops the prop (frontend/src/hooks/useNewLoginForm.js, frontend/src/pages/Logins.jsx)
+* [x] 1.6.26 - Local Agent FIX: T10 addLogin no longer accepts/forwards isAccount (frontend/src/services/api.mjs)
+* [x] 1.6.26 - Local Agent FIX: T11 PasswordChangeModal removes the isAccount/notMailbox Alert block (frontend/src/components/PasswordChangeModal.jsx)
+* [x] 1.6.26 - Local Agent FIX: T12 "also delete mailbox" checkbox no longer gated on isAccount (frontend/src/components/logins/DeleteConfirmModal.jsx)
+* [x] 1.6.26 - Local Agent FIX: T13 deleteAccount role-aware cascade, deletes only sole-role non-admin logins (backend/accounts.mjs, backend/db.mjs)
+* [x] 1.6.26 - Local Agent FIX: T14 i18n drops isAccountChoice/notMailbox, adds api.errors.changePasswordPartial (frontend/src/locales/en/translation.json, frontend/src/locales/pl/translation.json)
 * [x] 1.6.25 - designed a new TASKS_password-flow.md
 * [x] 1.6.25 - changePassword: allowed only for logins table
 * [x] 1.6.25 - db.mjs: drop salt and hash from accounts table

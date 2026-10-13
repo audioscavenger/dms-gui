@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   debugLog,
   errorLog,
 } from '../frontend.mjs';
 import {
-  plucks,
   regexUsername,
   isNonEmptyDict,
   regexEmailStrict,
@@ -34,7 +33,6 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
     confirmPassword: '',
     email: '',
     isAdmin: 0,
-    isAccount: 0,
     isActive: 1,
     mailserver: containerName, // Leave empty here, we will populate it dynamically
     roles: [],
@@ -52,14 +50,6 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
 
   // State for save login button ----------------------------------
   const [submitDisabled, setSubmitDisabled] = useState(true);
-
-
-  // filter out the mailbox dropdown entries that are already used in logins
-  const filteredAccountOptions = useMemo(() => {
-    return accountOptions.filter(option => 
-      !logins.some(login => login.mailbox === option.value)
-    );
-  }, [logins, accountOptions]);
 
 
   const handleNewLoginInputChange = (e) => {
@@ -88,35 +78,6 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
 
     // selecting various checkboxes will alter other options and we also need to construct the roles array, so we will use a temporary dict
     jsonDict = {[name]: inputValue};
-
-    // checkboxes will resolve to 0 or 1 and 1 is == true
-    if (name == 'isAdmin' && checked) {
-      debugLog('isAdmin ==> 1: disabling isAccount');
-      // disable isAccount checkbox and SelectField
-      jsonDict.isAccount = 0;
-    }
-
-    if (name == 'isAccount' && checked) {
-      // test if the mailbox entered manually prior / chosen from the list is in the list, and select it as a role, otherwise start from scratch
-      if (plucks(accountOptions).has(newLoginformData.mailbox)) {
-        debugLog(`isAccount ==> 1: adding ${newLoginformData.mailbox} to the roles`);
-        jsonDict.roles = [newLoginformData.mailbox]
-
-      } else {
-        debugLog(`isAccount ==> 1: removing ${newLoginformData.mailbox} as it is NOT defined in available mailboxes`);
-        // we MUST reset mailbox since it is not in the official list
-        jsonDict.mailbox = '';
-        jsonDict.roles = [];
-      }
-    }
-
-    if (name == 'mailbox') {
-      if (newLoginformData.isAccount) {
-        // we are attached to a mailbox and user just chose it from the SelectField
-        debugLog(`roles ==> [${inputValue}]`);
-        jsonDict.roles = [inputValue];
-      }
-    }
 
     // Calculate the exact next state
     const updatedFormData = {
@@ -216,7 +177,6 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
         newLoginformData.password,
         newLoginformData.email,
         newLoginformData.isAdmin,
-        newLoginformData.isAccount,
         newLoginformData.isActive,
         newLoginformData.mailserver,
         newLoginformData.roles,
@@ -246,7 +206,6 @@ export default function useNewLoginForm({ accountOptions, logins, containerName,
     newLoginformData,
     newLoginFormErrors,
     submitDisabled,
-    filteredAccountOptions,
     handleNewLoginInputChange,
     handleNewLoginRolesChange,
     handleSubmitNewLogin,

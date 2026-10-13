@@ -8,7 +8,6 @@ import Col from 'react-bootstrap/Col';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 
-import { plucks } from '../../../../common.mjs';
 import Button from '../Button';
 import FormField from '../FormField';
 import SelectField from '../SelectField';
@@ -26,7 +25,6 @@ const NewLoginForm = ({
   formData,
   errors,
   submitDisabled,
-  filteredAccountOptions,
   rolesAvailable,
   containerName,
   mailservers,
@@ -47,17 +45,6 @@ const NewLoginForm = ({
         onChange={onInputChange}
         error={errors.isAdmin}
         isChecked={formData.isAdmin}
-      />
-
-      <FormField
-        type="checkbox"
-        id="isAccount"
-        name="isAccount"
-        label="logins.isAccountChoice"
-        onChange={onInputChange}
-        error={errors.isAccount}
-        isChecked={formData.isAccount && !formData.isAdmin}
-        disabled={formData.isAdmin}
       />
 
       <SelectField
@@ -97,45 +84,30 @@ const NewLoginForm = ({
         </div>
       </div>
 
-      {formData.isAccount && (
-        <SelectField
+      {/* Local Agent FIX: T8 - drop the isAccount-driven mailbox SelectField; keep the free-text box always. */}
+      <div>
+        <FormField
+          type="email"
           id="mailbox"
           name="mailbox"
-          label="accounts.mailbox"
-          value={plucks(filteredAccountOptions, 'value').has(formData.mailbox) ? formData.mailbox : ""}
+          label="logins.mailbox"
+          value={formData.mailbox}
           onChange={onInputChange}
-          options={filteredAccountOptions}
-          placeholder="accounts.mailboxRequired"
-          error={(filteredAccountOptions.length) ? errors.mailbox : t('logins.mailboxNothingToPick')}
-          helpText="accounts.mailboxHelp"
+          maxLength={254}
+          groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
+          placeholder="user@domain.com"
+          error={errors.mailbox}
+          helpText="logins.mailboxHelp"
           required
         />
-      ) || (
-        <div>
-          <FormField
-            type="email"
-            id="mailbox"
-            name="mailbox"
-            label="logins.mailbox"
-            value={formData.mailbox}
-            onChange={onInputChange}
-            maxLength={254}
-            groupClass="mb-0" // Removed margin so the badge sits cleanly right under the input field
-            placeholder="user@domain.com"
-            error={errors.mailbox}
-            helpText="logins.mailboxHelp"
-            required
-          />
 
-          {/* The Live Character Counter Badge */}
-          <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
-            <span className={formData.mailbox?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
-              {formData.mailbox?.length || 0}/254
-            </span>
-          </div>
+        {/* The Live Character Counter Badge */}
+        <div className="text-end small mb-2" style={{ marginTop: "-2px" }}>
+          <span className={formData.mailbox?.length >= 200 ? "text-danger fw-bold" : "text-muted"}>
+            {formData.mailbox?.length || 0}/254
+          </span>
         </div>
-
-      )}
+      </div>
 
       <Autocomplete
         multiple
@@ -143,7 +115,6 @@ const NewLoginForm = ({
         options={rolesAvailable}
         groupBy={(mailbox) => mailbox.split('@')[1]}    // groupBy with an array of strings: so easy! create the group off the valuesdirectly!
         filterSelectedOptions
-        disabled={formData.isAccount}
 
         value={formData.roles}
         onChange={(e, newValue) => onRolesChange(e, newValue)}

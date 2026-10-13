@@ -403,13 +403,14 @@ export const getLogins = async credentials => {
   });
 };
 
-export const addLogin = async (mailbox, username, password, email, isAdmin=0, isAccount=0, isActive=1, mailserver, roles=[]) => {
+// Local Agent FIX: T10 - isAccount is retired from the UI; stop writing it so new logins default to non-linked (backend keeps the legacy param, defaulting to 0).
+export const addLogin = async (mailbox, username, password, email, isAdmin=0, isActive=1, mailserver, roles=[]) => {
   if (!mailbox) return {success: false, error: 'mailbox is required'};
   if (!username) return {success: false, error: 'username is required'};
   if (!password) return {success: false, error: 'password is required'};
   
   return await cacheWrap(async () => {
-    const response = await api.put(`/logins`, { mailbox, username, password, email, isAdmin, isActive, isAccount, mailserver, roles });
+    const response = await api.put(`/logins`, { mailbox, username, password, email, isAdmin, isActive, mailserver, roles });
     return response.data;
   });
 };

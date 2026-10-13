@@ -48,6 +48,8 @@ import {
   addAccount,
   deleteAccount,
   getAccounts,
+  // Local Agent FIX: T2 - updateAccount is the single mailbox-password path (D3)
+  updateAccount,
 } from './accounts.mjs';
 
 import {
@@ -750,7 +752,7 @@ async (req, res) => {
   }
 });
 
-// Endpoint for updating a mailbox account; also updates their dms-gui login password if isAccount=1
+// Local Agent FIX: T20 - docstring fix: updateAccount updates the doveadm mailbox password; if a login exists for that mailbox, it also updates that login's hash to keep the dms-gui UI password in sync
 /**
  * @swagger
  * /api/accounts/{schema}/{containerName}/{mailbox}:
@@ -807,21 +809,20 @@ async (req, res) => {
     if (!mailbox)       return res.status(400).json({ error: 'Mailbox is required' });
 
     // Users can only act on their own mailboxes or those in their roles (unless admin)
-    let result, jsonDict;
-    jsonDict = {...req.body, schema:schema};
-
+    // Local Agent FIX: T2 - the PATCH /api/accounts endpoint routes a password change to updateAccount (D3); it keeps the doveadm mailbox and any linked login hash in sync. Non-password keys, if any, fall through to the generic updateDB path.
     // Regardless of if we are updating logins only or accounts (+logins), there are 3 distinct scenarios:
-    if (    req.user.isAdmin                                    // user isAdmin -> we do whatever an admin wants
-        || (req.user.isAccount && req.user?.mailbox == mailbox) // user isAccount only AND it's their mailbox
-        || (req.user.roles.includes(mailbox))) {                // user handles multiple mailboxes, cannot be isAccount
-      result = await updateDB('accounts', mailbox, jsonDict, containerName)
-
-    // hack tentative
-    } else {
-      result = {success: false, error: 'Permission denied'};
+    const { password, ...rest } = req.body;
+    if (password) {
+      if (    req.user.isAdmin                                    // user isAdmin -> we do whatever an admin wants
+          || (req.user.isAccount && req.user?.mailbox == mailbox) // user isAccount only AND it's their mailbox
+          || (req.user.roles.includes(mailbox))) {                // user handles multiple mailboxes, cannot be isAccount
+        return res.json(await updateAccount(schema, containerName, mailbox, password));
+      }
+      return res.json({success: false, error: 'Permission denied'});
     }
-    return res.json(result);
-    
+    // Non-password keys: keep the generic updateDB path (currently the UI sends no such field).
+    return res.json(await updateDB('accounts', mailbox, { ...rest, schema: schema }, containerName));
+
   } catch (error) {
     errorLog(`index PATCH /api/accounts: ${error.message}`);
     // res.status(500).json({ error: 'Unable to update Account' });
@@ -1377,6 +1378,7 @@ app.put('/api/logins',
   requireAdmin, 
 async (req, res) => {
   try {
+    // Local Agent FIX: T15 - isAccount is deprecated (Stage A of isAccount retirement, see D9): the UI no longer sends it, so it defaults to 0 in addLogin. Kept in the destructuring only for backward compatibility with older frontend builds.
     const { mailbox, username, password, email, isAdmin, isAccount, isActive, mailserver, roles } = req.body;
     if (!mailbox)     return res.status(400).json({ error: 'mailbox is missing' });
     if (!username)  return res.status(400).json({ error: 'username is missing' });

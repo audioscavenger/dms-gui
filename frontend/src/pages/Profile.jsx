@@ -259,16 +259,6 @@ const Profile = () => {
           disabled
         />
 
-        <FormField
-          type="checkbox"
-          id="isAccount"
-          name="isAccount"
-          label="logins.isAccountChoice"
-          error={formErrors.isAccount}
-          defaultChecked={loginFormData.isAccount && !loginFormData.isAdmin}
-          disabled
-        />
-
         <SelectField
           id="mailserver"
           name="mailserver"
@@ -282,22 +272,20 @@ const Profile = () => {
           required
         />
 
-        {!loginFormData.isAccount && (
-          <FormField
-            type="email"
-            id="mailbox"
-            name="mailbox"
-            label="logins.mailbox"
-            value={loginFormData.mailbox}
-            onChange={handleInputChange}
-            maxLength={254}
-            placeholder="user@domain.com"
-            error={formErrors.mailbox}
-            helpText="logins.mailboxHelp"
-            required
-            disabled
-          />
-        )}
+        <FormField
+          type="email"
+          id="mailbox"
+          name="mailbox"
+          label="logins.mailbox"
+          value={loginFormData.mailbox}
+          onChange={handleInputChange}
+          maxLength={254}
+          placeholder="user@domain.com"
+          error={formErrors.mailbox}
+          helpText="logins.mailboxHelp"
+          required
+          disabled
+        />
 
         <Autocomplete
           multiple

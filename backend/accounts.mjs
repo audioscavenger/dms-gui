@@ -309,7 +309,8 @@ export const addAccount = async (schema='dms', containerName=null, mailbox=null,
           if (!result.success) {
 
             // result = dbRun(sql.logins.insert.login, { email:mailbox, username:mailbox, salt:salt, hash:hash, isAdmin:0, isAccount:1, isActive:1, roles:JSON.stringify([mailbox]), scope:containerName});
-            result = await addLogin(mailbox, mailbox, password, mailbox, 0, 1, 1, containerName, [mailbox]);
+            // Local Agent FIX: T17 - isAccount is retired; a mailbox created via addAccount gets a non-linked login (isAccount=0) per D7/D9.
+            result = await addLogin(mailbox, mailbox, password, mailbox, 0, 0, 1, containerName, [mailbox]);
             if (result.success) {
               successLog(`addLogin created: ${mailbox}`);
 
@@ -390,8 +391,18 @@ export const deleteAccount = async (schema='dms', containerName=null, mailbox=nu
         result = await getLogin(mailbox); // search if login exist by mailbox
         if (result.success) {
 
-          // delete linked login
-          if (result.message.isAccount && !result.message.isAdmin) result = await deleteEntry('logins', result.message.id, 'id');
+          // Local Agent FIX: T13 role-aware cascade (D10): was keyed on isAccount and the login's own mailbox; now keyed on the roles table.
+          // Only a login whose SOLE role is this mailbox and which is not an admin gets deleted; multi-mailbox logins and admins survive.
+          result = dbAll(sql.roles.cascade.managingLogins, {role: mailbox});
+          if (result.success) {
+            for (const candidate of result.message) {
+              if (candidate.roleCount == 1 && !candidate.isAdmin) {
+                dbRun(sql.roles.delete.loginID, candidate.id);
+                result = await deleteEntry('logins', candidate.id, 'id');
+                if (result.success) successLog(`linked login deleted (sole role was ${mailbox}): id=${candidate.id}`);
+              }
+            }
+          }
 
         // no login associated for some reason, we still return success as everything else is deleted
         } else result = {success:true}
@@ -442,6 +453,23 @@ export const updateAccount = async (schema='dms', containerName=null, mailbox=nu
 
     if (!results?.returncode) {
       successLog(`Password updated for ${mailbox}`);
+            // Local Agent FIX: updateAccount is the single mailbox-password path (D2).
+      // After a successful doveadm update, keep any associated login's salt/hash
+      // in sync so the dms-gui app login still verifies against the logins table.
+      // doveadm is the critical step; a local login sync failure is partial success.
+      let login = await getLogin(mailbox);
+      if (login.success && login.message) {
+        const { salt, hash } = await hashPassword(password);
+        let dbResult = dbRun(sql.logins.update.password, { salt: salt, hash: hash, scope: containerName }, login.message.id);
+        if (dbResult.success) {
+          return { success: true, message: `Password updated for ${mailbox} (mailbox + login)` };
+        } else {
+          let dbError = dbResult.error || 'local login update failed';
+          warnLog(`doveadm OK but login hash sync failed for ${mailbox}: ${dbError}`);
+          // partial success: the mailbox (doveadm) was updated, the local login was not
+          return { success: true, message: `Mailbox password updated for ${mailbox}; local login update failed`, error: dbError };
+        }
+      }
       return { success: true, message: `Password updated for ${mailbox}` };
       
     } else {

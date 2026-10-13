@@ -95,7 +95,6 @@ const Logins = () => {
           formData={newLoginForm.newLoginformData}
           errors={newLoginForm.newLoginFormErrors}
           submitDisabled={newLoginForm.submitDisabled}
-          filteredAccountOptions={newLoginForm.filteredAccountOptions}
           rolesAvailable={loginsData.rolesAvailable}
           containerName={containerName}
           mailservers={mailservers}

@@ -120,54 +120,6 @@ settings: {
   ],
 },
 
-/*
-██████   ██████  ██      ███████ ███████ 
-██   ██ ██    ██ ██      ██      ██      
-██████  ██    ██ ██      █████   ███████ 
-██   ██ ██    ██ ██      ██           ██ 
-██   ██  ██████  ███████ ███████ ███████ 
-*/
-roles: {
-
-  key:  'loginID',
-  keys:   {
-    id:'number', 
-    loginID:'number', 
-    role:'string', 
-  },
-  scope:  false,
-  
-  select: {
-    count:            `SELECT COUNT(*) count FROM roles`,
-    roles:            `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username))`,
-    rolesById:        `SELECT role        FROM roles WHERE 1=1 AND loginID = @loginID`,
-    rolesByObj:       `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND {key} = @{key})`,
-    granteeUsernames: `SELECT json_group_array(username) as managers FROM logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND role = @role`,
-  },
-  
-  insert: {
-    role:     `REPLACE INTO roles (loginID, role) VALUES (@loginID, ?)`,
-  },
-  
-  update: {
-    role:     `REPLACE INTO roles (loginID, role) VALUES (?, @role)`,
-  },
-
-  delete: {
-    loginID:  `DELETE FROM roles WHERE 1=1 AND loginID = ?`,
-  },
-
-  init:   `BEGIN TRANSACTION;
-          CREATE    TABLE IF NOT EXISTS roles (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
-          loginID   INTEGER NOT NULL,
-          role      TEXT NOT NULL,
-          UNIQUE    (loginID, role)
-          );
-          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('roles', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
-          COMMIT;`,
-  
-},
 
 /*
  ██████  ██████  ███    ██ ███████ ██  ██████  ███████
@@ -404,12 +356,6 @@ logins: {
           COMMIT;`,
   
   patch: [
-    // { DB_VERSION: '1.4.7',
-    //   patches: [
-    //     `ALTER TABLE logins ADD refreshToken    TEXT`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_logins', '1.4.7', 1, ${env.isImmutable})`,
-    //   ],
-    // },
     { DB_VERSION: '1.5.13',
       patches: [
         `ALTER TABLE logins RENAME COLUMN favorite TO mailserver`,
@@ -513,10 +459,64 @@ accounts: {
       patches: [
         `ALTER TABLE accounts DROP COLUMN salt;`,
         `ALTER TABLE accounts DROP COLUMN hash;`,
-        `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_accounts', '1.6.25', 1, ${env.isImmutable})`,
+        `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('accounts', '1.6.25', 1, ${env.isImmutable})`,
       ],
     },
   ],
+},
+
+/*
+██████   ██████  ██      ███████ ███████ 
+██   ██ ██    ██ ██      ██      ██      
+██████  ██    ██ ██      █████   ███████ 
+██   ██ ██    ██ ██      ██           ██ 
+██   ██  ██████  ███████ ███████ ███████ 
+*/
+roles: {
+
+  key:  'loginID',
+  keys:   {
+    id:'number', 
+    loginID:'number', 
+    role:'string', 
+  },
+  scope:  false,
+  
+  select: {
+    count:            `SELECT COUNT(*) count FROM roles`,
+    roles:            `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND (mailbox = @mailbox OR username = @username))`,
+    rolesById:        `SELECT role        FROM roles WHERE 1=1 AND loginID = @loginID`,
+    rolesByObj:       `SELECT role        FROM roles WHERE 1=1 AND loginID = (select id from logins WHERE 1=1 AND {key} = @{key})`,
+    granteeUsernames: `SELECT json_group_array(username) as managers FROM logins l LEFT JOIN roles r ON l.id = r.loginID WHERE 1=1 AND role = @role`,
+  },
+  
+  insert: {
+    role:     `REPLACE INTO roles (loginID, role) VALUES (@loginID, ?)`,
+  },
+  
+  update: {
+    role:     `REPLACE INTO roles (loginID, role) VALUES (?, @role)`,
+  },
+
+  delete: {
+    loginID:  `DELETE FROM roles WHERE 1=1 AND loginID = ?`,
+  },
+
+  // Local Agent FIX: T13 role-aware cascade (D10): list every login that manages a mailbox, with its total role count
+  cascade: {
+    managingLogins: `SELECT l.id, l.isAdmin, COUNT(r.id) AS roleCount FROM roles r JOIN logins l ON l.id = r.loginID WHERE r.role = @role GROUP BY l.id`,
+  },
+
+  init:   `BEGIN TRANSACTION;
+          CREATE    TABLE IF NOT EXISTS roles (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          loginID   INTEGER NOT NULL,
+          role      TEXT NOT NULL,
+          UNIQUE    (loginID, role)
+          );
+          INSERT OR IGNORE INTO settings (name, value, configID, isMutable) VALUES ('roles', '${env.DMSGUI_VERSION}', 1, ${env.isImmutable});
+          COMMIT;`,
+  
 },
 
 /*
@@ -626,19 +626,19 @@ domains: {
     //   patches: [
     //     `ALTER TABLE domains ADD keytype TEXT DEFAULT 'rsa'`,
     //     `ALTER TABLE domains ADD keysize TEXT DEFAULT '2048'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.2', 1, ${env.isImmutable})`,
+    //     `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('domains', '1.1.2', 1, ${env.isImmutable})`,
     //   ],
     // },
     // { DB_VERSION: '1.1.3',
     //   patches: [
     //     `ALTER TABLE domains ADD scope   TEXT DEFAULT '${live.DMS_CONTAINER}'`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.1.3', 1, ${env.isImmutable})`,
+    //     `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('domains', '1.1.3', 1, ${env.isImmutable})`,
     //   ],
     // },
     // { DB_VERSION: '1.5.7',
     //   patches: [
     //     `ALTER TABLE domains ADD provider   TEXT`,
-    //     `REPLACE INTO settings (name, value, scope, isMutable) VALUES ('DB_VERSION_domains', '1.5.7', 1, ${env.isImmutable})`,
+    //     `REPLACE INTO settings (name, value, configID, isMutable) VALUES ('domains', '1.5.7', 1, ${env.isImmutable})`,
     //   ],
     // },
   ],

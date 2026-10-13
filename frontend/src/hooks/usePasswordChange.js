@@ -104,67 +104,40 @@ export default function usePasswordChange({ containerName, mailservers, user }) 
       return;
     }
 
-    // Local Agent FIX: do the irrevocable / more-important step (dovecot) first,
-    // then the local GUI login.  If dovecot fails we haven't touched the local
-    // password at all → no out-of-sync state.
-
     const newPassword = passwordFormData.newPassword;
-    const completedSteps = [];
 
     try {
-      // ── Step 1 (most important): update mailbox via dovecot ──
-      if (selectedLogin.isAccount) {
-        const accountResult = await updateAccount(
+      // Local Agent FIX: T4 - one API call per caller. The Accounts page passes a
+      // mailbox record (has `mailbox` + `domain`, no login `id`) -> updateAccount,
+      // which keeps the doveadm mailbox and any linked login hash in sync (D2).
+      // Profile and Logins pass a login record (has `id`) -> updateLogin.
+      let result;
+      if (selectedLogin.mailbox && selectedLogin.domain) {
+        result = await updateAccount(
           getValueFromArrayOfObj(mailservers, containerName, 'value', 'schema'),
           containerName,
           selectedLogin.mailbox,
           { password: newPassword },
         );
-        if (!accountResult.success) {
-          throw new Error(accountResult.error || t('api.errors.changePassword'));
+      } else {
+        result = await updateLogin(selectedLogin.id, { password: newPassword });
+      }
+
+      // Local Agent FIX: T4/D5 - surface both alerts on the partial-success case
+      // (mailbox updated, local login update failed) which returns success AND error.
+      if (result.success) {
+        setSuccessMessage(result.message || t('password.passwordUpdated', { key: 'username', value: selectedLogin.username }));
+        if (result.error) {
+          setErrorMessage({ key: 'api.errors.changePasswordPartial', values: { error: result.error } });
         }
-        completedSteps.push(
-          t('password.passwordUpdated', { key: 'mailbox', value: selectedLogin.mailbox }),
-        );
+      } else {
+        errorLog(t('api.errors.changePassword'), result);
+        setErrorMessage({ key: 'api.errors.changePassword', values: { error: result.error } });
       }
-
-      // ── Step 2: update local GUI login ──
-      // Local Agent FIX: guard - account objects from Accounts.jsx don't carry a login id,
-      // so this step is skipped for pure-mailbox password changes.
-      // When the account data includes a linked login's `id` (future backend enhancement),
-      // both dovecot and local login will be updated in sync automatically.
-      if (selectedLogin.id) {
-        const loginResult = await updateLogin(selectedLogin.id, { password: newPassword });
-        if (!loginResult.success) {
-          // Mailbox already changed - report both facts so the admin knows
-          // what state they're in.
-          throw new Error(
-            completedSteps.length
-              ? `${completedSteps.join('; ')} - ${loginResult.error || t('api.errors.changePassword')}`
-              : (loginResult.error || t('api.errors.changePassword')),
-          );
-        }
-        completedSteps.push(
-          t('password.passwordUpdated', { key: 'username', value: selectedLogin.username }),
-        );
-      }
-
-      // Local Agent FIX: if neither step ran (no isAccount, no id) that's a caller bug -
-      // surface it instead of silently succeeding with an empty message.
-      if (completedSteps.length === 0) {
-        throw new Error(t('api.errors.changePassword'));
-      }
-
-      // ── All good ──
-      setSuccessMessage(completedSteps.join(' · '));
 
     } catch (error) {
       errorLog(t('api.errors.changePassword'), error);
-      // Local Agent FIX: include any partial-success context so the admin
-      // knows exactly which step succeeded and which failed.
-      setErrorMessage(completedSteps.length
-        ? { key: 'api.errors.changePassword', values: { error: error.message } }
-        : { key: 'api.errors.changePassword', values: { error: error.message } });
+      setErrorMessage({ key: 'api.errors.changePassword', values: { error: error.message } });
 
     } finally {
       handleClosePasswordModal();

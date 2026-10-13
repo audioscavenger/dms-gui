@@ -3,8 +3,6 @@ import Modal from 'react-bootstrap/Modal';
 import Button from './Button';
 import FormField from './FormField';
 import Translate from './Translate';
-import AlertMessage from './AlertMessage';
-
 const PasswordChangeModal = ({
   show,
   selectedLogin,
@@ -26,9 +24,6 @@ const PasswordChangeModal = ({
       </Modal.Header>
       <Modal.Body>
         {/* Local Agent FIX: moved here from Profile.jsx - shared by both pages */}
-        {selectedLogin && !selectedLogin.isAdmin && !selectedLogin.isAccount && (
-          <AlertMessage type="info" message={Translate('password.notMailbox')} />
-        )}
         {selectedLogin && ( // Ensure selectedLogin exists before rendering form
           <form onSubmit={onSubmit} ref={passwordFormRef}>
             <FormField

@@ -38,6 +38,7 @@ const lockoutCache = new Map();
 
 // mailserver used to be containerName, now we want configID
 // addLogin will not create a mailbox by itself, while addAccount will create a login for it
+// Local Agent FIX: T16 - isAccount is legacy (Stage A of isAccount retirement, see D9): it stays only to keep the DB column writable; Stage B will remove it along with the column. Always defaults to 0 now that the UI no longer links logins to mailboxes.
 export const addLogin = async (mailbox, username, password='', email='', isAdmin=0, isAccount=0, isActive=1, mailserver=null, roles=[]) => {
   debugLog(mailbox, username, '********', email, isAdmin, isActive, isAccount, mailserver, roles);
 
@@ -127,14 +128,8 @@ export const loginHandler = async (password, login, test) => {
 
   // Perform the actual password verification
   let result;
-  if (login.isAccount) {
-    // TODO: get a way to have schema=dms as a global variable somewhere?
-    result = await doveadm('dms', login.mailserver, 'loginUser', login.mailbox, {mailbox: login.mailbox, password: password});
-    if (!result?.returncode) result.success = true;
-
-  } else {
-    result = await verifyPassword(password, login);
-  }
+  // Local Agent FIX: T3 - the dms-gui logins table is the ONLY place we validate logins (D1): always verify against the local salt/hash, no doveadm branch
+  result = await verifyPassword(password, login);
 
   debugLog('ddebug', test, login.username, password)
   if (result.success) {
@@ -194,51 +189,19 @@ export const loginUser = async (credential=null, password='', test=false) => {
       if (login.success) {
         if (login.message.lockout_until <= now) {
           if (login.message.isActive) {
-            if (login.message.isAccount) {
-              if (login.message.mailserver) {
-                if (login.message.mailbox) {
+            // Local Agent FIX: T3 - always verify against the local logins salt/hash (D1); the isAccount/doveadm branch is retired
+            // result = await verifyPassword(password, login.message);
+            result = await loginHandler(password, login.message, test);
+            // debugLog('ddebug 2 getLogin result', result);
+            if (result.success) {
+              successLog(`User ${credential} logged in successfully`);
 
-                  result = await loginHandler(password, login.message);
-                  // debugLog('ddebug mailbox loginHandler result', result)
-                  if (result.success) {
-                    successLog(`User ${credential} logged in successfully`);
-                    
-                  } else {
-                    message = result?.error || `User ${credential} password is invalid`;
-                    warnLog(message);
-                    login.message = message;
-                    login.success = false;
-                    login.returncode = results?.returncode;   // index doesn't do anything with that yet
-                  }
-
-                } else {
-                  message = `${credential} does not have a mailbox`;
-                  errorLog(message);
-                  login.message = message;
-                  login.success = false;
-                }
-
-              } else {
-                message = `${credential} does not have a mailserver assigned yet`;
-                errorLog(message);
-                login.message = message;
-                login.success = false;
-              }
-              
             } else {
-              // result = await verifyPassword(password, login.message);
-              result = await loginHandler(password, login.message, test);
-              // debugLog('ddebug 2 getLogin result', result);
-              if (result.success) {
-                successLog(`User ${credential} logged in successfully`);
-                
-              } else {
-                message = (test && login.message.username == 'admin' && password == 'changeme') ? `Login page refresh with ${credential}/${password}` : result?.error || `User ${credential} password invalid`;
-                warnLog(message);
-                login.message = message;
-                login.success = false;
-                // debugLog('ddebug 2 getLogin login', login);
-              }
+              message = (test && login.message.username == 'admin' && password == 'changeme') ? `Login page refresh with ${credential}/${password}` : result?.error || `User ${credential} password invalid`;
+              warnLog(message);
+              login.message = message;
+              login.success = false;
+              // debugLog('ddebug 2 getLogin login', login);
             }
           } else {
             message = `User ${credential} is inactive`;
